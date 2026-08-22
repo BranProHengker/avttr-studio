@@ -1,0 +1,59 @@
+<script setup lang="ts">
+import { ref, defineAsyncComponent } from 'vue'
+import { useDownloader } from '~/composables/useDownloader'
+import { ALL_CATEGORIES } from '~/composables/useSearch'
+import HeroPasteBar from '~/components/dashboard/HeroPasteBar.vue'
+import CategorySection from '~/components/dashboard/CategorySection.vue'
+
+const LazyMediaPreviewModal = defineAsyncComponent(() => import('~/components/downloaders/MediaPreviewModal.vue'))
+
+const { url, loading, result, resolveMedia } = useDownloader()
+const isModalOpen = ref(false)
+
+const handleResolve = async () => {
+  if (!url.value.trim()) return
+  const data = await resolveMedia()
+  if (data && data.success) {
+    isModalOpen.value = true
+  }
+}
+</script>
+
+<template>
+  <div class="space-y-8 pb-12">
+    <!-- Header Banner -->
+    <div class="space-y-1.5">
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+        Avttr Studio Dashboard
+      </h1>
+      <p class="text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
+        High-performance Swiss Army knife for fast social media downloading and client-side browser developer utilities.
+      </p>
+    </div>
+
+    <!-- Hero Universal Downloader Omnibox -->
+    <div class="space-y-3">
+      <HeroPasteBar
+        v-model="url"
+        :loading="loading"
+        @submit="handleResolve"
+      />
+    </div>
+
+    <!-- Categorized Tool Sections (Delphi Style) -->
+    <div class="space-y-10 pt-2">
+      <CategorySection
+        v-for="category in ALL_CATEGORIES"
+        :key="category.id"
+        :category="category"
+      />
+    </div>
+
+    <!-- Lazy Loaded Media Download Preview Modal -->
+    <LazyMediaPreviewModal
+      v-if="isModalOpen"
+      v-model="isModalOpen"
+      :result="result"
+    />
+  </div>
+</template>

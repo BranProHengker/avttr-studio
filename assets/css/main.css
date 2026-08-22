@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-app: #FFFFFF;
+    --bg-sidebar: #FBFBFC;
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #F4F4F5;
+    --bg-surface-elevated: #FFFFFF;
+    --bg-input: #FFFFFF;
+    --bg-input-search: #F4F4F5;
+    
+    --border-subtle: #E4E4E7;
+    --border-card: #E4E4E7;
+    --border-card-hover: #D4D4D8;
+    --border-active: #18181B;
+
+    --text-primary: #18181B;
+    --text-secondary: #71717A;
+    --text-tertiary: #A1A1AA;
+
+    --primary: #18181B;
+    --primary-foreground: #FFFFFF;
+    --primary-hover: #27272A;
+    --primary-active: #09090B;
+    --primary-subtle: #F4F4F5;
+    --primary-glow: rgba(0, 0, 0, 0.08);
+
+    --success: #10B981;
+    --success-subtle: rgba(16, 185, 129, 0.1);
+    --error: #EF4444;
+    --error-subtle: rgba(239, 68, 68, 0.1);
+    --warning: #F59E0B;
+    --warning-subtle: rgba(245, 158, 11, 0.1);
+
+    --radius-card: 14px;
+    --radius-control: 8px;
+    --radius-badge: 6px;
+  }
+
+  .dark, :root[data-theme="dark"] {
+    --bg-app: #09090B;
+    --bg-sidebar: #09090B;
+    --bg-card: #121215;
+    --bg-card-hover: #18181B;
+    --bg-surface-elevated: #18181B;
+    --bg-input: #121215;
+    --bg-input-search: #18181B;
+
+    --border-subtle: #27272A;
+    --border-card: #27272A;
+    --border-card-hover: #3F3F46;
+    --border-active: #FFFFFF;
+
+    --text-primary: #FAFAFA;
+    --text-secondary: #A1A1AA;
+    --text-tertiary: #71717A;
+
+    --primary: #FAFAFA;
+    --primary-foreground: #09090B;
+    --primary-hover: #E4E4E7;
+    --primary-active: #D4D4D8;
+    --primary-subtle: rgba(255, 255, 255, 0.08);
+    --primary-glow: rgba(255, 255, 255, 0.15);
+
+    --success: #10B981;
+    --success-subtle: rgba(16, 185, 129, 0.15);
+    --error: #EF4444;
+    --error-subtle: rgba(239, 68, 68, 0.15);
+    --warning: #F59E0B;
+    --warning-subtle: rgba(245, 158, 11, 0.15);
+  }
+
+  * {
+    border-color: var(--border-subtle);
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  code, pre, kbd {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}

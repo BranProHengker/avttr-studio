@@ -1,0 +1,36 @@
+# Nuxt build output
+.nuxt
+.output
+dist
+.nitro
+.cache
+
+# Dependencies
+node_modules
+.pnpm-store
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor & OS files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
