@@ -6,6 +6,7 @@ import HeroPasteBar from '~/components/dashboard/HeroPasteBar.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
+import Badge from '~/components/ui/Badge.vue'
 
 const LazyMediaPreviewModal = defineAsyncComponent(() => import('~/components/downloaders/MediaPreviewModal.vue'))
 
@@ -114,41 +115,17 @@ const handleResolve = async () => {
       @submit="handleResolve"
     />
 
-    <!-- Features Overview -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <Card
+    <!-- Feature Pill Tags -->
+    <div class="flex flex-wrap items-center gap-2">
+      <Badge
         v-for="feat in platformInfo.features"
         :key="feat"
-        :hoverable="false"
-        class="p-3.5 text-center flex flex-col items-center justify-center"
+        variant="badge"
+        class="px-3 py-1 text-xs"
       >
-        <span class="text-xs font-semibold text-[var(--text-primary)]">{{ feat }}</span>
-      </Card>
+        {{ feat }}
+      </Badge>
     </div>
-
-    <!-- Instructions Guide -->
-    <Card :hoverable="false" class="p-6 space-y-4">
-      <h3 class="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-        <span>How to download from {{ platformInfo.name }}</span>
-      </h3>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-[var(--text-secondary)]">
-        <div class="p-3 bg-[var(--bg-card-hover)] rounded-lg space-y-1">
-          <div class="font-mono font-bold text-white">01. Copy Link</div>
-          <p>Open {{ platformInfo.name }}, tap Share, and copy the video/post URL.</p>
-        </div>
-
-        <div class="p-3 bg-[var(--bg-card-hover)] rounded-lg space-y-1">
-          <div class="font-mono font-bold text-white">02. Paste in Avttr</div>
-          <p>Paste the link into the box above and click "Download".</p>
-        </div>
-
-        <div class="p-3 bg-[var(--bg-card-hover)] rounded-lg space-y-1">
-          <div class="font-mono font-bold text-white">03. Direct Download</div>
-          <p>Choose your quality option (HD Video, Audio MP3, or ZIP) to download directly.</p>
-        </div>
-      </div>
-    </Card>
 
     <!-- Lazy Loaded Preview Modal -->
     <LazyMediaPreviewModal

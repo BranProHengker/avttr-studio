@@ -23,6 +23,7 @@ Agents must adhere to the principles defined across these designated skills:
 * `ux-designer` / `web-design-guidelines`: Accessibility, keyboard ergonomics (`Cmd+K`), and touch targets.
 * `api-design-principles` / `security-review` / `security-audit`: Robust, RESTful, and secure server routes.
 * `ai-slop-cleaner` / `redesign-existing-projects` / `audit-website` / `brainstorming`: Code hygiene and continuous audit.
+* `design-consistency-auditor`: Hunts design-token drift, hardcoded hex values, one-off styles, and ensures 100% strict cross-page design token consistency.
 
 ---
 

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import QRCode from 'qrcode'
+import { Download, Copy, RefreshCw, Check } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
+import { useI18n } from '~/composables/useI18n'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
-import Input from '~/components/ui/Input.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const text = ref('https://github.com')
@@ -17,6 +18,7 @@ const qrSvg = ref('')
 
 const toast = useToast()
 const { copy } = useClipboard()
+const { t } = useI18n()
 
 const generateQR = async () => {
   if (!text.value) {
@@ -86,27 +88,38 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-8 pb-12 w-full max-w-5xl">
-    <!-- Breadcrumb -->
-    <div class="flex items-center gap-2">
-      <NuxtLink to="/" class="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-        ← Dashboard
-      </NuxtLink>
-      <span class="text-xs text-[var(--text-tertiary)]">/</span>
-      <span class="text-xs font-mono text-[var(--text-primary)]">QR Code Studio</span>
-    </div>
-
-    <!-- Header -->
-    <div class="space-y-1">
-      <div class="flex items-center gap-2">
-        <h1 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-          QR Code Studio
-        </h1>
-        <Badge variant="primary" size="sm">Client-Side</Badge>
+  <div class="space-y-6">
+    <!-- Header & Breadcrumbs -->
+    <div>
+      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
+        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">
+          Dashboard
+        </NuxtLink>
+        <span>/</span>
+        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+        <span>/</span>
+        <span class="text-[var(--text-primary)]">QR Code Studio</span>
       </div>
-      <p class="text-xs sm:text-sm text-[var(--text-secondary)]">
-        Generate custom styled QR codes with custom colors and export as high-resolution PNG or vector SVG.
-      </p>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+            QR Code Studio
+          </h1>
+          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+            Generate customized vector QR codes with custom colors and export as high-resolution PNG or SVG.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <Badge variant="secondary">
+            SVG & PNG Export
+          </Badge>
+          <Badge variant="badge">
+            100% Client Privacy
+          </Badge>
+        </div>
+      </div>
     </div>
 
     <!-- Main Workspace Grid -->
@@ -115,21 +128,21 @@ onMounted(() => {
       <div class="md:col-span-7 space-y-5">
         <Card :hoverable="false" class="p-5 sm:p-6 space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-1.5">
               Content / URL
             </label>
             <textarea
               v-model="text"
               rows="3"
               placeholder="Enter URL or plain text to encode..."
-              class="w-full p-3 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-lg text-sm transition-all focus:outline-none focus:border-[#1447E6] focus:ring-3 focus:ring-[#1447E6]/15 font-mono"
+              class="w-full p-3 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-lg text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 font-mono"
             />
           </div>
 
           <!-- Color Customizer -->
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-1.5">
                 Foreground Color
               </label>
               <div class="flex items-center gap-2 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg p-2">
@@ -147,7 +160,7 @@ onMounted(() => {
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-1.5">
                 Background Color
               </label>
               <div class="flex items-center gap-2 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg p-2">
@@ -167,7 +180,7 @@ onMounted(() => {
 
           <!-- Error Correction Level -->
           <div>
-            <label class="block text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] mb-1.5">
               Error Correction Level
             </label>
             <div class="grid grid-cols-4 gap-2">
@@ -175,38 +188,44 @@ onMounted(() => {
                 v-for="lvl in ['L', 'M', 'Q', 'H'] as const"
                 :key="lvl"
                 type="button"
-                class="py-1.5 text-xs font-mono font-medium rounded-lg border transition-all cursor-pointer"
+                class="py-2 text-xs font-mono font-medium rounded-lg border transition-all cursor-pointer"
                 :class="
                   errorCorrectionLevel === lvl
-                    ? 'bg-[#1447E6] text-white border-[#1447E6]'
-                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-card)] hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-white text-black border-white font-bold shadow-xs'
+                    : 'bg-[var(--bg-input)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white hover:border-[var(--border-card-hover)]'
                 "
                 @click="errorCorrectionLevel = lvl"
               >
                 {{ lvl }}
               </button>
             </div>
+            <p class="text-[11px] text-[var(--text-tertiary)] mt-1.5 font-mono">
+              L: 7% recovery • M: 15% recovery • Q: 25% recovery • H: 30% recovery
+            </p>
           </div>
         </Card>
       </div>
 
-      <!-- Right Live Preview & Download -->
-      <div class="md:col-span-5 flex flex-col gap-4">
-        <Card :hoverable="false" class="p-6 flex flex-col items-center justify-center gap-5">
-          <!-- QR Canvas Box -->
-          <div class="p-4 bg-white rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.1)] flex items-center justify-center max-w-[260px] aspect-square">
+      <!-- Right Preview Box -->
+      <div class="md:col-span-5 space-y-4">
+        <Card :hoverable="false" class="p-6 text-center flex flex-col items-center justify-center space-y-5">
+          <!-- Canvas Display -->
+          <div
+            class="p-4 rounded-xl border border-[var(--border-subtle)] shadow-inner transition-colors flex items-center justify-center min-h-[220px] w-full max-w-[240px]"
+            :style="{ backgroundColor: bgColor }"
+          >
             <img
               v-if="qrDataUrl"
               :src="qrDataUrl"
               alt="Generated QR Code"
-              class="w-full h-full object-contain"
+              class="w-full h-auto object-contain rounded select-none"
             />
-            <div v-else class="text-xs text-gray-400 font-mono text-center">
+            <span v-else class="text-xs text-[var(--text-tertiary)] font-mono">
               Enter content to generate
-            </div>
+            </span>
           </div>
 
-          <!-- Download Action Triggers -->
+          <!-- Action Buttons -->
           <div class="w-full space-y-2">
             <Button
               variant="primary"
@@ -214,26 +233,19 @@ onMounted(() => {
               :disabled="!qrDataUrl"
               @click="downloadPNG"
             >
+              <Download class="w-3.5 h-3.5 mr-1.5" />
               Download PNG
             </Button>
-            <div class="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                :disabled="!qrSvg"
-                @click="downloadSVG"
-              >
-                Vector SVG
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                :disabled="!qrDataUrl"
-                @click="copy(qrDataUrl, 'Base64 Data URL')"
-              >
-                Copy Data URL
-              </Button>
-            </div>
+
+            <Button
+              variant="secondary"
+              class="w-full"
+              :disabled="!qrSvg"
+              @click="downloadSVG"
+            >
+              <Download class="w-3.5 h-3.5 mr-1.5" />
+              Download SVG (Vector)
+            </Button>
           </div>
         </Card>
       </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { Copy, Lock, Unlock, RefreshCw, Check } from 'lucide-vue-next'
 import { useClipboard } from '~/composables/useClipboard'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
@@ -12,11 +13,11 @@ interface ColorItem {
 }
 
 const colors = ref<ColorItem[]>([
-  { hex: '#0A0A0A', isLocked: false },
-  { hex: '#1447E6', isLocked: false },
-  { hex: '#3080FF', isLocked: false },
-  { hex: '#10B981', isLocked: false },
-  { hex: '#F59E0B', isLocked: false },
+  { hex: '#171717', isLocked: false },
+  { hex: '#212121', isLocked: false },
+  { hex: '#2E2E2E', isLocked: false },
+  { hex: '#737373', isLocked: false },
+  { hex: '#FAFAFA', isLocked: false },
 ])
 
 const { copy } = useClipboard()
@@ -70,35 +71,37 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="space-y-8 pb-12 w-full max-w-5xl">
-    <!-- Breadcrumb -->
-    <div class="flex items-center gap-2">
-      <NuxtLink to="/" class="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-        ← Dashboard
-      </NuxtLink>
-      <span class="text-xs text-[var(--text-tertiary)]">/</span>
-      <span class="text-xs font-mono text-[var(--text-primary)]">Color Palette Studio</span>
-    </div>
-
-    <!-- Header & Action Controls -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            Color Palette Studio
-          </h1>
-          <Badge variant="primary" size="sm">Spacebar to Generate</Badge>
-        </div>
-        <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-          Explore color harmonies, check WCAG contrast ratios, and copy CSS values in one click.
-        </p>
+  <div class="space-y-6">
+    <!-- Header & Breadcrumbs -->
+    <div>
+      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
+        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">
+          Dashboard
+        </NuxtLink>
+        <span>/</span>
+        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+        <span>/</span>
+        <span class="text-[var(--text-primary)]">Color Palette Studio</span>
       </div>
 
-      <div class="flex items-center gap-2">
-        <Button variant="primary" @click="generateNewPalette">
-          <span>Generate Palette</span>
-          <kbd class="ml-1.5 px-1.5 py-0.5 text-[10px] font-mono bg-white/20 rounded">Space</kbd>
-        </Button>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+            Color Palette Studio
+          </h1>
+          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+            Explore color harmonies, check WCAG contrast ratios, and copy CSS tokens in one click.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <Button variant="primary" @click="generateNewPalette">
+            Generate Palette
+          </Button>
+          <kbd class="px-2 py-1 text-xs font-mono bg-[#2E2E2E] text-[var(--text-secondary)] border border-[var(--border-subtle)] rounded-lg shadow-xs">
+            Space
+          </kbd>
+        </div>
       </div>
     </div>
 
@@ -114,29 +117,27 @@ onUnmounted(() => {
         <div class="flex justify-end">
           <button
             type="button"
-            class="p-2 rounded-lg backdrop-blur-md bg-black/20 hover:bg-black/40 transition-colors cursor-pointer"
+            class="p-2 rounded-lg backdrop-blur-md bg-black/25 hover:bg-black/50 transition-colors cursor-pointer"
             :title="c.isLocked ? 'Unlock color' : 'Lock color'"
             @click="toggleLock(idx)"
           >
-            <svg v-if="c.isLocked" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <svg v-else class="w-3.5 h-3.5 opacity-60 hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-            </svg>
+            <Lock v-if="c.isLocked" class="w-3.5 h-3.5" />
+            <Unlock v-else class="w-3.5 h-3.5 opacity-60 hover:opacity-100" />
           </button>
         </div>
 
         <!-- Bottom Color Info & Copy -->
-        <div class="space-y-2">
+        <div class="space-y-1">
           <button
             type="button"
-            class="text-left font-mono text-sm sm:text-base font-bold tracking-wider hover:underline cursor-pointer"
+            class="text-left font-mono text-sm sm:text-base font-bold tracking-wider hover:underline cursor-pointer flex items-center gap-1.5"
             @click="copy(c.hex, 'Color HEX')"
+            title="Click to copy HEX"
           >
-            {{ c.hex }}
+            <span>{{ c.hex }}</span>
+            <Copy class="w-3 h-3 opacity-60" />
           </button>
-          <div class="text-[10px] font-mono opacity-80 uppercase">
+          <div class="text-[10px] font-mono opacity-75 uppercase tracking-wider">
             Color {{ idx + 1 }}
           </div>
         </div>
@@ -144,22 +145,34 @@ onUnmounted(() => {
     </div>
 
     <!-- Contrast & Export Card -->
-    <Card :hoverable="false" class="p-6 space-y-4">
-      <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+    <Card :hoverable="false" class="p-5 sm:p-6 space-y-4">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">
         Export Palette Tokens
       </h3>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-mono text-[var(--text-tertiary)] mb-1">CSS Custom Properties</label>
-          <pre class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-xs font-mono text-[var(--text-primary)] overflow-x-auto">:root {
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-mono text-[var(--text-secondary)]">CSS Custom Properties</label>
+            <Button size="sm" variant="ghost" @click="copy(`:root {\n${colors.map((c, i) => `  --color-${i + 1}: ${c.hex};`).join('\n')}\n}`, 'CSS Variables')">
+              <Copy class="w-3.5 h-3.5 mr-1" />
+              Copy
+            </Button>
+          </div>
+          <pre class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-xs font-mono text-[var(--text-primary)] overflow-x-auto select-all">:root {
 {{ colors.map((c, i) => `  --color-${i + 1}: ${c.hex};`).join('\n') }}
 }</pre>
         </div>
 
-        <div>
-          <label class="block text-xs font-mono text-[var(--text-tertiary)] mb-1">JSON Array</label>
-          <pre class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-xs font-mono text-[var(--text-primary)] overflow-x-auto">{{ JSON.stringify(colors.map(c => c.hex), null, 2) }}</pre>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-mono text-[var(--text-secondary)]">JSON Array</label>
+            <Button size="sm" variant="ghost" @click="copy(JSON.stringify(colors.map(c => c.hex), null, 2), 'JSON Array')">
+              <Copy class="w-3.5 h-3.5 mr-1" />
+              Copy
+            </Button>
+          </div>
+          <pre class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-xs font-mono text-[var(--text-primary)] overflow-x-auto select-all">{{ JSON.stringify(colors.map(c => c.hex), null, 2) }}</pre>
         </div>
       </div>
     </Card>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { Copy, Upload, Check, Hash, FileCode, Link as LinkIcon } from 'lucide-vue-next'
 import { useClipboard } from '~/composables/useClipboard'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
@@ -106,65 +107,80 @@ const handleFileUpload = (e: Event) => {
 </script>
 
 <template>
-  <div class="space-y-8 pb-12 w-full max-w-5xl">
-    <!-- Breadcrumb -->
-    <div class="flex items-center gap-2">
-      <NuxtLink to="/" class="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-        ← Dashboard
-      </NuxtLink>
-      <span class="text-xs text-[var(--text-tertiary)]">/</span>
-      <span class="text-xs font-mono text-[var(--text-primary)]">Base64 & Hash Studio</span>
-    </div>
-
-    <!-- Header -->
-    <div class="space-y-1">
-      <div class="flex items-center gap-2">
-        <h1 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-          Base64 & Hash Studio
-        </h1>
-        <Badge variant="primary" size="sm">Web Crypto API</Badge>
+  <div class="space-y-6">
+    <!-- Header & Breadcrumbs -->
+    <div>
+      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
+        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">
+          Dashboard
+        </NuxtLink>
+        <span>/</span>
+        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+        <span>/</span>
+        <span class="text-[var(--text-primary)]">Base64 & Hash Studio</span>
       </div>
-      <p class="text-xs sm:text-sm text-[var(--text-secondary)]">
-        Compute SHA-256/SHA-512 hashes, encode/decode Base64, and format URL parameters securely on the client.
-      </p>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+            Base64 & Hash Studio
+          </h1>
+          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+            Compute SHA-256/SHA-512 hashes, encode/decode Base64, and format URL parameters securely on the client.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <Badge variant="secondary">
+            Web Crypto API
+          </Badge>
+          <Badge variant="badge">
+            100% Client Privacy
+          </Badge>
+        </div>
+      </div>
     </div>
 
-    <!-- Tabs Header -->
-    <div class="flex items-center gap-2 border-b border-[var(--border-subtle)] pb-2">
+    <!-- Mode Switcher Tabs -->
+    <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
       <button
         type="button"
-        class="px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer"
-        :class="activeTab === 'hash' ? 'bg-[#1447E6] text-white font-semibold' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'"
+        class="px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+        :class="activeTab === 'hash' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
         @click="activeTab = 'hash'"
       >
         Cryptographic Hashes
       </button>
+
       <button
         type="button"
-        class="px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer"
-        :class="activeTab === 'base64' ? 'bg-[#1447E6] text-white font-semibold' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'"
+        class="px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+        :class="activeTab === 'base64' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
         @click="activeTab = 'base64'"
       >
-        Base64 Converter
+        Base64 Encode & Decode
       </button>
+
       <button
         type="button"
-        class="px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer"
-        :class="activeTab === 'url' ? 'bg-[#1447E6] text-white font-semibold' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'"
+        class="px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+        :class="activeTab === 'url' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
         @click="activeTab = 'url'"
       >
-        URL Encoder
+        URL Component
       </button>
     </div>
 
-    <!-- Input Textarea Card -->
-    <Card :hoverable="false" class="p-5 space-y-3">
+    <!-- Input Box Card -->
+    <Card :hoverable="false" class="p-5 sm:p-6 space-y-4">
       <div class="flex items-center justify-between">
-        <label class="text-xs font-semibold text-[var(--text-primary)]">
-          Input String or Payload
+        <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">
+          Input Payload / Plaintext
         </label>
-        <label class="text-xs text-[#3080FF] hover:underline cursor-pointer">
-          <span>Upload File</span>
+
+        <label class="text-xs text-[var(--text-secondary)] hover:text-white cursor-pointer flex items-center gap-1.5 transition-colors">
+          <Upload class="w-3.5 h-3.5" />
+          <span>Load Text File</span>
           <input type="file" class="hidden" @change="handleFileUpload" />
         </label>
       </div>
@@ -172,99 +188,124 @@ const handleFileUpload = (e: Event) => {
       <textarea
         v-model="inputText"
         rows="4"
-        placeholder="Type or paste payload..."
-        class="w-full p-3 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-lg text-xs sm:text-sm font-mono focus:outline-none focus:border-[#1447E6] focus:ring-3 focus:ring-[#1447E6]/15"
+        placeholder="Enter text or paste payload to hash / encode..."
+        class="w-full p-3 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-lg text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 font-mono"
       />
     </Card>
 
-    <!-- Tab 1: Hashes Output -->
-    <div v-if="activeTab === 'hash'" class="space-y-3">
-      <Card :hoverable="false" class="p-4 space-y-2">
+    <!-- TAB 1: Hashes -->
+    <div v-if="activeTab === 'hash'" class="space-y-4">
+      <!-- SHA-256 (Primary) -->
+      <Card :hoverable="false" class="p-5 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-bold text-[var(--text-primary)]">SHA-256 (Standard)</span>
-          <Button size="sm" variant="ghost" @click="copy(sha256Hash, 'SHA-256')">Copy</Button>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-[var(--text-primary)]">SHA-256 (Recommended)</span>
+            <Badge variant="primary" size="sm">256-bit</Badge>
+          </div>
+          <Button size="sm" variant="ghost" @click="copy(sha256Hash, 'SHA-256 Hash')">
+            <Copy class="w-3.5 h-3.5 mr-1" />
+            Copy
+          </Button>
         </div>
-        <div class="p-2.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg font-mono text-xs text-[#3080FF] break-all select-all">
-          {{ sha256Hash || 'Waiting for input...' }}
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-white break-all select-all">
+          {{ sha256Hash || '...' }}
         </div>
       </Card>
 
-      <Card :hoverable="false" class="p-4 space-y-2">
+      <!-- SHA-512 -->
+      <Card :hoverable="false" class="p-5 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-bold text-[var(--text-primary)]">SHA-512 (High Security)</span>
-          <Button size="sm" variant="ghost" @click="copy(sha512Hash, 'SHA-512')">Copy</Button>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-[var(--text-primary)]">SHA-512 (High Security)</span>
+            <Badge variant="secondary" size="sm">512-bit</Badge>
+          </div>
+          <Button size="sm" variant="ghost" @click="copy(sha512Hash, 'SHA-512 Hash')">
+            <Copy class="w-3.5 h-3.5 mr-1" />
+            Copy
+          </Button>
         </div>
-        <div class="p-2.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg font-mono text-xs text-[#10B981] break-all select-all">
-          {{ sha512Hash || 'Waiting for input...' }}
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-[var(--text-secondary)] break-all select-all">
+          {{ sha512Hash || '...' }}
         </div>
       </Card>
 
-      <Card :hoverable="false" class="p-4 space-y-2">
+      <!-- SHA-1 -->
+      <Card :hoverable="false" class="p-5 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-bold text-[var(--text-primary)]">SHA-1 (Legacy)</span>
-          <Button size="sm" variant="ghost" @click="copy(sha1Hash, 'SHA-1')">Copy</Button>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-[var(--text-primary)]">SHA-1 (Legacy / Git Checksums)</span>
+            <Badge variant="badge" size="sm">160-bit</Badge>
+          </div>
+          <Button size="sm" variant="ghost" @click="copy(sha1Hash, 'SHA-1 Hash')">
+            <Copy class="w-3.5 h-3.5 mr-1" />
+            Copy
+          </Button>
         </div>
-        <div class="p-2.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg font-mono text-xs text-[var(--text-secondary)] break-all select-all">
-          {{ sha1Hash || 'Waiting for input...' }}
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-[var(--text-secondary)] break-all select-all">
+          {{ sha1Hash || '...' }}
         </div>
       </Card>
     </div>
 
-    <!-- Tab 2: Base64 Output -->
-    <div v-if="activeTab === 'base64'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- TAB 2: Base64 -->
+    <div v-else-if="activeTab === 'base64'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Encoded -->
       <Card :hoverable="false" class="p-5 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-[var(--text-primary)]">Base64 Encoded</span>
-          <Button size="sm" variant="ghost" @click="copy(base64Encoded, 'Base64 Encoded')">Copy</Button>
+          <span class="text-xs font-semibold text-[var(--text-primary)]">Base64 Encoded (Output)</span>
+          <Button size="sm" variant="ghost" @click="copy(base64Encoded, 'Base64 Encoded')">
+            <Copy class="w-3.5 h-3.5 mr-1" />
+            Copy
+          </Button>
         </div>
-        <textarea
-          :value="base64Encoded"
-          readonly
-          rows="6"
-          class="w-full p-2.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg font-mono text-xs text-[var(--text-primary)] resize-none"
-        />
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-white break-all select-all min-h-[100px]">
+          {{ base64Encoded || '...' }}
+        </div>
       </Card>
 
+      <!-- Decoded -->
       <Card :hoverable="false" class="p-5 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-[var(--text-primary)]">Base64 Decoded (If input is valid B64)</span>
-          <Button size="sm" variant="ghost" @click="copy(base64Decoded, 'Base64 Decoded')">Copy</Button>
+          <span class="text-xs font-semibold text-[var(--text-primary)]">Base64 Decoded (From Payload)</span>
+          <Button size="sm" variant="ghost" @click="copy(base64Decoded, 'Base64 Decoded')">
+            <Copy class="w-3.5 h-3.5 mr-1" />
+            Copy
+          </Button>
         </div>
-        <textarea
-          :value="base64Decoded"
-          readonly
-          rows="6"
-          class="w-full p-2.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg font-mono text-xs text-[var(--text-primary)] resize-none"
-        />
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-[var(--text-secondary)] break-all select-all min-h-[100px]">
+          {{ base64Decoded || '...' }}
+        </div>
       </Card>
     </div>
 
-    <!-- Tab 3: URL Output -->
-    <div v-if="activeTab === 'url'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- TAB 3: URL Component -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- URI Encoded -->
       <Card :hoverable="false" class="p-5 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-[var(--text-primary)]">URL Encoded</span>
-          <Button size="sm" variant="ghost" @click="copy(urlEncoded, 'URL Encoded')">Copy</Button>
+          <span class="text-xs font-semibold text-[var(--text-primary)]">encodeURIComponent</span>
+          <Button size="sm" variant="ghost" @click="copy(urlEncoded, 'URL Encoded')">
+            <Copy class="w-3.5 h-3.5 mr-1" />
+            Copy
+          </Button>
         </div>
-        <textarea
-          :value="urlEncoded"
-          readonly
-          rows="6"
-          class="w-full p-2.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg font-mono text-xs text-[var(--text-primary)] resize-none"
-        />
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-white break-all select-all min-h-[100px]">
+          {{ urlEncoded || '...' }}
+        </div>
       </Card>
 
+      <!-- URI Decoded -->
       <Card :hoverable="false" class="p-5 space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-[var(--text-primary)]">URL Decoded</span>
-          <Button size="sm" variant="ghost" @click="copy(urlDecoded, 'URL Decoded')">Copy</Button>
+          <span class="text-xs font-semibold text-[var(--text-primary)]">decodeURIComponent</span>
+          <Button size="sm" variant="ghost" @click="copy(urlDecoded, 'URL Decoded')">
+            <Copy class="w-3.5 h-3.5 mr-1" />
+            Copy
+          </Button>
         </div>
-        <textarea
-          :value="urlDecoded"
-          readonly
-          rows="6"
-          class="w-full p-2.5 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg font-mono text-xs text-[var(--text-primary)] resize-none"
-        />
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-[var(--text-secondary)] break-all select-all min-h-[100px]">
+          {{ urlDecoded || '...' }}
+        </div>
       </Card>
     </div>
   </div>
