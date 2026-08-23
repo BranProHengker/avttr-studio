@@ -167,6 +167,43 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="m20 4-2 2 2 2"/>
     </svg>
 
+    <!-- Background Remover Vector -->
+    <svg
+      v-else-if="normalized === 'background-remover' || normalized === 'bg-remover' || normalized === 'cutout'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <path d="M12 2v4"/>
+      <path d="m4.93 4.93 2.83 2.83"/>
+      <path d="M2 12h4"/>
+      <path d="m4.93 19.07 2.83-2.83"/>
+      <path d="m14 14 7 7"/>
+      <path d="m17 11 4 4"/>
+      <path d="m11 17 4 4"/>
+    </svg>
+
+    <!-- Image Converter Vector -->
+    <svg
+      v-else-if="normalized === 'image-converter' || normalized === 'converter'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <path d="M21 7v6h-6"/>
+      <path d="M3 17v-6h6"/>
+      <path d="m21 13-4-4a5 5 0 0 0-7.07 0L3 16"/>
+      <path d="m3 11 4 4a5 5 0 0 0 7.07 0L21 8"/>
+    </svg>
+
     <!-- Color Converter / Eyedropper Vector -->
     <svg
       v-else-if="normalized === 'color-converter' || normalized === 'eyedropper' || normalized === 'pipette'"

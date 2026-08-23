@@ -8,7 +8,7 @@ import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const activeTab = ref<'hash' | 'base64' | 'url'>('hash')
-const inputText = ref('Avttr Studio 2026')
+const inputText = ref('')
 
 // Hashes
 const sha1Hash = ref('')
