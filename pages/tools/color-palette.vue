@@ -81,13 +81,13 @@ onUnmounted(() => {
         <span>/</span>
         <span class="text-[var(--text-secondary)] font-medium">Tools</span>
         <span>/</span>
-        <span class="text-[var(--text-primary)]">Color Palette Studio</span>
+        <span class="text-[var(--text-primary)]">Color Palette Generator</span>
       </div>
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            Color Palette Studio
+            Color Palette Generator
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
             Explore color harmonies, check WCAG contrast ratios, and copy CSS tokens in one click.

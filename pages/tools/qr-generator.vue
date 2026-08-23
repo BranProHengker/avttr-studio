@@ -98,13 +98,13 @@ onMounted(() => {
         <span>/</span>
         <span class="text-[var(--text-secondary)] font-medium">Tools</span>
         <span>/</span>
-        <span class="text-[var(--text-primary)]">QR Code Studio</span>
+        <span class="text-[var(--text-primary)]">QR Code Generator</span>
       </div>
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            QR Code Studio
+            QR Code Generator
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
             Generate customized vector QR codes with custom colors and export as high-resolution PNG or SVG.

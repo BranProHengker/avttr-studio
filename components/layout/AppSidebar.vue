@@ -69,13 +69,13 @@ const isRouteActive = (targetRoute: string) => {
           class="flex items-center justify-between p-2 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] transition-colors group cursor-pointer"
         >
           <div class="flex items-center gap-2.5 min-w-0">
-            <!-- 3D / Hexagon Workspace Icon -->
-            <div class="w-8 h-8 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0 shadow-xs">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                <line x1="12" y1="22.08" x2="12" y2="12"/>
-              </svg>
+            <!-- Mio Logo Image -->
+            <div class="w-8 h-8 rounded-lg overflow-hidden bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 shadow-xs">
+              <img
+                src="/mio.png"
+                alt="Avttr Studio Logo"
+                class="w-full h-full object-cover"
+              />
             </div>
             <div class="truncate">
               <div class="font-semibold text-sm text-white tracking-tight leading-tight truncate">
@@ -348,7 +348,7 @@ const isRouteActive = (targetRoute: string) => {
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                QR Code Studio
+                QR Code Generator
               </NuxtLink>
               <NuxtLink
                 to="/tools/hash-encoder"
@@ -359,7 +359,7 @@ const isRouteActive = (targetRoute: string) => {
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                Base64 & Hash Studio
+                Base64 & Hash Encoder
               </NuxtLink>
             </div>
           </div>
@@ -391,6 +391,17 @@ const isRouteActive = (targetRoute: string) => {
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
               <NuxtLink
+                to="/tools/color-converter"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/color-converter')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Color Converter & Picker
+              </NuxtLink>
+              <NuxtLink
                 to="/tools/color-palette"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
@@ -399,7 +410,7 @@ const isRouteActive = (targetRoute: string) => {
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                Color Palette Studio
+                Color Palette Generator
               </NuxtLink>
             </div>
           </div>
@@ -435,29 +446,40 @@ const isRouteActive = (targetRoute: string) => {
         </div>
       </div>
 
-      <!-- Bottom User Profile Card (Shadcn Style) -->
+      <!-- Bottom GitHub Repository Card -->
       <div class="p-3 border-t border-[var(--border-subtle)]">
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] transition-colors cursor-pointer group">
+        <a
+          href="https://github.com/BranProHengker/avttr-studio"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-white/20 transition-all cursor-pointer group"
+          title="Open GitHub Repository"
+        >
           <div class="flex items-center gap-2.5 min-w-0">
-            <!-- User Avatar -->
-            <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#2E2E2E] to-[#3F3F46] border border-[#2E2E2E] flex items-center justify-center text-white font-bold text-sm shrink-0">
-              AV
+            <!-- GitHub Icon Avatar -->
+            <div class="w-9 h-9 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0 group-hover:border-white/30 transition-colors shadow-xs">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
             </div>
             <div class="truncate">
-              <div class="font-semibold text-sm text-white leading-tight truncate">
-                avttr
+              <div class="font-semibold text-sm text-white leading-tight truncate flex items-center gap-1.5">
+                <span>avttr-studio</span>
+                <svg class="w-3 h-3 text-[var(--text-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
               </div>
-              <div class="text-xs text-[var(--text-tertiary)] leading-tight truncate mt-0.5">
-                dev@avttr.studio
+              <div class="text-xs text-[var(--text-tertiary)] leading-tight truncate mt-0.5 font-mono">
+                BranProHengker/avttr-studio
               </div>
             </div>
           </div>
 
-          <!-- Selector Chevrons -->
+          <!-- Chevron Right -->
           <svg class="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-white transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
-        </div>
+        </a>
       </div>
     </aside>
   </div>

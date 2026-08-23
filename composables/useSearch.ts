@@ -99,7 +99,7 @@ export const ALL_CATEGORIES: ToolCategory[] = [
       },
       {
         id: 'qr-generator',
-        title: 'QR Code Studio',
+        title: 'QR Code Generator',
         description: 'Generate styled QR codes with custom colors, error correction, and SVG/PNG download.',
         category: 'image',
         icon: 'qr-generator',
@@ -109,7 +109,7 @@ export const ALL_CATEGORIES: ToolCategory[] = [
       },
       {
         id: 'base64-image',
-        title: 'Base64 & Hash Studio',
+        title: 'Base64 & Hash Encoder',
         description: 'Convert files to Base64, generate SHA-256 / SHA-512 hashes via Web Crypto API.',
         category: 'image',
         icon: 'hash-encoder',
@@ -125,13 +125,23 @@ export const ALL_CATEGORIES: ToolCategory[] = [
     icon: 'Palette',
     tools: [
       {
+        id: 'color-converter',
+        title: 'Color Converter & Picker',
+        description: 'Visual color picker with bi-directional HEX, RGB, CMYK, HSV, HSL translation & shades.',
+        category: 'color',
+        icon: 'color-converter',
+        route: '/tools/color-converter',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'color-palette',
-        title: 'Color Palette Studio',
+        title: 'Color Palette Generator',
         description: 'Generate harmonious color palettes, check WCAG contrast, and copy CSS tokens.',
         category: 'color',
         icon: 'color-palette',
         route: '/tools/color-palette',
-        badge: 'New',
+        badge: 'Popular',
       },
     ],
   },
