@@ -77,35 +77,65 @@ const processSelectedFile = (file: File) => {
   removeBackground()
 }
 
-// Fetch Image from URL (with proxy fallback for CORS)
+// Switch AI Engine Mode with auto re-process
+const setModelQuality = (quality: 'small' | 'medium') => {
+  if (modelQuality.value === quality) return
+  modelQuality.value = quality
+  if (originalImageFile.value && !isProcessing.value) {
+    toast.info('Model Switched', `Re-processing with ${quality === 'small' ? 'Fast Mode' : 'Balanced HQ'}...`)
+    removeBackground()
+  }
+}
+
+// Fetch Image from URL (supports relative /mio.png, data:image, and remote HTTP/HTTPS with proxy fallback)
 const fetchImageFromUrl = async (urlToFetch?: string) => {
   const target = (urlToFetch || imageUrlInput.value).trim()
-  if (!target || !/^https?:\/\//i.test(target)) {
-    toast.error('Invalid URL', 'Please enter a valid HTTP/HTTPS image link')
+  if (!target) return
+
+  const isHttp = /^https?:\/\//i.test(target)
+  const isRelative = target.startsWith('/') || target.startsWith('./')
+  const isDataUrl = target.startsWith('data:image/')
+
+  if (!isHttp && !isRelative && !isDataUrl) {
+    toast.error('Invalid URL', 'Please enter a valid HTTP/HTTPS link or select a sample image')
     return
   }
 
   isFetchingUrl.value = true
-  progressStatus.value = 'Fetching image from link...'
+  progressStatus.value = 'Fetching image...'
 
   try {
     let response: Response | null = null
 
-    // Try direct fetch first
-    try {
-      response = await fetch(target, { mode: 'cors' })
-      if (!response.ok) response = null
-    } catch {
-      response = null
+    if (isDataUrl) {
+      const res = await fetch(target)
+      const blob = await res.blob()
+      const file = new File([blob], 'sample_image.png', { type: blob.type || 'image/png' })
+      processSelectedFile(file)
+      imageUrlInput.value = ''
+      return
     }
 
-    // Fallback to server proxy if direct fetch is blocked by CORS
-    if (!response) {
-      const proxyUrl = `/api/proxy?url=${encodeURIComponent(target)}`
-      response = await fetch(proxyUrl)
+    if (isRelative) {
+      // Local relative asset (e.g. /mio.png)
+      response = await fetch(target)
+    } else {
+      // Try direct fetch first
+      try {
+        response = await fetch(target, { mode: 'cors' })
+        if (!response.ok) response = null
+      } catch {
+        response = null
+      }
+
+      // Fallback to server proxy if direct fetch is blocked by CORS
+      if (!response) {
+        const proxyUrl = `/api/proxy?url=${encodeURIComponent(target)}`
+        response = await fetch(proxyUrl)
+      }
     }
 
-    if (!response.ok) throw new Error('Could not download image from specified URL')
+    if (!response || !response.ok) throw new Error('Could not download image from specified link')
 
     const blob = await response.blob()
     const fileName = target.split('/').pop()?.split('?')[0] || 'online_image.png'
@@ -315,10 +345,27 @@ const resetAll = () => {
           </p>
         </div>
 
-        <div class="flex items-center gap-2">
-          <Badge variant="secondary">
-            Neural AI Model
-          </Badge>
+        <!-- AI Engine Mode Switcher (Visible before & during editing) -->
+        <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-lg p-1 text-xs shrink-0 self-start sm:self-auto">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer"
+            :class="modelQuality === 'small' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+            @click="setModelQuality('small')"
+          >
+            <Zap class="w-3.5 h-3.5" />
+            <span>Fast Mode</span>
+            <span class="text-[10px] text-[var(--text-tertiary)] font-mono ml-0.5">(&lt;1s)</span>
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer"
+            :class="modelQuality === 'medium' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+            @click="setModelQuality('medium')"
+          >
+            <Sparkles class="w-3.5 h-3.5" />
+            <span>Balanced (HQ)</span>
+          </button>
         </div>
       </div>
     </div>
@@ -531,24 +578,26 @@ const resetAll = () => {
           <div class="space-y-1.5 pt-3 border-t border-[var(--border-subtle)]">
             <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
               <span>AI Engine Mode</span>
-              <span class="text-[11px] text-[var(--text-tertiary)] font-mono">{{ modelQuality === 'small' ? '⚡ Fast (<1s)' : '🎯 Balanced HQ' }}</span>
+              <span class="text-[11px] text-[var(--text-tertiary)] font-mono">{{ modelQuality === 'small' ? 'Fast (<1s)' : 'Balanced HQ' }}</span>
             </div>
             <div class="grid grid-cols-2 gap-1.5 p-1 bg-[#171717] border border-[var(--border-subtle)] rounded-lg text-xs">
               <button
                 type="button"
-                class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center"
+                class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
                 :class="modelQuality === 'small' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
-                @click="modelQuality = 'small'"
+                @click="setModelQuality('small')"
               >
-                ⚡ Fast Mode
+                <Zap class="w-3 h-3" />
+                <span>Fast Mode</span>
               </button>
               <button
                 type="button"
-                class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center"
+                class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
                 :class="modelQuality === 'medium' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
-                @click="modelQuality = 'medium'"
+                @click="setModelQuality('medium')"
               >
-                🎯 Balanced (HQ)
+                <Sparkles class="w-3 h-3" />
+                <span>Balanced (HQ)</span>
               </button>
             </div>
           </div>

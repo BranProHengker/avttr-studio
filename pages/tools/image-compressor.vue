@@ -537,7 +537,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
             <span class="text-white font-mono">Saved {{ totalSavedPercent }}% overall</span>
           </div>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-            {{ formatBytes(totalOriginalSize) }} ➔ {{ formatBytes(totalCompressedSize) }}
+            {{ formatBytes(totalOriginalSize) }} to {{ formatBytes(totalCompressedSize) }}
             <span class="text-white font-mono">(-{{ formatBytes(totalOriginalSize - totalCompressedSize) }})</span>
           </p>
         </div>

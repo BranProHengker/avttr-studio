@@ -155,6 +155,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'font-explorer',
+        title: 'Font Explorer & Tester',
+        description: 'Browse, test, shuffle random fonts, and preview 80+ modern typefaces with instant CSS embed.',
+        category: 'color',
+        icon: 'font-explorer',
+        route: '/tools/font-explorer',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'color-palette',
         title: 'Color Palette Generator',
         description: 'Generate harmonious color palettes, check WCAG contrast, and copy CSS tokens.',

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { X } from 'lucide-vue-next'
 import { useHistory } from '~/composables/useHistory'
 import { useClipboard } from '~/composables/useClipboard'
 import { useI18n } from '~/composables/useI18n'
@@ -70,8 +71,9 @@ const handleSelect = (url: string) => {
             type="button"
             class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md cursor-pointer"
             @click="emit('close')"
+            title="Close"
           >
-            ✕
+            <X class="w-4 h-4" />
           </button>
         </div>
 
@@ -128,7 +130,7 @@ const handleSelect = (url: string) => {
                   title="Remove item"
                   @click="remove(item.id)"
                 >
-                  ✕
+                  <X class="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

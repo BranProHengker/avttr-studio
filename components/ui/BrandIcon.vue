@@ -220,6 +220,22 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l-3-3Z"/>
     </svg>
 
+    <!-- Font Explorer Vector -->
+    <svg
+      v-else-if="normalized === 'font-explorer' || normalized === 'font-tester' || normalized === 'typography'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <polyline points="4 7 4 4 20 4 20 7"/>
+      <line x1="9" x2="15" y1="20" y2="20"/>
+      <line x1="12" x2="12" y1="4" y2="20"/>
+    </svg>
+
     <!-- Generic Fallback Tool -->
     <svg
       v-else

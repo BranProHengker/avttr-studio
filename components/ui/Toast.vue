@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Check, X, AlertTriangle, Info } from 'lucide-vue-next'
 import type { ToastItem } from '~/types'
 
 interface Props {
@@ -17,11 +18,19 @@ const emit = defineEmits<{
   >
     <div class="flex items-start gap-3">
       <!-- Status Icon -->
-      <div class="mt-0.5">
-        <span v-if="toast.type === 'success'" class="flex h-5 w-5 rounded-full bg-[#10B981]/15 text-[#10B981] items-center justify-center text-xs">✓</span>
-        <span v-else-if="toast.type === 'error'" class="flex h-5 w-5 rounded-full bg-[#EF4444]/15 text-[#EF4444] items-center justify-center text-xs">✕</span>
-        <span v-else-if="toast.type === 'warning'" class="flex h-5 w-5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] items-center justify-center text-xs">!</span>
-        <span v-else class="flex h-5 w-5 rounded-full bg-[#1447E6]/15 text-[#3080FF] items-center justify-center text-xs">ℹ</span>
+      <div class="mt-0.5 shrink-0">
+        <span v-if="toast.type === 'success'" class="flex h-5 w-5 rounded-full bg-[#10B981]/15 text-[#10B981] items-center justify-center">
+          <Check class="w-3 h-3" />
+        </span>
+        <span v-else-if="toast.type === 'error'" class="flex h-5 w-5 rounded-full bg-[#EF4444]/15 text-[#EF4444] items-center justify-center">
+          <X class="w-3 h-3" />
+        </span>
+        <span v-else-if="toast.type === 'warning'" class="flex h-5 w-5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] items-center justify-center">
+          <AlertTriangle class="w-3 h-3" />
+        </span>
+        <span v-else class="flex h-5 w-5 rounded-full bg-[#1447E6]/15 text-[#3080FF] items-center justify-center">
+          <Info class="w-3 h-3" />
+        </span>
       </div>
 
       <div>
@@ -37,12 +46,11 @@ const emit = defineEmits<{
     <!-- Dismiss Button -->
     <button
       type="button"
-      class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors p-1"
+      class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors p-1 cursor-pointer"
       @click="emit('dismiss', toast.id)"
+      title="Close"
     >
-      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
+      <X class="w-3.5 h-3.5" />
     </button>
   </div>
 </template>
