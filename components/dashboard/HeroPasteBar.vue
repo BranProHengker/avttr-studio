@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { detectPlatform } from '~/server/utils/sanitizer'
+import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
 
@@ -17,6 +18,8 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
   (e: 'submit'): void
 }>()
+
+const { t } = useI18n()
 
 const platform = computed(() => {
   if (!props.modelValue) return null
@@ -53,7 +56,7 @@ const pasteFromClipboard = async () => {
         <input
           :value="modelValue"
           type="url"
-          placeholder="Paste link from TikTok, Instagram, YouTube, Twitter/X, CapCut..."
+          :placeholder="t.pastePlaceholder"
           class="w-full h-12 pl-10 pr-20 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-lg text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 disabled:opacity-50"
           :disabled="loading"
           @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
@@ -81,7 +84,7 @@ const pasteFromClipboard = async () => {
         :loading="loading"
         @click="emit('submit')"
       >
-        <span>Download</span>
+        <span>{{ t.download }}</span>
         <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
         </svg>

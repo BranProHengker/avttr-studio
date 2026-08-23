@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useHistory } from '~/composables/useHistory'
 import { useClipboard } from '~/composables/useClipboard'
+import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 
 const { history, remove, clear } = useHistory()
 const { copy } = useClipboard()
+const { t } = useI18n()
 
 const formatDate = (timestamp: number) => {
   return new Date(timestamp).toLocaleDateString(undefined, {
@@ -60,9 +62,9 @@ const handleSelect = (url: string) => {
         <div class="h-14 px-5 border-b border-[var(--border-subtle)] flex items-center justify-between">
           <div class="flex items-center gap-2">
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
-              Download History
+              {{ t.recentDownloads }}
             </h3>
-            <Badge variant="neutral" size="sm">{{ history.length }}</Badge>
+            <Badge variant="secondary" size="sm">{{ history.length }}</Badge>
           </div>
           <button
             type="button"
@@ -79,8 +81,8 @@ const handleSelect = (url: string) => {
             v-if="history.length === 0"
             class="py-16 text-center text-xs text-[var(--text-tertiary)]"
           >
-            <p>No recent downloads yet.</p>
-            <p class="mt-1 text-[11px]">Links resolved in Avttr Studio will appear here.</p>
+            <p>{{ t.noHistory }}</p>
+            <p class="mt-1 text-[11px]">{{ t.noHistoryDesc }}</p>
           </div>
 
           <div
@@ -105,7 +107,7 @@ const handleSelect = (url: string) => {
                   </div>
                 </div>
               </div>
-              <Badge variant="primary" size="sm">{{ item.platform }}</Badge>
+              <Badge variant="secondary" size="sm">{{ item.platform }}</Badge>
             </div>
 
             <!-- Actions -->
@@ -136,9 +138,9 @@ const handleSelect = (url: string) => {
         <!-- Footer -->
         <div v-if="history.length > 0" class="p-3 border-t border-[var(--border-subtle)] flex items-center justify-between">
           <Button size="sm" variant="ghost" @click="clear">
-            Clear History
+            {{ t.clearHistory }}
           </Button>
-          <span class="text-[11px] text-[var(--text-tertiary)] font-mono">Stored in browser localStorage</span>
+          <span class="text-[11px] text-[var(--text-tertiary)] font-mono">localStorage</span>
         </div>
       </aside>
     </div>

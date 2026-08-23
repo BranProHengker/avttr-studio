@@ -149,6 +149,24 @@ const normalized = computed(() => props.name.toLowerCase())
       <line x1="16" y1="3" x2="14" y2="21"/>
     </svg>
 
+    <!-- Image Compressor Vector -->
+    <svg
+      v-else-if="normalized === 'image-compressor' || normalized === 'compress' || normalized === 'image'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+      <circle cx="8.5" cy="8.5" r="1.5"/>
+      <path d="m21 15-5-5L5 21"/>
+      <path d="m14 4 2 2-2 2"/>
+      <path d="m20 4-2 2 2 2"/>
+    </svg>
+
     <!-- Generic Fallback Tool -->
     <svg
       v-else

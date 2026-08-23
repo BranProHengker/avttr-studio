@@ -173,8 +173,13 @@ export interface ScraperResult {
 
 ## 6. UI & Aesthetic Guardrails
 * Adhere strictly to the color tokens and typography scale in `DESIGN.md`.
-* **Dark Mode First:** Default to the deep obsidian background (`#0A0A0A`).
-* **Radius Tokens:** Cards use `rounded-[14px]` (`14px`), buttons/inputs use `rounded-lg` (`8px`), badges use `rounded-md` (`6px`).
+* **Dark Mode First:** Default to the `#171717` dark background palette.
+* **Radius Tokens:** Cards use `rounded-[14px]` (`14px`), buttons/inputs use `rounded-lg` (`8px`), badges use `rounded-full` (full pill shape).
+* **Badge & Tagline Standard:**
+  * All badges and taglines MUST use the centralized `<Badge>` component from `/components/ui/Badge.vue`.
+  * Geometry: Always full pill shape (`rounded-full`) with `text-xs` (`px-2.5 py-0.5`).
+  * Pure Monochrome Palette: Solid white (`primary`), neutral dark `#2E2E2E` (`secondary`), card border `#212121` (`badge`), transparent outline (`outline`), or ghost text (`ghost`).
+  * Strict prohibition on generic bright green/blue/colorful badge tints.
 * **Anti-AI-Slop Iconography Rules:**
   * **Strict Ban on Emojis/Emoticons in UI:** Absolutely forbidden to use generic emojis (e.g. 🎵, 📸, ▶️, 🎬, 📱, 📄, 🎨, ⚡, 🎧) inside cards, buttons, badges, headers, or sidebars.
   * **Official SVG Brand Logos:** Always use authentic, clean SVG vector brand logos for social platforms (TikTok, Instagram, YouTube, Twitter/X, CapCut, Facebook, Spotify, etc.).

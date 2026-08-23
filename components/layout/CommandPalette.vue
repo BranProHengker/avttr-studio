@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useSearch } from '~/composables/useSearch'
+import { useI18n } from '~/composables/useI18n'
 import Badge from '~/components/ui/Badge.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
 
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const { searchQuery, allTools } = useSearch()
+const { t } = useI18n()
 const selectedIndex = ref(0)
 const inputRef = ref<HTMLInputElement | null>(null)
 
@@ -115,7 +117,7 @@ onUnmounted(() => {
               ref="inputRef"
               v-model="searchQuery"
               type="text"
-              placeholder="Search tools, downloaders, utilities..."
+              :placeholder="t.searchPlaceholder"
               class="w-full bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none"
             />
             <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded text-[var(--text-tertiary)]">ESC</kbd>
@@ -127,7 +129,7 @@ onUnmounted(() => {
               v-if="filteredList.length === 0"
               class="py-12 text-center text-xs text-[var(--text-tertiary)]"
             >
-              No matching tools found for "{{ searchQuery }}"
+              {{ t.noResults }}
             </div>
 
             <div
@@ -136,7 +138,7 @@ onUnmounted(() => {
               class="flex items-center justify-between px-3 py-2.5 rounded-lg text-xs transition-colors cursor-pointer"
               :class="
                 index === selectedIndex
-                  ? 'bg-[#1447E6]/15 text-[var(--text-primary)] border border-[#1447E6]/30'
+                  ? 'bg-[#2E2E2E] text-white border border-[#404040]'
                   : 'hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-transparent'
               "
               @click="navigateToTool(tool.route)"
@@ -157,7 +159,7 @@ onUnmounted(() => {
               </div>
 
               <div class="flex items-center gap-2">
-                <Badge v-if="tool.badge" size="sm" :variant="tool.badge === 'HD' ? 'primary' : 'neutral'">
+                <Badge v-if="tool.badge" size="sm" :variant="tool.badge === 'HD' ? 'primary' : 'secondary'">
                   {{ tool.badge }}
                 </Badge>
                 <span class="text-[10px] font-mono uppercase text-[var(--text-tertiary)]">
@@ -173,7 +175,7 @@ onUnmounted(() => {
               <span>↑↓ Navigate</span>
               <span>↵ Open</span>
             </div>
-            <span>{{ filteredList.length }} tools available</span>
+            <span>{{ filteredList.length }} tools</span>
           </div>
         </div>
       </div>

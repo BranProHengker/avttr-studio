@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, defineAsyncComponent } from 'vue'
 import { useDownloader } from '~/composables/useDownloader'
+import { useI18n } from '~/composables/useI18n'
 import { ALL_CATEGORIES } from '~/composables/useSearch'
 import HeroPasteBar from '~/components/dashboard/HeroPasteBar.vue'
 import CategorySection from '~/components/dashboard/CategorySection.vue'
@@ -8,6 +9,7 @@ import CategorySection from '~/components/dashboard/CategorySection.vue'
 const LazyMediaPreviewModal = defineAsyncComponent(() => import('~/components/downloaders/MediaPreviewModal.vue'))
 
 const { url, loading, result, resolveMedia } = useDownloader()
+const { t } = useI18n()
 const isModalOpen = ref(false)
 
 const handleResolve = async () => {
@@ -24,10 +26,10 @@ const handleResolve = async () => {
     <!-- Header Banner -->
     <div class="space-y-1.5">
       <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-        Avttr Studio Dashboard
+        {{ t.heroTitle }}
       </h1>
       <p class="text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
-        High-performance Swiss Army knife for fast social media downloading and client-side browser developer utilities.
+        {{ t.heroSubtitle }}
       </p>
     </div>
 

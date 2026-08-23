@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
 import { useHistory } from '~/composables/useHistory'
+import { useI18n } from '~/composables/useI18n'
 import Badge from '~/components/ui/Badge.vue'
 
 defineEmits<{
@@ -17,14 +19,24 @@ const isDark = useDark({
 })
 const toggleDark = useToggle(isDark)
 const { history } = useHistory()
+const { locale, t, toggleLocale } = useI18n()
+
+const shortcutKey = ref('Ctrl+K')
+
+onMounted(() => {
+  if (typeof navigator !== 'undefined') {
+    const isMac = /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent || navigator.platform)
+    shortcutKey.value = isMac ? '⌘K' : 'Ctrl+K'
+  }
+})
 </script>
 
 <template>
   <header
-    class="sticky top-0 z-30 h-14 bg-[var(--bg-app)]/85 backdrop-blur-md border-b border-[var(--border-subtle)] flex items-center justify-between px-4 sm:px-6 transition-colors"
+    class="sticky top-0 z-30 h-14 bg-[var(--bg-app)]/85 backdrop-blur-md border-b border-[var(--border-subtle)] flex items-center justify-between px-3 sm:px-6 transition-colors"
   >
     <!-- Left: Mobile Menu Toggle & Title -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2.5 sm:gap-4 min-w-0">
       <button
         type="button"
         class="lg:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-lg transition-colors cursor-pointer"
@@ -36,28 +48,44 @@ const { history } = useHistory()
         </svg>
       </button>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <slot name="title">
           <h1 class="text-sm font-semibold text-[var(--text-primary)] tracking-tight">
-            Dashboard
+            {{ t.dashboard }}
           </h1>
         </slot>
       </div>
     </div>
 
     <!-- Right Controls -->
-    <div class="flex items-center gap-2">
-      <!-- Quick Search Button -->
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Quick Search Trigger (Mobile Icon) -->
       <button
         type="button"
-        class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] rounded-lg text-xs text-[var(--text-secondary)] transition-all cursor-pointer"
+        class="lg:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-lg transition-colors cursor-pointer"
         @click="$emit('open-palette')"
+        title="Search"
       >
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <span>Search...</span>
-        <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-app)] border border-[var(--border-subtle)] rounded">⌘K</kbd>
+      </button>
+
+      <!-- Language Switcher Pill (ID / EN) -->
+      <button
+        type="button"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer"
+        @click="toggleLocale"
+        :title="`Language: ${locale.toUpperCase()} (Click to switch)`"
+      >
+        <svg class="w-3.5 h-3.5 text-[var(--text-tertiary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span class="font-mono font-semibold uppercase text-[11px] text-white">
+          {{ locale }}
+        </span>
       </button>
 
       <!-- History Trigger -->
@@ -65,14 +93,14 @@ const { history } = useHistory()
         type="button"
         class="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-lg transition-colors cursor-pointer"
         @click="$emit('open-history')"
-        title="Recent Downloads History"
+        :title="t.downloadHistory"
       >
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span
           v-if="history.length > 0"
-          class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#1447E6]"
+          class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-white shadow-xs"
         />
       </button>
 

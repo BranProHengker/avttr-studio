@@ -198,12 +198,19 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 
 ---
 
-### E. Badges & Tags
+### E. Badges & Tagline Pills (Shadcn Specification)
 
-* **Success Badge:** Background `var(--success-subtle)`, Text `var(--success)`, Border `1px solid rgba(16, 185, 129, 0.3)`, Radius `6px`, Font `11px/12px` weight `600`.
-* **Warning Badge:** Background `var(--warning-subtle)`, Text `var(--warning)`, Border `1px solid rgba(245, 158, 11, 0.3)`, Radius `6px`.
-* **Error / Destructive Badge:** Background `var(--error-subtle)`, Text `var(--error)`, Border `1px solid rgba(239, 68, 68, 0.3)`, Radius `6px`.
-* **Primary / New Badge:** Background `var(--primary-subtle)`, Text `#3080FF`, Border `1px solid rgba(20, 71, 230, 0.3)`, Radius `6px`.
+All badges use full pill geometry (`rounded-full`), `text-xs` (`12px`), and strict semantic variants:
+
+* **Primary (`variant="primary"`):** Solid high-contrast white pill (`bg-white text-black font-semibold shadow-xs px-2.5 py-0.5`).
+* **Secondary (`variant="secondary"`):** Neutral dark pill (`bg-[#2E2E2E] text-white font-medium px-2.5 py-0.5`).
+* **Badge / Neutral (`variant="badge"`):** Dark card surface with 1px border (`border border-[var(--border-subtle)] bg-[var(--bg-card)] text-white px-2.5 py-0.5`).
+* **Outline (`variant="outline"`):** Transparent pill with 1px border (`border border-[var(--border-subtle)] bg-transparent text-[var(--text-secondary)] px-2.5 py-0.5`).
+* **Ghost (`variant="ghost"`):** Borderless text-only pill (`bg-transparent text-xs text-[var(--text-tertiary)] hover:text-white px-1.5 py-0.5`).
+* **Semantic Status Pills (`variant="success" | "warning" | "error"`):**
+  * **Success:** `bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 rounded-full`
+  * **Warning:** `bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 rounded-full`
+  * **Error:** `bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30 rounded-full`
 
 ---
 

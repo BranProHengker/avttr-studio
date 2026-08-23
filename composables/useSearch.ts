@@ -88,6 +88,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
     icon: 'Image',
     tools: [
       {
+        id: 'image-compressor',
+        title: 'Image Compressor',
+        description: 'Compress PNG, JPG, WebP, SVG, AVIF, and GIF without reducing resolution or visual quality.',
+        category: 'image',
+        icon: 'image-compressor',
+        route: '/tools/image-compressor',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'qr-generator',
         title: 'QR Code Studio',
         description: 'Generate styled QR codes with custom colors, error correction, and SVG/PNG download.',

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useHistory } from '~/composables/useHistory'
+import { useI18n } from '~/composables/useI18n'
 
 interface Props {
   isOpen: boolean
@@ -16,6 +17,16 @@ const emit = defineEmits<{
 
 const route = useRoute()
 const { history } = useHistory()
+const { t } = useI18n()
+
+const shortcutKey = ref('Ctrl+K')
+
+onMounted(() => {
+  if (typeof navigator !== 'undefined') {
+    const isMac = /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent || navigator.platform)
+    shortcutKey.value = isMac ? '⌘K' : 'Ctrl+K'
+  }
+})
 
 // Accordion state for collapsible menus
 const openMenus = ref<Record<string, boolean>>({
@@ -68,10 +79,10 @@ const isRouteActive = (targetRoute: string) => {
             </div>
             <div class="truncate">
               <div class="font-semibold text-sm text-white tracking-tight leading-tight truncate">
-                Avttr Studio
+                {{ t.appName }}
               </div>
               <div class="text-xs text-[var(--text-tertiary)] leading-tight truncate mt-0.5">
-                Nuxt 3 + shadcn
+                {{ t.appSubtitle }}
               </div>
             </div>
           </div>
@@ -83,12 +94,30 @@ const isRouteActive = (targetRoute: string) => {
         </NuxtLink>
       </div>
 
+      <!-- Prominent Search Bar (Under Workspace Header) -->
+      <div class="px-3 pt-3 pb-1 border-b border-[var(--border-subtle)]/50">
+        <button
+          type="button"
+          class="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] rounded-lg text-xs text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer shadow-xs group"
+          @click="emit('open-palette')"
+          title="Search tools (Ctrl + K)"
+        >
+          <svg class="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span class="flex-1 text-left truncate text-[12px] text-[var(--text-secondary)] group-hover:text-white">Search tools...</span>
+          <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[#2E2E2E] text-[var(--text-tertiary)] group-hover:text-white rounded shadow-xs font-semibold">
+            {{ shortcutKey }}
+          </kbd>
+        </button>
+      </div>
+
       <!-- Navigation Content -->
       <div class="flex-1 overflow-y-auto px-3 py-3 space-y-6">
         <!-- Section: Social Downloaders -->
         <div class="space-y-1.5">
           <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Social Downloaders
+            {{ t.socialDownloaders }}
           </div>
 
           <!-- Dashboard Menu -->
@@ -102,7 +131,7 @@ const isRouteActive = (targetRoute: string) => {
                 <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                <span>Dashboard</span>
+                <span>{{ t.dashboard }}</span>
               </div>
               <svg
                 class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
@@ -126,7 +155,7 @@ const isRouteActive = (targetRoute: string) => {
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                All Downloaders
+                {{ t.allDownloaders }}
               </NuxtLink>
             </div>
           </div>
@@ -142,7 +171,7 @@ const isRouteActive = (targetRoute: string) => {
                 <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span>Video & Socials</span>
+                <span>{{ t.videoSocials }}</span>
               </div>
               <svg
                 class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
@@ -237,7 +266,7 @@ const isRouteActive = (targetRoute: string) => {
                 <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
-                <span>Audio & Music</span>
+                <span>{{ t.audioMusic }}</span>
               </div>
               <svg
                 class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
@@ -270,7 +299,7 @@ const isRouteActive = (targetRoute: string) => {
         <!-- Section: Client Utilities -->
         <div class="space-y-1.5">
           <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Client Utilities
+            {{ t.clientUtilities }}
           </div>
 
           <!-- Assets Menu -->
@@ -284,7 +313,7 @@ const isRouteActive = (targetRoute: string) => {
                 <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
-                <span>Asset Generators</span>
+                <span>{{ t.assetGenerators }}</span>
               </div>
               <svg
                 class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
@@ -299,6 +328,17 @@ const isRouteActive = (targetRoute: string) => {
 
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['assets']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
+              <NuxtLink
+                to="/tools/image-compressor"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/image-compressor')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Image Compressor
+              </NuxtLink>
               <NuxtLink
                 to="/tools/qr-generator"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
@@ -335,7 +375,7 @@ const isRouteActive = (targetRoute: string) => {
                 <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4 5 5 0 015-5h4a5 5 0 015 5 4 4 0 01-4 4H7zM16 3.13a4 4 0 010 7.75M21 14v1a4 4 0 01-4 4h-1" />
                 </svg>
-                <span>Design System</span>
+                <span>{{ t.designSystem }}</span>
               </div>
               <svg
                 class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
@@ -368,7 +408,7 @@ const isRouteActive = (targetRoute: string) => {
         <!-- Section: System & Storage -->
         <div class="space-y-1.5">
           <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-            System & Storage
+            {{ t.systemStorage }}
           </div>
 
           <div class="space-y-0.5">
@@ -382,7 +422,7 @@ const isRouteActive = (targetRoute: string) => {
                 <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>Download History</span>
+                <span>{{ t.downloadHistory }}</span>
               </div>
               <span
                 v-if="history.length > 0"
@@ -390,21 +430,6 @@ const isRouteActive = (targetRoute: string) => {
               >
                 {{ history.length }}
               </span>
-            </button>
-
-            <!-- Command Palette Shortcut -->
-            <button
-              type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
-              @click="emit('open-palette')"
-            >
-              <div class="flex items-center gap-2.5">
-                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <span>Quick Search</span>
-              </div>
-              <kbd class="px-2 py-0.5 text-xs font-mono bg-[#2E2E2E] text-[var(--text-tertiary)] rounded-md">⌘K</kbd>
             </button>
           </div>
         </div>
