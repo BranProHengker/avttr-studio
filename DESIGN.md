@@ -23,7 +23,7 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 
 ### Primary & Accent Colors
 * **Primary High-Contrast Accent (`#FFFFFF` in Dark / `#18181B` in Light):** Primary action buttons, focused outlines, and high-priority CTA triggers.
-* **Active Navigation Neutral (`#27272A`):** Active sidebar item surface with pure white text and crisp 1px borders.
+* **Active Navigation Neutral (`#2E2E2E`):** Active sidebar item surface with pure white text and crisp 1px borders.
 * **Status Metrics (`#10B981` Emerald / `#EF4444` Red):** Positive trend metrics, success indicators, and error badges.
 
 ### CSS Variables & Semantic Tokens (Dark & Light Mode Support)
@@ -51,7 +51,7 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
   --primary: #18181B;
   --primary-foreground: #FFFFFF;
   --primary-hover: #27272A;
-  --primary-active: #09090B;
+  --primary-active: #171717;
 
   --success: #10B981;
   --error: #EF4444;
@@ -59,28 +59,28 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 }
 
 .dark, :root[data-theme="dark"] {
-  /* DARK THEME TOKENS (DEFAULT) */
-  --bg-app: #09090B;
-  --bg-sidebar: #09090B;
-  --bg-card: #121215;
-  --bg-card-hover: #18181B;
-  --bg-surface-elevated: #18181B;
-  --bg-input: #121215;
-  --bg-input-search: #18181B;
+  /* DARK THEME TOKENS (DEFAULT - #171717 PALETTE) */
+  --bg-app: #171717;
+  --bg-sidebar: #171717;
+  --bg-card: #212121;
+  --bg-card-hover: #292929;
+  --bg-surface-elevated: #292929;
+  --bg-input: #212121;
+  --bg-input-search: #262626;
 
-  --border-subtle: #27272A;
-  --border-card: #27272A;
-  --border-card-hover: #3F3F46;
-  --border-active: #FFFFFF;
+  --border-subtle: #2E2E2E;
+  --border-card: #2E2E2E;
+  --border-card-hover: #404040;
+  --border-active: #FAFAFA;
 
   --text-primary: #FAFAFA;
-  --text-secondary: #A1A1AA;
-  --text-tertiary: #71717A;
+  --text-secondary: #A3A3A3;
+  --text-tertiary: #737373;
 
   --primary: #FAFAFA;
-  --primary-foreground: #09090B;
-  --primary-hover: #E4E4E7;
-  --primary-active: #D4D4D8;
+  --primary-foreground: #171717;
+  --primary-hover: #E5E5E5;
+  --primary-active: #D4D4D4;
 
   --success: #10B981;
   --error: #EF4444;

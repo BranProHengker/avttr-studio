@@ -59,7 +59,7 @@ const isRouteActive = (targetRoute: string) => {
         >
           <div class="flex items-center gap-2.5 min-w-0">
             <!-- 3D / Hexagon Workspace Icon -->
-            <div class="w-8 h-8 rounded-lg bg-[#18181B] border border-[#27272A] flex items-center justify-center text-white shrink-0 shadow-xs">
+            <div class="w-8 h-8 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0 shadow-xs">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
@@ -67,10 +67,10 @@ const isRouteActive = (targetRoute: string) => {
               </svg>
             </div>
             <div class="truncate">
-              <div class="font-semibold text-xs text-white tracking-tight leading-tight truncate">
+              <div class="font-semibold text-sm text-white tracking-tight leading-tight truncate">
                 Avttr Studio
               </div>
-              <div class="text-[11px] text-[var(--text-tertiary)] leading-tight truncate">
+              <div class="text-xs text-[var(--text-tertiary)] leading-tight truncate mt-0.5">
                 Nuxt 3 + shadcn
               </div>
             </div>
@@ -84,10 +84,10 @@ const isRouteActive = (targetRoute: string) => {
       </div>
 
       <!-- Navigation Content -->
-      <div class="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+      <div class="flex-1 overflow-y-auto px-3 py-3 space-y-6">
         <!-- Section: Social Downloaders -->
-        <div class="space-y-1">
-          <div class="px-2 py-1 text-[11px] font-normal text-[var(--text-tertiary)]">
+        <div class="space-y-1.5">
+          <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
             Social Downloaders
           </div>
 
@@ -95,11 +95,11 @@ const isRouteActive = (targetRoute: string) => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('dashboard')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
                 <span>Dashboard</span>
@@ -116,13 +116,13 @@ const isRouteActive = (targetRoute: string) => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['dashboard']" class="ml-4 pl-3.5 border-l border-[#27272A] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['dashboard']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -135,11 +135,11 @@ const isRouteActive = (targetRoute: string) => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('video-reels')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 <span>Video & Socials</span>
@@ -156,13 +156,13 @@ const isRouteActive = (targetRoute: string) => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['video-reels']" class="ml-4 pl-3.5 border-l border-[#27272A] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['video-reels']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/d/tiktok"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/tiktok')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -170,10 +170,10 @@ const isRouteActive = (targetRoute: string) => {
               </NuxtLink>
               <NuxtLink
                 to="/d/instagram"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/instagram')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -181,10 +181,10 @@ const isRouteActive = (targetRoute: string) => {
               </NuxtLink>
               <NuxtLink
                 to="/d/youtube"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/youtube')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -192,10 +192,10 @@ const isRouteActive = (targetRoute: string) => {
               </NuxtLink>
               <NuxtLink
                 to="/d/twitter"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/twitter')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -203,10 +203,10 @@ const isRouteActive = (targetRoute: string) => {
               </NuxtLink>
               <NuxtLink
                 to="/d/capcut"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/capcut')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -214,10 +214,10 @@ const isRouteActive = (targetRoute: string) => {
               </NuxtLink>
               <NuxtLink
                 to="/d/facebook"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/facebook')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -230,11 +230,11 @@ const isRouteActive = (targetRoute: string) => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('feeds-audio')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
                 <span>Audio & Music</span>
@@ -251,13 +251,13 @@ const isRouteActive = (targetRoute: string) => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['feeds-audio']" class="ml-4 pl-3.5 border-l border-[#27272A] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['feeds-audio']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/d/spotify"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/spotify')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -268,8 +268,8 @@ const isRouteActive = (targetRoute: string) => {
         </div>
 
         <!-- Section: Client Utilities -->
-        <div class="space-y-1">
-          <div class="px-2 py-1 text-[11px] font-normal text-[var(--text-tertiary)]">
+        <div class="space-y-1.5">
+          <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
             Client Utilities
           </div>
 
@@ -277,11 +277,11 @@ const isRouteActive = (targetRoute: string) => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('assets')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
                 <span>Asset Generators</span>
@@ -298,13 +298,13 @@ const isRouteActive = (targetRoute: string) => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['assets']" class="ml-4 pl-3.5 border-l border-[#27272A] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['assets']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/tools/qr-generator"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/qr-generator')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -312,10 +312,10 @@ const isRouteActive = (targetRoute: string) => {
               </NuxtLink>
               <NuxtLink
                 to="/tools/hash-encoder"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/hash-encoder')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -328,11 +328,11 @@ const isRouteActive = (targetRoute: string) => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('design')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4 5 5 0 015-5h4a5 5 0 015 5 4 4 0 01-4 4H7zM16 3.13a4 4 0 010 7.75M21 14v1a4 4 0 01-4 4h-1" />
                 </svg>
                 <span>Design System</span>
@@ -349,13 +349,13 @@ const isRouteActive = (targetRoute: string) => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[#27272A] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/tools/color-palette"
-                class="block px-2.5 py-1.5 text-xs rounded-md transition-colors"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/color-palette')
-                    ? 'bg-[#27272A] text-white font-medium shadow-xs'
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
@@ -366,8 +366,8 @@ const isRouteActive = (targetRoute: string) => {
         </div>
 
         <!-- Section: System & Storage -->
-        <div class="space-y-1">
-          <div class="px-2 py-1 text-[11px] font-normal text-[var(--text-tertiary)]">
+        <div class="space-y-1.5">
+          <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
             System & Storage
           </div>
 
@@ -375,18 +375,18 @@ const isRouteActive = (targetRoute: string) => {
             <!-- Download History Button -->
             <button
               type="button"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="emit('open-history')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Download History</span>
               </div>
               <span
                 v-if="history.length > 0"
-                class="px-1.5 py-0.2 text-[10px] font-mono bg-[#27272A] text-white rounded"
+                class="px-2 py-0.5 text-xs font-mono bg-[#2E2E2E] text-white rounded-md"
               >
                 {{ history.length }}
               </span>
@@ -395,16 +395,16 @@ const isRouteActive = (targetRoute: string) => {
             <!-- Command Palette Shortcut -->
             <button
               type="button"
-              class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="emit('open-palette')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <span>Quick Search</span>
               </div>
-              <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[#27272A] text-[var(--text-tertiary)] rounded">⌘K</kbd>
+              <kbd class="px-2 py-0.5 text-xs font-mono bg-[#2E2E2E] text-[var(--text-tertiary)] rounded-md">⌘K</kbd>
             </button>
           </div>
         </div>
@@ -412,17 +412,17 @@ const isRouteActive = (targetRoute: string) => {
 
       <!-- Bottom User Profile Card (Shadcn Style) -->
       <div class="p-3 border-t border-[var(--border-subtle)]">
-        <div class="flex items-center justify-between p-2 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] transition-colors cursor-pointer group">
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] transition-colors cursor-pointer group">
           <div class="flex items-center gap-2.5 min-w-0">
             <!-- User Avatar -->
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#27272A] to-[#3F3F46] border border-[#27272A] flex items-center justify-center text-white font-bold text-xs shrink-0">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#2E2E2E] to-[#3F3F46] border border-[#2E2E2E] flex items-center justify-center text-white font-bold text-sm shrink-0">
               AV
             </div>
             <div class="truncate">
-              <div class="font-semibold text-xs text-white leading-tight truncate">
+              <div class="font-semibold text-sm text-white leading-tight truncate">
                 avttr
               </div>
-              <div class="text-[10px] text-[var(--text-tertiary)] leading-tight truncate">
+              <div class="text-xs text-[var(--text-tertiary)] leading-tight truncate mt-0.5">
                 dev@avttr.studio
               </div>
             </div>

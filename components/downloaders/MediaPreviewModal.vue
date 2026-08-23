@@ -225,7 +225,7 @@ watch(
                 step="0.1"
                 :value="audioCurrentTime"
                 @input="onAudioSeek"
-                class="w-full h-1.5 bg-[#27272A] rounded-lg appearance-none cursor-pointer accent-white hover:h-2 transition-all"
+                class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white hover:h-2 transition-all"
               />
             </div>
 
@@ -240,7 +240,7 @@ watch(
           <div class="flex items-center justify-center gap-4">
             <button
               type="button"
-              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#27272A] transition-all cursor-pointer"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#2E2E2E] transition-all cursor-pointer"
               title="Rewind 10s"
               @click="seekRelative(-10)"
             >
@@ -258,7 +258,7 @@ watch(
 
             <button
               type="button"
-              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#27272A] transition-all cursor-pointer"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#2E2E2E] transition-all cursor-pointer"
               title="Forward 10s"
               @click="seekRelative(10)"
             >
@@ -267,7 +267,7 @@ watch(
 
             <button
               type="button"
-              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#27272A] transition-all cursor-pointer ml-1"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#2E2E2E] transition-all cursor-pointer ml-1"
               :title="isAudioMuted ? 'Unmute' : 'Mute'"
               @click="toggleAudioMute"
             >
@@ -310,7 +310,7 @@ watch(
         </div>
 
         <div v-if="result.cached" class="shrink-0">
-          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-[#27272A] text-[var(--text-secondary)] border border-[var(--border-subtle)]">Cached</span>
+          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-[#2E2E2E] text-[var(--text-secondary)] border border-[var(--border-subtle)]">Cached</span>
         </div>
       </div>
 

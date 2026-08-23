@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 const variantClasses = computed(() => {
   switch (props.variant) {
     case 'primary':
-      return 'bg-[#27272A] text-[var(--text-primary)] border-[#3F3F46]'
+      return 'bg-[#2E2E2E] text-[var(--text-primary)] border-[#404040]'
     case 'success':
       return 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30'
     case 'warning':
@@ -23,7 +23,7 @@ const variantClasses = computed(() => {
       return 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/30'
     case 'neutral':
     default:
-      return 'bg-[#1E1E22] text-[var(--text-secondary)] border-[var(--border-subtle)]'
+      return 'bg-[#212121] text-[var(--text-secondary)] border-[var(--border-subtle)]'
   }
 })
 </script>
