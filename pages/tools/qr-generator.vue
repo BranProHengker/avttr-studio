@@ -346,9 +346,6 @@ onMounted(async () => {
           <Badge variant="secondary">
             PNG & SVG Export
           </Badge>
-          <Badge variant="badge">
-            100% Client Privacy
-          </Badge>
         </div>
       </div>
     </div>

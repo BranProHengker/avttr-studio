@@ -62,29 +62,37 @@ const isRouteActive = (targetRoute: string) => {
       class="fixed top-0 bottom-0 left-0 z-40 w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border-subtle)] flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 select-none"
       :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-      <!-- Top Brand Header (threeui style: Mio Logo + Title) -->
-      <div class="p-3 border-b border-[var(--border-subtle)]">
+      <!-- Top Brand Header (Flat threeui style: Logo + Title + GitHub Link) -->
+      <div class="px-4 py-3.5 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
         <NuxtLink
           to="/"
-          class="flex items-center gap-2.5 p-2 rounded-lg bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] transition-colors group cursor-pointer"
+          class="flex items-center gap-2.5 min-w-0 group cursor-pointer"
         >
           <!-- Mio Logo Image -->
-          <div class="w-8 h-8 rounded-lg overflow-hidden bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 shadow-xs">
+          <div class="w-8 h-8 rounded-lg overflow-hidden bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 shadow-xs group-hover:border-white/30 transition-colors">
             <img
               src="/mio.png"
               alt="Avttr Studio Logo"
               class="w-full h-full object-cover"
             />
           </div>
-          <div class="truncate">
-            <div class="font-semibold text-sm text-white tracking-tight leading-tight truncate">
-              {{ t.appName }}
-            </div>
-            <div class="text-xs text-[var(--text-tertiary)] leading-tight truncate mt-0.5">
-              {{ t.appSubtitle }}
-            </div>
-          </div>
+          <span class="font-bold text-[15px] text-white tracking-tight leading-tight truncate">
+            {{ t.appName }}
+          </span>
         </NuxtLink>
+
+        <!-- Right GitHub Repository Button -->
+        <a
+          href="https://github.com/BranProHengker/avttr-studio"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="p-2 text-[var(--text-secondary)] hover:text-white bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-white/20 rounded-lg transition-all shadow-xs group cursor-pointer shrink-0"
+          title="Open GitHub Repository"
+        >
+          <svg class="w-4 h-4 fill-current text-[var(--text-secondary)] group-hover:text-white transition-colors" viewBox="0 0 24 24">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+        </a>
       </div>
 
       <!-- Prominent Search Bar (Under Workspace Header) -->

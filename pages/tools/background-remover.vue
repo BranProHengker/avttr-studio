@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import {
   Upload,
   Download,
@@ -11,7 +11,11 @@ import {
   RefreshCw,
   Eye,
   Sliders,
-  Palette
+  Palette,
+  Clipboard,
+  Link as LinkIcon,
+  ArrowRight,
+  Zap
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
@@ -24,8 +28,10 @@ const originalImageFile = ref<File | null>(null)
 const originalImageUrl = ref<string | null>(null)
 const processedImageUrl = ref<string | null>(null)
 const isProcessing = ref(false)
+const isFetchingUrl = ref(false)
 const progressStatus = ref('')
 const progressPercent = ref(0)
+const imageUrlInput = ref('')
 
 // Background customization options
 const bgType = ref<'transparent' | 'color' | 'gradient'>('transparent')
@@ -39,6 +45,11 @@ const gradients = [
   'linear-gradient(to top, #0ba360 0%, #3cba92 100%)',
   'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)',
   'linear-gradient(135deg, #171717 0%, #2E2E2E 100%)',
+]
+
+// Quick Sample Images for 1-click test
+const sampleImages = [
+  { name: 'Mio Character', url: '/mio.png' },
 ]
 
 // File drop & upload handler
@@ -66,26 +77,147 @@ const processSelectedFile = (file: File) => {
   removeBackground()
 }
 
+// Fetch Image from URL (with proxy fallback for CORS)
+const fetchImageFromUrl = async (urlToFetch?: string) => {
+  const target = (urlToFetch || imageUrlInput.value).trim()
+  if (!target || !/^https?:\/\//i.test(target)) {
+    toast.error('Invalid URL', 'Please enter a valid HTTP/HTTPS image link')
+    return
+  }
+
+  isFetchingUrl.value = true
+  progressStatus.value = 'Fetching image from link...'
+
+  try {
+    let response: Response | null = null
+
+    // Try direct fetch first
+    try {
+      response = await fetch(target, { mode: 'cors' })
+      if (!response.ok) response = null
+    } catch {
+      response = null
+    }
+
+    // Fallback to server proxy if direct fetch is blocked by CORS
+    if (!response) {
+      const proxyUrl = `/api/proxy?url=${encodeURIComponent(target)}`
+      response = await fetch(proxyUrl)
+    }
+
+    if (!response.ok) throw new Error('Could not download image from specified URL')
+
+    const blob = await response.blob()
+    const fileName = target.split('/').pop()?.split('?')[0] || 'online_image.png'
+    const file = new File([blob], fileName, { type: blob.type || 'image/png' })
+
+    toast.success('Image Loaded', 'Starting AI background removal...')
+    processSelectedFile(file)
+    imageUrlInput.value = ''
+  } catch (err: any) {
+    toast.error('Fetch Failed', err.message || 'Could not load image from link')
+  } finally {
+    isFetchingUrl.value = false
+  }
+}
+
+// Paste from Clipboard Button Handler
+const pasteFromClipboard = async () => {
+  try {
+    const clipboardItems = await navigator.clipboard.read()
+    for (const item of clipboardItems) {
+      const imageType = item.types.find((t) => t.startsWith('image/'))
+      if (imageType) {
+        const blob = await item.getType(imageType)
+        const file = new File([blob], `pasted_image_${Date.now()}.png`, { type: imageType })
+        toast.info('Image Pasted', 'Processing image from clipboard...')
+        processSelectedFile(file)
+        return
+      }
+    }
+
+    // If no direct image blob in clipboard, check text for URL
+    const text = await navigator.clipboard.readText()
+    if (text && /^https?:\/\//i.test(text.trim())) {
+      imageUrlInput.value = text.trim()
+      fetchImageFromUrl(text.trim())
+      return
+    }
+
+    toast.warning('No Image in Clipboard', 'Please copy an image or image URL first')
+  } catch (err) {
+    toast.error('Clipboard Access', 'Use Ctrl+V / ⌘V to paste directly')
+  }
+}
+
+// Global Keyboard Paste Listener (Ctrl+V / Cmd+V)
+const handleGlobalPaste = (e: ClipboardEvent) => {
+  // If user is currently typing in an input field (other than url input), don't intercept unless it's an image
+  const items = e.clipboardData?.items
+  if (!items) return
+
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      const blob = items[i].getAsFile()
+      if (blob) {
+        e.preventDefault()
+        toast.info('Image Pasted', 'Processing pasted image from clipboard...')
+        processSelectedFile(blob)
+        return
+      }
+    }
+  }
+
+  // If text pasted is a direct image URL and no file is loaded
+  if (!originalImageUrl.value) {
+    const text = e.clipboardData?.getData('text/plain')?.trim()
+    if (text && /^https?:\/\/.+\.(jpg|jpeg|png|webp|avif|svg)(\?.*)?$/i.test(text)) {
+      e.preventDefault()
+      fetchImageFromUrl(text)
+    }
+  }
+}
+
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('paste', handleGlobalPaste)
+  }
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('paste', handleGlobalPaste)
+  }
+})
+
+// Model Performance Mode
+const modelQuality = ref<'small' | 'medium'>('medium')
+
 // AI Background Removal via @imgly/background-removal
 const removeBackground = async () => {
   if (!originalImageFile.value) return
 
   isProcessing.value = true
   progressPercent.value = 10
-  progressStatus.value = 'Initializing AI Neural Model...'
+  progressStatus.value = 'Preparing AI engine (Cached after first load)...'
 
   try {
     const { removeBackground: removeBg } = await import('@imgly/background-removal')
 
-    progressPercent.value = 35
-    progressStatus.value = 'Segmenting subject from background...'
+    progressPercent.value = 25
+    progressStatus.value = 'Loading neural network weights...'
 
     const blob = await removeBg(originalImageFile.value, {
+      model: modelQuality.value,
       progress: (key: string, current: number, total: number) => {
         if (total > 0) {
           const pct = Math.round((current / total) * 100)
-          progressPercent.value = Math.max(35, Math.min(95, pct))
-          progressStatus.value = `Processing: ${key} (${pct}%)`
+          progressPercent.value = Math.max(25, Math.min(95, pct))
+          if (key.includes('fetch')) {
+            progressStatus.value = `Downloading AI Model: ${pct}% (Cached locally)`
+          } else {
+            progressStatus.value = `Segmenting Subject: ${pct}%`
+          }
         }
       },
     })
@@ -155,6 +287,7 @@ const resetAll = () => {
   originalImageUrl.value = null
   processedImageUrl.value = null
   isProcessing.value = false
+  imageUrlInput.value = ''
 }
 </script>
 
@@ -178,7 +311,7 @@ const resetAll = () => {
             Background Remover
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            100% Client-Side AI segmentation to remove backgrounds instantly without uploading to external servers.
+            Remove image backgrounds instantly in your browser via AI neural segmentation, upload files, enter links, or paste with Ctrl+V.
           </p>
         </div>
 
@@ -186,15 +319,47 @@ const resetAll = () => {
           <Badge variant="secondary">
             Neural AI Model
           </Badge>
-          <Badge variant="badge">
-            100% Client Privacy
-          </Badge>
         </div>
       </div>
     </div>
 
-    <!-- Main Workspace -->
+    <!-- Empty Upload & URL Input Workspace -->
     <div v-if="!originalImageUrl" class="space-y-4">
+      <!-- 1. Quick URL & Clipboard Paste Bar -->
+      <Card :hoverable="false" class="p-4">
+        <form @submit.prevent="fetchImageFromUrl()" class="flex flex-col sm:flex-row items-center gap-2.5">
+          <div class="relative flex-1 w-full">
+            <LinkIcon class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              v-model="imageUrlInput"
+              type="url"
+              placeholder="Paste image link (URL) or press Ctrl+V anywhere..."
+              class="w-full pl-10 pr-24 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 font-mono"
+            />
+            <button
+              type="button"
+              class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-[#2E2E2E] hover:bg-[#3F3F46] text-white rounded text-[11px] font-medium transition-colors cursor-pointer flex items-center gap-1"
+              @click="pasteFromClipboard"
+              title="Paste from clipboard"
+            >
+              <Clipboard class="w-3 h-3" />
+              <span>Paste</span>
+            </button>
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            class="w-full sm:w-auto font-semibold text-xs shrink-0 py-2.5"
+            :disabled="!imageUrlInput || isFetchingUrl"
+          >
+            <Sparkles class="w-3.5 h-3.5 mr-1.5" />
+            Fetch & Cutout
+          </Button>
+        </form>
+      </Card>
+
+      <!-- 2. Main Dropzone Card -->
       <Card :hoverable="false" class="p-8 sm:p-12 text-center">
         <label
           class="border-2 border-dashed border-[var(--border-card)] hover:border-white/40 rounded-2xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors group"
@@ -207,7 +372,7 @@ const resetAll = () => {
 
           <div class="space-y-1 mt-2">
             <div class="text-sm font-semibold text-white">
-              Drop your image here, or <span class="underline underline-offset-4">browse</span>
+              Drop your image here, <span class="underline underline-offset-4">browse file</span>, or paste with <kbd class="px-1.5 py-0.5 text-xs bg-[#2E2E2E] rounded border border-[#3E3E3E]">Ctrl+V</kbd>
             </div>
             <p class="text-xs text-[var(--text-tertiary)]">
               Supports PNG, JPG, JPEG, WebP, AVIF (Max 20MB)
@@ -217,6 +382,21 @@ const resetAll = () => {
           <input type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
         </label>
       </Card>
+
+      <!-- 3. Quick Sample Try Section -->
+      <div class="flex items-center gap-2 pt-1 text-xs text-[var(--text-tertiary)]">
+        <span>No image at hand? Try with sample:</span>
+        <button
+          v-for="s in sampleImages"
+          :key="s.name"
+          type="button"
+          class="px-2.5 py-1 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-white/40 rounded-lg text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5"
+          @click="fetchImageFromUrl(s.url)"
+        >
+          <img :src="s.url" :alt="s.name" class="w-4 h-4 rounded object-cover" />
+          <span>{{ s.name }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Active Workspace View -->
@@ -345,6 +525,32 @@ const resetAll = () => {
               :style="{ backgroundImage: grad }"
               @click="gradientChoice = grad"
             />
+          </div>
+
+          <!-- AI Model Performance Mode Switcher -->
+          <div class="space-y-1.5 pt-3 border-t border-[var(--border-subtle)]">
+            <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+              <span>AI Engine Mode</span>
+              <span class="text-[11px] text-[var(--text-tertiary)] font-mono">{{ modelQuality === 'small' ? '⚡ Fast (<1s)' : '🎯 Balanced HQ' }}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 p-1 bg-[#171717] border border-[var(--border-subtle)] rounded-lg text-xs">
+              <button
+                type="button"
+                class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center"
+                :class="modelQuality === 'small' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                @click="modelQuality = 'small'"
+              >
+                ⚡ Fast Mode
+              </button>
+              <button
+                type="button"
+                class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center"
+                :class="modelQuality === 'medium' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                @click="modelQuality = 'medium'"
+              >
+                🎯 Balanced (HQ)
+              </button>
+            </div>
           </div>
         </Card>
 

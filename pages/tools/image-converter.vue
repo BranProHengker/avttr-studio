@@ -273,9 +273,6 @@ const clearAll = () => {
           <Badge variant="secondary">
             Batch Support
           </Badge>
-          <Badge variant="badge">
-            100% Client Privacy
-          </Badge>
         </div>
       </div>
     </div>

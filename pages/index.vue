@@ -5,6 +5,7 @@ import { useI18n } from '~/composables/useI18n'
 import { ALL_CATEGORIES } from '~/composables/useSearch'
 import HeroPasteBar from '~/components/dashboard/HeroPasteBar.vue'
 import CategorySection from '~/components/dashboard/CategorySection.vue'
+import Badge from '~/components/ui/Badge.vue'
 
 const LazyMediaPreviewModal = defineAsyncComponent(() => import('~/components/downloaders/MediaPreviewModal.vue'))
 
@@ -23,14 +24,22 @@ const handleResolve = async () => {
 
 <template>
   <div class="space-y-8 pb-12">
-    <!-- Header Banner -->
-    <div class="space-y-1.5">
-      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-        {{ t.heroTitle }}
-      </h1>
-      <p class="text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
-        {{ t.heroSubtitle }}
-      </p>
+    <!-- Header Banner with 100% Client Privacy badge -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="space-y-1.5">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+          {{ t.heroTitle }}
+        </h1>
+        <p class="text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
+          {{ t.heroSubtitle }}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <Badge variant="badge">
+          100% Client Privacy
+        </Badge>
+      </div>
     </div>
 
     <!-- Hero Universal Downloader Omnibox -->

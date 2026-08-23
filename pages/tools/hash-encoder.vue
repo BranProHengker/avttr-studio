@@ -245,9 +245,6 @@ const handleFileUpload = (e: Event) => {
           <Badge variant="secondary">
             Web Crypto & JS
           </Badge>
-          <Badge variant="badge">
-            100% Client Privacy
-          </Badge>
         </div>
       </div>
     </div>

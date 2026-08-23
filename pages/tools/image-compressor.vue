@@ -387,9 +387,6 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           <Badge variant="secondary">
             {{ items.length }} / 5 Files
           </Badge>
-          <Badge variant="badge">
-            100% Client Privacy
-          </Badge>
         </div>
       </div>
     </div>
