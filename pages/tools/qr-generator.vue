@@ -274,17 +274,27 @@ const downloadSVG = async () => {
 }
 
 const copyQRCodeImage = async () => {
-  try {
-    if (!qrCodeInstance) return
-    const rawBlob = await qrCodeInstance.getRawData('png')
-    if (rawBlob) {
-      const item = new ClipboardItem({ 'image/png': rawBlob })
-      await navigator.clipboard.write([item])
-      toast.success('Copied to Clipboard', 'QR Image is ready to paste anywhere')
+  if (!qrCodeInstance) return
+
+  // 1. Try modern Binary PNG image copy (Works in Secure Context: https or localhost)
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && window.isSecureContext && typeof ClipboardItem !== 'undefined') {
+    try {
+      const rawBlob = await qrCodeInstance.getRawData('png')
+      if (rawBlob) {
+        const item = new ClipboardItem({ 'image/png': rawBlob })
+        await navigator.clipboard.write([item])
+        toast.success('Image Copied', 'PNG QR Code copied to clipboard (ready to paste as image)')
+        return
+      }
+    } catch {
+      // Fall through
     }
-  } catch (err: any) {
-    toast.error('Copy Failed', 'Browser does not permit direct image copying')
   }
+
+  // 2. On HTTP LAN (non-secure context, browser blocks binary clipboard access):
+  // Download the PNG file directly and instruct user
+  await downloadPNG()
+  toast.info('File PNG Di-download', 'Pada IP LAN HTTP, browser membatasi copy gambar otomatis. Gunakan localhost atau klik kanan gambar > "Salin Gambar"')
 }
 
 // Watchers
