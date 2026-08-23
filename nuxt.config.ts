@@ -25,8 +25,22 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
           name: 'description',
-          content: 'High-performance, ad-free personal web suite and multi-downloader for TikTok, Instagram, YouTube, Twitter/X, and daily developer tools.',
+          content: 'High-performance, ad-free personal web suite and multi-downloader for TikTok, Instagram, YouTube, Spotify, with AI background remover, QR code generator, and 80+ fonts.',
         },
+        // Open Graph / Facebook / Discord / WhatsApp
+        { property: 'og:type', content: 'website' },
+        { property: 'og:url', content: 'https://studio.avttr.my.id/' },
+        { property: 'og:title', content: 'Avttr Studio — All-in-One Productivity Hub & Media Downloader' },
+        { property: 'og:description', content: 'High-performance, ad-free personal web suite and multi-downloader for TikTok, Instagram, YouTube, Spotify, with AI background remover, QR code generator, and 80+ fonts.' },
+        { property: 'og:image', content: '/og-image.png' },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:type', content: 'image/png' },
+        // Twitter Cards
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'Avttr Studio — All-in-One Productivity Hub & Media Downloader' },
+        { name: 'twitter:description', content: 'High-performance, ad-free personal web suite and multi-downloader for TikTok, Instagram, YouTube, Spotify, with AI background remover, QR code generator, and 80+ fonts.' },
+        { name: 'twitter:image', content: '/og-image.png' },
       ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
