@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import type { ScraperResult, MediaItem } from '~/types'
 import { useToast } from './useToast'
 import { useHistory } from './useHistory'
@@ -87,6 +88,11 @@ export function useDownloader() {
       ext = item.format || (item.type === 'audio' ? 'm4a' : item.type === 'image' ? 'jpg' : 'mp4')
     }
 
+    // If it's a converter URL (e.g. SaveFrom converter), return raw URL directly
+    if (rawUrl.includes('sf-converter.com') || rawUrl.includes('convert?payload=')) {
+      return rawUrl
+    }
+
     const safeTitle = (customTitle || result.value?.title || 'media_download')
       .replace(/[^a-zA-Z0-9_-]/g, '_')
       .substring(0, 50)
@@ -106,11 +112,20 @@ export function useDownloader() {
 
   const downloadMediaItem = (item: MediaItem, customTitle?: string) => {
     if (!item?.url) return
+
+    // If it's a converter service URL (e.g. SaveFrom converter), open in a new tab directly
+    if (item.url.includes('sf-converter.com') || item.url.includes('convert?payload=')) {
+      window.open(item.url, '_blank')
+      toast.info('Opening Converter', 'Redirecting to HD converter in new tab...')
+      return
+    }
+
     const downloadUrl = getProxiedUrl(item, customTitle, true)
     
     const link = document.createElement('a')
     link.href = downloadUrl
     link.setAttribute('download', '')
+    link.setAttribute('target', '_blank')
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

@@ -57,10 +57,9 @@ export const youtubeScraper: PlatformScraper = {
           const medias: MediaItem[] = []
           const seenQualities = new Set<string>()
 
-          // Filter only valid, direct media URLs (discard HTML converters / broken payloads)
+          // Filter only valid media URLs
           const validMediaList = mediaList.filter((m: any) => {
             if (!m || typeof m.url !== 'string' || !m.url.startsWith('http')) return false
-            if (m.url.includes('sf-converter.com') || m.url.includes('convert?payload=')) return false
             return true
           })
 
@@ -71,7 +70,7 @@ export const youtubeScraper: PlatformScraper = {
 
           for (const item of candidateVideos) {
             const qNum = parseInt(item.quality || item.subname || '0', 10)
-            if (!qNum || qNum < 144) continue // skip invalid bitrate labels
+            if (!qNum || qNum < 144) continue
             const qKey = `${qNum}p`
             if (seenQualities.has(qKey)) continue
             seenQualities.add(qKey)
@@ -81,11 +80,11 @@ export const youtubeScraper: PlatformScraper = {
               url: item.url,
               quality: `${qNum}p`,
               format: item.ext || 'mp4',
-              size: item.filesize,
+              size: item.filesize || item.contentLength,
             })
           }
 
-          // Sort video qualities descending (1080p, 720p, 480p, 360p)
+          // Sort video qualities descending (2160p, 1440p, 1080p, 720p, 480p, 360p)
           medias.sort((a, b) => {
             const qa = parseInt(a.quality || '0', 10) || 0
             const qb = parseInt(b.quality || '0', 10) || 0
@@ -113,10 +112,9 @@ export const youtubeScraper: PlatformScraper = {
               url: bestAudio.url,
               quality: format === 'm4a' ? 'Audio (M4A)' : 'Audio',
               format,
-              size: bestAudio.filesize,
+              size: bestAudio.filesize || bestAudio.contentLength,
             })
           } else if (candidateVideos.length > 0) {
-            // Fallback audio from direct progressive video stream
             const bestProgressive = candidateVideos[0]
             medias.push({
               type: 'audio',

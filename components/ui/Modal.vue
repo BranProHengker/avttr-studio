@@ -4,7 +4,7 @@ import { onMounted, onUnmounted, watch } from 'vue'
 interface Props {
   modelValue: boolean
   title?: string
-  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -85,6 +85,9 @@ onUnmounted(() => {
             'max-w-lg': maxWidth === 'lg',
             'max-w-xl': maxWidth === 'xl',
             'max-w-2xl': maxWidth === '2xl',
+            'max-w-3xl': maxWidth === '3xl',
+            'max-w-4xl': maxWidth === '4xl',
+            'max-w-5xl': maxWidth === '5xl',
           }"
         >
           <!-- Header -->

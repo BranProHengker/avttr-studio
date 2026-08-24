@@ -55,9 +55,15 @@ export interface ToolItem {
   category: 'downloader' | 'image' | 'color' | 'dev'
   icon: string
   route: string
-  badge?: 'Fast' | 'HD' | 'New' | 'Beta'
+  badge?: 'Fast' | 'HD' | 'New' | 'Beta' | 'AI' | 'Popular' | string
   popular?: boolean
   platform?: PlatformType
+}
+
+export interface PlatformScraper {
+  name: PlatformType | string
+  supports: (url: string) => boolean
+  resolve: (url: string) => Promise<ScraperResult>
 }
 
 export interface ToastItem {
