@@ -353,10 +353,10 @@ watch(
           >
             <div>
               <div class="text-xs font-semibold text-[var(--text-primary)]">
-                {{ item.quality || 'Audio Only (MP3)' }}
+                {{ item.quality || 'Audio Only' }}
               </div>
               <div class="text-[10px] text-[var(--text-tertiary)] font-mono mt-0.5">
-                {{ item.format?.toUpperCase() || 'MP3' }} {{ item.size ? `• ${(item.size / (1024 * 1024)).toFixed(1)} MB` : '• High Quality MP3' }}
+                {{ item.format?.toUpperCase() || 'M4A' }} {{ item.size ? `• ${(item.size / (1024 * 1024)).toFixed(1)} MB` : '• High Quality Audio' }}
               </div>
             </div>
 
@@ -365,7 +365,7 @@ watch(
               size="sm"
               @click="downloadMediaItem(item, `${result.title || result.platform}`)"
             >
-              Download MP3
+              Download {{ item.format?.toUpperCase() || 'Audio' }}
             </Button>
           </div>
         </div>

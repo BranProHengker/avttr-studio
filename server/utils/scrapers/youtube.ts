@@ -57,13 +57,17 @@ export const youtubeScraper: PlatformScraper = {
           const medias: MediaItem[] = []
           const seenQualities = new Set<string>()
 
-          // 1. Separate progressive MP4 videos (with audio) and DASH videos
-          const progressiveMp4 = mediaList.filter(
-            (m: any) => !m.type?.includes('audio') && (m.no_audio === false || m.no_audio === undefined) && m.ext === 'mp4'
+          // Filter only valid, direct media URLs (discard HTML converters / broken payloads)
+          const validMediaList = mediaList.filter((m: any) => {
+            if (!m || typeof m.url !== 'string' || !m.url.startsWith('http')) return false
+            if (m.url.includes('sf-converter.com') || m.url.includes('convert?payload=')) return false
+            return true
+          })
+
+          // 1. Separate all video streams and qualities
+          const candidateVideos = validMediaList.filter(
+            (m: any) => !m.type?.includes('audio') && (m.ext === 'mp4' || m.ext === 'webm')
           )
-          const candidateVideos = progressiveMp4.length > 0
-            ? progressiveMp4
-            : mediaList.filter((m: any) => !m.type?.includes('audio') && (m.ext === 'mp4' || m.ext === 'webm'))
 
           for (const item of candidateVideos) {
             const qNum = parseInt(item.quality || item.subname || '0', 10)
@@ -72,18 +76,10 @@ export const youtubeScraper: PlatformScraper = {
             if (seenQualities.has(qKey)) continue
             seenQualities.add(qKey)
 
-            let qualityLabel = `${qNum}p`
-            if (qNum >= 2160) qualityLabel = '2160p (4K UHD)'
-            else if (qNum >= 1440) qualityLabel = '1440p (2K QHD)'
-            else if (qNum >= 1080) qualityLabel = '1080p (Full HD)'
-            else if (qNum >= 720) qualityLabel = '720p (HD)'
-            else if (qNum >= 480) qualityLabel = '480p (SD)'
-            else if (qNum >= 360) qualityLabel = '360p (Medium)'
-
             medias.push({
               type: 'video',
               url: item.url,
-              quality: qualityLabel,
+              quality: `${qNum}p`,
               format: item.ext || 'mp4',
               size: item.filesize,
             })
@@ -96,23 +92,38 @@ export const youtubeScraper: PlatformScraper = {
             return qb - qa
           })
 
-          // 2. Add Best Audio Stream
-          const audioList = mediaList.filter(
+          // 2. Add Valid Direct Audio Streams (Prioritize universal M4A/AAC for 100% device compatibility)
+          const m4aAudio = validMediaList.filter((m: any) => m.ext === 'm4a' || m.type?.includes('m4a'))
+          const allAudio = validMediaList.filter(
             (m: any) => m.type?.includes('audio') || m.ext === 'm4a' || m.ext === 'mp3' || m.ext === 'opus'
           )
-          if (audioList.length > 0) {
-            audioList.sort((a: any, b: any) => {
+          const preferredAudioList = m4aAudio.length > 0 ? m4aAudio : allAudio
+
+          if (preferredAudioList.length > 0) {
+            preferredAudioList.sort((a: any, b: any) => {
               const ba = parseInt(b.quality || b.subname || '0', 10)
               const aa = parseInt(a.quality || a.subname || '0', 10)
               return ba - aa
             })
-            const bestAudio = audioList[0]
+
+            const bestAudio = preferredAudioList[0]
+            const format = bestAudio.ext === 'opus' ? 'opus' : 'm4a'
             medias.push({
               type: 'audio',
               url: bestAudio.url,
-              quality: 'Audio Only (High Quality)',
-              format: bestAudio.ext === 'opus' ? 'mp3' : (bestAudio.ext || 'mp3'),
+              quality: format === 'm4a' ? 'Audio (M4A)' : 'Audio',
+              format,
               size: bestAudio.filesize,
+            })
+          } else if (candidateVideos.length > 0) {
+            // Fallback audio from direct progressive video stream
+            const bestProgressive = candidateVideos[0]
+            medias.push({
+              type: 'audio',
+              url: bestProgressive.url,
+              quality: 'Audio (M4A)',
+              format: 'm4a',
+              size: bestProgressive.filesize,
             })
           }
 

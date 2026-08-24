@@ -72,7 +72,11 @@ export function useDownloader() {
     if (typeof item === 'string') {
       rawUrl = item
       if (rawUrl === 'undefined' || !rawUrl.startsWith('http')) return ''
-      if (/\.(mp3|m4a|opus|wav|flac|aac)/i.test(rawUrl) || /spotify|audio/i.test(rawUrl)) {
+      if (/\.m4a/i.test(rawUrl)) {
+        ext = 'm4a'
+      } else if (/\.opus/i.test(rawUrl)) {
+        ext = 'opus'
+      } else if (/\.(mp3|wav|flac|aac)/i.test(rawUrl) || /spotify|audio/i.test(rawUrl)) {
         ext = 'mp3'
       } else if (/\.(jpg|jpeg|png|webp|gif)/i.test(rawUrl)) {
         ext = 'jpg'
@@ -80,7 +84,7 @@ export function useDownloader() {
     } else {
       rawUrl = item.url
       if (!rawUrl || rawUrl === 'undefined') return ''
-      ext = item.format || (item.type === 'audio' ? 'mp3' : item.type === 'image' ? 'jpg' : 'mp4')
+      ext = item.format || (item.type === 'audio' ? 'm4a' : item.type === 'image' ? 'jpg' : 'mp4')
     }
 
     const safeTitle = (customTitle || result.value?.title || 'media_download')

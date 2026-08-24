@@ -14,8 +14,8 @@ import {
   Palette,
   Clipboard,
   Link as LinkIcon,
-  ArrowRight,
-  Zap
+  Zap,
+  AlertTriangle
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
@@ -30,8 +30,9 @@ const processedImageUrl = ref<string | null>(null)
 const isProcessing = ref(false)
 const isFetchingUrl = ref(false)
 const progressStatus = ref('')
-const progressPercent = ref(0)
 const imageUrlInput = ref('')
+const isQuotaExceeded = ref(false)
+const quotaErrorMessage = ref('')
 
 // Background customization options
 const bgType = ref<'transparent' | 'color' | 'gradient'>('transparent')
@@ -77,14 +78,14 @@ const processSelectedFile = (file: File) => {
   removeBackground()
 }
 
-// Switch AI Engine Mode with auto re-process
-const setModelQuality = (quality: 'small' | 'medium') => {
-  if (modelQuality.value === quality) return
-  modelQuality.value = quality
-  if (originalImageFile.value && !isProcessing.value) {
-    toast.info('Model Switched', `Re-processing with ${quality === 'small' ? 'Fast Mode' : 'Balanced HQ'}...`)
-    removeBackground()
-  }
+// Convert File to Base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 // Fetch Image from URL (supports relative /mio.png, data:image, and remote HTTP/HTTPS with proxy fallback)
@@ -141,7 +142,7 @@ const fetchImageFromUrl = async (urlToFetch?: string) => {
     const fileName = target.split('/').pop()?.split('?')[0] || 'online_image.png'
     const file = new File([blob], fileName, { type: blob.type || 'image/png' })
 
-    toast.success('Image Loaded', 'Starting AI background removal...')
+    toast.success('Image Loaded', 'Processing background removal via Remove.bg...')
     processSelectedFile(file)
     imageUrlInput.value = ''
   } catch (err: any) {
@@ -182,7 +183,6 @@ const pasteFromClipboard = async () => {
 
 // Global Keyboard Paste Listener (Ctrl+V / Cmd+V)
 const handleGlobalPaste = (e: ClipboardEvent) => {
-  // If user is currently typing in an input field (other than url input), don't intercept unless it's an image
   const items = e.clipboardData?.items
   if (!items) return
 
@@ -220,44 +220,42 @@ onUnmounted(() => {
   }
 })
 
-// Model Performance Mode
-const modelQuality = ref<'small' | 'medium'>('medium')
-
-// AI Background Removal via @imgly/background-removal
+// Remove Background via official Remove.bg API
 const removeBackground = async () => {
   if (!originalImageFile.value) return
 
   isProcessing.value = true
-  progressPercent.value = 10
-  progressStatus.value = 'Preparing AI engine (Cached after first load)...'
+  progressStatus.value = 'Removing background with Remove.bg API...'
+  isQuotaExceeded.value = false
 
   try {
-    const { removeBackground: removeBg } = await import('@imgly/background-removal')
+    const b64 = await fileToBase64(originalImageFile.value)
 
-    progressPercent.value = 25
-    progressStatus.value = 'Loading neural network weights...'
-
-    const blob = await removeBg(originalImageFile.value, {
-      model: modelQuality.value,
-      progress: (key: string, current: number, total: number) => {
-        if (total > 0) {
-          const pct = Math.round((current / total) * 100)
-          progressPercent.value = Math.max(25, Math.min(95, pct))
-          if (key.includes('fetch')) {
-            progressStatus.value = `Downloading AI Model: ${pct}% (Cached locally)`
-          } else {
-            progressStatus.value = `Segmenting Subject: ${pct}%`
-          }
-        }
+    const res = await $fetch<{ success: boolean; resultUrl: string }>('/api/tools/remove-bg', {
+      method: 'POST',
+      body: {
+        image_b64: b64,
+        size: 'auto',
       },
     })
 
-    processedImageUrl.value = URL.createObjectURL(blob)
-    progressPercent.value = 100
-    toast.success('Cutout Ready', 'Background removed with AI precision')
+    if (res && res.resultUrl) {
+      processedImageUrl.value = res.resultUrl
+      toast.success('Cutout Ready', 'Background successfully removed!')
+    } else {
+      throw new Error('No image returned from Remove.bg')
+    }
   } catch (err: any) {
-    console.error('BG Removal Error:', err)
-    toast.error('Processing Failed', err.message || 'Could not remove background')
+    console.error('Remove.bg Error:', err)
+    const isQuota = err.statusCode === 429 || err.statusCode === 402 || err.data?.data?.isQuotaExceeded || /limit|credit|quota|exceeded/i.test(err.message || '')
+    if (isQuota) {
+      isQuotaExceeded.value = true
+      quotaErrorMessage.value = 'Remove.bg API Quota Limit Reached: The monthly free credits or API request limit has been exhausted. Background removal is temporarily unavailable.'
+      toast.error('API Quota Limit', 'Remove.bg credits limit has been reached.')
+    } else {
+      const msg = err.data?.message || err.message || 'Could not remove background'
+      toast.error('Removal Failed', msg)
+    }
   } finally {
     isProcessing.value = false
   }
@@ -341,32 +339,25 @@ const resetAll = () => {
             Background Remover
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Remove image backgrounds instantly in your browser via AI neural segmentation, upload files, enter links, or paste with Ctrl+V.
+            High-precision background removal powered by Remove.bg API. Upload files, enter links, or paste with Ctrl+V.
           </p>
         </div>
+      </div>
+    </div>
 
-        <!-- AI Engine Mode Switcher (Visible before & during editing) -->
-        <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-lg p-1 text-xs shrink-0 self-start sm:self-auto">
-          <button
-            type="button"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer"
-            :class="modelQuality === 'small' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
-            @click="setModelQuality('small')"
-          >
-            <Zap class="w-3.5 h-3.5" />
-            <span>Fast Mode</span>
-            <span class="text-[10px] text-[var(--text-tertiary)] font-mono ml-0.5">(&lt;1s)</span>
-          </button>
-          <button
-            type="button"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer"
-            :class="modelQuality === 'medium' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
-            @click="setModelQuality('medium')"
-          >
-            <Sparkles class="w-3.5 h-3.5" />
-            <span>Balanced (HQ)</span>
-          </button>
-        </div>
+    <!-- API Quota Limit Alert Banner -->
+    <div
+      v-if="isQuotaExceeded"
+      class="p-4 rounded-xl bg-red-950/40 border border-red-800/60 text-red-200 flex items-start gap-3 shadow-sm transition-all"
+    >
+      <AlertTriangle class="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+      <div class="space-y-1">
+        <h4 class="text-xs font-bold text-red-300">
+          Remove.bg API Quota Limit Reached
+        </h4>
+        <p class="text-xs text-red-300/80 leading-relaxed">
+          {{ quotaErrorMessage || 'API key limit reached (Insufficient credits or rate limit exceeded). Background removal is temporarily unavailable.' }}
+        </p>
       </div>
     </div>
 
@@ -422,7 +413,7 @@ const resetAll = () => {
               Drop your image here, <span class="underline underline-offset-4">browse file</span>, or paste with <kbd class="px-1.5 py-0.5 text-xs bg-[#2E2E2E] rounded border border-[#3E3E3E]">Ctrl+V</kbd>
             </div>
             <p class="text-xs text-[var(--text-tertiary)]">
-              Supports PNG, JPG, JPEG, WebP, AVIF (Max 20MB)
+              Supports PNG, JPG, JPEG, WebP (Max 20MB)
             </p>
           </div>
 
@@ -457,15 +448,7 @@ const resetAll = () => {
             class="absolute inset-0 bg-black/80 backdrop-blur-xs z-20 flex flex-col items-center justify-center p-6 text-center space-y-4"
           >
             <div class="w-10 h-10 border-3 border-white/20 border-t-white rounded-full animate-spin" />
-            <div class="space-y-1.5 max-w-sm">
-              <div class="text-sm font-semibold text-white">{{ progressStatus }}</div>
-              <div class="w-full bg-[#2E2E2E] h-2 rounded-full overflow-hidden">
-                <div
-                  class="bg-white h-full transition-all duration-300 rounded-full"
-                  :style="{ width: `${progressPercent}%` }"
-                />
-              </div>
-            </div>
+            <div class="text-sm font-semibold text-white">{{ progressStatus }}</div>
           </div>
 
           <!-- Cutout Canvas Preview -->
@@ -573,34 +556,6 @@ const resetAll = () => {
               @click="gradientChoice = grad"
             />
           </div>
-
-          <!-- AI Model Performance Mode Switcher -->
-          <div class="space-y-1.5 pt-3 border-t border-[var(--border-subtle)]">
-            <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-              <span>AI Engine Mode</span>
-              <span class="text-[11px] text-[var(--text-tertiary)] font-mono">{{ modelQuality === 'small' ? 'Fast (<1s)' : 'Balanced HQ' }}</span>
-            </div>
-            <div class="grid grid-cols-2 gap-1.5 p-1 bg-[#171717] border border-[var(--border-subtle)] rounded-lg text-xs">
-              <button
-                type="button"
-                class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
-                :class="modelQuality === 'small' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
-                @click="setModelQuality('small')"
-              >
-                <Zap class="w-3 h-3" />
-                <span>Fast Mode</span>
-              </button>
-              <button
-                type="button"
-                class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
-                :class="modelQuality === 'medium' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
-                @click="setModelQuality('medium')"
-              >
-                <Sparkles class="w-3 h-3" />
-                <span>Balanced (HQ)</span>
-              </button>
-            </div>
-          </div>
         </Card>
 
         <!-- Actions Card -->
@@ -622,7 +577,7 @@ const resetAll = () => {
             @click="removeBackground"
           >
             <RefreshCw class="w-3.5 h-3.5 mr-1.5" />
-            Reprocess AI
+            Reprocess Cutout
           </Button>
 
           <Button

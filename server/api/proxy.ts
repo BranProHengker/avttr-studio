@@ -43,13 +43,21 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!upstream.ok && upstream.status !== 206) {
+      if (/googlevideo\.com/i.test(targetUrl)) {
+        return sendRedirect(event, targetUrl)
+      }
       throw createError({
         statusCode: upstream.status || 502,
         statusMessage: `Upstream media fetch failed (${upstream.status})`,
       })
     }
 
-    const contentType = upstream.headers.get('content-type') || (targetUrl.includes('.mp3') ? 'audio/mpeg' : 'video/mp4')
+    let defaultType = 'video/mp4'
+    if (/\.mp3/i.test(targetUrl) || /\.mp3/i.test(filename)) defaultType = 'audio/mpeg'
+    else if (/\.m4a/i.test(targetUrl) || /\.m4a/i.test(filename) || /mime=audio/i.test(targetUrl)) defaultType = 'audio/mp4'
+    else if (/\.opus/i.test(targetUrl) || /\.opus/i.test(filename)) defaultType = 'audio/opus'
+
+    const contentType = upstream.headers.get('content-type') || defaultType
     const contentLength = upstream.headers.get('content-length')
     const contentRange = upstream.headers.get('content-range')
     const acceptRanges = upstream.headers.get('accept-ranges') || 'bytes'

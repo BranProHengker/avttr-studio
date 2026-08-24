@@ -12,9 +12,77 @@ export const instagramScraper: PlatformScraper = {
   supports: (url: string) => /instagram\.com|instagr\.am/i.test(url),
 
   async resolve(url: string): Promise<ScraperResult> {
-    const shortcode = extractShortcode(url)
+    const cleanUrl = url.split('?')[0].replace(/\/$/, '')
+    const shortcode = extractShortcode(cleanUrl)
 
-    // Strategy 1: Direct Instagram Embed Scraper (Fast & Official CDN)
+    // Strategy 1: FastDL & SSSInstagram Multi-Node Engine
+    const fastDlGateways = [
+      {
+        url: 'https://sssinstagram.com/api/convert',
+        body: JSON.stringify({ target_url: cleanUrl }),
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://sssinstagram.com/',
+          'Origin': 'https://sssinstagram.com',
+        },
+      },
+      {
+        url: 'https://igram.world/api/convert',
+        body: JSON.stringify({ target_url: cleanUrl }),
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://igram.world/',
+          'Origin': 'https://igram.world',
+        },
+      },
+    ]
+
+    for (const gw of fastDlGateways) {
+      try {
+        const res = await fetch(gw.url, {
+          method: 'POST',
+          headers: gw.headers,
+          body: gw.body,
+          signal: AbortSignal.timeout(5000),
+        })
+
+        if (res.ok) {
+          const json = await res.json()
+          if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+            const medias: MediaItem[] = []
+            for (const item of json.data) {
+              const mediaUrl = item.url || item.download_url || item.media || item.video
+              if (mediaUrl && typeof mediaUrl === 'string') {
+                const isImage = item.type === 'image' || mediaUrl.includes('.jpg') || mediaUrl.includes('.webp') || mediaUrl.includes('.jpeg')
+                medias.push({
+                  type: isImage ? 'image' : 'video',
+                  url: mediaUrl,
+                  quality: item.quality || 'HD',
+                  format: isImage ? 'jpg' : 'mp4',
+                  thumbnail: item.thumb || item.thumbnail,
+                })
+              }
+            }
+
+            if (medias.length > 0) {
+              return {
+                success: true,
+                platform: 'instagram',
+                title: json.title || 'Instagram Post',
+                thumbnail: medias[0]?.thumbnail || medias[0]?.url,
+                medias,
+              }
+            }
+          }
+        }
+      } catch {
+        // Continue to next fallback
+      }
+    }
+
+    // Strategy 2: Direct Instagram Embed Scraper (Official CDN)
     if (shortcode) {
       try {
         const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`
@@ -24,7 +92,7 @@ export const instagramScraper: PlatformScraper = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
           },
-          signal: AbortSignal.timeout(6000),
+          signal: AbortSignal.timeout(5000),
         })
 
         if (embedRes.ok) {
@@ -32,7 +100,7 @@ export const instagramScraper: PlatformScraper = {
           const $ = cheerio.load(html)
           const medias: MediaItem[] = []
 
-          // Check video tag
+          // 1. Direct Video tag
           const videoSrc = $('video').attr('src') || $('video source').attr('src')
           if (videoSrc) {
             medias.push({
@@ -43,7 +111,7 @@ export const instagramScraper: PlatformScraper = {
             })
           }
 
-          // Check embedded scripts for video_url or display_url
+          // 2. Direct embedded script JSON extraction
           const scripts = $('script').toArray()
           for (const s of scripts) {
             const text = $(s).html() || ''
@@ -80,7 +148,7 @@ export const instagramScraper: PlatformScraper = {
             }
           }
 
-          // Check image tag
+          // 3. Fallback EmbeddedMediaImage
           if (medias.length === 0) {
             const imgSrc = $('img.EmbeddedMediaImage').attr('src')
             if (imgSrc && !imgSrc.startsWith('data:')) {
@@ -105,62 +173,7 @@ export const instagramScraper: PlatformScraper = {
           }
         }
       } catch {
-        // Embed strategy failed, proceed to next strategy
-      }
-    }
-
-    // Strategy 2: Multi-Provider Public API Gateways
-    const gateways = [
-      'https://api.siputzx.my.id/api/d/fastdl',
-      'https://api.siputzx.my.id/api/d/igram',
-      'https://api.siputzx.my.id/api/d/sssinstagram',
-      'https://api.siputzx.my.id/api/d/savefrom',
-    ]
-
-    for (const gateway of gateways) {
-      try {
-        const res = await fetch(gateway, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          },
-          body: JSON.stringify({ url }),
-          signal: AbortSignal.timeout(6000),
-        })
-
-        if (res.ok) {
-          const json = await res.json()
-          if (json.status && json.data) {
-            const medias: MediaItem[] = []
-            const dataArray = Array.isArray(json.data) ? json.data : [json.data]
-
-            for (const item of dataArray) {
-              const mediaUrl = item.url || item.download_url || item.video || item.link || item.media
-              if (mediaUrl && typeof mediaUrl === 'string') {
-                medias.push({
-                  type: item.type === 'image' || mediaUrl.includes('.jpg') || mediaUrl.includes('.webp') ? 'image' : 'video',
-                  url: mediaUrl,
-                  quality: item.quality || 'HD',
-                  format: item.type === 'image' ? 'jpg' : 'mp4',
-                  thumbnail: item.thumbnail || item.thumb,
-                })
-              }
-            }
-
-            if (medias.length > 0) {
-              return {
-                success: true,
-                platform: 'instagram',
-                title: json.title || 'Instagram Media',
-                thumbnail: medias[0]?.thumbnail || medias[0]?.url,
-                medias,
-              }
-            }
-          }
-        }
-      } catch {
-        // Try next gateway
+        // Embed fallback failed
       }
     }
 
@@ -173,9 +186,10 @@ export const instagramScraper: PlatformScraper = {
     return {
       success: false,
       platform: 'instagram',
-      title: '',
+      title: 'Instagram Post',
       medias: [],
       error: 'Unable to resolve Instagram media. The post might be private or temporarily restricted by Instagram.',
     }
   },
 }
+
