@@ -28,7 +28,7 @@ export function cleanUrl(rawUrl: string): string {
 }
 
 export async function unshortenUrl(url: string): Promise<string> {
-  const isShortlink = /vt\.tiktok\.com|vm\.tiktok\.com|youtu\.be|t\.co|bit\.ly|tinyurl\.com|fb\.watch|capcut\.com\/t\//i.test(url)
+  const isShortlink = /vt\.tiktok\.com|vm\.tiktok\.com|t\.co|bit\.ly|tinyurl\.com|fb\.watch|capcut\.com\/t\//i.test(url)
   
   if (!isShortlink) {
     return cleanUrl(url)
