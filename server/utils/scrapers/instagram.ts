@@ -1,10 +1,19 @@
-import * as cheerio from 'cheerio'
 import type { PlatformScraper, ScraperResult, MediaItem } from '~/types'
-import { resolveCobalt } from './cobaltFallback'
 
-function extractShortcode(url: string): string | null {
-  const match = url.match(/(?:instagram\.com|instagr\.am)\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i)
-  return match ? match[1] : null
+function unwrapCdnUrl(urlStr: string): string {
+  if (!urlStr) return ''
+  if (urlStr.includes('uri=')) {
+    try {
+      const parsed = new URL(urlStr)
+      const direct = parsed.searchParams.get('uri')
+      if (direct && direct.startsWith('http')) {
+        return direct
+      }
+    } catch {
+      // return original fallback
+    }
+  }
+  return urlStr
 }
 
 export const instagramScraper: PlatformScraper = {
@@ -12,184 +21,119 @@ export const instagramScraper: PlatformScraper = {
   supports: (url: string) => /instagram\.com|instagr\.am/i.test(url),
 
   async resolve(url: string): Promise<ScraperResult> {
-    const cleanUrl = url.split('?')[0].replace(/\/$/, '')
-    const shortcode = extractShortcode(cleanUrl)
+    const cleanUrl = url.trim()
 
-    // Strategy 1: FastDL & SSSInstagram Multi-Node Engine
-    const fastDlGateways = [
-      {
-        url: 'https://sssinstagram.com/api/convert',
-        body: JSON.stringify({ target_url: cleanUrl }),
+    try {
+      const apiUrl = `https://api.siputzx.my.id/api/d/sssinstagram?url=${encodeURIComponent(cleanUrl)}`
+      
+      const res = await fetch(apiUrl, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://sssinstagram.com/',
-          'Origin': 'https://sssinstagram.com',
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         },
-      },
-      {
-        url: 'https://igram.world/api/convert',
-        body: JSON.stringify({ target_url: cleanUrl }),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://igram.world/',
-          'Origin': 'https://igram.world',
-        },
-      },
-    ]
+        signal: AbortSignal.timeout(12000),
+      })
 
-    for (const gw of fastDlGateways) {
-      try {
-        const res = await fetch(gw.url, {
-          method: 'POST',
-          headers: gw.headers,
-          body: gw.body,
-          signal: AbortSignal.timeout(5000),
-        })
-
-        if (res.ok) {
-          const json = await res.json()
-          if (json.data && Array.isArray(json.data) && json.data.length > 0) {
-            const medias: MediaItem[] = []
-            for (const item of json.data) {
-              const mediaUrl = item.url || item.download_url || item.media || item.video
-              if (mediaUrl && typeof mediaUrl === 'string') {
-                const isImage = item.type === 'image' || mediaUrl.includes('.jpg') || mediaUrl.includes('.webp') || mediaUrl.includes('.jpeg')
-                medias.push({
-                  type: isImage ? 'image' : 'video',
-                  url: mediaUrl,
-                  quality: item.quality || 'HD',
-                  format: isImage ? 'jpg' : 'mp4',
-                  thumbnail: item.thumb || item.thumbnail,
-                })
-              }
-            }
-
-            if (medias.length > 0) {
-              return {
-                success: true,
-                platform: 'instagram',
-                title: json.title || 'Instagram Post',
-                thumbnail: medias[0]?.thumbnail || medias[0]?.url,
-                medias,
-              }
-            }
-          }
-        }
-      } catch {
-        // Continue to next fallback
+      if (!res.ok) {
+        throw new Error(`Siputzx API HTTP ${res.status}`)
       }
-    }
 
-    // Strategy 2: Direct Instagram Embed Scraper (Official CDN)
-    if (shortcode) {
-      try {
-        const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`
-        const embedRes = await fetch(embedUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-          },
-          signal: AbortSignal.timeout(5000),
-        })
+      const json = await res.json()
+      
+      if (!json || (!json.status && !json.data && !json.result)) {
+        throw new Error(json?.message || json?.error || 'No media returned from Instagram API')
+      }
 
-        if (embedRes.ok) {
-          const html = await embedRes.text()
-          const $ = cheerio.load(html)
-          const medias: MediaItem[] = []
+      const medias: MediaItem[] = []
+      const dataObj = json.data || json.result || json
+      const meta = dataObj?.meta || {}
 
-          // 1. Direct Video tag
-          const videoSrc = $('video').attr('src') || $('video source').attr('src')
-          if (videoSrc) {
+      // Extract url items list (handle dataObj.url array, dataObj array, dataObj.data array)
+      let itemsToParse: any[] = []
+
+      if (Array.isArray(dataObj)) {
+        itemsToParse = dataObj
+      } else if (Array.isArray(dataObj?.url)) {
+        itemsToParse = dataObj.url
+      } else if (Array.isArray(dataObj?.data)) {
+        itemsToParse = dataObj.data
+      } else if (dataObj?.url && typeof dataObj.url === 'string') {
+        itemsToParse = [dataObj]
+      } else {
+        itemsToParse = [dataObj]
+      }
+
+      for (const item of itemsToParse) {
+        if (!item) continue
+
+        // If item is direct string URL
+        if (typeof item === 'string' && item.startsWith('http')) {
+          const directUrl = unwrapCdnUrl(item)
+          const isImage = directUrl.includes('.jpg') || directUrl.includes('.jpeg') || directUrl.includes('.webp') || directUrl.includes('.png')
+          medias.push({
+            type: isImage ? 'image' : 'video',
+            url: directUrl,
+            quality: 'HD',
+            format: isImage ? 'jpg' : 'mp4',
+            thumbnail: unwrapCdnUrl(dataObj?.thumb || meta?.thumb || directUrl),
+          })
+          continue
+        }
+
+        // If item is object
+        if (typeof item === 'object') {
+          const rawMediaUrl = item.url || item.download_url || item.download || item.video || item.link || item.media || item.src
+          if (rawMediaUrl && typeof rawMediaUrl === 'string' && rawMediaUrl.startsWith('http')) {
+            const directUrl = unwrapCdnUrl(rawMediaUrl)
+            const isImage = item.type === 'image' || directUrl.includes('.jpg') || directUrl.includes('.jpeg') || directUrl.includes('.webp') || directUrl.includes('.png')
             medias.push({
-              type: 'video',
-              url: videoSrc,
-              quality: 'HD',
-              format: 'mp4',
+              type: isImage ? 'image' : 'video',
+              url: directUrl,
+              quality: item.subname || (item.quality ? `${item.quality}p` : 'HD'),
+              format: item.ext || (isImage ? 'jpg' : 'mp4'),
+              thumbnail: unwrapCdnUrl(item.thumb || item.thumbnail || dataObj?.thumb || meta?.thumb || directUrl),
             })
           }
-
-          // 2. Direct embedded script JSON extraction
-          const scripts = $('script').toArray()
-          for (const s of scripts) {
-            const text = $(s).html() || ''
-            if (text.includes('video_url') || text.includes('display_url')) {
-              const videoMatches = text.match(/"video_url":"([^"]+)"/g)
-              if (videoMatches) {
-                for (const vm of videoMatches) {
-                  const cleanUrl = vm.replace(/"video_url":"|"/g, '').replace(/\\u0026/g, '&')
-                  if (!medias.some(m => m.url === cleanUrl)) {
-                    medias.push({
-                      type: 'video',
-                      url: cleanUrl,
-                      quality: 'HD',
-                      format: 'mp4',
-                    })
-                  }
-                }
-              }
-
-              const displayMatches = text.match(/"display_url":"([^"]+)"/g)
-              if (displayMatches && medias.length === 0) {
-                for (const dm of displayMatches) {
-                  const cleanUrl = dm.replace(/"display_url":"|"/g, '').replace(/\\u0026/g, '&')
-                  if (!medias.some(m => m.url === cleanUrl)) {
-                    medias.push({
-                      type: 'image',
-                      url: cleanUrl,
-                      quality: 'HD',
-                      format: 'jpg',
-                    })
-                  }
-                }
-              }
-            }
-          }
-
-          // 3. Fallback EmbeddedMediaImage
-          if (medias.length === 0) {
-            const imgSrc = $('img.EmbeddedMediaImage').attr('src')
-            if (imgSrc && !imgSrc.startsWith('data:')) {
-              medias.push({
-                type: 'image',
-                url: imgSrc,
-                quality: 'HD',
-                format: 'jpg',
-              })
-            }
-          }
-
-          if (medias.length > 0) {
-            const caption = $('.Caption').text().trim() || 'Instagram Post'
-            return {
-              success: true,
-              platform: 'instagram',
-              title: caption.slice(0, 100),
-              thumbnail: medias[0].thumbnail || medias[0].url,
-              medias,
-            }
-          }
         }
-      } catch {
-        // Embed fallback failed
       }
-    }
 
-    // Strategy 3: Cobalt fallback
-    const cobaltRes = await resolveCobalt(url, 'instagram')
-    if (cobaltRes.success) {
-      return cobaltRes
-    }
+      if (medias.length > 0) {
+        const title = meta.title || dataObj?.title || json?.title || 'Instagram Media'
+        const thumbnail = unwrapCdnUrl(dataObj?.thumb || meta.thumb || medias[0]?.thumbnail || medias[0]?.url)
+        const author = meta.username
+          ? {
+              name: meta.username,
+              username: meta.username,
+              avatar: unwrapCdnUrl(dataObj?.thumb || meta?.thumb),
+            }
+          : undefined
 
-    return {
-      success: false,
-      platform: 'instagram',
-      title: 'Instagram Post',
-      medias: [],
-      error: 'Unable to resolve Instagram media. The post might be private or temporarily restricted by Instagram.',
+        return {
+          success: true,
+          platform: 'instagram',
+          title,
+          thumbnail,
+          author,
+          medias,
+        }
+      }
+
+      return {
+        success: false,
+        platform: 'instagram',
+        title: 'Instagram Post',
+        medias: [],
+        error: json?.data?.message || json?.message || 'Download link not found for this Instagram URL.',
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        platform: 'instagram',
+        title: 'Instagram Post',
+        medias: [],
+        error: err.message || 'Failed to connect to Siputzx Instagram API',
+      }
     }
   },
 }
-
