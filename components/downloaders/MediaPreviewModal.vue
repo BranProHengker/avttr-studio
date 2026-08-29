@@ -100,6 +100,14 @@ const formatTime = (sec: number) => {
   return `${m}:${s < 10 ? '0' : ''}${s}`
 }
 
+const formatSize = (bytes?: number) => {
+  if (!bytes || isNaN(bytes) || bytes <= 0) return '-'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
 watch(
   () => props.modelValue,
   (val) => {
@@ -332,7 +340,7 @@ watch(
                 <span>{{ item.quality || 'Video (MP4)' }}</span>
               </div>
               <div class="text-[10px] text-[var(--text-tertiary)] font-mono mt-0.5">
-                {{ item.format?.toUpperCase() || 'MP4' }} {{ item.size ? `• ${(item.size / (1024 * 1024)).toFixed(1)} MB` : '' }}
+                {{ item.format?.toUpperCase() || 'MP4' }} • Size: <span class="text-[var(--text-secondary)] font-medium">{{ formatSize(item.size) }}</span>
               </div>
             </div>
 
@@ -357,7 +365,7 @@ watch(
                 <span>{{ item.quality || 'High Definition Photo' }}</span>
               </div>
               <div class="text-[10px] text-[var(--text-tertiary)] font-mono mt-0.5">
-                {{ item.format?.toUpperCase() || 'JPG' }} • Original Quality
+                {{ item.format?.toUpperCase() || 'JPG' }} • Size: <span class="text-[var(--text-secondary)] font-medium">{{ formatSize(item.size) }}</span>
               </div>
             </div>
 
@@ -381,7 +389,7 @@ watch(
                 {{ item.quality || 'Audio Only' }}
               </div>
               <div class="text-[10px] text-[var(--text-tertiary)] font-mono mt-0.5">
-                {{ item.format?.toUpperCase() || 'M4A' }} {{ item.size ? `• ${(item.size / (1024 * 1024)).toFixed(1)} MB` : '• High Quality Audio' }}
+                {{ item.format?.toUpperCase() || 'M4A' }} • Size: <span class="text-[var(--text-secondary)] font-medium">{{ formatSize(item.size) }}</span>
               </div>
             </div>
 
@@ -417,6 +425,9 @@ watch(
               <div class="relative w-full aspect-video rounded overflow-hidden bg-black/40 cursor-pointer" @click="selectedMediaIndex = idx">
                 <img :src="img.url" :alt="`Photo ${idx + 1}`" loading="lazy" decoding="async" class="w-full h-full object-cover" />
                 <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-black/75 text-white">#{{ idx + 1 }}</span>
+              </div>
+              <div class="text-[10px] text-[var(--text-tertiary)] font-mono text-center">
+                Size: <span class="text-[var(--text-secondary)] font-medium">{{ formatSize(img.size) }}</span>
               </div>
               <Button
                 variant="secondary"
