@@ -324,7 +324,7 @@ watch(
           <!-- Video Options -->
           <div
             v-for="(item, idx) in videoMedias"
-            :key="idx"
+            :key="'video-' + idx"
             class="flex items-center justify-between p-3 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-lg hover:border-[var(--border-card-hover)] hover:bg-[var(--bg-card-hover)] transition-all"
           >
             <div>
@@ -342,6 +342,31 @@ watch(
               @click="downloadMediaItem(item, `${result.platform}_${idx + 1}`)"
             >
               Download
+            </Button>
+          </div>
+
+          <!-- Single Image Option (When not a carousel) -->
+          <div
+            v-for="(item, idx) in imageMedias"
+            v-if="!isCarousel && imageMedias.length === 1"
+            :key="'img-single-' + idx"
+            class="flex items-center justify-between p-3 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-lg hover:border-[var(--border-card-hover)] hover:bg-[var(--bg-card-hover)] transition-all col-span-full"
+          >
+            <div>
+              <div class="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                <span>{{ item.quality || 'High Definition Photo' }}</span>
+              </div>
+              <div class="text-[10px] text-[var(--text-tertiary)] font-mono mt-0.5">
+                {{ item.format?.toUpperCase() || 'JPG' }} • Original Quality
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="sm"
+              @click="downloadMediaItem(item, `${result.title || result.platform}_photo`)"
+            >
+              Download Photo
             </Button>
           </div>
 
@@ -370,35 +395,36 @@ watch(
           </div>
         </div>
 
-        <!-- Carousel ZIP Action -->
-        <div v-if="isCarousel" class="pt-2">
+        <!-- Carousel ZIP & Multi-Photo Action -->
+        <div v-if="isCarousel" class="space-y-3 pt-2">
           <Button
             variant="primary"
             class="w-full font-semibold"
             :loading="isZipping"
             @click="downloadAsZip(imageMedias, result.title || 'instagram_carousel')"
           >
-            <span>Download All {{ imageMedias.length }} Images as ZIP</span>
+            <span>Download All {{ imageMedias.length }} Photos as ZIP</span>
             <span v-if="isZipping" class="ml-2 font-mono text-xs">({{ zipProgress }}%)</span>
           </Button>
-        </div>
 
-        <!-- Individual Image Downloads if Carousel -->
-        <div v-if="isCarousel" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-          <div
-            v-for="(img, idx) in imageMedias"
-            :key="'img-' + idx"
-            class="relative group rounded-lg overflow-hidden border border-[var(--border-subtle)] aspect-square bg-black/40"
-          >
-            <img :src="img.url" :alt="`Image ${idx + 1}`" loading="lazy" decoding="async" class="w-full h-full object-cover" />
-            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+          <!-- Individual Image Cards in Carousel -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div
+              v-for="(img, idx) in imageMedias"
+              :key="'img-' + idx"
+              class="flex flex-col p-2.5 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-lg hover:border-[var(--border-card-hover)] transition-all gap-2"
+            >
+              <div class="relative w-full aspect-video rounded overflow-hidden bg-black/40 cursor-pointer" @click="selectedMediaIndex = idx">
+                <img :src="img.url" :alt="`Photo ${idx + 1}`" loading="lazy" decoding="async" class="w-full h-full object-cover" />
+                <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-black/75 text-white">#{{ idx + 1 }}</span>
+              </div>
               <Button
                 variant="secondary"
                 size="sm"
-                class="text-[10px] py-1 px-2 h-auto"
-                @click="downloadMediaItem(img, `${result.title || 'image'}_${idx + 1}`)"
+                class="w-full text-xs"
+                @click="downloadMediaItem(img, `${result.title || 'photo'}_${idx + 1}`)"
               >
-                Save #{{ idx + 1 }}
+                Download #{{ idx + 1 }}
               </Button>
             </div>
           </div>
