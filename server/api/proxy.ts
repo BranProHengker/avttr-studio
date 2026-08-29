@@ -1,3 +1,5 @@
+import { spawn } from 'node:child_process'
+
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const targetUrl = typeof query.url === 'string' ? query.url : ''
@@ -30,6 +32,51 @@ export default defineEventHandler(async (event) => {
       referer = 'https://www.1024tera.com/'
     }
 
+    // 1. If real MP3 conversion is requested (e.g. for YouTube video/audio streams to genuine MP3)
+    if (/\.mp3$/i.test(filename)) {
+      const cleanAsciiFilename = filename.replace(/[^\w\s.-]/gi, '_')
+      const mp3Headers: Record<string, string> = {
+        'Content-Type': 'audio/mpeg',
+        'Accept-Ranges': 'none',
+        'Access-Control-Allow-Origin': '*',
+      }
+
+      if (isDownload) {
+        mp3Headers['Content-Disposition'] = `attachment; filename="${cleanAsciiFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+      }
+
+      setResponseStatus(event, 200)
+      setResponseHeaders(event, mp3Headers)
+
+      const ffmpegArgs = ['-hide_banner', '-loglevel', 'error']
+
+      if (/googlevideo\.com/i.test(targetUrl)) {
+        ffmpegArgs.push('-user_agent', 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip')
+      } else if (referer) {
+        ffmpegArgs.push('-referer', referer)
+      }
+
+      ffmpegArgs.push(
+        '-i', targetUrl,
+        '-vn',
+        '-acodec', 'libmp3lame',
+        '-b:a', '192k',
+        '-f', 'mp3',
+        'pipe:1'
+      )
+
+      const ffmpeg = spawn('ffmpeg', ffmpegArgs)
+
+      event.node.req.on('close', () => {
+        try {
+          ffmpeg.kill('SIGKILL')
+        } catch {}
+      })
+
+      return sendStream(event, ffmpeg.stdout)
+    }
+
+    // 2. Direct streaming proxy for Video, Images, and other files
     const upstreamHeaders: Record<string, string> = {
       'Accept': '*/*',
     }
@@ -83,8 +130,7 @@ export default defineEventHandler(async (event) => {
     else if (/\.png/i.test(targetUrl) || /\.png/i.test(filename)) defaultType = 'image/png'
 
     let contentType = upstream.headers.get('content-type') || defaultType
-    if (/\.mp3$/i.test(filename)) contentType = 'audio/mpeg'
-    else if (/\.m4a$/i.test(filename)) contentType = 'audio/mp4'
+    if (/\.m4a$/i.test(filename)) contentType = 'audio/mp4'
     else if (/\.opus$/i.test(filename)) contentType = 'audio/opus'
     else if (/\.mp4$/i.test(filename)) contentType = 'video/mp4'
     else if (/\.(jpg|jpeg)$/i.test(filename)) contentType = 'image/jpeg'
