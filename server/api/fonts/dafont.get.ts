@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
   const cat = (query.cat as string || '').trim()
   const customText = (query.text as string || '').trim()
   const page = (query.page as string || '1').trim()
+  const pageNum = parseInt(page, 10) || 1
 
   try {
     let url = ''
@@ -27,8 +28,8 @@ export default defineEventHandler(async (event) => {
     if (customText) {
       params.set('text', customText)
     }
-    if (page && page !== '1') {
-      params.set('page', page)
+    if (pageNum > 1) {
+      params.set('page', pageNum.toString())
     }
 
     if (cat) {
@@ -57,6 +58,17 @@ export default defineEventHandler(async (event) => {
     const html = await res.text()
     const $ = cheerio.load(html)
     const fonts: DaFontItem[] = []
+
+    // Calculate maximum available pages
+    let maxPage = pageNum
+    $("a[href*='page=']").each((i, el) => {
+      const href = $(el).attr('href') || ''
+      const m = href.match(/page=(\d+)/)
+      if (m) {
+        const p = parseInt(m[1], 10)
+        if (p > maxPage) maxPage = p
+      }
+    })
 
     // Parse all matching font preview cards
     $('div.preview').each((i, el) => {
@@ -121,6 +133,8 @@ export default defineEventHandler(async (event) => {
       success: true,
       query: searchQuery,
       category: cat,
+      page: pageNum,
+      totalPages: Math.max(maxPage, 1),
       count: fonts.length,
       fonts,
     }
@@ -128,6 +142,8 @@ export default defineEventHandler(async (event) => {
     return {
       success: false,
       error: err.message || 'Failed to fetch fonts from DaFont',
+      page: 1,
+      totalPages: 1,
       fonts: [],
     }
   }

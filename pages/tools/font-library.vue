@@ -18,7 +18,9 @@ import {
   Loader2,
   Sun,
   Moon,
-  Info
+  Info,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
@@ -70,9 +72,15 @@ const fontSize = ref(32)
 const letterSpacing = ref(0)
 const lineHeight = ref(1.4)
 
-// DaFont Scraping State
+// DaFont Scraping & Pagination State
 const daFontResults = ref<DaFontItem[]>([])
 const isLoadingDaFont = ref(false)
+const daFontPage = ref(1)
+const daFontTotalPages = ref(1)
+
+// Google WebFonts Pagination State
+const googlePage = ref(1)
+const googlePageSize = ref(12)
 
 // Selected Font for Inspector Detail Modal
 const isDetailModalOpen = ref(false)
@@ -186,7 +194,7 @@ const textPresets = [
   { label: 'Headline', text: 'Crafting Next-Gen Visual Experiences' },
 ]
 
-// Filtered Google Fonts
+// Filtered & Paginated Google Fonts
 const filteredGoogleFonts = computed(() => {
   if (activeSource.value === 'dafont') return []
   return allGoogleFonts.value.filter((font) => {
@@ -195,6 +203,32 @@ const filteredGoogleFonts = computed(() => {
     return matchesCategory && matchesSearch
   })
 })
+
+const googleTotalPages = computed(() => {
+  return Math.max(Math.ceil(filteredGoogleFonts.value.length / googlePageSize.value), 1)
+})
+
+const paginatedGoogleFonts = computed(() => {
+  const start = (googlePage.value - 1) * googlePageSize.value
+  return filteredGoogleFonts.value.slice(start, start + googlePageSize.value)
+})
+
+// Pagination Range Calculation (Matches Pill Bar UX: 1 2 3 ... 10)
+const getPaginationRange = (currentPage: number, totalPages: number) => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1)
+  }
+
+  if (currentPage <= 3) {
+    return [1, 2, 3, '...', totalPages]
+  }
+
+  if (currentPage >= totalPages - 2) {
+    return [1, '...', totalPages - 2, totalPages - 1, totalPages]
+  }
+
+  return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages]
+}
 
 // Dynamic Font Loading for Google Fonts
 const loadedFontsSet = new Set<string>()
@@ -231,34 +265,58 @@ const fetchDaFont = async () => {
     if (searchQuery.value.trim()) params.set('q', searchQuery.value.trim())
     if (selectedDaFontCat.value) params.set('cat', selectedDaFontCat.value)
     if (previewText.value.trim()) params.set('text', previewText.value.trim())
+    if (daFontPage.value > 1) params.set('page', daFontPage.value.toString())
 
     const data: any = await $fetch(`/api/fonts/dafont?${params.toString()}`)
     if (data?.success && Array.isArray(data.fonts)) {
       daFontResults.value = data.fonts
+      daFontTotalPages.value = data.totalPages || 1
     } else {
       daFontResults.value = []
+      daFontTotalPages.value = 1
     }
   } catch {
     daFontResults.value = []
+    daFontTotalPages.value = 1
   } finally {
     isLoadingDaFont.value = false
   }
 }
 
-const triggerDebouncedDaFontFetch = () => {
+const triggerDebouncedDaFontFetch = (resetPage = true) => {
+  if (resetPage) daFontPage.value = 1
   if (daFontDebounceTimer) clearTimeout(daFontDebounceTimer)
   daFontDebounceTimer = setTimeout(() => {
     fetchDaFont()
   }, 400)
 }
 
+const setDaFontPage = (page: number) => {
+  if (page < 1 || page > daFontTotalPages.value || page === daFontPage.value) return
+  daFontPage.value = page
+  fetchDaFont()
+}
+
+const setGooglePage = (page: number) => {
+  if (page < 1 || page > googleTotalPages.value || page === googlePage.value) return
+  googlePage.value = page
+}
+
 // Watchers
 watch(
   [searchQuery, selectedDaFontCat, activeSource],
   () => {
+    googlePage.value = 1
     if (activeSource.value !== 'google') {
-      triggerDebouncedDaFontFetch()
+      triggerDebouncedDaFontFetch(true)
     }
+  }
+)
+
+watch(
+  selectedCategory,
+  () => {
+    googlePage.value = 1
   }
 )
 
@@ -266,15 +324,15 @@ watch(
   previewText,
   () => {
     if (activeSource.value !== 'google') {
-      triggerDebouncedDaFontFetch()
+      triggerDebouncedDaFontFetch(false)
     }
   }
 )
 
 watch(
-  filteredGoogleFonts,
+  paginatedGoogleFonts,
   (fonts) => {
-    fonts.slice(0, 30).forEach((f) => loadFontDynamically(f))
+    fonts.forEach((f) => loadFontDynamically(f))
   },
   { immediate: true }
 )
@@ -587,7 +645,7 @@ onMounted(() => {
         <div class="flex items-center gap-2">
           <Palette class="w-4 h-4 text-[var(--text-secondary)]" />
           <h2 class="text-sm font-mono uppercase tracking-wider font-semibold text-[var(--text-primary)]">
-            DaFont Directory Specimens ({{ daFontResults.length }} fonts)
+            DaFont Directory (Page {{ daFontPage }} of {{ daFontTotalPages }})
           </h2>
         </div>
         <div v-if="isLoadingDaFont" class="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] font-mono">
@@ -597,87 +655,140 @@ onMounted(() => {
       </div>
 
       <!-- DaFont Cards Grid -->
-      <div v-if="daFontResults.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div
-          v-for="df in daFontResults"
-          :key="df.id"
-          class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] rounded-[14px] transition-all space-y-4 flex flex-col justify-between shadow-xs cursor-pointer group"
-          @click="openFontDetail(df)"
-        >
-          <!-- Card Header -->
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="font-bold text-sm text-[var(--text-primary)] tracking-tight group-hover:underline underline-offset-2 truncate">
-                  {{ df.name }}
-                </h3>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)] font-mono shrink-0">
-                  Inspect
-                </span>
-              </div>
-              <div class="flex items-center gap-2 mt-1 text-[11px] text-[var(--text-tertiary)]">
-                <span class="truncate">by <strong class="text-[var(--text-secondary)] font-medium">{{ df.author }}</strong></span>
-                <span>•</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)] shrink-0">
-                  {{ df.license }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Download ZIP Action -->
-            <a
-              :href="df.downloadUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="px-3 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
-              title="Download font ZIP archive"
-              @click.stop
-            >
-              <Download class="w-3.5 h-3.5" />
-              <span>Download ZIP</span>
-            </a>
-          </div>
-
-          <!-- DaFont Live Specimen Image Preview Viewport (High-Contrast Clean Specimen Box) -->
+      <div v-if="daFontResults.length > 0" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
-            class="py-3 px-4 rounded-xl border min-h-[96px] flex items-center justify-center overflow-hidden transition-colors"
-            :class="
-              specimenTheme === 'light'
-                ? 'bg-[#FFFFFF] border-zinc-200 text-zinc-950 shadow-xs'
-                : 'bg-[#0D0D0D] border-zinc-800 text-white'
-            "
+            v-for="df in daFontResults"
+            :key="df.id"
+            class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] rounded-[14px] transition-all space-y-4 flex flex-col justify-between shadow-xs cursor-pointer group"
+            @click="openFontDetail(df)"
           >
-            <img
-              :src="df.previewUrl"
-              :alt="df.name"
-              loading="lazy"
-              decoding="async"
-              class="max-h-[76px] max-w-full object-contain transition-all group-hover:scale-105"
-              :class="specimenTheme === 'dark' ? 'invert brightness-200 contrast-150' : 'brightness-100 contrast-125'"
-            />
-          </div>
+            <!-- Card Header -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-sm text-[var(--text-primary)] tracking-tight group-hover:underline underline-offset-2 truncate">
+                    {{ df.name }}
+                  </h3>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)] font-mono shrink-0">
+                    Inspect
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 mt-1 text-[11px] text-[var(--text-tertiary)]">
+                  <span class="truncate">by <strong class="text-[var(--text-secondary)] font-medium">{{ df.author }}</strong></span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)] shrink-0">
+                    {{ df.license }}
+                  </span>
+                </div>
+              </div>
 
-          <!-- Card Footer -->
-          <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]" @click.stop>
-            <span class="font-mono text-[10px] text-[var(--text-tertiary)]">Source: dafont.com</span>
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="hover:text-[var(--text-primary)] transition-colors cursor-pointer font-medium"
-                @click="copy(df.downloadUrl)"
+              <!-- Download ZIP Action -->
+              <a
+                :href="df.downloadUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-3 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
+                title="Download font ZIP archive"
+                @click.stop
               >
-                Copy Link
-              </button>
-              <span>•</span>
-              <button
-                type="button"
-                class="hover:text-[var(--text-primary)] transition-colors cursor-pointer font-medium flex items-center gap-1"
-                @click="openFontDetail(df)"
-              >
-                <span>Full Specimen</span>
-                <Info class="w-3 h-3" />
-              </button>
+                <Download class="w-3.5 h-3.5" />
+                <span>Download ZIP</span>
+              </a>
             </div>
+
+            <!-- DaFont Live Specimen Image Preview Viewport (High-Contrast Clean Specimen Box) -->
+            <div
+              class="py-3 px-4 rounded-xl border min-h-[96px] flex items-center justify-center overflow-hidden transition-colors"
+              :class="
+                specimenTheme === 'light'
+                  ? 'bg-[#FFFFFF] border-zinc-200 text-zinc-950 shadow-xs'
+                  : 'bg-[#0D0D0D] border-zinc-800 text-white'
+              "
+            >
+              <img
+                :src="df.previewUrl"
+                :alt="df.name"
+                loading="lazy"
+                decoding="async"
+                class="max-h-[76px] max-w-full object-contain transition-all group-hover:scale-105"
+                :class="specimenTheme === 'dark' ? 'invert brightness-200 contrast-150' : 'brightness-100 contrast-125'"
+              />
+            </div>
+
+            <!-- Card Footer -->
+            <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]" @click.stop>
+              <span class="font-mono text-[10px] text-[var(--text-tertiary)]">Source: dafont.com</span>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="hover:text-[var(--text-primary)] transition-colors cursor-pointer font-medium"
+                  @click="copy(df.downloadUrl)"
+                >
+                  Copy Link
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  class="hover:text-[var(--text-primary)] transition-colors cursor-pointer font-medium flex items-center gap-1"
+                  @click="openFontDetail(df)"
+                >
+                  <span>Full Specimen</span>
+                  <Info class="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DAFONT MODERN PAGINATION BAR (Pill Bar UX from screenshot) -->
+        <div v-if="daFontTotalPages > 1" class="flex items-center justify-center pt-2">
+          <div class="inline-flex items-center gap-1.5 p-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl shadow-xs">
+            <!-- Prev Button -->
+            <button
+              type="button"
+              :disabled="daFontPage <= 1 || isLoadingDaFont"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs flex items-center gap-1"
+              @click="setDaFontPage(daFontPage - 1)"
+            >
+              <ChevronLeft class="w-3.5 h-3.5" />
+              <span>Prev</span>
+            </button>
+
+            <!-- Page Number Buttons -->
+            <template v-for="(item, idx) in getPaginationRange(daFontPage, daFontTotalPages)" :key="idx">
+              <span
+                v-if="item === '...'"
+                class="w-7 h-7 flex items-center justify-center text-xs text-[var(--text-tertiary)] font-mono select-none"
+              >
+                ...
+              </span>
+              <button
+                v-else
+                type="button"
+                :disabled="isLoadingDaFont"
+                class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold transition-all cursor-pointer"
+                :class="
+                  daFontPage === item
+                    ? 'bg-[#1E1E1E] text-white dark:bg-white dark:text-black shadow-xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                "
+                @click="setDaFontPage(Number(item))"
+              >
+                {{ item }}
+              </button>
+            </template>
+
+            <!-- Next Button -->
+            <button
+              type="button"
+              :disabled="daFontPage >= daFontTotalPages || isLoadingDaFont"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs flex items-center gap-1"
+              @click="setDaFontPage(daFontPage + 1)"
+            >
+              <span>Next</span>
+              <ChevronRight class="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
@@ -707,97 +818,149 @@ onMounted(() => {
         <div class="flex items-center gap-2">
           <Type class="w-4 h-4 text-[var(--text-secondary)]" />
           <h2 class="text-sm font-mono uppercase tracking-wider font-semibold text-[var(--text-primary)]">
-            Google WebFonts ({{ filteredGoogleFonts.length }} fonts)
+            Google WebFonts (Page {{ googlePage }} of {{ googleTotalPages }} • {{ filteredGoogleFonts.length }} fonts)
           </h2>
         </div>
       </div>
 
       <!-- Google Font Cards Grid -->
-      <div v-if="filteredGoogleFonts.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div
-          v-for="font in filteredGoogleFonts"
-          :key="font.id"
-          class="p-5 bg-[var(--bg-card)] border rounded-[14px] transition-all hover:border-[var(--border-card-hover)] space-y-4 relative group shadow-xs cursor-pointer"
-          :class="activeModalFont?.id === font.id ? 'border-[var(--border-active)] ring-1 ring-[var(--primary-glow)]' : 'border-[var(--border-card)]'"
-          @mouseenter="loadFontDynamically(font)"
-          @click="openFontDetail(font)"
-        >
-          <!-- Card Top Bar -->
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="font-bold text-sm text-[var(--text-primary)] tracking-tight truncate group-hover:underline underline-offset-2">
-                {{ font.name }}
-              </span>
-              <span class="px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider bg-[var(--bg-card-hover)] text-[var(--text-secondary)] rounded border border-[var(--border-subtle)] shrink-0">
-                {{ font.category }}
-              </span>
-              <span v-if="font.designer" class="text-[11px] text-[var(--text-tertiary)] truncate hidden sm:inline">
-                by {{ font.designer }}
-              </span>
-            </div>
-
-            <!-- Quick Copy Actions -->
-            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity" @click.stop>
-              <button
-                type="button"
-                class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
-                title="Copy CSS font-family"
-                @click="copySnippet(font, 'css')"
-              >
-                <Code class="w-3 h-3" />
-                <span>CSS</span>
-              </button>
-
-              <button
-                type="button"
-                class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
-                title="Copy @import URL"
-                @click="copySnippet(font, 'import')"
-              >
-                <Copy class="w-3 h-3" />
-                <span>@import</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Live Font Preview Viewport (High-Contrast Clean Box) -->
+      <div v-if="filteredGoogleFonts.length > 0" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
-            class="py-3 px-4 rounded-xl border min-h-[96px] flex items-center overflow-hidden transition-colors"
-            :class="
-              specimenTheme === 'light'
-                ? 'bg-[#FFFFFF] border-zinc-200 text-zinc-950 shadow-xs'
-                : 'bg-[#0D0D0D] border-zinc-800 text-white'
-            "
+            v-for="font in paginatedGoogleFonts"
+            :key="font.id"
+            class="p-5 bg-[var(--bg-card)] border rounded-[14px] transition-all hover:border-[var(--border-card-hover)] space-y-4 relative group shadow-xs cursor-pointer"
+            :class="activeModalFont?.id === font.id ? 'border-[var(--border-active)] ring-1 ring-[var(--primary-glow)]' : 'border-[var(--border-card)]'"
+            @mouseenter="loadFontDynamically(font)"
+            @click="openFontDetail(font)"
           >
+            <!-- Card Top Bar -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class="font-bold text-sm text-[var(--text-primary)] tracking-tight truncate group-hover:underline underline-offset-2">
+                  {{ font.name }}
+                </span>
+                <span class="px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider bg-[var(--bg-card-hover)] text-[var(--text-secondary)] rounded border border-[var(--border-subtle)] shrink-0">
+                  {{ font.category }}
+                </span>
+                <span v-if="font.designer" class="text-[11px] text-[var(--text-tertiary)] truncate hidden sm:inline">
+                  by {{ font.designer }}
+                </span>
+              </div>
+
+              <!-- Quick Copy Actions -->
+              <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity" @click.stop>
+                <button
+                  type="button"
+                  class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                  title="Copy CSS font-family"
+                  @click="copySnippet(font, 'css')"
+                >
+                  <Code class="w-3 h-3" />
+                  <span>CSS</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                  title="Copy @import URL"
+                  @click="copySnippet(font, 'import')"
+                >
+                  <Copy class="w-3 h-3" />
+                  <span>@import</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Font Preview Viewport (High-Contrast Clean Box) -->
             <div
-              class="w-full break-words transition-all select-all leading-normal font-normal"
-              :style="{
-                fontFamily: `'${font.name}', sans-serif`,
-                fontSize: `${fontSize}px`,
-                letterSpacing: `${letterSpacing}px`,
-                lineHeight: lineHeight,
-              }"
+              class="py-3 px-4 rounded-xl border min-h-[96px] flex items-center overflow-hidden transition-colors"
+              :class="
+                specimenTheme === 'light'
+                  ? 'bg-[#FFFFFF] border-zinc-200 text-zinc-950 shadow-xs'
+                  : 'bg-[#0D0D0D] border-zinc-800 text-white'
+              "
             >
-              {{ previewText || font.name }}
+              <div
+                class="w-full break-words transition-all select-all leading-normal font-normal"
+                :style="{
+                  fontFamily: `'${font.name}', sans-serif`,
+                  fontSize: `${fontSize}px`,
+                  letterSpacing: `${letterSpacing}px`,
+                  lineHeight: lineHeight,
+                }"
+              >
+                {{ previewText || font.name }}
+              </div>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]" @click.stop>
+              <div class="flex items-center gap-1 font-mono">
+                <span>Weights:</span>
+                <span class="text-[var(--text-secondary)] font-medium">{{ font.weights.join(', ') }}</span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer underline underline-offset-2 font-medium"
+                  @click="copySnippet(font, 'tailwind')"
+                >
+                  Tailwind Config
+                </button>
+              </div>
             </div>
           </div>
+        </div>
 
-          <!-- Card Footer -->
-          <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]" @click.stop>
-            <div class="flex items-center gap-1 font-mono">
-              <span>Weights:</span>
-              <span class="text-[var(--text-secondary)] font-medium">{{ font.weights.join(', ') }}</span>
-            </div>
+        <!-- GOOGLE FONTS MODERN PAGINATION BAR (Pill Bar UX from screenshot) -->
+        <div v-if="googleTotalPages > 1" class="flex items-center justify-center pt-2">
+          <div class="inline-flex items-center gap-1.5 p-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl shadow-xs">
+            <!-- Prev Button -->
+            <button
+              type="button"
+              :disabled="googlePage <= 1"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs flex items-center gap-1"
+              @click="setGooglePage(googlePage - 1)"
+            >
+              <ChevronLeft class="w-3.5 h-3.5" />
+              <span>Prev</span>
+            </button>
 
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer underline underline-offset-2 font-medium"
-                @click="copySnippet(font, 'tailwind')"
+            <!-- Page Number Buttons -->
+            <template v-for="(item, idx) in getPaginationRange(googlePage, googleTotalPages)" :key="idx">
+              <span
+                v-if="item === '...'"
+                class="w-7 h-7 flex items-center justify-center text-xs text-[var(--text-tertiary)] font-mono select-none"
               >
-                Tailwind Config
+                ...
+              </span>
+              <button
+                v-else
+                type="button"
+                class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold transition-all cursor-pointer"
+                :class="
+                  googlePage === item
+                    ? 'bg-[#1E1E1E] text-white dark:bg-white dark:text-black shadow-xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                "
+                @click="setGooglePage(Number(item))"
+              >
+                {{ item }}
               </button>
-            </div>
+            </template>
+
+            <!-- Next Button -->
+            <button
+              type="button"
+              :disabled="googlePage >= googleTotalPages"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs flex items-center gap-1"
+              @click="setGooglePage(googlePage + 1)"
+            >
+              <span>Next</span>
+              <ChevronRight class="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
