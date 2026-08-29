@@ -17,13 +17,15 @@ import {
   Eye,
   Loader2,
   Sun,
-  Moon
+  Moon,
+  Info
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
+import FontDetailModal from '~/components/tools/FontDetailModal.vue'
 
 interface FontItem {
   id: string
@@ -72,8 +74,14 @@ const lineHeight = ref(1.4)
 const daFontResults = ref<DaFontItem[]>([])
 const isLoadingDaFont = ref(false)
 
-// Selected Font for Inspector Detail Modal / Drawer
-const selectedFont = ref<FontItem | null>(null)
+// Selected Font for Inspector Detail Modal
+const isDetailModalOpen = ref(false)
+const activeModalFont = ref<any>(null)
+
+const openFontDetail = (font: any) => {
+  activeModalFont.value = font
+  isDetailModalOpen.value = true
+}
 
 // Comprehensive Curated Catalog of 80+ Top Modern Typefaces
 const FONTS_DATABASE: FontItem[] = [
@@ -277,7 +285,7 @@ const pickRandomFont = () => {
   const randomIndex = Math.floor(Math.random() * filteredGoogleFonts.value.length)
   const font = filteredGoogleFonts.value[randomIndex]
   loadFontDynamically(font)
-  selectedFont.value = font
+  openFontDetail(font)
   toast.show({
     title: 'Random Font Selected',
     description: `Showing ${font.name} (${font.category})`,
@@ -310,7 +318,7 @@ const handleCustomFontUpload = async (e: Event) => {
     }
 
     customFonts.value.unshift(newFont)
-    selectedFont.value = newFont
+    openFontDetail(newFont)
     toast.show({
       title: 'Font Loaded',
       description: `Custom font "${fontName}" is ready to preview!`,
@@ -593,18 +601,24 @@ onMounted(() => {
         <div
           v-for="df in daFontResults"
           :key="df.id"
-          class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] rounded-[14px] transition-all space-y-4 flex flex-col justify-between shadow-xs"
+          class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] rounded-[14px] transition-all space-y-4 flex flex-col justify-between shadow-xs cursor-pointer group"
+          @click="openFontDetail(df)"
         >
           <!-- Card Header -->
           <div class="flex items-start justify-between gap-2">
-            <div>
-              <h3 class="font-bold text-sm text-[var(--text-primary)] tracking-tight">
-                {{ df.name }}
-              </h3>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-sm text-[var(--text-primary)] tracking-tight group-hover:underline underline-offset-2 truncate">
+                  {{ df.name }}
+                </h3>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)] font-mono shrink-0">
+                  Inspect
+                </span>
+              </div>
               <div class="flex items-center gap-2 mt-1 text-[11px] text-[var(--text-tertiary)]">
-                <span>by <strong class="text-[var(--text-secondary)] font-medium">{{ df.author }}</strong></span>
+                <span class="truncate">by <strong class="text-[var(--text-secondary)] font-medium">{{ df.author }}</strong></span>
                 <span>•</span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)] shrink-0">
                   {{ df.license }}
                 </span>
               </div>
@@ -617,6 +631,7 @@ onMounted(() => {
               rel="noopener noreferrer"
               class="px-3 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
               title="Download font ZIP archive"
+              @click.stop
             >
               <Download class="w-3.5 h-3.5" />
               <span>Download ZIP</span>
@@ -637,13 +652,13 @@ onMounted(() => {
               :alt="df.name"
               loading="lazy"
               decoding="async"
-              class="max-h-[76px] max-w-full object-contain transition-all"
+              class="max-h-[76px] max-w-full object-contain transition-all group-hover:scale-105"
               :class="specimenTheme === 'dark' ? 'invert brightness-200 contrast-150' : 'brightness-100 contrast-125'"
             />
           </div>
 
           <!-- Card Footer -->
-          <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]">
+          <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]" @click.stop>
             <span class="font-mono text-[10px] text-[var(--text-tertiary)]">Source: dafont.com</span>
             <div class="flex items-center gap-2">
               <button
@@ -654,15 +669,14 @@ onMounted(() => {
                 Copy Link
               </button>
               <span>•</span>
-              <a
-                :href="`https://www.dafont.com/${df.id}.font`"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-[var(--text-primary)] transition-colors flex items-center gap-1 font-medium"
+              <button
+                type="button"
+                class="hover:text-[var(--text-primary)] transition-colors cursor-pointer font-medium flex items-center gap-1"
+                @click="openFontDetail(df)"
               >
-                <span>View on DaFont</span>
-                <ExternalLink class="w-3 h-3" />
-              </a>
+                <span>Full Specimen</span>
+                <Info class="w-3 h-3" />
+              </button>
             </div>
           </div>
         </div>
@@ -703,17 +717,18 @@ onMounted(() => {
         <div
           v-for="font in filteredGoogleFonts"
           :key="font.id"
-          class="p-5 bg-[var(--bg-card)] border rounded-[14px] transition-all hover:border-[var(--border-card-hover)] space-y-4 relative group shadow-xs"
-          :class="selectedFont?.id === font.id ? 'border-[var(--border-active)] ring-1 ring-[var(--primary-glow)]' : 'border-[var(--border-card)]'"
+          class="p-5 bg-[var(--bg-card)] border rounded-[14px] transition-all hover:border-[var(--border-card-hover)] space-y-4 relative group shadow-xs cursor-pointer"
+          :class="activeModalFont?.id === font.id ? 'border-[var(--border-active)] ring-1 ring-[var(--primary-glow)]' : 'border-[var(--border-card)]'"
           @mouseenter="loadFontDynamically(font)"
+          @click="openFontDetail(font)"
         >
           <!-- Card Top Bar -->
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
-              <span class="font-bold text-sm text-[var(--text-primary)] tracking-tight truncate">
+              <span class="font-bold text-sm text-[var(--text-primary)] tracking-tight truncate group-hover:underline underline-offset-2">
                 {{ font.name }}
               </span>
-              <span class="px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider bg-[var(--bg-card-hover)] text-[var(--text-secondary)] rounded border border-[var(--border-subtle)]">
+              <span class="px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider bg-[var(--bg-card-hover)] text-[var(--text-secondary)] rounded border border-[var(--border-subtle)] shrink-0">
                 {{ font.category }}
               </span>
               <span v-if="font.designer" class="text-[11px] text-[var(--text-tertiary)] truncate hidden sm:inline">
@@ -722,7 +737,7 @@ onMounted(() => {
             </div>
 
             <!-- Quick Copy Actions -->
-            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity" @click.stop>
               <button
                 type="button"
                 class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
@@ -768,7 +783,7 @@ onMounted(() => {
           </div>
 
           <!-- Card Footer -->
-          <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]">
+          <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]" @click.stop>
             <div class="flex items-center gap-1 font-mono">
               <span>Weights:</span>
               <span class="text-[var(--text-secondary)] font-medium">{{ font.weights.join(', ') }}</span>
@@ -805,5 +820,12 @@ onMounted(() => {
         </Button>
       </Card>
     </div>
+
+    <!-- Full Font Detail Modal (DaFont Artwork, Mockups, Full Glyphs Map & Specs) -->
+    <FontDetailModal
+      v-model="isDetailModalOpen"
+      :font="activeModalFont"
+      :initial-preview-text="previewText"
+    />
   </div>
 </template>
