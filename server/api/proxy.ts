@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
 
     const upstream = await fetch(targetUrl, {
       headers: upstreamHeaders,
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(300000),
     })
 
     if (!upstream.ok && upstream.status !== 206) {

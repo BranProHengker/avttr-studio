@@ -97,10 +97,13 @@ export function useDownloader() {
     if (item && typeof item !== 'string' && item.filename) {
       filename = item.filename
     } else {
-      const safeTitle = (customTitle || result.value?.title || 'download')
-        .replace(/[^a-zA-Z0-9_.-]/g, '_')
+      const rawTitle = (customTitle || result.value?.title || 'download')
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .replace(/\s+/g, ' ')
+        .trim()
         .substring(0, 80)
-      filename = safeTitle.includes('.') ? safeTitle : `${safeTitle}.${ext}`
+      const cleanBase = rawTitle.replace(new RegExp(`\\.${ext}$`, 'i'), '')
+      filename = `${cleanBase}.${ext}`
     }
 
     const params = new URLSearchParams({
@@ -125,13 +128,16 @@ export function useDownloader() {
       return
     }
 
-    const downloadUrl = getProxiedUrl(item, customTitle, true)
-    
     const ext = item.format || (item.type === 'audio' ? 'mp3' : item.type === 'image' ? 'jpg' : 'mp4')
-    const safeTitle = (customTitle || result.value?.title || 'download')
-      .replace(/[^a-zA-Z0-9_.-]/g, '_')
+    const rawTitle = (customTitle || result.value?.title || 'download')
+      .replace(/[\\/:*?"<>|]/g, '_')
+      .replace(/\s+/g, ' ')
+      .trim()
       .substring(0, 80)
-    const filename = safeTitle.endsWith(`.${ext}`) ? safeTitle : `${safeTitle}.${ext}`
+    const cleanBase = rawTitle.replace(new RegExp(`\\.${ext}$`, 'i'), '')
+    const filename = `${cleanBase}.${ext}`
+
+    const downloadUrl = getProxiedUrl(item, filename, true)
 
     const link = document.createElement('a')
     link.href = downloadUrl
