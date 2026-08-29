@@ -18,15 +18,14 @@ import {
   Loader2,
   Sun,
   Moon,
-  Info,
-  ChevronLeft,
-  ChevronRight
+  Info
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
+import Pagination from '~/components/ui/Pagination.vue'
 import FontDetailModal from '~/components/tools/FontDetailModal.vue'
 
 interface FontItem {
@@ -213,23 +212,6 @@ const paginatedGoogleFonts = computed(() => {
   return filteredGoogleFonts.value.slice(start, start + googlePageSize.value)
 })
 
-// Pagination Range Calculation (Matches Pill Bar UX: 1 2 3 ... 10)
-const getPaginationRange = (currentPage: number, totalPages: number) => {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1)
-  }
-
-  if (currentPage <= 3) {
-    return [1, 2, 3, '...', totalPages]
-  }
-
-  if (currentPage >= totalPages - 2) {
-    return [1, '...', totalPages - 2, totalPages - 1, totalPages]
-  }
-
-  return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages]
-}
-
 // Dynamic Font Loading for Google Fonts
 const loadedFontsSet = new Set<string>()
 
@@ -289,17 +271,6 @@ const triggerDebouncedDaFontFetch = (resetPage = true) => {
   daFontDebounceTimer = setTimeout(() => {
     fetchDaFont()
   }, 400)
-}
-
-const setDaFontPage = (page: number) => {
-  if (page < 1 || page > daFontTotalPages.value || page === daFontPage.value) return
-  daFontPage.value = page
-  fetchDaFont()
-}
-
-const setGooglePage = (page: number) => {
-  if (page < 1 || page > googleTotalPages.value || page === googlePage.value) return
-  googlePage.value = page
 }
 
 // Watchers
@@ -741,55 +712,14 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- DAFONT MODERN PAGINATION BAR (Pill Bar UX from screenshot) -->
+        <!-- DAFONT REUSABLE PAGINATION COMPONENT -->
         <div v-if="daFontTotalPages > 1" class="flex items-center justify-center pt-2">
-          <div class="inline-flex items-center gap-1.5 p-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl shadow-xs">
-            <!-- Prev Button -->
-            <button
-              type="button"
-              :disabled="daFontPage <= 1 || isLoadingDaFont"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs flex items-center gap-1"
-              @click="setDaFontPage(daFontPage - 1)"
-            >
-              <ChevronLeft class="w-3.5 h-3.5" />
-              <span>Prev</span>
-            </button>
-
-            <!-- Page Number Buttons -->
-            <template v-for="(item, idx) in getPaginationRange(daFontPage, daFontTotalPages)" :key="idx">
-              <span
-                v-if="item === '...'"
-                class="w-7 h-7 flex items-center justify-center text-xs text-[var(--text-tertiary)] font-mono select-none"
-              >
-                ...
-              </span>
-              <button
-                v-else
-                type="button"
-                :disabled="isLoadingDaFont"
-                class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold transition-all cursor-pointer"
-                :class="
-                  daFontPage === item
-                    ? 'bg-[#1E1E1E] text-white dark:bg-white dark:text-black shadow-xs font-bold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-                @click="setDaFontPage(Number(item))"
-              >
-                {{ item }}
-              </button>
-            </template>
-
-            <!-- Next Button -->
-            <button
-              type="button"
-              :disabled="daFontPage >= daFontTotalPages || isLoadingDaFont"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs flex items-center gap-1"
-              @click="setDaFontPage(daFontPage + 1)"
-            >
-              <span>Next</span>
-              <ChevronRight class="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <Pagination
+            v-model="daFontPage"
+            :total-pages="daFontTotalPages"
+            :disabled="isLoadingDaFont"
+            @change="fetchDaFont"
+          />
         </div>
       </div>
 
@@ -914,54 +844,12 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- GOOGLE FONTS MODERN PAGINATION BAR (Pill Bar UX from screenshot) -->
+        <!-- GOOGLE FONTS REUSABLE PAGINATION COMPONENT -->
         <div v-if="googleTotalPages > 1" class="flex items-center justify-center pt-2">
-          <div class="inline-flex items-center gap-1.5 p-1.5 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl shadow-xs">
-            <!-- Prev Button -->
-            <button
-              type="button"
-              :disabled="googlePage <= 1"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs flex items-center gap-1"
-              @click="setGooglePage(googlePage - 1)"
-            >
-              <ChevronLeft class="w-3.5 h-3.5" />
-              <span>Prev</span>
-            </button>
-
-            <!-- Page Number Buttons -->
-            <template v-for="(item, idx) in getPaginationRange(googlePage, googleTotalPages)" :key="idx">
-              <span
-                v-if="item === '...'"
-                class="w-7 h-7 flex items-center justify-center text-xs text-[var(--text-tertiary)] font-mono select-none"
-              >
-                ...
-              </span>
-              <button
-                v-else
-                type="button"
-                class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold transition-all cursor-pointer"
-                :class="
-                  googlePage === item
-                    ? 'bg-[#1E1E1E] text-white dark:bg-white dark:text-black shadow-xs font-bold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-                @click="setGooglePage(Number(item))"
-              >
-                {{ item }}
-              </button>
-            </template>
-
-            <!-- Next Button -->
-            <button
-              type="button"
-              :disabled="googlePage >= googleTotalPages"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs flex items-center gap-1"
-              @click="setGooglePage(googlePage + 1)"
-            >
-              <span>Next</span>
-              <ChevronRight class="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <Pagination
+            v-model="googlePage"
+            :total-pages="googleTotalPages"
+          />
         </div>
       </div>
 
