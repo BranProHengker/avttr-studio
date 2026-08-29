@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
       params.set('q', searchQuery)
       url = `https://www.dafont.com/search.php?${params.toString()}`
     } else {
-      // Default to top / new popular fonts
+      // Default to popular / new fonts
       url = `https://www.dafont.com/new.php?${params.toString()}`
     }
 
@@ -58,8 +58,12 @@ export default defineEventHandler(async (event) => {
     const $ = cheerio.load(html)
     const fonts: DaFontItem[] = []
 
-    // Parse each font card in DaFont
-    $('div.preview, div.dfpreview').each((i, el) => {
+    // Parse all matching font preview cards
+    $('div.preview').each((i, el) => {
+      const slugHref = $(el).find("a[href*='.font']").attr('href') || ''
+      if (!slugHref) return
+
+      const slug = slugHref.replace(/\.font.*$/, '')
       const style = $(el).attr('style') || ''
       const bgMatch = style.match(/url\(([^)]+)\)/i)
       let previewUrl = bgMatch ? bgMatch[1].replace(/['"]/g, '') : ''
@@ -70,44 +74,47 @@ export default defineEventHandler(async (event) => {
         previewUrl = `https://www.dafont.com${previewUrl.startsWith('/') ? '' : '/'}${previewUrl}`
       }
 
-      // Title & slug from link inside preview or surrounding elements
-      const fontLink = $(el).find('a').first().attr('href') || ''
-      const slugMatch = fontLink.match(/([a-zA-Z0-9_-]+)\.font/i)
-      const slug = slugMatch ? slugMatch[1] : (previewUrl.match(/ttf=([a-zA-Z0-9_-]+)/)?.[1] || `font_${i}`)
+      // Extract header details (Title & Author)
+      const header = $(el).prevAll('div.lv1left').first()
+      const right = $(el).prevAll('div.lv2right, div.lv1right').first()
 
-      // Title from previous lv1left
-      const prevHeader = $(el).prevAll('div.lv1left').first()
-      const nextHeader = $(el).parent().find('div.lv1left').first()
-      const titleEl = prevHeader.find('a').first().length ? prevHeader.find('a').first() : nextHeader.find('a').first()
-      
-      let title = titleEl.text().trim()
-      if (!title) {
-        title = slug.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+      let fontTitle = ''
+      if (header.length > 0) {
+        // Priority 1: Link pointing to .font
+        const titleLink = header.find("a[href*='.font']").first()
+        if (titleLink.length) {
+          fontTitle = titleLink.text().trim()
+        }
+
+        // Priority 2: Extract text before ' by ' while removing accent indicators
+        if (!fontTitle) {
+          const headerHtml = header.html() || ''
+          const beforeBy = headerHtml.split(/\s+by\s+/i)[0] || ''
+          const cleanBeforeBy = cheerio.load(`<div>${beforeBy}</div>`)('div')
+          cleanBeforeBy.find('span.contain, img').remove()
+          fontTitle = cleanBeforeBy.text().replace(/€/g, '').trim()
+        }
       }
 
-      // Author from lv1left
-      const authorEl = prevHeader.find("a[href*='author.php'], a[href*='.d']").first()
-      const author = authorEl.text().trim() || 'DaFont Creator'
+      // Fallback clean title from slug if title is empty or single character
+      if (!fontTitle || fontTitle === 'à' || fontTitle.length <= 1) {
+        fontTitle = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+      }
 
-      // License from surrounding text
-      const surroundingText = $(el).parent().text()
-      const licenseMatch = surroundingText.match(/(Free for personal use|100% Free|Public domain|Donationware|Shareware|Demo)/i)
+      const author = header.find("a[href*='author.php'], a[href*='.d']").first().text().trim() || 'DaFont Designer'
+      const licenseMatch = right.text().match(/(Free for personal use|100% Free|Public domain|Donationware|Shareware|Demo)/i)
       const license = licenseMatch ? licenseMatch[0] : 'Free for personal use'
 
-      // Download Link
-      const dlLink = `https://dl.dafont.com/dl/?f=${slug}`
-
-      if (slug && (previewUrl || title)) {
-        fonts.push({
-          id: slug,
-          name: title,
-          author,
-          license,
-          previewUrl: previewUrl || `https://img.dafont.com/preview.php?font=${slug}&size=50`,
-          downloadUrl: dlLink,
-          source: 'dafont',
-        })
-      }
+      const dlSlug = slug.replace(/-/g, '_')
+      fonts.push({
+        id: slug,
+        name: fontTitle,
+        author,
+        license,
+        previewUrl: previewUrl || `https://img.dafont.com/preview.php?font=${dlSlug}&size=50`,
+        downloadUrl: `https://dl.dafont.com/dl/?f=${dlSlug}`,
+        source: 'dafont',
+      })
     })
 
     return {
