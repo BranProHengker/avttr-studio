@@ -111,7 +111,8 @@ export default defineEventHandler(async (event) => {
     if (contentRange) responseHeaders['Content-Range'] = contentRange
 
     if (isDownload) {
-      responseHeaders['Content-Disposition'] = `attachment; filename="${encodeURIComponent(filename)}"`
+      const cleanAsciiFilename = filename.replace(/[^\w\s.-]/gi, '_')
+      responseHeaders['Content-Disposition'] = `attachment; filename="${cleanAsciiFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`
     }
 
     setResponseStatus(event, upstream.status)

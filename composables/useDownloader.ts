@@ -127,14 +127,26 @@ export function useDownloader() {
 
     const downloadUrl = getProxiedUrl(item, customTitle, true)
     
+    const ext = item.format || (item.type === 'audio' ? 'mp3' : item.type === 'image' ? 'jpg' : 'mp4')
+    const safeTitle = (customTitle || result.value?.title || 'download')
+      .replace(/[^a-zA-Z0-9_.-]/g, '_')
+      .substring(0, 80)
+    const filename = safeTitle.endsWith(`.${ext}`) ? safeTitle : `${safeTitle}.${ext}`
+
     const link = document.createElement('a')
     link.href = downloadUrl
-    link.setAttribute('download', '')
-    link.setAttribute('target', '_blank')
+    link.download = filename
+    link.style.display = 'none'
     document.body.appendChild(link)
     link.click()
-    document.body.removeChild(link)
-    toast.info('Download Started', 'Your file download has been initiated')
+    
+    setTimeout(() => {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link)
+      }
+    }, 200)
+
+    toast.info('Download Started', `Downloading ${filename}...`)
   }
 
   const reset = () => {
