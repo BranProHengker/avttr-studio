@@ -374,6 +374,17 @@ const isRouteActive = (targetRoute: string) => {
                 QR Code Generator
               </NuxtLink>
               <NuxtLink
+                to="/tools/brat-generator"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/brat-generator')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Brat Text Generator
+              </NuxtLink>
+              <NuxtLink
                 to="/tools/hash-encoder"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="

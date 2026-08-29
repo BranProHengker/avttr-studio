@@ -128,6 +128,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'brat-generator',
+        title: 'Brat Text Generator',
+        description: 'Generate authentic Charli XCX Brat album-style blurred text, memes, and word-by-word animated GIFs.',
+        category: 'image',
+        icon: 'type',
+        route: '/tools/brat-generator',
+        badge: 'Popular',
+        popular: true,
+      },
+      {
         id: 'base64-image',
         title: 'Base64 & Hash Encoder',
         description: 'Convert files to Base64, generate SHA-256 / SHA-512 hashes via Web Crypto API.',

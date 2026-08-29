@@ -222,7 +222,7 @@ const normalized = computed(() => props.name.toLowerCase())
 
     <!-- Font Explorer Vector -->
     <svg
-      v-else-if="normalized === 'font-explorer' || normalized === 'font-tester' || normalized === 'typography'"
+      v-else-if="normalized === 'font-explorer' || normalized === 'font-tester' || normalized === 'typography' || normalized === 'brat-generator' || normalized === 'brat' || normalized === 'type'"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
