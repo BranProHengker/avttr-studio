@@ -425,15 +425,15 @@ const isRouteActive = (targetRoute: string) => {
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
               <NuxtLink
-                to="/tools/font-explorer"
+                to="/tools/font-library"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
-                  isRouteActive('/tools/font-explorer')
+                  isRouteActive('/tools/font-library')
                     ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                Font Explorer & Tester
+                Font Library
               </NuxtLink>
               <NuxtLink
                 to="/tools/color-converter"

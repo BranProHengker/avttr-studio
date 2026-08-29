@@ -6,17 +6,16 @@ import {
   Copy,
   Download,
   Upload,
-  Sparkles,
-  Sliders,
   Check,
   Type,
   Code,
   ExternalLink,
-  ChevronRight,
   RefreshCw,
+  Sliders,
+  Globe,
   Palette,
   Eye,
-  Trash2
+  Loader2
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
@@ -36,20 +35,37 @@ interface FontItem {
   customBlobUrl?: string
 }
 
+export interface DaFontItem {
+  id: string
+  name: string
+  author: string
+  license: string
+  previewUrl: string
+  downloadUrl: string
+  source: 'dafont'
+  category?: string
+}
+
 const toast = useToast()
 const { copy } = useClipboard()
+
+// Active Source Tab: 'google' | 'dafont' | 'all'
+const activeSource = ref<'all' | 'google' | 'dafont'>('all')
 
 // Search & Filter State
 const searchQuery = ref('')
 const selectedCategory = ref<string>('all')
+const selectedDaFontCat = ref<string>('')
 const previewText = ref('The quick brown fox jumps over the lazy dog')
 
 // Playground Controls
 const fontSize = ref(32)
-const fontWeight = ref(400)
 const letterSpacing = ref(0)
 const lineHeight = ref(1.4)
-const isDarkModePreview = ref(true)
+
+// DaFont Scraping State
+const daFontResults = ref<DaFontItem[]>([])
+const isLoadingDaFont = ref(false)
 
 // Selected Font for Inspector Detail Modal / Drawer
 const selectedFont = ref<FontItem | null>(null)
@@ -122,18 +138,32 @@ const FONTS_DATABASE: FontItem[] = [
 
 const customFonts = ref<FontItem[]>([])
 
-const allFonts = computed(() => {
+const allGoogleFonts = computed(() => {
   return [...customFonts.value, ...FONTS_DATABASE]
 })
 
 const categories = [
-  { id: 'all', label: 'All Types' },
+  { id: 'all', label: 'All WebFonts' },
   { id: 'sans-serif', label: 'Sans-Serif' },
   { id: 'serif', label: 'Serif & Luxury' },
   { id: 'display', label: 'Display & Bold' },
   { id: 'monospace', label: 'Monospace' },
   { id: 'handwriting', label: 'Handwriting' },
   { id: 'retro', label: 'Pixel & Retro' },
+]
+
+// DaFont Curated Theme Categories
+const daFontCategories = [
+  { id: '', label: 'Popular / New' },
+  { id: '603', label: 'Retro & Vintage' },
+  { id: '303', label: 'Techno & Sci-Fi' },
+  { id: '401', label: 'Gothic & Medieval' },
+  { id: '601', label: 'Script & Calligraphy' },
+  { id: '605', label: 'Graffiti & Urban' },
+  { id: '110', label: 'Horror & Halloween' },
+  { id: '102', label: 'Comic & Cartoon' },
+  { id: '304', label: 'Y2K & Cyber' },
+  { id: '203', label: 'Typewriter' },
 ]
 
 const textPresets = [
@@ -143,16 +173,17 @@ const textPresets = [
   { label: 'Headline', text: 'Crafting Next-Gen Visual Experiences' },
 ]
 
-// Filtered Fonts based on Search Query & Category
-const filteredFonts = computed(() => {
-  return allFonts.value.filter((font) => {
+// Filtered Google Fonts
+const filteredGoogleFonts = computed(() => {
+  if (activeSource.value === 'dafont') return []
+  return allGoogleFonts.value.filter((font) => {
     const matchesCategory = selectedCategory.value === 'all' || font.category === selectedCategory.value
     const matchesSearch = font.name.toLowerCase().includes(searchQuery.value.toLowerCase()) || font.designer?.toLowerCase().includes(searchQuery.value.toLowerCase())
     return matchesCategory && matchesSearch
   })
 })
 
-// Dynamic Font Loading Function
+// Dynamic Font Loading for Google Fonts
 const loadedFontsSet = new Set<string>()
 
 const loadFontDynamically = (font: FontItem) => {
@@ -175,9 +206,60 @@ const loadFontDynamically = (font: FontItem) => {
   }
 }
 
-// Ensure visible fonts are loaded
+// Fetch DaFont Results via Nitro API
+let daFontDebounceTimer: any = null
+
+const fetchDaFont = async () => {
+  if (activeSource.value === 'google') return
+
+  isLoadingDaFont.value = true
+  try {
+    const params = new URLSearchParams()
+    if (searchQuery.value.trim()) params.set('q', searchQuery.value.trim())
+    if (selectedDaFontCat.value) params.set('cat', selectedDaFontCat.value)
+    if (previewText.value.trim()) params.set('text', previewText.value.trim())
+
+    const data: any = await $fetch(`/api/fonts/dafont?${params.toString()}`)
+    if (data?.success && Array.isArray(data.fonts)) {
+      daFontResults.value = data.fonts
+    } else {
+      daFontResults.value = []
+    }
+  } catch {
+    daFontResults.value = []
+  } finally {
+    isLoadingDaFont.value = false
+  }
+}
+
+const triggerDebouncedDaFontFetch = () => {
+  if (daFontDebounceTimer) clearTimeout(daFontDebounceTimer)
+  daFontDebounceTimer = setTimeout(() => {
+    fetchDaFont()
+  }, 400)
+}
+
+// Watchers
 watch(
-  filteredFonts,
+  [searchQuery, selectedDaFontCat, activeSource],
+  () => {
+    if (activeSource.value !== 'google') {
+      triggerDebouncedDaFontFetch()
+    }
+  }
+)
+
+watch(
+  previewText,
+  () => {
+    if (activeSource.value !== 'google') {
+      triggerDebouncedDaFontFetch()
+    }
+  }
+)
+
+watch(
+  filteredGoogleFonts,
   (fonts) => {
     fonts.slice(0, 30).forEach((f) => loadFontDynamically(f))
   },
@@ -186,12 +268,16 @@ watch(
 
 // Random Font Picker (Shuffle)
 const pickRandomFont = () => {
-  if (filteredFonts.value.length === 0) return
-  const randomIndex = Math.floor(Math.random() * filteredFonts.value.length)
-  const font = filteredFonts.value[randomIndex]
+  if (filteredGoogleFonts.value.length === 0) return
+  const randomIndex = Math.floor(Math.random() * filteredGoogleFonts.value.length)
+  const font = filteredGoogleFonts.value[randomIndex]
   loadFontDynamically(font)
   selectedFont.value = font
-  toast.success('Random Font Selected', `Showing ${font.name} (${font.category})`)
+  toast.show({
+    title: 'Random Font Selected',
+    description: `Showing ${font.name} (${font.category})`,
+    type: 'success',
+  })
 }
 
 // Custom Font File Upload (.ttf, .otf, .woff, .woff2)
@@ -220,9 +306,17 @@ const handleCustomFontUpload = async (e: Event) => {
 
     customFonts.value.unshift(newFont)
     selectedFont.value = newFont
-    toast.success('Font Loaded', `Custom font "${fontName}" is ready to preview!`)
+    toast.show({
+      title: 'Font Loaded',
+      description: `Custom font "${fontName}" is ready to preview!`,
+      type: 'success',
+    })
   } catch (err: any) {
-    toast.error('Font Load Failed', err.message || 'Could not parse font file')
+    toast.show({
+      title: 'Font Load Failed',
+      description: err.message || 'Could not parse font file',
+      type: 'error',
+    })
   }
 }
 
@@ -245,12 +339,11 @@ const getEmbedCode = (font: FontItem, type: 'html' | 'css' | 'import' | 'tailwin
 
 const copySnippet = (font: FontItem, type: 'html' | 'css' | 'import' | 'tailwind') => {
   const code = getEmbedCode(font, type)
-  copy(code, `${type.toUpperCase()} snippet`)
+  copy(code)
 }
 
 // Keyboard Spacebar Shortcut for Random Font
 const handleKeyDown = (e: KeyboardEvent) => {
-  // If user is focused on an input/textarea, do not trigger space shuffle
   const activeEl = document.activeElement
   if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return
 
@@ -263,14 +356,14 @@ const handleKeyDown = (e: KeyboardEvent) => {
 onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeyDown)
-    // Preload top fonts
     FONTS_DATABASE.slice(0, 15).forEach((f) => loadFontDynamically(f))
+    fetchDaFont()
   }
 })
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 max-w-7xl mx-auto pb-12">
     <!-- Header & Breadcrumbs -->
     <div>
       <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
@@ -280,16 +373,16 @@ onMounted(() => {
         <span>/</span>
         <span class="text-[var(--text-secondary)] font-medium">Tools</span>
         <span>/</span>
-        <span class="text-[var(--text-primary)]">Font Explorer & Tester</span>
+        <span class="text-[var(--text-primary)]">Font Library</span>
       </div>
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            Font Explorer & Tester
+            Font Library
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Browse, search, shuffle random fonts, and test 80+ curated modern typefaces with instant CSS embed snippets.
+            Browse, search, and live-preview Google Fonts & DaFont directory with instant ZIP downloads and CSS embeds.
           </p>
         </div>
 
@@ -297,17 +390,50 @@ onMounted(() => {
           <!-- Random Font Button -->
           <Button variant="primary" class="font-semibold text-xs shadow-xs" @click="pickRandomFont">
             <Shuffle class="w-3.5 h-3.5 mr-1.5" />
-            Random Font <kbd class="ml-1.5 px-1.5 py-0.5 text-[10px] bg-black/20 text-white rounded">Space</kbd>
+            Random WebFont <kbd class="ml-1.5 px-1.5 py-0.5 text-[10px] bg-black/20 text-white rounded">Space</kbd>
           </Button>
 
           <!-- Custom Font Upload Label -->
-          <label class="px-3 py-2 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-white/40 text-xs text-white rounded-lg transition-all cursor-pointer flex items-center gap-1.5">
+          <label class="px-3 py-2 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-white/40 text-xs text-white rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-xs">
             <Upload class="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
             <span>Upload Font</span>
             <input type="file" accept=".ttf,.otf,.woff,.woff2" class="hidden" @change="handleCustomFontUpload" />
           </label>
         </div>
       </div>
+    </div>
+
+    <!-- Source Selector Segmented Tabs -->
+    <div class="p-1 bg-[#1F1F1F] border border-[var(--border-subtle)] rounded-xl inline-flex gap-1">
+      <button
+        type="button"
+        class="flex items-center gap-2 py-2 px-4 rounded-lg text-xs transition-all cursor-pointer"
+        :class="activeSource === 'all' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+        @click="activeSource = 'all'"
+      >
+        <Globe class="w-4 h-4" />
+        <span>All Fonts (Google & DaFont)</span>
+      </button>
+
+      <button
+        type="button"
+        class="flex items-center gap-2 py-2 px-4 rounded-lg text-xs transition-all cursor-pointer"
+        :class="activeSource === 'google' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+        @click="activeSource = 'google'"
+      >
+        <Type class="w-4 h-4" />
+        <span>Google WebFonts</span>
+      </button>
+
+      <button
+        type="button"
+        class="flex items-center gap-2 py-2 px-4 rounded-lg text-xs transition-all cursor-pointer"
+        :class="activeSource === 'dafont' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+        @click="activeSource = 'dafont'"
+      >
+        <Palette class="w-4 h-4" />
+        <span>DaFont Directory (ZIP Downloads)</span>
+      </button>
     </div>
 
     <!-- Playground Customizer Omnibar -->
@@ -320,7 +446,7 @@ onMounted(() => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search 80+ fonts (e.g. Inter, Satoshi, Clash)..."
+            placeholder="Search fonts across Google Fonts & DaFont..."
             class="w-full pl-10 pr-3 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10"
           />
         </div>
@@ -351,8 +477,8 @@ onMounted(() => {
 
       <!-- Categories & Controls Row -->
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-2 border-t border-[var(--border-subtle)]">
-        <!-- Category Filter Pills -->
-        <div class="flex flex-wrap items-center gap-1.5">
+        <!-- Category Filter Pills (Google Fonts or DaFont) -->
+        <div v-if="activeSource !== 'dafont'" class="flex flex-wrap items-center gap-1.5">
           <button
             v-for="cat in categories"
             :key="cat.id"
@@ -369,9 +495,26 @@ onMounted(() => {
           </button>
         </div>
 
-        <!-- Slider Controls (Size, Weight, Spacing) -->
+        <!-- DaFont Category Theme Pills -->
+        <div v-else class="flex flex-wrap items-center gap-1.5">
+          <button
+            v-for="cat in daFontCategories"
+            :key="cat.id"
+            type="button"
+            class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer"
+            :class="
+              selectedDaFontCat === cat.id
+                ? 'bg-white text-black font-semibold shadow-xs'
+                : 'bg-[var(--bg-input)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:text-white'
+            "
+            @click="selectedDaFontCat = cat.id"
+          >
+            {{ cat.label }}
+          </button>
+        </div>
+
+        <!-- Slider Controls (Size, Weight, Spacing) for WebFonts -->
         <div class="flex flex-wrap items-center gap-4 text-xs text-[var(--text-secondary)]">
-          <!-- Size Slider -->
           <div class="flex items-center gap-2">
             <span>Size:</span>
             <input
@@ -385,7 +528,6 @@ onMounted(() => {
             <span class="font-mono text-white w-8 text-right">{{ fontSize }}px</span>
           </div>
 
-          <!-- Letter Spacing -->
           <div class="flex items-center gap-2">
             <span>Spacing:</span>
             <input
@@ -402,102 +544,186 @@ onMounted(() => {
       </div>
     </Card>
 
-    <!-- Font Cards Grid -->
-    <div v-if="filteredFonts.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div
-        v-for="font in filteredFonts"
-        :key="font.id"
-        class="p-5 bg-[var(--bg-card)] border rounded-[14px] transition-all hover:border-white/30 space-y-4 relative group"
-        :class="selectedFont?.id === font.id ? 'border-white/40 ring-1 ring-white/20' : 'border-[var(--border-card)]'"
-        @mouseenter="loadFontDynamically(font)"
-      >
-        <!-- Card Top Bar: Name, Category, and Embed Action -->
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span class="font-bold text-sm text-white tracking-tight truncate">
-              {{ font.name }}
-            </span>
-            <span class="px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider bg-[#212121] text-[var(--text-tertiary)] rounded border border-[#2E2E2E]">
-              {{ font.category }}
-            </span>
-            <span v-if="font.designer" class="text-[11px] text-[var(--text-tertiary)] truncate hidden sm:inline">
-              by {{ font.designer }}
-            </span>
-          </div>
-
-          <!-- Quick Copy Actions -->
-          <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-            <button
-              type="button"
-              class="p-1.5 text-[var(--text-tertiary)] hover:text-white bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
-              title="Copy CSS font-family"
-              @click="copySnippet(font, 'css')"
-            >
-              <Code class="w-3 h-3" />
-              <span>CSS</span>
-            </button>
-
-            <button
-              type="button"
-              class="p-1.5 text-[var(--text-tertiary)] hover:text-white bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
-              title="Copy @import URL"
-              @click="copySnippet(font, 'import')"
-            >
-              <Copy class="w-3 h-3" />
-              <span>@import</span>
-            </button>
-          </div>
+    <!-- SECTION: DaFont Directory Scraped Results -->
+    <div v-if="activeSource === 'dafont' || (activeSource === 'all' && daFontResults.length > 0)" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <Palette class="w-4 h-4 text-[var(--text-secondary)]" />
+          <h2 class="text-sm font-mono uppercase tracking-wider font-semibold text-[var(--text-primary)]">
+            DaFont Directory Specimens ({{ daFontResults.length }} fonts)
+          </h2>
         </div>
-
-        <!-- Live Font Preview Viewport -->
-        <div class="py-2 min-h-[90px] flex items-center overflow-hidden">
-          <div
-            class="w-full text-white break-words transition-all select-all leading-normal"
-            :style="{
-              fontFamily: `'${font.name}', sans-serif`,
-              fontSize: `${fontSize}px`,
-              letterSpacing: `${letterSpacing}px`,
-              lineHeight: lineHeight,
-            }"
-          >
-            {{ previewText || font.name }}
-          </div>
+        <div v-if="isLoadingDaFont" class="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] font-mono">
+          <Loader2 class="w-3.5 h-3.5 animate-spin" />
+          <span>Searching DaFont...</span>
         </div>
+      </div>
 
-        <!-- Card Footer: Available Weights & Snippets -->
-        <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)]/60 text-[11px] text-[var(--text-tertiary)]">
-          <div class="flex items-center gap-1 font-mono">
-            <span>Weights:</span>
-            <span class="text-white">{{ font.weights.join(', ') }}</span>
+      <!-- DaFont Cards Grid -->
+      <div v-if="daFontResults.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          v-for="df in daFontResults"
+          :key="df.id"
+          class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-white/30 rounded-[14px] transition-all space-y-4 flex flex-col justify-between"
+        >
+          <!-- Card Header -->
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm text-white tracking-tight">
+                {{ df.name }}
+              </h3>
+              <div class="flex items-center gap-2 mt-1 text-[11px] text-[var(--text-tertiary)]">
+                <span>by <strong class="text-[var(--text-secondary)]">{{ df.author }}</strong></span>
+                <span>•</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#212121] text-[var(--text-secondary)] border border-[#2E2E2E]">
+                  {{ df.license }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Download ZIP Action -->
+            <a
+              :href="df.downloadUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-3 py-1.5 bg-white text-black hover:bg-zinc-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
+              title="Download font ZIP archive"
+            >
+              <Download class="w-3.5 h-3.5" />
+              <span>Download ZIP</span>
+            </a>
           </div>
 
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer underline underline-offset-2"
-              @click="copySnippet(font, 'tailwind')"
-            >
-              Tailwind Config
-            </button>
+          <!-- DaFont Live Specimen Image Preview -->
+          <div class="py-2 px-3 bg-black/60 rounded-lg border border-[var(--border-subtle)] min-h-[90px] flex items-center justify-center overflow-hidden">
+            <img
+              :src="df.previewUrl"
+              :alt="df.name"
+              loading="lazy"
+              decoding="async"
+              class="max-h-[80px] max-w-full object-contain filter invert opacity-90 hover:opacity-100 transition-opacity"
+            />
+          </div>
+
+          <!-- Card Footer -->
+          <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)]/60 text-[11px] text-[var(--text-tertiary)]">
+            <span class="font-mono text-[10px] text-[var(--text-tertiary)]">Source: dafont.com</span>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="hover:text-white transition-colors cursor-pointer"
+                @click="copy(df.downloadUrl)"
+              >
+                Copy Link
+              </button>
+              <span>•</span>
+              <a
+                :href="`https://www.dafont.com/${df.id}.font`"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-white transition-colors flex items-center gap-1"
+              >
+                <span>View on DaFont</span>
+                <ExternalLink class="w-3 h-3" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Empty Search State -->
-    <Card v-else :hoverable="false" class="p-12 text-center space-y-3">
-      <div class="w-12 h-12 rounded-xl bg-[var(--bg-input)] border border-[var(--border-subtle)] mx-auto flex items-center justify-center text-[var(--text-tertiary)]">
-        <Type class="w-6 h-6" />
+    <!-- SECTION: Google WebFonts Catalog -->
+    <div v-if="activeSource === 'google' || activeSource === 'all'" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <Type class="w-4 h-4 text-[var(--text-secondary)]" />
+          <h2 class="text-sm font-mono uppercase tracking-wider font-semibold text-[var(--text-primary)]">
+            Google WebFonts ({{ filteredGoogleFonts.length }} fonts)
+          </h2>
+        </div>
       </div>
-      <div class="space-y-1">
-        <h3 class="text-sm font-semibold text-white">No fonts found</h3>
-        <p class="text-xs text-[var(--text-secondary)]">
-          Try searching for another typeface name or switch categories.
-        </p>
+
+      <!-- Google Font Cards Grid -->
+      <div v-if="filteredGoogleFonts.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          v-for="font in filteredGoogleFonts"
+          :key="font.id"
+          class="p-5 bg-[var(--bg-card)] border rounded-[14px] transition-all hover:border-white/30 space-y-4 relative group"
+          :class="selectedFont?.id === font.id ? 'border-white/40 ring-1 ring-white/20' : 'border-[var(--border-card)]'"
+          @mouseenter="loadFontDynamically(font)"
+        >
+          <!-- Card Top Bar -->
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="font-bold text-sm text-white tracking-tight truncate">
+                {{ font.name }}
+              </span>
+              <span class="px-2 py-0.5 text-[10px] uppercase font-mono tracking-wider bg-[#212121] text-[var(--text-tertiary)] rounded border border-[#2E2E2E]">
+                {{ font.category }}
+              </span>
+              <span v-if="font.designer" class="text-[11px] text-[var(--text-tertiary)] truncate hidden sm:inline">
+                by {{ font.designer }}
+              </span>
+            </div>
+
+            <!-- Quick Copy Actions -->
+            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                class="p-1.5 text-[var(--text-tertiary)] hover:text-white bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                title="Copy CSS font-family"
+                @click="copySnippet(font, 'css')"
+              >
+                <Code class="w-3 h-3" />
+                <span>CSS</span>
+              </button>
+
+              <button
+                type="button"
+                class="p-1.5 text-[var(--text-tertiary)] hover:text-white bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                title="Copy @import URL"
+                @click="copySnippet(font, 'import')"
+              >
+                <Copy class="w-3 h-3" />
+                <span>@import</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Font Preview Viewport -->
+          <div class="py-2 min-h-[90px] flex items-center overflow-hidden">
+            <div
+              class="w-full text-white break-words transition-all select-all leading-normal"
+              :style="{
+                fontFamily: `'${font.name}', sans-serif`,
+                fontSize: `${fontSize}px`,
+                letterSpacing: `${letterSpacing}px`,
+                lineHeight: lineHeight,
+              }"
+            >
+              {{ previewText || font.name }}
+            </div>
+          </div>
+
+          <!-- Card Footer -->
+          <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)]/60 text-[11px] text-[var(--text-tertiary)]">
+            <div class="flex items-center gap-1 font-mono">
+              <span>Weights:</span>
+              <span class="text-white">{{ font.weights.join(', ') }}</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer underline underline-offset-2"
+                @click="copySnippet(font, 'tailwind')"
+              >
+                Tailwind Config
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <Button size="sm" variant="secondary" @click="searchQuery = ''; selectedCategory = 'all'">
-        Reset Search
-      </Button>
-    </Card>
+    </div>
   </div>
 </template>
