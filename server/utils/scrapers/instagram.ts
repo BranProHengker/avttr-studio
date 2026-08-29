@@ -16,37 +16,28 @@ function unwrapCdnUrl(urlStr: string): string {
   return urlStr
 }
 
-function parseMediaItems(dataObj: any, meta: any): MediaItem[] {
+function parseMediaItems(dataObj: any, fallbackThumb?: string): MediaItem[] {
   const medias: MediaItem[] = []
-  let itemsToParse: any[] = []
+  const seenUrls = new Set<string>()
 
-  if (Array.isArray(dataObj)) {
-    itemsToParse = dataObj
-  } else if (Array.isArray(dataObj?.url)) {
-    itemsToParse = dataObj.url
-  } else if (Array.isArray(dataObj?.data)) {
-    itemsToParse = dataObj.data
-  } else if (dataObj?.url && typeof dataObj.url === 'string') {
-    itemsToParse = [dataObj]
-  } else {
-    itemsToParse = [dataObj]
-  }
-
-  for (const item of itemsToParse) {
-    if (!item) continue
+  const collectMedia = (item: any) => {
+    if (!item) return
 
     // If item is direct string URL
     if (typeof item === 'string' && item.startsWith('http')) {
       const directUrl = unwrapCdnUrl(item)
+      if (seenUrls.has(directUrl)) return
+      seenUrls.add(directUrl)
+
       const isImage = directUrl.includes('.jpg') || directUrl.includes('.jpeg') || directUrl.includes('.webp') || directUrl.includes('.png')
       medias.push({
         type: isImage ? 'image' : 'video',
         url: directUrl,
         quality: 'HD',
         format: isImage ? 'jpg' : 'mp4',
-        thumbnail: unwrapCdnUrl(dataObj?.thumb || meta?.thumb || directUrl),
+        thumbnail: unwrapCdnUrl(fallbackThumb || directUrl),
       })
-      continue
+      return
     }
 
     // If item is object
@@ -54,18 +45,50 @@ function parseMediaItems(dataObj: any, meta: any): MediaItem[] {
       const rawMediaUrl = item.url || item.download_url || item.download || item.video || item.link || item.media || item.src
       if (rawMediaUrl && typeof rawMediaUrl === 'string' && rawMediaUrl.startsWith('http')) {
         const directUrl = unwrapCdnUrl(rawMediaUrl)
+        if (seenUrls.has(directUrl)) return
+        seenUrls.add(directUrl)
+
         const isImage = item.type === 'image' || directUrl.includes('.jpg') || directUrl.includes('.jpeg') || directUrl.includes('.webp') || directUrl.includes('.png')
         medias.push({
           type: isImage ? 'image' : 'video',
           url: directUrl,
           quality: item.subname || (item.quality ? `${item.quality}p` : 'HD'),
           format: item.ext || (isImage ? 'jpg' : 'mp4'),
-          thumbnail: unwrapCdnUrl(item.thumb || item.thumbnail || dataObj?.thumb || meta?.thumb || directUrl),
+          thumbnail: unwrapCdnUrl(item.thumb || item.thumbnail || fallbackThumb || directUrl),
         })
       }
     }
   }
 
+  const unpack = (target: any) => {
+    if (!target) return
+
+    if (Array.isArray(target)) {
+      for (const el of target) {
+        unpack(el)
+      }
+      return
+    }
+
+    if (typeof target === 'object') {
+      // If target has an array of urls or items
+      if (Array.isArray(target.url)) {
+        for (const u of target.url) collectMedia(u)
+      } else if (Array.isArray(target.data)) {
+        for (const d of target.data) unpack(d)
+      } else if (Array.isArray(target.medias)) {
+        for (const m of target.medias) collectMedia(m)
+      } else if (Array.isArray(target.images)) {
+        for (const im of target.images) collectMedia(im)
+      } else if (Array.isArray(target.picker)) {
+        for (const p of target.picker) collectMedia(p)
+      } else {
+        collectMedia(target)
+      }
+    }
+  }
+
+  unpack(dataObj)
   return medias
 }
 
@@ -76,7 +99,7 @@ export const instagramScraper: PlatformScraper = {
   async resolve(url: string): Promise<ScraperResult> {
     const cleanUrl = url.trim()
 
-    // Strategy 1: Siputzx SSSInstagram Engine (Primary - Ultra Fast for Reels & Videos)
+    // Strategy 1: Siputzx SSSInstagram Engine (Primary - Fast for Reels & Multi-Slide Media)
     try {
       const apiUrl = `https://api.siputzx.my.id/api/d/sssinstagram?url=${encodeURIComponent(cleanUrl)}`
       const res = await fetch(apiUrl, {
@@ -93,10 +116,10 @@ export const instagramScraper: PlatformScraper = {
         if (json?.status && json?.data && json.data.response !== 4 && json.data.success !== false) {
           const dataObj = json.data
           const meta = dataObj?.meta || {}
-          const medias = parseMediaItems(dataObj, meta)
+          const medias = parseMediaItems(dataObj, dataObj?.thumb || meta?.thumb)
 
           if (medias.length > 0) {
-            const title = meta.title || dataObj?.title || json?.title || 'Instagram Reel'
+            const title = meta.title || dataObj?.title || json?.title || 'Instagram Post'
             const thumbnail = unwrapCdnUrl(dataObj?.thumb || meta.thumb || medias[0]?.thumbnail || medias[0]?.url)
             const author = meta.username
               ? {
@@ -121,7 +144,7 @@ export const instagramScraper: PlatformScraper = {
       // Primary SSSInstagram failed, proceed to fallback
     }
 
-    // Strategy 2: Multi-Method Fallback for Posts & Photos
+    // Strategy 2: Multi-Item Fallback for Posts, Carousel & Photos (SaveFrom)
     try {
       const savefromRes = await fetch('https://api.siputzx.my.id/api/d/savefrom', {
         method: 'POST',
@@ -135,17 +158,19 @@ export const instagramScraper: PlatformScraper = {
 
       if (savefromRes.ok) {
         const sfJson = await savefromRes.json()
-        const first = sfJson.data?.[0]
-        const item = Array.isArray(first?.data) ? first.data[0] : (first?.data || first)
+        if (sfJson?.status && sfJson?.data) {
+          const medias = parseMediaItems(sfJson.data)
 
-        if (item && item.response !== 4 && item.success !== false) {
-          const medias = parseMediaItems(item, item.meta || {})
           if (medias.length > 0) {
+            const first = Array.isArray(sfJson.data) ? sfJson.data[0] : sfJson.data
+            const item = Array.isArray(first?.data) ? first.data[0] : (first?.data || first)
+            const meta = item?.meta || first?.meta || {}
+
             return {
               success: true,
               platform: 'instagram',
-              title: item.meta?.title || 'Instagram Media',
-              thumbnail: unwrapCdnUrl(item.thumb || medias[0]?.thumbnail || medias[0]?.url),
+              title: meta.title || item?.title || 'Instagram Carousel',
+              thumbnail: unwrapCdnUrl(item?.thumb || medias[0]?.thumbnail || medias[0]?.url),
               medias,
             }
           }
