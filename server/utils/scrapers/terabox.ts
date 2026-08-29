@@ -10,10 +10,10 @@ export const teraboxScraper: PlatformScraper = {
 
   async resolve(url: string): Promise<ScraperResult> {
     const apifyToken = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN || ''
-    const actorId = process.env.APIFY_TERABOX_ACTOR_ID || 'easyapi/terabox-video-file-downloader'
+    const actorId = process.env.APIFY_TERABOX_ACTOR_ID || process.env.APIFY_ACTOR_ID || ''
 
-    // ENGINE 1: Apify Actor Client (if token is provided in environment)
-    if (apifyToken) {
+    // ENGINE 1: Apify Actor Client (if token and actorId are provided in environment)
+    if (apifyToken && actorId) {
       try {
         const client = new ApifyClient({
           token: apifyToken,
