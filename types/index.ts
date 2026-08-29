@@ -9,6 +9,7 @@ export type PlatformType =
   | 'soundcloud'
   | 'pinterest'
   | 'threads'
+  | 'terabox'
   | 'other'
 
 export interface MediaItem {

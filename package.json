@@ -11,6 +11,7 @@
   "dependencies": {
     "@vueuse/core": "^12.8.2",
     "@vueuse/nuxt": "^12.8.2",
+    "apify-client": "^2.25.0",
     "canvas-confetti": "^1.9.4",
     "cheerio": "^1.0.0",
     "clsx": "^2.1.1",

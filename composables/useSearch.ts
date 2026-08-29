@@ -79,6 +79,17 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         badge: 'Beta',
         platform: 'spotify',
       },
+      {
+        id: 'terabox',
+        title: 'TeraBox Downloader',
+        description: 'Fast direct download links for TeraBox cloud files and shared videos.',
+        category: 'downloader',
+        icon: 'terabox',
+        route: '/d/terabox',
+        badge: 'New',
+        popular: true,
+        platform: 'terabox',
+      },
     ],
   },
   {

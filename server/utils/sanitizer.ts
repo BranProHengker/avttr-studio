@@ -60,5 +60,6 @@ export function detectPlatform(url: string): PlatformType {
   if (/soundcloud\.com/i.test(lower)) return 'soundcloud'
   if (/pinterest\.com|pin\.it/i.test(lower)) return 'pinterest'
   if (/threads\.net/i.test(lower)) return 'threads'
+  if (/terabox\.com|terabox\.app|terasharelink\.com|teraboxlink\.com|1024tera\.com|freeterabox\.com|mirrobox\.com|nephobox\.com|4funbox\.com|terabox\.fun|tibibox\.com/i.test(lower)) return 'terabox'
   return 'other'
 }

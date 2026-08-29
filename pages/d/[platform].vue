@@ -57,6 +57,13 @@ const platformInfo = computed(() => {
         placeholder: 'Paste Facebook video link (e.g. https://www.facebook.com/watch?v=...)',
         features: ['HD & SD Video', 'Reels Support', 'Direct MP4 File', 'No Account Required'],
       }
+    case 'terabox':
+      return {
+        name: 'TeraBox',
+        subtitle: 'Direct high-speed download links for TeraBox files, folders, and shared videos',
+        placeholder: 'Paste TeraBox share link (e.g. https://terabox.com/s/... or https://terabox.app/s/...)',
+        features: ['Fast Direct Link', 'HD Video Stream', 'Multi-File Folder Support', 'Apify & Direct Engine'],
+      }
     case 'spotify':
     default:
       return {

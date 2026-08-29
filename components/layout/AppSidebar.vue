@@ -253,6 +253,17 @@ const isRouteActive = (targetRoute: string) => {
               >
                 Facebook
               </NuxtLink>
+              <NuxtLink
+                to="/d/terabox"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/d/terabox')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                TeraBox
+              </NuxtLink>
             </div>
           </div>
 

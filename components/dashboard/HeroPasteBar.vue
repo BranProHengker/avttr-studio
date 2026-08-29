@@ -102,6 +102,8 @@ const pasteFromClipboard = async () => {
       <span class="hover:text-[var(--text-secondary)]">CapCut</span>
       <span>•</span>
       <span class="hover:text-[var(--text-secondary)]">Spotify</span>
+      <span>•</span>
+      <span class="hover:text-[var(--text-secondary)]">TeraBox</span>
     </div>
   </div>
 </template>

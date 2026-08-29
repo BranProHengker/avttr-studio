@@ -7,6 +7,7 @@ import { youtubeScraper } from '~/server/utils/scrapers/youtube'
 import { twitterScraper } from '~/server/utils/scrapers/twitter'
 import { capcutScraper } from '~/server/utils/scrapers/capcut'
 import { facebookScraper, spotifyScraper } from '~/server/utils/scrapers/facebook'
+import { teraboxScraper } from '~/server/utils/scrapers/terabox'
 import { resolveCobalt } from '~/server/utils/scrapers/cobaltFallback'
 
 const scrapers = [
@@ -17,6 +18,7 @@ const scrapers = [
   capcutScraper,
   facebookScraper,
   spotifyScraper,
+  teraboxScraper,
 ]
 
 export default defineEventHandler(async (event) => {
