@@ -376,7 +376,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6 max-w-7xl mx-auto pb-12">
+  <div class="space-y-6">
     <!-- Header & Breadcrumbs -->
     <div>
       <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
