@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@distube/ytdl-core':
+        specifier: ^4.16.12
+        version: 4.16.12(supports-color@10.2.2)
       '@vueuse/core':
         specifier: ^12.8.2
         version: 12.8.2(typescript@5.9.3)
@@ -44,6 +47,9 @@ importers:
       ofetch:
         specifier: ^1.4.1
         version: 1.5.1
+      play-dl:
+        specifier: ^1.9.7
+        version: 1.9.7
       qr-code-styling:
         specifier: ^1.9.2
         version: 1.9.2
@@ -59,6 +65,9 @@ importers:
       vue-router:
         specifier: ^4.5.0
         version: 4.6.4(vue@3.5.41(typescript@5.9.3))
+      youtubei.js:
+        specifier: ^18.0.0
+        version: 18.0.0
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.0.9
@@ -228,6 +237,9 @@ packages:
       commander:
         optional: true
 
+  '@bufbuild/protobuf@2.14.0':
+    resolution: {integrity: sha512-C3UGsiCwSprE2NKIIFA3hCDlpXTMCAXRZuEVp88L1GY36Y41+rYL5fryE+nOFhp4p4JPQvdV8PQ4DWgHgeTE+w==}
+
   '@clack/core@1.4.3':
     resolution: {integrity: sha512-/kr3UWNtdJfxZtPgDqUOmG2pvwlmcLGheex5yiZKdwbzZJxhV+HMNR9QNmyY5cGwTNV6LrR7Jtp+KjhUAP1qBQ==}
     engines: {node: '>= 20.12.0'}
@@ -246,6 +258,10 @@ packages:
   '@crawlee/types@3.18.1':
     resolution: {integrity: sha512-jmV7HN4b1vEzriGcKhCRa8A5rv5HaqBPPfneGRxPpZtbmnEcusHTmEOOyG393lUBmv0yaM03da0hy+PZnR35vw==}
     engines: {node: '>=16.0.0'}
+
+  '@distube/ytdl-core@4.16.12':
+    resolution: {integrity: sha512-/NR8Jur1Q4E2oD+DJta7uwWu7SkqdEkhwERt7f4iune70zg7ZlLLTOHs1+jgg3uD2jQjpdk7RGC16FqstG4RsA==}
+    engines: {node: '>=20.18.1'}
 
   '@dxup/nuxt@0.5.9':
     resolution: {integrity: sha512-k1rba9t7NYynmMNkV6mJCRXfFadqaKPfwNlWSmmUCT/KqJh6xZ4DZdemNMTbcUHdVmhGl7+a8RiHDZcQuXTHCw==}
@@ -1430,6 +1446,10 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
+  agent-base@9.0.0:
+    resolution: {integrity: sha512-TQf59BsZnytt8GdJKLPfUZ54g/iaUL2OWDSFCCvMOhsHduDQxO8xC4PNeyIkVcA5KwL2phPSv0douC0fgWzmnA==}
+    engines: {node: '>= 20'}
+
   alien-signals@3.2.1:
     resolution: {integrity: sha512-I8FjmltrfnDFoZedi5CG8DghVYNhzb/Ijluz7tCSJH0xpd0484Kowhbb1XDYOxfJpU1p5wnM2X54dA+IfGyD1g==}
 
@@ -2115,6 +2135,9 @@ packages:
       picomatch:
         optional: true
 
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
+
   file-uri-to-path@1.0.0:
     resolution: {integrity: sha512-0Zt+s3L7Vf1biwWZ29aARiVYLx7iMGnEUl9x33fbB/j3jR81u/O2LbqK+Bm1CDSNDKVtJ/YjwY7TUd5SkeLQLw==}
 
@@ -2261,6 +2284,16 @@ packages:
 
   htmlparser2@10.1.0:
     resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
+
+  http-cookie-agent@7.0.4:
+    resolution: {integrity: sha512-BF9iTnice7+LI4tHB8Bm0nFnp+J+bAY5Cll53uEa9NIFQCM7noUyWbImqJhB+j0drmJHvE/Wr6o+8FXq7IVYeA==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      tough-cookie: ^4.0.0 || ^5.0.0 || ^6.0.0
+      undici: ^7.0.0
+    peerDependenciesMeta:
+      undici:
+        optional: true
 
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
@@ -2580,6 +2613,10 @@ packages:
     peerDependencies:
       vue: '>=3.0.1'
 
+  m3u8stream@0.8.6:
+    resolution: {integrity: sha512-LZj8kIVf9KCphiHmH7sbFQTVe4tOemb202fWwvJwR9W5ENW/1hxJN6ksAWGhQgSBSa3jyWhnjKU1Fw1GaOdbyA==}
+    engines: {node: '>=12'}
+
   magic-string-ast@1.0.3:
     resolution: {integrity: sha512-CvkkH1i81zl7mmb94DsRiFeG9V2fR2JeuK8yDgS8oiZSFa++wWLEgZ5ufEOyLHbvSbD1gTRKv9NdX69Rnvr9JA==}
     engines: {node: '>=20.19.0'}
@@ -2610,6 +2647,10 @@ packages:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
 
+  meriyah@7.3.2:
+    resolution: {integrity: sha512-uFPXbsoxaEd7PafMz3K/n/Z3kXz7iZBJtYU0VQB/kcV7i33+JghLTKweabLir480FUsyLz6gUIj4LW7kCQ35TA==}
+    engines: {node: '>=20.0.0'}
+
   micromatch@4.0.8:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
     engines: {node: '>=8.6'}
@@ -2637,6 +2678,10 @@ packages:
 
   mimic-fn@4.0.0:
     resolution: {integrity: sha512-vqiC06CuhBTUdZH+RYl8sFrL096vA45Ok5ISO6sE/Mr1jRbGH4Csnhi8f3wKVl7x8mO4Au7Ir9D3Oyv1VYMFJw==}
+    engines: {node: '>=12'}
+
+  miniget@4.2.3:
+    resolution: {integrity: sha512-SjbDPDICJ1zT+ZvQwK0hUcRY4wxlhhNpHL9nJOB2MEAXRGagTljsO8MEDzQMTFf0Q8g4QNi8P9lEm/g7e+qgzA==}
     engines: {node: '>=12'}
 
   minimatch@10.2.6:
@@ -2914,6 +2959,13 @@ packages:
 
   pkg-types@2.3.1:
     resolution: {integrity: sha512-y+ichcgc2LrADuhLNAx8DFjVfgz91pRxfZdI3UDhxHvcVEZsenLO+7XaU5vOp0u/7V/wZ+plyuQxtrDlZJ+yeg==}
+
+  play-audio@0.5.2:
+    resolution: {integrity: sha512-ZAqHUKkQLix2Iga7pPbsf1LpUoBjcpwU93F1l3qBIfxYddQLhxS6GKmS0d3jV8kSVaUbr6NnOEcEMFvuX93SWQ==}
+
+  play-dl@1.9.7:
+    resolution: {integrity: sha512-KpgerWxUCY4s9Mhze2qdqPhiqd8Ve6HufpH9mBH3FN+vux55qSh6WJKDabfie8IBHN7lnrAlYcT/UdGax58c2A==}
+    engines: {node: '>=16.0.0'}
 
   pngjs@5.0.0:
     resolution: {integrity: sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==}
@@ -3476,6 +3528,13 @@ packages:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
 
+  tldts-core@6.1.86:
+    resolution: {integrity: sha512-Je6p7pkk+KMzMv2XXKmAE3McmolOQFdxkKw0R8EYNr7sELW46JqnNeTX8ybPiQgvg1ymCoF8LXs5fzFaZvJPTA==}
+
+  tldts@6.1.86:
+    resolution: {integrity: sha512-WMi/OQ2axVTf/ykqCQgXiIct+mSQDFdH2fkwhPwgEwvJ1kSzZRiinb0zF2Xb8u4+OqPChmyI6MEu4EezNJz+FQ==}
+    hasBin: true
+
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
@@ -3487,6 +3546,10 @@ packages:
   totalist@3.0.1:
     resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
     engines: {node: '>=6'}
+
+  tough-cookie@5.1.2:
+    resolution: {integrity: sha512-FVDYdxtnj0G6Qm/DhNPSb8Ju59ULcup3tuJxkFb5K8Bv2pUXILbf0xZWU8PX8Ov19OXljbUyveOFwRMwkXzO+A==}
+    engines: {node: '>=16'}
 
   tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
@@ -3947,6 +4010,9 @@ packages:
   youch@4.1.1:
     resolution: {integrity: sha512-mxW3qiSnl+GRxXsaUMzv2Mbada1Y8CDltET9UxejDQe6DBYlSekghl5U5K0ReAikcHDi0G1vKZEmmo/NWAGKLA==}
 
+  youtubei.js@18.0.0:
+    resolution: {integrity: sha512-7Tztl5QzNL4nIhiAxa4P/0C8cDDsUe0j4iaUeNiaA+ZfSe/l+HkHxXyoWlQXNW7IPi2n6AW23ysVMJLDh+AwWQ==}
+
   zip-stream@6.0.1:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
@@ -4137,6 +4203,8 @@ snapshots:
       cac: 6.7.14
       citty: 0.2.2
 
+  '@bufbuild/protobuf@2.14.0': {}
+
   '@clack/core@1.4.3':
     dependencies:
       fast-wrap-ansi: 0.2.2
@@ -4156,6 +4224,18 @@ snapshots:
   '@crawlee/types@3.18.1':
     dependencies:
       tslib: 2.8.1
+
+  '@distube/ytdl-core@4.16.12(supports-color@10.2.2)':
+    dependencies:
+      http-cookie-agent: 7.0.4(tough-cookie@5.1.2)(undici@7.29.0)
+      https-proxy-agent: 7.0.6(supports-color@10.2.2)
+      m3u8stream: 0.8.6
+      miniget: 4.2.3
+      sax: 1.6.1
+      tough-cookie: 5.1.2
+      undici: 7.29.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@dxup/nuxt@0.5.9(esbuild@0.28.2)(magicast@0.5.4)(oxc-parser@0.143.0)(rollup@4.62.5)(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.50.0)(yaml@2.9.0))':
     dependencies:
@@ -5369,6 +5449,8 @@ snapshots:
 
   agent-base@7.1.4: {}
 
+  agent-base@9.0.0: {}
+
   alien-signals@3.2.1: {}
 
   ansi-colors@4.1.3: {}
@@ -6052,6 +6134,8 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.5
 
+  fflate@0.8.3: {}
+
   file-uri-to-path@1.0.0: {}
 
   fill-range@7.1.1:
@@ -6210,6 +6294,13 @@ snapshots:
       domhandler: 5.0.3
       domutils: 3.2.2
       entities: 7.0.1
+
+  http-cookie-agent@7.0.4(tough-cookie@5.1.2)(undici@7.29.0):
+    dependencies:
+      agent-base: 9.0.0
+      tough-cookie: 5.1.2
+    optionalDependencies:
+      undici: 7.29.0
 
   http-errors@2.0.1:
     dependencies:
@@ -6495,6 +6586,11 @@ snapshots:
     dependencies:
       vue: 3.5.41(typescript@5.9.3)
 
+  m3u8stream@0.8.6:
+    dependencies:
+      miniget: 4.2.3
+      sax: 1.6.1
+
   magic-string-ast@1.0.3:
     dependencies:
       magic-string: 0.30.21
@@ -6523,6 +6619,8 @@ snapshots:
 
   merge2@1.4.1: {}
 
+  meriyah@7.3.2: {}
+
   micromatch@4.0.8:
     dependencies:
       braces: 3.0.3
@@ -6543,6 +6641,8 @@ snapshots:
   mime@4.1.0: {}
 
   mimic-fn@4.0.0: {}
+
+  miniget@4.2.3: {}
 
   minimatch@10.2.6:
     dependencies:
@@ -7068,6 +7168,12 @@ snapshots:
       confbox: 0.2.4
       exsolve: 1.1.1
       pathe: 2.0.3
+
+  play-audio@0.5.2: {}
+
+  play-dl@1.9.7:
+    dependencies:
+      play-audio: 0.5.2
 
   pngjs@5.0.0: {}
 
@@ -7648,6 +7754,12 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.5)
       picomatch: 4.0.5
 
+  tldts-core@6.1.86: {}
+
+  tldts@6.1.86:
+    dependencies:
+      tldts-core: 6.1.86
+
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
@@ -7655,6 +7767,10 @@ snapshots:
   toidentifier@1.0.1: {}
 
   totalist@3.0.1: {}
+
+  tough-cookie@5.1.2:
+    dependencies:
+      tldts: 6.1.86
 
   tr46@0.0.3: {}
 
@@ -8053,6 +8169,12 @@ snapshots:
       '@speed-highlight/core': 1.2.24
       cookie-es: 3.1.1
       youch-core: 0.3.3
+
+  youtubei.js@18.0.0:
+    dependencies:
+      '@bufbuild/protobuf': 2.14.0
+      fflate: 0.8.3
+      meriyah: 7.3.2
 
   zip-stream@6.0.1:
     dependencies:

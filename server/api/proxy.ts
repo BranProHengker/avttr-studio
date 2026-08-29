@@ -31,9 +31,16 @@ export default defineEventHandler(async (event) => {
     }
 
     const upstreamHeaders: Record<string, string> = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Referer': referer,
       'Accept': '*/*',
+    }
+
+    if (/googlevideo\.com/i.test(targetUrl)) {
+      upstreamHeaders['User-Agent'] = 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip'
+    } else {
+      upstreamHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      if (referer) {
+        upstreamHeaders['Referer'] = referer
+      }
     }
 
     if (/terabox|1024tera|baidupcs|terasharelink/i.test(targetUrl)) {
@@ -75,7 +82,13 @@ export default defineEventHandler(async (event) => {
     else if (/\.(jpg|jpeg)/i.test(targetUrl) || /\.(jpg|jpeg)/i.test(filename)) defaultType = 'image/jpeg'
     else if (/\.png/i.test(targetUrl) || /\.png/i.test(filename)) defaultType = 'image/png'
 
-    const contentType = upstream.headers.get('content-type') || defaultType
+    let contentType = upstream.headers.get('content-type') || defaultType
+    if (/\.mp3$/i.test(filename)) contentType = 'audio/mpeg'
+    else if (/\.m4a$/i.test(filename)) contentType = 'audio/mp4'
+    else if (/\.opus$/i.test(filename)) contentType = 'audio/opus'
+    else if (/\.mp4$/i.test(filename)) contentType = 'video/mp4'
+    else if (/\.(jpg|jpeg)$/i.test(filename)) contentType = 'image/jpeg'
+    else if (/\.png$/i.test(filename)) contentType = 'image/png'
 
     if (contentType.includes('text/html') && !filename.endsWith('.html')) {
       throw createError({
