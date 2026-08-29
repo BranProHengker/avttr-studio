@@ -3,7 +3,7 @@ import { resolveCobalt } from './cobaltFallback'
 
 export const twitterScraper: PlatformScraper = {
   name: 'twitter',
-  supports: (url: string) => /twitter\.com|x\.com/i.test(url),
+  supports: (url: string) => /twitter\.com|(?:^|\/\/|\.)x\.com(?:[\/?]|$)/i.test(url),
 
   async resolve(url: string): Promise<ScraperResult> {
     const cobaltResult = await resolveCobalt(url, 'twitter')

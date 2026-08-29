@@ -1,6 +1,74 @@
 import type { PlatformScraper, ScraperResult, MediaItem } from '~/types'
-import { resolveCobalt } from './cobaltFallback'
-import { ApifyClient } from 'apify-client'
+
+function detectMediaType(fileName: string, typeHint?: string): 'video' | 'audio' | 'image' | 'file' {
+  const ext = fileName.split('.').pop()?.toLowerCase() || ''
+  if (/^(mp4|mkv|mov|avi|webm|flv|wmv|m4v|3gp|ts)$/i.test(ext) || typeHint === 'video') return 'video'
+  if (/^(mp3|m4a|wav|aac|flac|ogg|opus|wma|alac)$/i.test(ext) || typeHint === 'audio') return 'audio'
+  if (/^(jpg|jpeg|png|webp|gif|bmp|svg|tiff|avif|heic)$/i.test(ext) || typeHint === 'image') return 'image'
+  return 'file'
+}
+
+function isWebpageShareUrl(url: string): boolean {
+  return /terabox\.(com|app|fun)\/(s\/|sharing\/link)/i.test(url) ||
+         /1024tera\.com\/s\//i.test(url) ||
+         /4funbox\.com\/s\//i.test(url) ||
+         /mirrobox\.com\/s\//i.test(url) ||
+         /nephobox\.com\/s\//i.test(url) ||
+         /terasharelink\.com\/s\//i.test(url) ||
+         /teraboxlink\.com\/s\//i.test(url)
+}
+
+function extractSurl(rawUrl: string): { surlParam: string, shortUrl: string } {
+  try {
+    const unquoted = decodeURIComponent(rawUrl.trim())
+    const match = unquoted.match(/[?&]surl=([a-zA-Z0-9_-]+)/)
+    let key = ''
+    if (match && match[1]) {
+      key = match[1]
+    } else {
+      const pathMatch = unquoted.match(/\/(?:s|share|filelist)\/([a-zA-Z0-9_-]+)/)
+      key = pathMatch ? pathMatch[1] : unquoted
+    }
+
+    key = key.replace(/[^a-zA-Z0-9_-]/g, '')
+    if (key.startsWith('1') && key.length > 1) {
+      return { surlParam: key, shortUrl: key.slice(1) }
+    }
+    return { surlParam: `1${key}`, shortUrl: key }
+  } catch {
+    return { surlParam: '', shortUrl: '' }
+  }
+}
+
+function normalizeFileItem(raw: any, shareId?: number | string, uk?: number | string): MediaItem | null {
+  if (!raw || raw.isdir === '1') return null
+
+  const fileName = raw.server_filename || raw.filename || raw.fileName || raw.name || raw.title || 'TeraBox File'
+  const ext = raw.format || fileName.split('.').pop()?.toLowerCase() || 'bin'
+  const mediaType = detectMediaType(fileName, raw.type)
+
+  let downloadUrl = raw.download_url || raw.direct_link || raw.downloadLink || raw.dl_cdn || raw.dlink || raw.cdn
+
+  if (!downloadUrl && raw.fs_id && shareId && uk) {
+    downloadUrl = `https://www.1024tera.com/share/download?app_id=250528&shareid=${shareId}&uk=${uk}&fid=${raw.fs_id}`
+  }
+
+  if (!downloadUrl && raw.url && !isWebpageShareUrl(raw.url)) {
+    downloadUrl = raw.url
+  }
+
+  if (!downloadUrl) return null
+
+  return {
+    type: mediaType,
+    url: downloadUrl,
+    filename: fileName,
+    quality: raw.quality || (mediaType === 'file' ? fileName : 'Direct High-Speed'),
+    format: ext,
+    size: typeof raw.size === 'string' ? parseInt(raw.size, 10) : (raw.size || raw.file_size || raw.bytes),
+    thumbnail: raw.thumbnail || raw.thumb || raw.cover || (raw.thumbs ? (raw.thumbs.url3 || raw.thumbs.url2 || raw.thumbs.url1) : undefined),
+  }
+}
 
 export const teraboxScraper: PlatformScraper = {
   name: 'terabox',
@@ -9,159 +77,132 @@ export const teraboxScraper: PlatformScraper = {
   },
 
   async resolve(url: string): Promise<ScraperResult> {
-    const apifyToken = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN || ''
-    const actorId = process.env.APIFY_TERABOX_ACTOR_ID || process.env.APIFY_ACTOR_ID || ''
+    const { shortUrl } = extractSurl(url)
+    const userCookie = process.env.TERABOX_COOKIE || process.env.COOKIE_JSON || process.env.NDUS_COOKIE || ''
 
-    // ENGINE 1: Apify Actor Client (if token and actorId are provided in environment)
-    if (apifyToken && actorId) {
+    // ENGINE 1: Native TeraBox / 1024tera Recursive Share Resolver
+    if (shortUrl) {
       try {
-        const client = new ApifyClient({
-          token: apifyToken,
+        const headers: Record<string, string> = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Referer': 'https://www.1024tera.com/',
+        }
+        if (userCookie) {
+          headers['Cookie'] = userCookie.includes('=') ? userCookie : `ndus=${userCookie}`
+        }
+
+        const listRes = await fetch(`https://www.1024tera.com/share/list?app_id=250528&shorturl=${shortUrl}&root=1`, {
+          headers,
+          signal: AbortSignal.timeout(8000),
         })
 
-        const run = await client.actor(actorId).call(
-          {
-            startUrls: [{ url }],
-            url,
-            link: url,
-          },
-          {
-            waitSecs: 35,
-          }
-        )
-
-        if (run && run.defaultDatasetId) {
-          const { items } = await client.dataset(run.defaultDatasetId).listItems()
-
-          if (Array.isArray(items) && items.length > 0) {
-            const item: any = items[0]
+        if (listRes.ok) {
+          const data: any = await listRes.json()
+          if (data && data.errno === 0 && Array.isArray(data.list) && data.list.length > 0) {
+            const shareId = data.share_id
+            const uk = data.uk
             const medias: MediaItem[] = []
+            const folderQueue: string[] = []
 
-            // Extract direct download link or video URL
-            const directUrl = item.download_url || item.direct_link || item.downloadLink || item.dlink || item.url || item.video_url
-            const streamUrl = item.stream_url || item.fast_download_url || item.play_url
-
-            if (directUrl) {
-              medias.push({
-                type: (item.type === 'video' || (item.file_name && /\.(mp4|mkv|mov|webm)$/i.test(item.file_name))) ? 'video' : 'image',
-                url: directUrl,
-                quality: item.quality || 'Fast Direct Download',
-                format: item.format || (item.file_name?.split('.').pop()) || 'mp4',
-                size: item.size || item.file_size,
-              })
-            }
-
-            if (streamUrl && streamUrl !== directUrl) {
-              medias.push({
-                type: 'video',
-                url: streamUrl,
-                quality: 'HD Stream URL',
-                format: 'mp4',
-              })
-            }
-
-            // Also check nested list if folder
-            if (Array.isArray(item.list) && item.list.length > 0) {
-              for (const file of item.list) {
-                const fUrl = file.download_url || file.direct_link || file.dlink
-                if (fUrl) {
-                  medias.push({
-                    type: (file.type === 'video' || /\.(mp4|mkv|mov|webm)$/i.test(file.file_name || file.name)) ? 'video' : 'image',
-                    url: fUrl,
-                    quality: file.quality || file.file_name || 'Direct File',
-                    format: file.file_name?.split('.').pop() || 'mp4',
-                    size: file.size,
-                  })
-                }
+            for (const item of data.list) {
+              if (item.isdir === '1' && item.path) {
+                folderQueue.push(item.path)
+              } else {
+                const norm = normalizeFileItem(item, shareId, uk)
+                if (norm) medias.push(norm)
               }
+            }
+
+            // Recurse into subfolders (up to 3 levels)
+            const visited = new Set<string>()
+            while (folderQueue.length > 0 && visited.size < 5) {
+              const currentDir = folderQueue.shift()!
+              if (visited.has(currentDir)) continue
+              visited.add(currentDir)
+
+              try {
+                const subRes = await fetch(`https://www.1024tera.com/share/list?app_id=250528&shorturl=${shortUrl}&dir=${encodeURIComponent(currentDir)}`, {
+                  headers,
+                  signal: AbortSignal.timeout(6000),
+                })
+                if (subRes.ok) {
+                  const subData: any = await subRes.json()
+                  if (subData && subData.errno === 0 && Array.isArray(subData.list)) {
+                    for (const subItem of subData.list) {
+                      if (subItem.isdir === '1' && subItem.path) {
+                        folderQueue.push(subItem.path)
+                      } else {
+                        const subNorm = normalizeFileItem(subItem, shareId, uk)
+                        if (subNorm && !medias.some(m => m.filename === subNorm.filename)) {
+                          medias.push(subNorm)
+                        }
+                      }
+                    }
+                  }
+                }
+              } catch {}
             }
 
             if (medias.length > 0) {
               return {
                 success: true,
                 platform: 'terabox',
-                title: item.title || item.file_name || item.name || 'TeraBox Shared File',
-                description: item.description || (item.size_formatted ? `Size: ${item.size_formatted}` : undefined),
-                thumbnail: item.thumbnail || item.thumb || item.cover,
+                title: data.title || `TeraBox Shared Content (${medias.length} items)`,
+                description: `${medias.length} file(s) available for download`,
+                thumbnail: medias[0]?.thumbnail,
                 medias,
               }
             }
           }
         }
       } catch (err: any) {
-        console.warn('Apify Terabox Actor failed, trying public fallback resolver:', err.message)
+        console.warn('Native TeraBox API list failed:', err.message)
       }
     }
 
-    // ENGINE 2: Public Multi-Engine Resolvers
+    // ENGINE 2: Public Multi-Resolver Gateways
     try {
       const res = await fetch(`https://api.vkrdown.com/api/v1/terabox?url=${encodeURIComponent(url)}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(6000),
       })
 
       if (res.ok) {
         const json = await res.json()
-        if (json.data && (json.data.download_url || json.data.dlink || json.data.url)) {
-          const dlUrl = json.data.download_url || json.data.dlink || json.data.url
-          return {
-            success: true,
-            platform: 'terabox',
-            title: json.data.file_name || json.data.title || 'TeraBox File',
-            thumbnail: json.data.thumbnail || json.data.thumb,
-            medias: [
-              {
-                type: 'video',
-                url: dlUrl,
-                quality: 'Original Quality',
-                format: json.data.file_name?.split('.').pop() || 'mp4',
-                size: json.data.size,
-              },
-            ],
-          }
-        }
-      }
-    } catch {
-      // Continue to next fallback
-    }
+        const medias: MediaItem[] = []
 
-    // ENGINE 3: Secondary Public Workers Gateway
-    try {
-      const surlMatch = url.match(/s\/(?:1)?([a-zA-Z0-9_-]+)/)
-      const shorturl = surlMatch ? surlMatch[1] : ''
-      if (shorturl) {
-        const res = await fetch(`https://terabox-dl.qtcloud.workers.dev/api/get-info?shorturl=${shorturl}`, {
-          signal: AbortSignal.timeout(6000),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (data && data.downloadLink) {
+        if (json.data) {
+          const list = Array.isArray(json.data.list) ? json.data.list : [json.data]
+          for (const item of list) {
+            const normalized = normalizeFileItem(item)
+            if (normalized) medias.push(normalized)
+          }
+
+          if (medias.length > 0) {
             return {
               success: true,
               platform: 'terabox',
-              title: data.fileName || 'TeraBox File',
-              thumbnail: data.thumbnail,
-              medias: [
-                {
-                  type: 'video',
-                  url: data.downloadLink,
-                  quality: 'High Speed Direct',
-                  format: data.fileName?.split('.').pop() || 'mp4',
-                  size: data.size,
-                },
-              ],
+              title: json.data.title || json.data.file_name || 'TeraBox Shared Content',
+              thumbnail: json.data.thumbnail || medias[0]?.thumbnail,
+              medias,
             }
           }
         }
       }
     } catch {
-      // Continue to universal fallback
+      // Continue to final error
     }
 
-    // ENGINE 4: Universal Cobalt Fallback
-    return resolveCobalt(url, 'terabox')
+    // Final clean informative error result
+    return {
+      success: false,
+      platform: 'terabox',
+      title: '',
+      medias: [],
+      error: 'Tidak dapat mengambil link unduhan langsung dari TeraBox. Pastikan link bersifat publik atau perbarui cookie di konfigurasi.',
+    }
   },
 }

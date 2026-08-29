@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     let referer = 'https://www.google.com/'
     if (/tiktokcdn|tiktok\.com/i.test(targetUrl)) {
       referer = 'https://www.tiktok.com/'
-    } else if (/twimg|twitter\.com|x\.com/i.test(targetUrl)) {
+    } else if (/twimg|twitter\.com|(?:^|\/\/|\.)x\.com(?:[\/?]|$)/i.test(targetUrl)) {
       referer = 'https://twitter.com/'
     } else if (/googlevideo|youtube\.com|youtu\.be/i.test(targetUrl)) {
       referer = 'https://www.youtube.com/'
@@ -26,12 +26,21 @@ export default defineEventHandler(async (event) => {
       referer = 'https://www.facebook.com/'
     } else if (/cdninstagram|instagram\.com/i.test(targetUrl)) {
       referer = 'https://www.instagram.com/'
+    } else if (/terabox|1024tera|baidupcs|terasharelink/i.test(targetUrl)) {
+      referer = 'https://www.1024tera.com/'
     }
 
     const upstreamHeaders: Record<string, string> = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       'Referer': referer,
       'Accept': '*/*',
+    }
+
+    if (/terabox|1024tera|baidupcs|terasharelink/i.test(targetUrl)) {
+      const userCookie = process.env.TERABOX_COOKIE || process.env.COOKIE_JSON || process.env.NDUS_COOKIE || ''
+      if (userCookie) {
+        upstreamHeaders['Cookie'] = userCookie.includes('=') ? userCookie : `ndus=${userCookie}`
+      }
     }
 
     if (clientRange) {
@@ -53,12 +62,28 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    let defaultType = 'video/mp4'
-    if (/\.mp3/i.test(targetUrl) || /\.mp3/i.test(filename)) defaultType = 'audio/mpeg'
+    let defaultType = 'application/octet-stream'
+    if (/\.mp4/i.test(targetUrl) || /\.mp4/i.test(filename)) defaultType = 'video/mp4'
+    else if (/\.mkv/i.test(targetUrl) || /\.mkv/i.test(filename)) defaultType = 'video/x-matroska'
+    else if (/\.mp3/i.test(targetUrl) || /\.mp3/i.test(filename)) defaultType = 'audio/mpeg'
     else if (/\.m4a/i.test(targetUrl) || /\.m4a/i.test(filename) || /mime=audio/i.test(targetUrl)) defaultType = 'audio/mp4'
     else if (/\.opus/i.test(targetUrl) || /\.opus/i.test(filename)) defaultType = 'audio/opus'
+    else if (/\.zip/i.test(targetUrl) || /\.zip/i.test(filename)) defaultType = 'application/zip'
+    else if (/\.rar/i.test(targetUrl) || /\.rar/i.test(filename)) defaultType = 'application/vnd.rar'
+    else if (/\.pdf/i.test(targetUrl) || /\.pdf/i.test(filename)) defaultType = 'application/pdf'
+    else if (/\.apk/i.test(targetUrl) || /\.apk/i.test(filename)) defaultType = 'application/vnd.android.package-archive'
+    else if (/\.(jpg|jpeg)/i.test(targetUrl) || /\.(jpg|jpeg)/i.test(filename)) defaultType = 'image/jpeg'
+    else if (/\.png/i.test(targetUrl) || /\.png/i.test(filename)) defaultType = 'image/png'
 
     const contentType = upstream.headers.get('content-type') || defaultType
+
+    if (contentType.includes('text/html') && !filename.endsWith('.html')) {
+      throw createError({
+        statusCode: 502,
+        statusMessage: 'Upstream server returned an HTML webpage instead of a media file. Link may be protected or expired.',
+      })
+    }
+
     const contentLength = upstream.headers.get('content-length')
     const contentRange = upstream.headers.get('content-range')
     const acceptRanges = upstream.headers.get('accept-ranges') || 'bytes'

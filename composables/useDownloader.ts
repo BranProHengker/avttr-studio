@@ -85,7 +85,7 @@ export function useDownloader() {
     } else {
       rawUrl = item.url
       if (!rawUrl || rawUrl === 'undefined') return ''
-      ext = item.format || (item.type === 'audio' ? 'm4a' : item.type === 'image' ? 'jpg' : 'mp4')
+      ext = item.format || (item.type === 'audio' ? 'mp3' : item.type === 'image' ? 'jpg' : item.type === 'file' ? 'bin' : 'mp4')
     }
 
     // If it's a converter URL (e.g. SaveFrom converter), return raw URL directly
@@ -93,10 +93,15 @@ export function useDownloader() {
       return rawUrl
     }
 
-    const safeTitle = (customTitle || result.value?.title || 'media_download')
-      .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .substring(0, 50)
-    const filename = `${safeTitle}.${ext}`
+    let filename = ''
+    if (item && typeof item !== 'string' && item.filename) {
+      filename = item.filename
+    } else {
+      const safeTitle = (customTitle || result.value?.title || 'download')
+        .replace(/[^a-zA-Z0-9_.-]/g, '_')
+        .substring(0, 80)
+      filename = safeTitle.includes('.') ? safeTitle : `${safeTitle}.${ext}`
+    }
 
     const params = new URLSearchParams({
       url: rawUrl,

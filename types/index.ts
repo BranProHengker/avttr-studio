@@ -13,13 +13,14 @@ export type PlatformType =
   | 'other'
 
 export interface MediaItem {
-  type: 'video' | 'audio' | 'image'
+  type: 'video' | 'audio' | 'image' | 'file'
   url: string
   quality?: string
   format?: string
   size?: number
   watermark?: boolean
   thumbnail?: string
+  filename?: string
 }
 
 export interface AuthorInfo {

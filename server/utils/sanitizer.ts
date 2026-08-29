@@ -53,7 +53,7 @@ export function detectPlatform(url: string): PlatformType {
   if (/tiktok\.com/i.test(lower)) return 'tiktok'
   if (/instagram\.com/i.test(lower)) return 'instagram'
   if (/youtube\.com|youtu\.be/i.test(lower)) return 'youtube'
-  if (/twitter\.com|x\.com/i.test(lower)) return 'twitter'
+  if (/twitter\.com|(?:^|\/\/|\.)x\.com(?:[\/?]|$)/i.test(lower)) return 'twitter'
   if (/facebook\.com|fb\.watch/i.test(lower)) return 'facebook'
   if (/capcut\.com/i.test(lower)) return 'capcut'
   if (/spotify\.com/i.test(lower)) return 'spotify'

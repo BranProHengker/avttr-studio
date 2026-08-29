@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Music } from 'lucide-vue-next'
+import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Music, FileText, Archive, FileDown } from 'lucide-vue-next'
 import type { ScraperResult, MediaItem } from '~/types'
 import { useDownloader } from '~/composables/useDownloader'
 import { useClipboard } from '~/composables/useClipboard'
@@ -40,6 +40,10 @@ const audioMedias = computed(() => {
 
 const imageMedias = computed(() => {
   return props.result?.medias.filter((m) => m.type === 'image') || []
+})
+
+const fileMedias = computed(() => {
+  return props.result?.medias.filter((m) => m.type === 'file' || (!['video', 'audio', 'image'].includes(m.type))) || []
 })
 
 const isCarousel = computed(() => {
@@ -399,6 +403,40 @@ watch(
               @click="downloadMediaItem(item, `${result.title || result.platform}`)"
             >
               Download {{ item.format?.toUpperCase() || 'Audio' }}
+            </Button>
+          </div>
+
+          <!-- General Files & Documents (ZIP, PDF, APK, Documents, etc.) -->
+          <div
+            v-for="(item, idx) in fileMedias"
+            :key="'file-' + idx"
+            class="flex items-center justify-between p-3 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-lg hover:border-[var(--border-card-hover)] hover:bg-[var(--bg-card-hover)] transition-all col-span-full"
+          >
+            <div class="flex items-center gap-3 min-w-0 pr-2">
+              <div class="w-9 h-9 rounded-lg bg-[#2E2E2E] border border-[var(--border-subtle)] flex items-center justify-center text-white shrink-0">
+                <FileText v-if="/^(pdf|doc|docx|txt|epub|xls|xlsx|ppt|pptx)$/i.test(item.format || '')" class="w-4.5 h-4.5" />
+                <Archive v-else-if="/^(zip|rar|7z|tar|gz|iso|tgz|bz2)$/i.test(item.format || '')" class="w-4.5 h-4.5" />
+                <FileDown v-else class="w-4.5 h-4.5" />
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs font-semibold text-[var(--text-primary)] truncate" :title="item.filename || item.quality">
+                  {{ item.filename || item.quality || 'Download File' }}
+                </div>
+                <div class="text-[10px] text-[var(--text-tertiary)] font-mono mt-0.5 flex items-center gap-1.5">
+                  <span class="px-1.5 py-0.2 bg-[#212121] border border-[var(--border-subtle)] rounded text-white text-[9px] font-bold uppercase">{{ item.format?.toUpperCase() || 'FILE' }}</span>
+                  <span>•</span>
+                  <span>Size: <span class="text-[var(--text-secondary)] font-medium">{{ formatSize(item.size) }}</span></span>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="sm"
+              class="shrink-0"
+              @click="downloadMediaItem(item, item.filename || `${result.platform}_file_${idx + 1}`)"
+            >
+              Download
             </Button>
           </div>
         </div>
