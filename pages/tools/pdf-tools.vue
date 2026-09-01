@@ -439,7 +439,7 @@ const handleExecuteImgToPdf = async () => {
 
         <div class="flex items-center gap-2">
           <Badge variant="badge">
-            100% Client Privacy
+            Client Privacy
           </Badge>
         </div>
       </div>

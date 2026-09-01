@@ -37,7 +37,7 @@ const handleResolve = async () => {
 
       <div class="flex items-center gap-2 shrink-0">
         <Badge variant="badge">
-          100% Client Privacy
+          Client Privacy
         </Badge>
       </div>
     </div>
