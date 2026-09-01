@@ -16,7 +16,8 @@ import {
   Sliders,
   Image as ImageIcon,
   Pipette,
-  Layers
+  Layers,
+  RotateCcw
 } from 'lucide-vue-next'
 import { toPng, toBlob } from 'html-to-image'
 import { useToast } from '~/composables/useToast'
@@ -28,12 +29,16 @@ const toast = useToast()
 
 type DeviceType = 'iphone' | 'macbook' | 'clay'
 type AspectRatio = '16:9' | '1:1' | '4:5' | '9:16'
-type PerspectiveAngle = 'flat' | 'iso-left' | 'iso-right' | 'floating'
+type PerspectiveAngle = 'flat' | 'iso-left' | 'iso-right' | 'floating' | 'custom'
 type BgMode = 'preset' | 'color' | 'image' | 'transparent'
 
 const selectedDevice = ref<DeviceType>('iphone')
 const selectedAspectRatio = ref<AspectRatio>('16:9')
 const selectedPerspective = ref<PerspectiveAngle>('flat')
+const rotX = ref<number>(0)
+const rotY = ref<number>(0)
+const rotZ = ref<number>(0)
+const mockupScale = ref<number>(100)
 const bgMode = ref<BgMode>('preset')
 const selectedBgTheme = ref<string>('gradient-obsidian')
 const customBgColor = ref<string>('#171717')
@@ -170,12 +175,49 @@ const aspectRatioClass = computed(() => {
   }
 })
 
+const applyPerspectivePreset = (preset: PerspectiveAngle) => {
+  selectedPerspective.value = preset
+  if (preset === 'flat') {
+    rotX.value = 0
+    rotY.value = 0
+    rotZ.value = 0
+    mockupScale.value = 100
+  } else if (preset === 'floating') {
+    rotX.value = 12
+    rotY.value = 0
+    rotZ.value = 0
+    mockupScale.value = 95
+  } else if (preset === 'iso-left') {
+    rotX.value = 6
+    rotY.value = 18
+    rotZ.value = -3
+    mockupScale.value = 92
+  } else if (preset === 'iso-right') {
+    rotX.value = 6
+    rotY.value = -18
+    rotZ.value = 3
+    mockupScale.value = 92
+  }
+}
+
+const onSliderChange = () => {
+  selectedPerspective.value = 'custom'
+}
+
+const resetPerspective = () => {
+  applyPerspectivePreset('flat')
+}
+
+const isPerspectiveModified = computed(() => {
+  return rotX.value !== 0 || rotY.value !== 0 || rotZ.value !== 0 || mockupScale.value !== 100
+})
+
 const perspectiveStyle = computed(() => {
-  switch (selectedPerspective.value) {
-    case 'iso-left': return { transform: 'perspective(1200px) rotateY(16deg) rotateX(6deg) scale(0.92)' }
-    case 'iso-right': return { transform: 'perspective(1200px) rotateY(-16deg) rotateX(6deg) scale(0.92)' }
-    case 'floating': return { transform: 'perspective(1200px) rotateX(8deg) translateY(-8px) scale(0.95)' }
-    default: return { transform: 'none' }
+  const isZero = rotX.value === 0 && rotY.value === 0 && rotZ.value === 0 && mockupScale.value === 100
+  if (isZero) return { transform: 'none' }
+  const s = mockupScale.value / 100
+  return {
+    transform: `perspective(1200px) rotateX(${rotX.value}deg) rotateY(${rotY.value}deg) rotateZ(${rotZ.value}deg) scale(${s})`
   }
 })
 
@@ -435,44 +477,128 @@ const handleCopyImage = async () => {
             </div>
           </div>
 
-          <!-- 3D Perspective -->
-          <div class="space-y-2">
-            <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
-              Perspective Angle
-            </label>
-            <div class="grid grid-cols-2 gap-2 text-xs">
+          <!-- 3D Perspective & Fine-Tuning Sliders -->
+          <div class="space-y-3 pt-2 border-t border-[var(--border-subtle)]">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
+                Perspective Angle
+              </label>
+              <button
+                v-if="isPerspectiveModified"
+                type="button"
+                class="flex items-center gap-1 text-[11px] text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer"
+                @click="resetPerspective"
+              >
+                <RotateCcw class="w-3 h-3" />
+                <span>Reset</span>
+              </button>
+            </div>
+
+            <!-- Preset Buttons -->
+            <div class="grid grid-cols-4 gap-1.5 text-xs">
               <button
                 type="button"
-                class="py-1.5 px-3 rounded-md border text-center transition-all cursor-pointer"
+                class="py-1.5 px-1.5 rounded-md border text-center transition-all cursor-pointer text-[11px]"
                 :class="selectedPerspective === 'flat' ? 'bg-[#2E2E2E] border-white/40 text-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
-                @click="selectedPerspective = 'flat'"
+                @click="applyPerspectivePreset('flat')"
               >
-                Flat (2D)
+                Flat 2D
               </button>
               <button
                 type="button"
-                class="py-1.5 px-3 rounded-md border text-center transition-all cursor-pointer"
+                class="py-1.5 px-1.5 rounded-md border text-center transition-all cursor-pointer text-[11px]"
                 :class="selectedPerspective === 'floating' ? 'bg-[#2E2E2E] border-white/40 text-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
-                @click="selectedPerspective = 'floating'"
+                @click="applyPerspectivePreset('floating')"
               >
-                Floating 3D
+                Floating
               </button>
               <button
                 type="button"
-                class="py-1.5 px-3 rounded-md border text-center transition-all cursor-pointer"
+                class="py-1.5 px-1.5 rounded-md border text-center transition-all cursor-pointer text-[11px]"
                 :class="selectedPerspective === 'iso-left' ? 'bg-[#2E2E2E] border-white/40 text-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
-                @click="selectedPerspective = 'iso-left'"
+                @click="applyPerspectivePreset('iso-left')"
               >
-                Isometric Left
+                Iso Left
               </button>
               <button
                 type="button"
-                class="py-1.5 px-3 rounded-md border text-center transition-all cursor-pointer"
+                class="py-1.5 px-1.5 rounded-md border text-center transition-all cursor-pointer text-[11px]"
                 :class="selectedPerspective === 'iso-right' ? 'bg-[#2E2E2E] border-white/40 text-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
-                @click="selectedPerspective = 'iso-right'"
+                @click="applyPerspectivePreset('iso-right')"
               >
-                Isometric Right
+                Iso Right
               </button>
+            </div>
+
+            <!-- Custom 3D Angle Sliders -->
+            <div class="space-y-2.5 pt-1">
+              <!-- Horizontal Tilt (Yaw) -->
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                  <span>Horizontal Tilt (Yaw)</span>
+                  <span class="font-mono text-white text-[11px]">{{ rotY > 0 ? `+${rotY}°` : `${rotY}°` }}</span>
+                </div>
+                <input
+                  v-model.number="rotY"
+                  type="range"
+                  min="-45"
+                  max="45"
+                  step="1"
+                  class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white"
+                  @input="onSliderChange"
+                />
+              </div>
+
+              <!-- Vertical Tilt (Pitch) -->
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                  <span>Vertical Tilt (Pitch)</span>
+                  <span class="font-mono text-white text-[11px]">{{ rotX > 0 ? `+${rotX}°` : `${rotX}°` }}</span>
+                </div>
+                <input
+                  v-model.number="rotX"
+                  type="range"
+                  min="-45"
+                  max="45"
+                  step="1"
+                  class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white"
+                  @input="onSliderChange"
+                />
+              </div>
+
+              <!-- Device Rotation (Roll) -->
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                  <span>Device Rotation (Roll)</span>
+                  <span class="font-mono text-white text-[11px]">{{ rotZ > 0 ? `+${rotZ}°` : `${rotZ}°` }}</span>
+                </div>
+                <input
+                  v-model.number="rotZ"
+                  type="range"
+                  min="-30"
+                  max="30"
+                  step="1"
+                  class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white"
+                  @input="onSliderChange"
+                />
+              </div>
+
+              <!-- Mockup Zoom Scale -->
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                  <span>Mockup Scale</span>
+                  <span class="font-mono text-white text-[11px]">{{ mockupScale }}%</span>
+                </div>
+                <input
+                  v-model.number="mockupScale"
+                  type="range"
+                  min="60"
+                  max="120"
+                  step="2"
+                  class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white"
+                  @input="onSliderChange"
+                />
+              </div>
             </div>
           </div>
         </Card>
