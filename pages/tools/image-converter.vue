@@ -312,7 +312,7 @@ const clearAll = () => {
 </script>
 
 <template>
-  <div class="space-y-6 pb-12 w-full max-w-5xl">
+  <div class="space-y-6 pb-12 w-full">
     <!-- Header Section -->
     <div class="space-y-2">
       <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">

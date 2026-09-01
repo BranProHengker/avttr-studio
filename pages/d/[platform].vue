@@ -32,9 +32,9 @@ const platformInfo = computed(() => {
     case 'youtube':
       return {
         name: 'YouTube',
-        subtitle: 'Download YouTube Videos (1080p/720p), Shorts, and Audio MP3 streams',
+        subtitle: 'Download YouTube Videos, Shorts, and Audio MP3 streams',
         placeholder: 'Paste YouTube video link (e.g. https://youtu.be/... or youtube.com/watch?v=...)',
-        features: ['1080p & 720p HD Video', 'Shorts Support', 'Audio Extraction (MP3)', 'Fast Streaming'],
+        features: ['Shorts Support', 'Audio Extraction (MP3)', 'Fast Streaming'],
       }
     case 'twitter':
       return {
@@ -88,7 +88,7 @@ const handleResolve = async () => {
 </script>
 
 <template>
-  <div class="space-y-8 pb-12 w-full max-w-5xl">
+  <div class="space-y-8 pb-12 w-full">
     <!-- Breadcrumb & Back -->
     <div class="flex items-center gap-2">
       <NuxtLink to="/" class="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1">

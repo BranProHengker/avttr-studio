@@ -186,8 +186,14 @@ export interface ScraperResult {
 
 ---
 
-## 6. UI & Aesthetic Guardrails
-* Adhere strictly to the color tokens and typography scale in `DESIGN.md`.
+## 6. UI & Aesthetic Guardrails (DESIGN.md Mandate)
+* **Strict Mandate on `DESIGN.md`:** All pages, components, and tools MUST strictly follow the design tokens, typography, and spacing defined in `DESIGN.md`.
+* **Uniform Page Layout & Full-Width Fluid Standard:** 
+  * All sub-pages, downloader routes, and tools MUST use the standardized full-width container: `class="space-y-6 pb-12 w-full"`.
+  * **Strict Ban on Narrow Max-Widths & `mx-auto` on Page Roots:** Never place `max-w-5xl`, `max-w-4xl`, or `mx-auto` on top-level page containers. Interfaces must utilize the full content width fluidly.
+* **Standard Breadcrumb & Header Structure:** Every dedicated tool page and downloader page MUST start with:
+  1. Left-aligned Breadcrumbs: `Dashboard / [Category] / [Page Name]` with mono font and subtle hover transitions.
+  2. Header Flex Row: Title (`text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]`), subtitle description, and right-aligned `<Badge variant="badge">100% Client Privacy</Badge>`.
 * **Dark Mode First:** Default to the `#171717` dark background palette.
 * **Radius Tokens:** Cards use `rounded-[14px]` (`14px`), buttons/inputs use `rounded-lg` (`8px`), badges use `rounded-full` (full pill shape).
 * **Badge & Tagline Standard:**
