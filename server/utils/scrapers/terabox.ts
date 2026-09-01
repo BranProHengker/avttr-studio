@@ -80,6 +80,8 @@ export const teraboxScraper: PlatformScraper = {
     const { shortUrl } = extractSurl(url)
     const userCookie = process.env.TERABOX_COOKIE || process.env.COOKIE_JSON || process.env.NDUS_COOKIE || ''
 
+    let lastErrorMsg = ''
+
     // ENGINE 1: Native TeraBox / 1024tera Recursive Share Resolver
     if (shortUrl) {
       try {
@@ -153,6 +155,14 @@ export const teraboxScraper: PlatformScraper = {
                 medias,
               }
             }
+          } else if (data && data.errno !== 0) {
+            if (data.errno === -6 || data.errno === 105) {
+              lastErrorMsg = 'Sesi Cookie TeraBox (ndus) telah kedaluwarsa. Silakan perbarui TERABOX_COOKIE di konfigurasi server.'
+            } else if (data.errno === 111 || data.errno === -111) {
+              lastErrorMsg = 'TeraBox memicu proteksi bot / verifikasi captcha. Sesi cookie server kedaluwarsa atau link memerlukan verifikasi manual.'
+            } else if (data.errno === 2 || data.errno === -2) {
+              lastErrorMsg = 'Link share TeraBox ini sudah tidak tersedia atau file telah dihapus oleh pemiliknya.'
+            }
           }
         }
       } catch (err: any) {
@@ -202,7 +212,7 @@ export const teraboxScraper: PlatformScraper = {
       platform: 'terabox',
       title: '',
       medias: [],
-      error: 'Tidak dapat mengambil link unduhan langsung dari TeraBox. Pastikan link bersifat publik atau perbarui cookie di konfigurasi.',
+      error: lastErrorMsg || 'Tidak dapat mengambil link unduhan TeraBox. Kemungkinan sesi Cookie TeraBox di server telah kedaluwarsa atau link terkunci proteksi captcha. Silakan perbarui TERABOX_COOKIE di file .env.',
     }
   },
 }
