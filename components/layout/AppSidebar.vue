@@ -396,6 +396,28 @@ const isRouteActive = (targetRoute: string) => {
                 Brat Text Generator
               </NuxtLink>
               <NuxtLink
+                to="/tools/pdf-tools"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/pdf-tools')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                PDF Studio
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/svg-optimizer"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/svg-optimizer')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                SVG Optimizer
+              </NuxtLink>
+              <NuxtLink
                 to="/tools/hash-encoder"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
@@ -435,6 +457,17 @@ const isRouteActive = (targetRoute: string) => {
 
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
+              <NuxtLink
+                to="/tools/device-mockup"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/device-mockup')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Device Mockup Studio
+              </NuxtLink>
               <NuxtLink
                 to="/tools/font-library"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"

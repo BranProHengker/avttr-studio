@@ -149,6 +149,26 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'pdf-tools',
+        title: 'PDF Studio',
+        description: 'Merge multiple PDFs, split & extract pages, and convert photos to PDF completely in your browser.',
+        category: 'image',
+        icon: 'file-text',
+        route: '/tools/pdf-tools',
+        badge: 'New',
+        popular: true,
+      },
+      {
+        id: 'svg-optimizer',
+        title: 'SVG Optimizer',
+        description: 'Clean Figma bloatware, minify SVG paths, live preview, and export to Vue 3, React, or 4K PNG.',
+        category: 'image',
+        icon: 'sparkles',
+        route: '/tools/svg-optimizer',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'base64-image',
         title: 'Base64 & Hash Encoder',
         description: 'Convert files to Base64, generate SHA-256 / SHA-512 hashes via Web Crypto API.',
@@ -165,6 +185,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
     description: 'Harmonious palettes, contrast verification, and token exports',
     icon: 'Palette',
     tools: [
+      {
+        id: 'device-mockup',
+        title: 'Device Mockup Studio',
+        description: 'Wrap screenshots into high-end iPhone 16 Pro, MacBook M3, and minimal 3D mockups for portfolio showcase.',
+        category: 'color',
+        icon: 'smartphone',
+        route: '/tools/device-mockup',
+        badge: 'New',
+        popular: true,
+      },
       {
         id: 'color-converter',
         title: 'Color Converter & Picker',
