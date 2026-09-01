@@ -224,6 +224,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         route: '/tools/color-palette',
         badge: 'Popular',
       },
+      {
+        id: 'og-previewer',
+        title: 'Open Graph Previewer',
+        description: 'Test, simulate, and generate social cards for Twitter, Discord, WhatsApp, Facebook, LinkedIn, and Google.',
+        category: 'color',
+        icon: 'globe',
+        route: '/tools/og-previewer',
+        badge: 'New',
+        popular: true,
+      },
     ],
   },
 ]

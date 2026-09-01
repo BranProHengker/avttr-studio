@@ -501,6 +501,17 @@ const isRouteActive = (targetRoute: string) => {
               >
                 Color Palette Generator
               </NuxtLink>
+              <NuxtLink
+                to="/tools/og-previewer"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/og-previewer')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Open Graph Previewer
+              </NuxtLink>
             </div>
           </div>
         </div>
