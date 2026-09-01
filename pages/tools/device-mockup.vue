@@ -3,21 +3,18 @@ import { ref, computed, onMounted } from 'vue'
 import {
   Smartphone,
   Laptop,
-  Tablet,
-  Monitor,
   Square,
   Upload,
   Download,
   Copy,
   Check,
-  RotateCcw,
+  Eye,
+  Trash2,
+  Plus,
+  Palette,
   Sparkles,
   Sliders,
-  Maximize,
-  Layers,
-  Palette,
-  Eye,
-  Trash2
+  Image as ImageIcon
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
@@ -26,42 +23,69 @@ import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
 
-type DeviceType = 'iphone' | 'macbook' | 'ipad' | 'monitor' | 'clay'
+type DeviceType = 'iphone' | 'macbook' | 'clay'
 type AspectRatio = '16:9' | '1:1' | '4:5' | '9:16'
 type PerspectiveAngle = 'flat' | 'iso-left' | 'iso-right' | 'floating'
+type BgMode = 'preset' | 'color' | 'image' | 'transparent'
 
 const selectedDevice = ref<DeviceType>('iphone')
 const selectedAspectRatio = ref<AspectRatio>('16:9')
 const selectedPerspective = ref<PerspectiveAngle>('flat')
+const bgMode = ref<BgMode>('preset')
 const selectedBgTheme = ref<string>('gradient-obsidian')
-const customBgColor = ref('#171717')
+const customBgColor = ref<string>('#171717')
+const customBgImage = ref<string | null>(null)
+const bgBlur = ref<number>(0)
+const bgOverlay = ref<number>(15)
 
 const paddingSize = ref(48)
 const shadowIntensity = ref<'none' | 'soft' | 'dramatic' | 'glow'>('dramatic')
 const deviceColor = ref<'black' | 'silver' | 'titanium'>('black')
 
 const uploadedImage = ref<string | null>(null)
+const uploadedImageName = ref<string>('')
 const isExporting = ref(false)
 const isCopied = ref(false)
 
 const BG_PRESETS = [
-  { id: 'gradient-obsidian', name: 'Obsidian', class: 'bg-gradient-to-br from-[#1c1c1e] via-[#0f0f10] to-[#050505]' },
-  { id: 'gradient-emerald', name: 'Emerald', class: 'bg-gradient-to-br from-[#064e3b] via-[#022c22] to-[#0f172a]' },
-  { id: 'gradient-sunset', name: 'Sunset', class: 'bg-gradient-to-br from-[#7c2d12] via-[#450a0a] to-[#1e1b4b]' },
-  { id: 'gradient-violet', name: 'Midnight', class: 'bg-gradient-to-br from-[#4c1d95] via-[#1e1b4b] to-[#030712]' },
-  { id: 'gradient-cyber', name: 'Cyberpunk', class: 'bg-gradient-to-br from-[#0284c7] via-[#3b0764] to-[#0f172a]' },
-  { id: 'solid-dark', name: 'Pure Dark', class: 'bg-[#121212]' },
-  { id: 'transparent', name: 'Transparent', class: 'bg-[#121212] bg-[radial-gradient(#262626_1px,transparent_1px)] [background-size:16px_16px]' },
+  { id: 'gradient-obsidian', name: 'Obsidian', type: 'gradient', class: 'bg-gradient-to-br from-[#1c1c1e] via-[#0f0f10] to-[#050505]' },
+  { id: 'gradient-studio', name: 'Studio Blue', type: 'gradient', class: 'bg-gradient-to-br from-[#1e293b] via-[#0f172a] to-[#020617]' },
+  { id: 'gradient-emerald', name: 'Emerald', type: 'gradient', class: 'bg-gradient-to-br from-[#064e3b] via-[#022c22] to-[#0f172a]' },
+  { id: 'gradient-sunset', name: 'Sunset', type: 'gradient', class: 'bg-gradient-to-br from-[#7c2d12] via-[#450a0a] to-[#1e1b4b]' },
+  { id: 'gradient-violet', name: 'Midnight', type: 'gradient', class: 'bg-gradient-to-br from-[#4c1d95] via-[#1e1b4b] to-[#030712]' },
+  { id: 'gradient-cyber', name: 'Cyberpunk', type: 'gradient', class: 'bg-gradient-to-br from-[#0284c7] via-[#3b0764] to-[#0f172a]' },
+  { id: 'wallpaper-mesh', name: 'Mesh Art', type: 'image', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80' },
+  { id: 'wallpaper-dark', name: 'Obsidian Foil', type: 'image', url: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1400&q=80' },
+  { id: 'wallpaper-studio', name: 'Spotlight', type: 'image', url: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=1400&q=80' },
+]
+
+const QUICK_COLORS = [
+  '#171717',
+  '#000000',
+  '#0f172a',
+  '#1e1b4b',
+  '#064e3b',
+  '#7c2d12',
+  '#27272a',
+  '#ffffff',
 ]
 
 const SAMPLE_IMAGES = {
-  mobile: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
-  desktop: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80',
+  mobile: {
+    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+    name: 'Mobile App UI',
+    device: 'iphone' as DeviceType,
+  },
+  desktop: {
+    url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1400&q=80',
+    name: 'Web Dashboard UI',
+    device: 'macbook' as DeviceType,
+  },
 }
 
 onMounted(() => {
-  // Default sample image
-  uploadedImage.value = SAMPLE_IMAGES.mobile
+  uploadedImage.value = SAMPLE_IMAGES.mobile.url
+  uploadedImageName.value = SAMPLE_IMAGES.mobile.name
 })
 
 const handleImageUpload = (e: Event) => {
@@ -77,90 +101,99 @@ const handleImageUpload = (e: Event) => {
   const reader = new FileReader()
   reader.onload = (event) => {
     uploadedImage.value = (event.target?.result as string) || null
+    uploadedImageName.value = file.name
     toast.success('Screenshot Loaded', `${file.name} ready for mockup`)
   }
   reader.readAsDataURL(file)
   input.value = ''
 }
 
-const loadSample = (type: 'mobile' | 'desktop') => {
-  uploadedImage.value = SAMPLE_IMAGES[type]
-  if (type === 'desktop') {
-    selectedDevice.value = 'macbook'
-  } else {
-    selectedDevice.value = 'iphone'
+const handleBgImageUpload = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) return
+
+  const file = input.files[0]
+  if (!file.type.startsWith('image/')) {
+    toast.error('Invalid File', 'Please select a valid image file (PNG, JPG, WebP)')
+    return
   }
-  toast.info('Sample Loaded', `Loaded sample ${type} screenshot`)
+
+  const reader = new FileReader()
+  reader.onload = (event) => {
+    customBgImage.value = (event.target?.result as string) || null
+    bgMode.value = 'image'
+    toast.success('Background Applied', `${file.name} set as custom background`)
+  }
+  reader.readAsDataURL(file)
+  input.value = ''
 }
 
-// Compute dynamic aspect ratio styles
+const loadSample = (type: 'mobile' | 'desktop') => {
+  const sample = SAMPLE_IMAGES[type]
+  uploadedImage.value = sample.url
+  uploadedImageName.value = sample.name
+  selectedDevice.value = sample.device
+  toast.info('Sample Loaded', `Loaded sample ${sample.name}`)
+}
+
+const removeScreenshot = () => {
+  uploadedImage.value = null
+  uploadedImageName.value = ''
+  toast.info('Removed', 'Screenshot removed')
+}
+
 const aspectRatioClass = computed(() => {
   switch (selectedAspectRatio.value) {
-    case '16:9':
-      return 'aspect-16/9'
-    case '1:1':
-      return 'aspect-square'
-    case '4:5':
-      return 'aspect-4/5'
-    case '9:16':
-      return 'aspect-9/16 max-w-sm mx-auto'
-    default:
-      return 'aspect-16/9'
+    case '16:9': return 'aspect-16/9'
+    case '1:1': return 'aspect-square max-w-xl mx-auto'
+    case '4:5': return 'aspect-4/5 max-w-md mx-auto'
+    case '9:16': return 'aspect-9/16 max-w-sm mx-auto'
+    default: return 'aspect-16/9'
   }
 })
 
-// Compute 3D perspective style
 const perspectiveStyle = computed(() => {
   switch (selectedPerspective.value) {
-    case 'iso-left':
-      return {
-        transform: 'perspective(1200px) rotateY(16deg) rotateX(6deg) scale(0.92)',
-        transformOrigin: 'center center',
-      }
-    case 'iso-right':
-      return {
-        transform: 'perspective(1200px) rotateY(-16deg) rotateX(6deg) scale(0.92)',
-        transformOrigin: 'center center',
-      }
-    case 'floating':
-      return {
-        transform: 'perspective(1200px) rotateX(8deg) translateY(-8px) scale(0.95)',
-        transformOrigin: 'center center',
-      }
-    default:
-      return {
-        transform: 'none',
-      }
+    case 'iso-left': return { transform: 'perspective(1200px) rotateY(16deg) rotateX(6deg) scale(0.92)' }
+    case 'iso-right': return { transform: 'perspective(1200px) rotateY(-16deg) rotateX(6deg) scale(0.92)' }
+    case 'floating': return { transform: 'perspective(1200px) rotateX(8deg) translateY(-8px) scale(0.95)' }
+    default: return { transform: 'none' }
   }
 })
 
-// Compute shadow style
 const shadowClass = computed(() => {
   switch (shadowIntensity.value) {
-    case 'soft':
-      return 'shadow-xl shadow-black/40'
-    case 'dramatic':
-      return 'shadow-2xl shadow-black/80 ring-1 ring-white/10'
-    case 'glow':
-      return 'shadow-[0_20px_60px_rgba(59,130,246,0.25)] ring-1 ring-white/20'
-    case 'none':
-    default:
-      return 'shadow-none'
+    case 'soft': return 'shadow-xl shadow-black/40'
+    case 'dramatic': return 'shadow-2xl shadow-black/80 ring-1 ring-white/10'
+    case 'glow': return 'shadow-[0_20px_60px_rgba(59,130,246,0.25)] ring-1 ring-white/20'
+    default: return 'shadow-none'
   }
 })
 
-// Background class
-const activeBgClass = computed(() => {
-  const preset = BG_PRESETS.find((p) => p.id === selectedBgTheme.value)
-  return preset ? preset.class : 'bg-[#171717]'
+const currentBgImageUrl = computed(() => {
+  if (bgMode.value === 'image') return customBgImage.value
+  if (bgMode.value === 'preset') {
+    const preset = BG_PRESETS.find((p) => p.id === selectedBgTheme.value)
+    return (preset && preset.type === 'image') ? preset.url : null
+  }
+  return null
 })
 
-// Render mockup to Canvas and export
+const activeBgClass = computed(() => {
+  if (bgMode.value === 'transparent') {
+    return 'bg-[#121212] bg-[radial-gradient(#333333_1px,transparent_1px)] [background-size:16px_16px]'
+  }
+  if (bgMode.value === 'color' || currentBgImageUrl.value) {
+    return 'bg-transparent'
+  }
+  const preset = BG_PRESETS.find((p) => p.id === selectedBgTheme.value)
+  return preset && preset.class ? preset.class : 'bg-[#171717]'
+})
+
 const exportToCanvas = async (scale = 2): Promise<HTMLCanvasElement> => {
   const mockupContainer = document.getElementById('mockup-render-area')
   if (!mockupContainer) throw new Error('Render container not found')
 
-  // We construct a high-resolution canvas manually to ensure 100% crisp pixel rendering
   const canvas = document.createElement('canvas')
   const width = mockupContainer.clientWidth * scale
   const height = mockupContainer.clientHeight * scale
@@ -171,38 +204,36 @@ const exportToCanvas = async (scale = 2): Promise<HTMLCanvasElement> => {
   if (!ctx) throw new Error('Canvas 2D context unavailable')
 
   // 1. Draw Background
-  if (selectedBgTheme.value === 'transparent') {
+  if (bgMode.value === 'transparent') {
     ctx.clearRect(0, 0, width, height)
-  } else {
-    // Fill gradient
-    const grad = ctx.createLinearGradient(0, 0, width, height)
-    if (selectedBgTheme.value === 'gradient-emerald') {
-      grad.addColorStop(0, '#064e3b')
-      grad.addColorStop(0.5, '#022c22')
-      grad.addColorStop(1, '#0f172a')
-    } else if (selectedBgTheme.value === 'gradient-sunset') {
-      grad.addColorStop(0, '#7c2d12')
-      grad.addColorStop(0.5, '#450a0a')
-      grad.addColorStop(1, '#1e1b4b')
-    } else if (selectedBgTheme.value === 'gradient-violet') {
-      grad.addColorStop(0, '#4c1d95')
-      grad.addColorStop(0.5, '#1e1b4b')
-      grad.addColorStop(1, '#030712')
-    } else if (selectedBgTheme.value === 'gradient-cyber') {
-      grad.addColorStop(0, '#0284c7')
-      grad.addColorStop(0.5, '#3b0764')
-      grad.addColorStop(1, '#0f172a')
-    } else if (selectedBgTheme.value === 'solid-dark') {
-      grad.addColorStop(0, '#121212')
-      grad.addColorStop(1, '#121212')
-    } else {
-      // Obsidian default
-      grad.addColorStop(0, '#1c1c1e')
-      grad.addColorStop(0.5, '#0f0f10')
-      grad.addColorStop(1, '#050505')
-    }
-    ctx.fillStyle = grad
+  } else if (bgMode.value === 'color') {
+    ctx.fillStyle = customBgColor.value || '#171717'
     ctx.fillRect(0, 0, width, height)
+  } else if (currentBgImageUrl.value) {
+    const bgImg = new Image()
+    bgImg.crossOrigin = 'anonymous'
+    bgImg.src = currentBgImageUrl.value
+    await new Promise((res, rej) => { bgImg.onload = res; bgImg.onerror = rej })
+    ctx.save()
+    if (bgBlur.value > 0) ctx.filter = `blur(${bgBlur.value * scale}px)`
+    const imgRatio = bgImg.naturalWidth / bgImg.naturalHeight
+    const canvasRatio = width / height
+    let drawW = width, drawH = height, drawX = 0, drawY = 0
+    if (canvasRatio > imgRatio) { drawH = width / imgRatio; drawY = (height - drawH) / 2 }
+    else { drawW = height * imgRatio; drawX = (width - drawW) / 2 }
+    ctx.drawImage(bgImg, drawX, drawY, drawW, drawH)
+    ctx.restore()
+    if (bgOverlay.value > 0) { ctx.fillStyle = `rgba(0, 0, 0, ${bgOverlay.value / 100})`; ctx.fillRect(0, 0, width, height) }
+  } else {
+    const grad = ctx.createLinearGradient(0, 0, width, height)
+    const preset = BG_PRESETS.find(p => p.id === selectedBgTheme.value)
+    if (preset?.class?.includes('emerald')) { grad.addColorStop(0, '#064e3b'); grad.addColorStop(0.5, '#022c22'); grad.addColorStop(1, '#0f172a') }
+    else if (preset?.class?.includes('sunset')) { grad.addColorStop(0, '#7c2d12'); grad.addColorStop(0.5, '#450a0a'); grad.addColorStop(1, '#1e1b4b') }
+    else if (preset?.class?.includes('studio')) { grad.addColorStop(0, '#1e293b'); grad.addColorStop(0.5, '#0f172a'); grad.addColorStop(1, '#020617') }
+    else if (preset?.class?.includes('violet')) { grad.addColorStop(0, '#4c1d95'); grad.addColorStop(0.5, '#1e1b4b'); grad.addColorStop(1, '#030712') }
+    else if (preset?.class?.includes('cyber')) { grad.addColorStop(0, '#0284c7'); grad.addColorStop(0.5, '#3b0764'); grad.addColorStop(1, '#0f172a') }
+    else { grad.addColorStop(0, '#1c1c1e'); grad.addColorStop(0.5, '#0f0f10'); grad.addColorStop(1, '#050505') }
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, width, height)
   }
 
   // 2. Draw Screenshot inside Mockup Frame
@@ -210,138 +241,62 @@ const exportToCanvas = async (scale = 2): Promise<HTMLCanvasElement> => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.src = uploadedImage.value
-
-    await new Promise((res, rej) => {
-      img.onload = res
-      img.onerror = rej
-    })
-
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej })
     const pad = paddingSize.value * scale
-    const targetW = width - pad * 2
-    const targetH = height - pad * 2
-
-    // Save state for 3D transforms / rounded clip
+    const targetW = width - pad * 2, targetH = height - pad * 2
     ctx.save()
-
-    // Draw shadow
     if (shadowIntensity.value !== 'none') {
       ctx.shadowColor = shadowIntensity.value === 'glow' ? 'rgba(59, 130, 246, 0.4)' : 'rgba(0, 0, 0, 0.7)'
       ctx.shadowBlur = shadowIntensity.value === 'dramatic' ? 40 * scale : 20 * scale
       ctx.shadowOffsetY = 15 * scale
     }
-
-    // Determine device frame geometry
-    let frameRadius = 24 * scale
-    let framePadding = 12 * scale
-
-    if (selectedDevice.value === 'iphone') {
-      frameRadius = 36 * scale
-      framePadding = 10 * scale
-    } else if (selectedDevice.value === 'macbook') {
-      frameRadius = 16 * scale
-      framePadding = 14 * scale
-    }
-
-    // Center coordinates
-    const frameX = pad
-    const frameY = pad
-
-    // Draw Outer Chassis
+    const frameRadius = (selectedDevice.value === 'iphone' ? 36 : selectedDevice.value === 'macbook' ? 16 : 24) * scale
+    const framePadding = (selectedDevice.value === 'iphone' ? 10 : selectedDevice.value === 'macbook' ? 14 : 12) * scale
     ctx.fillStyle = deviceColor.value === 'silver' ? '#e2e8f0' : deviceColor.value === 'titanium' ? '#334155' : '#18181b'
     ctx.beginPath()
-    ctx.roundRect(frameX, frameY, targetW, targetH, frameRadius)
+    ctx.roundRect(pad, pad, targetW, targetH, frameRadius)
     ctx.fill()
-
-    // Inner Screen Clip
-    ctx.restore()
-    ctx.save()
-    const screenX = frameX + framePadding
-    const screenY = frameY + framePadding
-    const screenW = targetW - framePadding * 2
-    const screenH = targetH - framePadding * 2
-    const innerRadius = Math.max(4, frameRadius - framePadding)
-
+    ctx.shadowColor = 'transparent'
+    const screenX = pad + framePadding, screenY = pad + framePadding
+    const screenW = targetW - framePadding * 2, screenH = targetH - framePadding * 2
     ctx.beginPath()
-    ctx.roundRect(screenX, screenY, screenW, screenH, innerRadius)
+    ctx.roundRect(screenX, screenY, screenW, screenH, Math.max(4, frameRadius - framePadding))
     ctx.clip()
-
-    // Draw image to cover screen
-    const imgAspect = img.width / img.height
-    const screenAspect = screenW / screenH
-    let drawW = screenW
-    let drawH = screenH
-    let drawX = screenX
-    let drawY = screenY
-
-    if (imgAspect > screenAspect) {
-      drawW = screenH * imgAspect
-      drawX = screenX + (screenW - drawW) / 2
-    } else {
-      drawH = screenW / imgAspect
-      drawY = screenY + (screenH - drawH) / 2
-    }
-
+    const imgRatio = img.naturalWidth / img.naturalHeight
+    const screenRatio = screenW / screenH
+    let drawW = screenW, drawH = screenH, drawX = screenX, drawY = screenY
+    if (screenRatio > imgRatio) { drawH = screenW / imgRatio; drawY = screenY + (screenH - drawH) / 2 }
+    else { drawW = screenH * imgRatio; drawX = screenX + (screenW - drawW) / 2 }
     ctx.drawImage(img, drawX, drawY, drawW, drawH)
-
-    // Dynamic Island for iPhone
-    if (selectedDevice.value === 'iphone') {
-      const pillW = 90 * scale
-      const pillH = 26 * scale
-      const pillX = screenX + (screenW - pillW) / 2
-      const pillY = screenY + 12 * scale
-      ctx.fillStyle = '#000000'
-      ctx.beginPath()
-      ctx.roundRect(pillX, pillY, pillW, pillH, 14 * scale)
-      ctx.fill()
-    }
-
     ctx.restore()
   }
-
   return canvas
 }
 
-// Download 4K Mockup
 const handleDownloadPng = async () => {
   isExporting.value = true
   try {
     const canvas = await exportToCanvas(2)
-    const url = canvas.toDataURL('image/png')
     const link = document.createElement('a')
-    link.href = url
+    link.href = canvas.toDataURL('image/png')
     link.download = `mockup_${selectedDevice.value}_${selectedAspectRatio.value.replace(':', 'x')}.png`
-    document.body.appendChild(link)
     link.click()
-    document.body.removeChild(link)
-    toast.success('Mockup Exported', 'High-res mockup image downloaded successfully!')
-  } catch (err: any) {
-    toast.error('Export Failed', err.message || 'Could not export mockup')
-  } finally {
-    isExporting.value = false
-  }
+    toast.success('Mockup Exported', 'High-res mockup downloaded successfully!')
+  } catch (err: any) { toast.error('Export Failed', err.message) } finally { isExporting.value = false }
 }
 
-// Copy to Clipboard
 const handleCopyImage = async () => {
   isExporting.value = true
   try {
     const canvas = await exportToCanvas(2)
     canvas.toBlob(async (blob) => {
-      if (!blob) throw new Error('Blob conversion failed')
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob }),
-      ])
+      if (!blob) throw new Error('Blob failed')
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
       isCopied.value = true
-      toast.success('Copied to Clipboard', 'Mockup image copied! You can paste it directly into Discord, Figma, or Twitter.')
-      setTimeout(() => {
-        isCopied.value = false
-      }, 2000)
+      toast.success('Copied', 'Mockup image copied to clipboard!')
+      setTimeout(() => isCopied.value = false, 2000)
     }, 'image/png')
-  } catch (err: any) {
-    toast.error('Copy Failed', err.message || 'Clipboard copy not supported on this browser')
-  } finally {
-    isExporting.value = false
-  }
+  } catch (err: any) { toast.error('Copy Failed', err.message) } finally { isExporting.value = false }
 }
 </script>
 
@@ -363,7 +318,7 @@ const handleCopyImage = async () => {
             Device Mockup Studio
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Wrap your screenshots into high-end iPhone 16 Pro, MacBook, and minimal 3D mockups for portfolio showcase.
+            Wrap your screenshots into high-end Phone, Desktop, and minimal 3D mockups for portfolio showcase.
           </p>
         </div>
 
@@ -379,34 +334,67 @@ const handleCopyImage = async () => {
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <!-- Left Column: Controls (4 cols) -->
       <div class="lg:col-span-4 space-y-4">
-        <!-- 1. Upload Section -->
-        <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3">
+        <!-- 1. Screenshot Image & Quick Samples -->
+        <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3.5">
           <div class="flex items-center justify-between">
-            <label class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+            <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider">
               Screenshot Image
             </label>
-            <div class="flex items-center gap-2 text-[11px]">
+            <span class="text-[11px] text-[var(--text-tertiary)]">Auto-fit</span>
+          </div>
+
+          <!-- Quick Samples Pill Buttons -->
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer"
+              :class="uploadedImageName === SAMPLE_IMAGES.mobile.name ? 'bg-white text-black border-white font-semibold' : 'bg-[#18181b] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'"
+              @click="loadSample('mobile')"
+            >
+              <Smartphone class="w-3.5 h-3.5" />
+              <span>Mobile Sample</span>
+            </button>
+
+            <button
+              type="button"
+              class="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg border text-xs font-medium transition-all cursor-pointer"
+              :class="uploadedImageName === SAMPLE_IMAGES.desktop.name ? 'bg-white text-black border-white font-semibold' : 'bg-[#18181b] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'"
+              @click="loadSample('desktop')"
+            >
+              <Laptop class="w-3.5 h-3.5" />
+              <span>Desktop Sample</span>
+            </button>
+          </div>
+
+          <!-- Upload Dropzone / Thumbnail Active -->
+          <div v-if="uploadedImage" class="p-2.5 rounded-lg bg-[#141414] border border-[var(--border-subtle)] flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <img :src="uploadedImage" alt="Preview" class="w-10 h-10 rounded-md object-cover border border-white/10 shrink-0" />
+              <div class="min-w-0">
+                <div class="text-xs font-medium text-white truncate">{{ uploadedImageName || 'Custom Screenshot' }}</div>
+                <div class="text-[10px] text-[var(--text-tertiary)]">Ready on mockup</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1">
+              <label class="p-1.5 rounded-md hover:bg-[#2E2E2E] text-[var(--text-secondary)] hover:text-white cursor-pointer transition-colors" title="Change screenshot">
+                <Upload class="w-4 h-4" />
+                <input type="file" accept="image/*" class="hidden" @change="handleImageUpload" />
+              </label>
               <button
                 type="button"
-                class="text-white/70 hover:text-white cursor-pointer transition-colors"
-                @click="loadSample('mobile')"
+                class="p-1.5 rounded-md hover:bg-[#2E2E2E] text-[var(--text-secondary)] hover:text-red-400 cursor-pointer transition-colors"
+                title="Remove screenshot"
+                @click="removeScreenshot"
               >
-                Mobile Sample
-              </button>
-              <span class="text-[var(--text-tertiary)]">•</span>
-              <button
-                type="button"
-                class="text-white/70 hover:text-white cursor-pointer transition-colors"
-                @click="loadSample('desktop')"
-              >
-                Desktop Sample
+                <Trash2 class="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <label class="flex flex-col items-center justify-center gap-2 p-4 border-dashed border border-[var(--border-subtle)] hover:border-white/30 rounded-lg cursor-pointer bg-[#121212] transition-colors text-center">
-            <Upload class="w-5 h-5 text-[var(--text-tertiary)]" />
-            <span class="text-xs font-medium text-white">Click or drag screenshot</span>
+          <label v-else class="flex flex-col items-center justify-center gap-2 p-5 border-dashed border border-[var(--border-subtle)] hover:border-white/30 rounded-lg cursor-pointer bg-[#121212] transition-colors text-center group">
+            <Upload class="w-5 h-5 text-[var(--text-tertiary)] group-hover:text-white transition-colors" />
+            <span class="text-xs font-medium text-white">Click or drag your screenshot</span>
             <span class="text-[10px] text-[var(--text-tertiary)]">PNG, JPG, WebP supported</span>
             <input
               type="file"
@@ -417,47 +405,33 @@ const handleCopyImage = async () => {
           </label>
         </Card>
 
-        <!-- 2. Device Frame Selector -->
+        <!-- 2. Device Chassis Selector -->
         <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3">
-          <label class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-            Device Type
+          <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
+            Device Chassis
           </label>
           <div class="grid grid-cols-3 gap-2">
             <button
+              v-for="d in (['iphone', 'macbook', 'clay'] as DeviceType[])"
+              :key="d"
               type="button"
               class="p-2.5 rounded-lg border text-xs font-medium flex flex-col items-center gap-1.5 transition-all cursor-pointer"
-              :class="selectedDevice === 'iphone' ? 'bg-[#2E2E2E] border-white/40 text-white' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'"
-              @click="selectedDevice = 'iphone'"
+              :class="selectedDevice === d ? 'bg-white text-black border-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'"
+              @click="selectedDevice = d"
             >
-              <Smartphone class="w-4 h-4" />
-              <span>iPhone 16</span>
-            </button>
-            <button
-              type="button"
-              class="p-2.5 rounded-lg border text-xs font-medium flex flex-col items-center gap-1.5 transition-all cursor-pointer"
-              :class="selectedDevice === 'macbook' ? 'bg-[#2E2E2E] border-white/40 text-white' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'"
-              @click="selectedDevice = 'macbook'"
-            >
-              <Laptop class="w-4 h-4" />
-              <span>MacBook M3</span>
-            </button>
-            <button
-              type="button"
-              class="p-2.5 rounded-lg border text-xs font-medium flex flex-col items-center gap-1.5 transition-all cursor-pointer"
-              :class="selectedDevice === 'clay' ? 'bg-[#2E2E2E] border-white/40 text-white' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'"
-              @click="selectedDevice = 'clay'"
-            >
-              <Square class="w-4 h-4" />
-              <span>Minimal Clay</span>
+              <Smartphone v-if="d === 'iphone'" class="w-4 h-4" />
+              <Laptop v-else-if="d === 'macbook'" class="w-4 h-4" />
+              <Square v-else class="w-4 h-4" />
+              <span>{{ d === 'iphone' ? 'Phone' : d === 'macbook' ? 'Desktop' : 'Minimal Clay' }}</span>
             </button>
           </div>
         </Card>
 
-        <!-- 3. Aspect Ratio & 3D Perspective -->
+        <!-- 3. Canvas Ratio & Perspective -->
         <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
           <!-- Aspect Ratio -->
           <div class="space-y-2">
-            <label class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+            <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
               Canvas Ratio
             </label>
             <div class="grid grid-cols-4 gap-1.5 text-xs">
@@ -466,7 +440,7 @@ const handleCopyImage = async () => {
                 :key="ratio"
                 type="button"
                 class="py-1.5 rounded-md border font-mono transition-all cursor-pointer"
-                :class="selectedAspectRatio === ratio ? 'bg-[#2E2E2E] border-white/40 text-white font-bold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
+                :class="selectedAspectRatio === ratio ? 'bg-white text-black border-white font-bold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
                 @click="selectedAspectRatio = ratio"
               >
                 {{ ratio }}
@@ -474,16 +448,16 @@ const handleCopyImage = async () => {
             </div>
           </div>
 
-          <!-- 3D Perspective Angle -->
+          <!-- 3D Perspective -->
           <div class="space-y-2">
-            <label class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+            <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
               Perspective Angle
             </label>
             <div class="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
                 class="py-1.5 px-3 rounded-md border text-center transition-all cursor-pointer"
-                :class="selectedPerspective === 'flat' ? 'bg-[#2E2E2E] border-white/40 text-white' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
+                :class="selectedPerspective === 'flat' ? 'bg-[#2E2E2E] border-white/40 text-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
                 @click="selectedPerspective = 'flat'"
               >
                 Flat (2D)
@@ -491,7 +465,7 @@ const handleCopyImage = async () => {
               <button
                 type="button"
                 class="py-1.5 px-3 rounded-md border text-center transition-all cursor-pointer"
-                :class="selectedPerspective === 'floating' ? 'bg-[#2E2E2E] border-white/40 text-white' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
+                :class="selectedPerspective === 'floating' ? 'bg-[#2E2E2E] border-white/40 text-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
                 @click="selectedPerspective = 'floating'"
               >
                 Floating 3D
@@ -499,7 +473,7 @@ const handleCopyImage = async () => {
               <button
                 type="button"
                 class="py-1.5 px-3 rounded-md border text-center transition-all cursor-pointer"
-                :class="selectedPerspective === 'iso-left' ? 'bg-[#2E2E2E] border-white/40 text-white' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
+                :class="selectedPerspective === 'iso-left' ? 'bg-[#2E2E2E] border-white/40 text-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
                 @click="selectedPerspective = 'iso-left'"
               >
                 Isometric Left
@@ -507,7 +481,7 @@ const handleCopyImage = async () => {
               <button
                 type="button"
                 class="py-1.5 px-3 rounded-md border text-center transition-all cursor-pointer"
-                :class="selectedPerspective === 'iso-right' ? 'bg-[#2E2E2E] border-white/40 text-white' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
+                :class="selectedPerspective === 'iso-right' ? 'bg-[#2E2E2E] border-white/40 text-white font-semibold' : 'bg-[#121212] border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:text-white'"
                 @click="selectedPerspective = 'iso-right'"
               >
                 Isometric Right
@@ -516,24 +490,159 @@ const handleCopyImage = async () => {
           </div>
         </Card>
 
-        <!-- 4. Background Theme Presets -->
-        <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3">
-          <label class="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-            Background Preset
-          </label>
-          <div class="grid grid-cols-4 gap-2">
+        <!-- 4. Background Styling & Modes -->
+        <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+              Background Style
+            </label>
+          </div>
+
+          <!-- Mode Switcher Tabs -->
+          <div class="grid grid-cols-4 gap-1 p-1 bg-[#141414] border border-[var(--border-subtle)] rounded-lg text-xs">
+            <button
+              type="button"
+              class="py-1 rounded-md text-center transition-all cursor-pointer"
+              :class="bgMode === 'preset' ? 'bg-[#2E2E2E] text-white font-semibold' : 'text-[var(--text-tertiary)] hover:text-white'"
+              @click="bgMode = 'preset'"
+            >
+              Presets
+            </button>
+            <button
+              type="button"
+              class="py-1 rounded-md text-center transition-all cursor-pointer"
+              :class="bgMode === 'color' ? 'bg-[#2E2E2E] text-white font-semibold' : 'text-[var(--text-tertiary)] hover:text-white'"
+              @click="bgMode = 'color'"
+            >
+              Color
+            </button>
+            <button
+              type="button"
+              class="py-1 rounded-md text-center transition-all cursor-pointer"
+              :class="bgMode === 'image' ? 'bg-[#2E2E2E] text-white font-semibold' : 'text-[var(--text-tertiary)] hover:text-white'"
+              @click="bgMode = 'image'"
+            >
+              Image
+            </button>
+            <button
+              type="button"
+              class="py-1 rounded-md text-center transition-all cursor-pointer"
+              :class="bgMode === 'transparent' ? 'bg-[#2E2E2E] text-white font-semibold' : 'text-[var(--text-tertiary)] hover:text-white'"
+              @click="bgMode = 'transparent'"
+            >
+              Alpha
+            </button>
+          </div>
+
+          <!-- Mode 1: Presets Swatches -->
+          <div v-if="bgMode === 'preset'" class="grid grid-cols-4 gap-2 pt-1">
             <button
               v-for="bg in BG_PRESETS"
               :key="bg.id"
               type="button"
-              class="h-8 rounded-md border transition-all cursor-pointer relative overflow-hidden"
+              class="h-9 rounded-md border transition-all cursor-pointer relative overflow-hidden"
               :class="[
-                bg.class,
-                selectedBgTheme === bg.id ? 'border-white ring-2 ring-white/20' : 'border-[#2E2E2E] hover:border-white/40'
+                bg.type === 'image' ? 'bg-[#121212]' : bg.class,
+                selectedBgTheme === bg.id ? 'border-white ring-2 ring-white/30' : 'border-[#2E2E2E] hover:border-white/40'
               ]"
               :title="bg.name"
               @click="selectedBgTheme = bg.id"
-            />
+            >
+              <img v-if="bg.type === 'image' && bg.url" :src="bg.url" :alt="bg.name" class="w-full h-full object-cover opacity-80" />
+            </button>
+          </div>
+
+          <!-- Mode 2: Color Picker -->
+          <div v-else-if="bgMode === 'color'" class="space-y-3 pt-1">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-lg border border-white/20 relative overflow-hidden shrink-0" :style="{ backgroundColor: customBgColor }">
+                <input
+                  v-model="customBgColor"
+                  type="color"
+                  class="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                />
+              </div>
+              <input
+                v-model="customBgColor"
+                type="text"
+                class="flex-1 px-3 py-1.5 bg-[#121212] border border-[var(--border-subtle)] rounded-lg text-xs font-mono text-white uppercase focus:outline-hidden focus:border-white/40"
+                placeholder="#171717"
+              />
+            </div>
+
+            <!-- Quick Swatches -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button
+                v-for="c in QUICK_COLORS"
+                :key="c"
+                type="button"
+                class="w-6 h-6 rounded-md border transition-all cursor-pointer"
+                :class="customBgColor.toLowerCase() === c.toLowerCase() ? 'border-white ring-2 ring-white/40' : 'border-white/10 hover:border-white/30'"
+                :style="{ backgroundColor: c }"
+                :title="c"
+                @click="customBgColor = c"
+              />
+            </div>
+          </div>
+
+          <!-- Mode 3: Custom Background Image Upload -->
+          <div v-else-if="bgMode === 'image'" class="space-y-3 pt-1">
+            <div v-if="customBgImage" class="p-2 rounded-lg bg-[#141414] border border-[var(--border-subtle)] flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2 min-w-0">
+                <img :src="customBgImage" alt="Custom BG" class="w-8 h-8 rounded object-cover border border-white/10 shrink-0" />
+                <span class="text-xs text-white truncate">Custom Wallpaper</span>
+              </div>
+              <label class="text-xs text-white hover:underline cursor-pointer">
+                Change
+                <input type="file" accept="image/*" class="hidden" @change="handleBgImageUpload" />
+              </label>
+            </div>
+
+            <label v-else class="flex flex-col items-center justify-center gap-1.5 p-4 border-dashed border border-[var(--border-subtle)] hover:border-white/30 rounded-lg cursor-pointer bg-[#121212] text-center">
+              <Plus class="w-4 h-4 text-[var(--text-tertiary)]" />
+              <span class="text-xs text-white font-medium">Upload Custom Wallpaper</span>
+              <span class="text-[10px] text-[var(--text-tertiary)]">PNG, JPG, WebP</span>
+              <input type="file" accept="image/*" class="hidden" @change="handleBgImageUpload" />
+            </label>
+
+            <!-- Blur & Overlay Adjustments -->
+            <div class="space-y-2.5 pt-1">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                  <span>Background Blur</span>
+                  <span class="font-mono text-white">{{ bgBlur }}px</span>
+                </div>
+                <input
+                  v-model.number="bgBlur"
+                  type="range"
+                  min="0"
+                  max="24"
+                  step="2"
+                  class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                  <span>Dark Dim Overlay</span>
+                  <span class="font-mono text-white">{{ bgOverlay }}%</span>
+                </div>
+                <input
+                  v-model.number="bgOverlay"
+                  type="range"
+                  min="0"
+                  max="80"
+                  step="5"
+                  class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Mode 4: Transparent -->
+          <div v-else-if="bgMode === 'transparent'" class="p-3 bg-[#141414] border border-[var(--border-subtle)] rounded-lg text-center space-y-1">
+            <div class="text-xs font-medium text-white">Transparent Alpha Channel</div>
+            <div class="text-[11px] text-[var(--text-tertiary)]">Exports pure transparent PNG mockup with zero background</div>
           </div>
         </Card>
       </div>
@@ -559,10 +668,28 @@ const handleCopyImage = async () => {
             id="mockup-render-area"
             class="w-full rounded-xl overflow-hidden border border-[#212121] flex items-center justify-center p-8 transition-all duration-300 relative"
             :class="[aspectRatioClass, activeBgClass]"
+            :style="bgMode === 'color' ? { backgroundColor: customBgColor } : {}"
           >
+            <!-- Background Image Layer if selected -->
+            <div
+              v-if="currentBgImageUrl"
+              class="absolute inset-0 pointer-events-none transition-all duration-300"
+            >
+              <img
+                :src="currentBgImageUrl"
+                alt="Background Wallpaper"
+                class="w-full h-full object-cover transition-all duration-300"
+                :style="{ filter: bgBlur > 0 ? `blur(${bgBlur}px)` : 'none' }"
+              />
+              <div
+                class="absolute inset-0 bg-black transition-opacity duration-300"
+                :style="{ opacity: bgOverlay / 100 }"
+              />
+            </div>
+
             <!-- Device Mockup Component Container -->
             <div
-              class="transition-all duration-300 max-w-full max-h-full flex items-center justify-center"
+              class="transition-all duration-300 max-w-full max-h-full flex items-center justify-center relative z-10"
               :style="perspectiveStyle"
             >
               <!-- iPhone 16 Frame -->
@@ -648,7 +775,7 @@ const handleCopyImage = async () => {
             >
               <Check v-if="isCopied" class="w-4 h-4 mr-2 text-emerald-400" />
               <Copy v-else class="w-4 h-4 mr-2" />
-              <span>{{ isCopied ? 'Copied Image!' : 'Copy to Clipboard' }}</span>
+              <span>{{ isCopied ? 'Copied to Clipboard!' : 'Copy to Clipboard' }}</span>
             </Button>
           </div>
         </Card>
