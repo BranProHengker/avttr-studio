@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import JSZip from 'jszip'
+import { PDFDocument } from 'pdf-lib'
 import {
   Upload,
   Download,
@@ -18,13 +19,15 @@ import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
+export type ImageTargetFormat = 'webp' | 'png' | 'jpeg' | 'avif' | 'ico' | 'svg' | 'pdf' | 'gif' | 'bmp'
+
 interface ConvertedFileItem {
   id: string
   file: File
   name: string
   originalSize: number
   originalUrl: string
-  targetFormat: 'png' | 'jpeg' | 'webp' | 'ico' | 'bmp'
+  targetFormat: ImageTargetFormat
   quality: number
   icoSize?: number
   convertedBlob: Blob | null
@@ -37,7 +40,7 @@ interface ConvertedFileItem {
 const toast = useToast()
 
 const items = ref<ConvertedFileItem[]>([])
-const globalTargetFormat = ref<'png' | 'jpeg' | 'webp' | 'ico' | 'bmp'>('webp')
+const globalTargetFormat = ref<ImageTargetFormat>('webp')
 const globalQuality = ref(90)
 const globalIcoSize = ref(64)
 const isConvertingAll = ref(false)
@@ -46,7 +49,11 @@ const formatOptions = [
   { id: 'webp', label: 'WebP', desc: 'Modern web image (small & crisp)' },
   { id: 'png', label: 'PNG', desc: 'Lossless with transparency' },
   { id: 'jpeg', label: 'JPG', desc: 'Universal photograph standard' },
+  { id: 'avif', label: 'AVIF', desc: 'Next-gen format with superior compression' },
   { id: 'ico', label: 'ICO', desc: 'Website Favicon icon' },
+  { id: 'svg', label: 'SVG', desc: 'Vector XML container' },
+  { id: 'pdf', label: 'PDF', desc: 'Document PDF format' },
+  { id: 'gif', label: 'GIF', desc: 'Graphics Interchange Format' },
   { id: 'bmp', label: 'BMP', desc: 'Uncompressed raw bitmap' },
 ] as const
 
@@ -108,7 +115,7 @@ const addFiles = (files: File[]) => {
   convertAll()
 }
 
-// Convert Single Image via Canvas
+// Convert Single Image via Canvas / PDF / SVG
 const convertItem = async (item: ConvertedFileItem): Promise<void> => {
   item.status = 'converting'
 
@@ -116,19 +123,61 @@ const convertItem = async (item: ConvertedFileItem): Promise<void> => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
 
-    img.onload = () => {
+    img.onload = async () => {
       try {
-        const canvas = document.createElement('canvas')
-        let targetWidth = img.naturalWidth
-        let targetHeight = img.naturalHeight
+        const targetWidth = item.targetFormat === 'ico' ? (item.icoSize || 64) : img.naturalWidth
+        const targetHeight = item.targetFormat === 'ico' ? (item.icoSize || 64) : img.naturalHeight
 
-        // Favicon ICO resize
-        if (item.targetFormat === 'ico') {
-          const sz = item.icoSize || 64
-          targetWidth = sz
-          targetHeight = sz
+        // 1. PDF Conversion via pdf-lib
+        if (item.targetFormat === 'pdf') {
+          const pdfDoc = await PDFDocument.create()
+          const canvas = document.createElement('canvas')
+          canvas.width = img.naturalWidth
+          canvas.height = img.naturalHeight
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0)
+          const pngDataUrl = canvas.toDataURL('image/png')
+          const pngBytes = await (await fetch(pngDataUrl)).arrayBuffer()
+          const embeddedImage = await pdfDoc.embedPng(pngBytes)
+          const page = pdfDoc.addPage([embeddedImage.width, embeddedImage.height])
+          page.drawImage(embeddedImage, {
+            x: 0,
+            y: 0,
+            width: embeddedImage.width,
+            height: embeddedImage.height,
+          })
+          const pdfBytes = await pdfDoc.save()
+          const blob = new Blob([pdfBytes as any], { type: 'application/pdf' })
+          item.convertedBlob = blob
+          item.convertedUrl = URL.createObjectURL(blob)
+          item.convertedSize = blob.size
+          item.status = 'done'
+          resolve()
+          return
         }
 
+        // 2. SVG Container Conversion
+        if (item.targetFormat === 'svg') {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.naturalWidth
+          canvas.height = img.naturalHeight
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0)
+          const pngDataUrl = canvas.toDataURL('image/png')
+          const svgContent = `<svg width="${img.naturalWidth}" height="${img.naturalHeight}" viewBox="0 0 ${img.naturalWidth} ${img.naturalHeight}" xmlns="http://www.w3.org/2000/svg">
+  <image href="${pngDataUrl}" width="${img.naturalWidth}" height="${img.naturalHeight}"/>
+</svg>`
+          const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' })
+          item.convertedBlob = blob
+          item.convertedUrl = URL.createObjectURL(blob)
+          item.convertedSize = blob.size
+          item.status = 'done'
+          resolve()
+          return
+        }
+
+        // 3. Raster Image Formats via Canvas
+        const canvas = document.createElement('canvas')
         canvas.width = targetWidth
         canvas.height = targetHeight
         const ctx = canvas.getContext('2d')
@@ -145,10 +194,12 @@ const convertItem = async (item: ConvertedFileItem): Promise<void> => {
         let mime = 'image/png'
         if (item.targetFormat === 'webp') mime = 'image/webp'
         else if (item.targetFormat === 'jpeg') mime = 'image/jpeg'
+        else if (item.targetFormat === 'avif') mime = 'image/avif'
         else if (item.targetFormat === 'ico') mime = 'image/x-icon'
+        else if (item.targetFormat === 'gif') mime = 'image/gif'
         else if (item.targetFormat === 'bmp') mime = 'image/bmp'
 
-        const qualityVal = item.targetFormat === 'png' ? 1 : item.quality / 100
+        const qualityVal = (item.targetFormat === 'png' || item.targetFormat === 'bmp' || item.targetFormat === 'ico') ? 1 : item.quality / 100
 
         canvas.toBlob(
           (blob) => {
@@ -158,8 +209,20 @@ const convertItem = async (item: ConvertedFileItem): Promise<void> => {
               item.convertedSize = blob.size
               item.status = 'done'
             } else {
-              item.status = 'error'
-              item.error = 'Blob conversion failed'
+              // Fallback to PNG if browser doesn't support specific mime (e.g. AVIF on older engines)
+              canvas.toBlob((fallbackBlob) => {
+                if (fallbackBlob) {
+                  item.convertedBlob = fallbackBlob
+                  item.convertedUrl = URL.createObjectURL(fallbackBlob)
+                  item.convertedSize = fallbackBlob.size
+                  item.status = 'done'
+                } else {
+                  item.status = 'error'
+                  item.error = 'Blob conversion failed'
+                }
+                resolve()
+              }, 'image/png')
+              return
             }
             resolve()
           },
@@ -225,20 +288,23 @@ const downloadZip = async () => {
   })
 
   const content = await zip.generateAsync({ type: 'blob' })
+  const url = URL.createObjectURL(content)
   const link = document.createElement('a')
-  link.href = URL.createObjectURL(content)
+  link.href = url
   link.download = `converted_images_${Date.now()}.zip`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  URL.revokeObjectURL(link.href)
-  toast.success('ZIP Exported', `Archived ${readyItems.length} converted images`)
+  URL.revokeObjectURL(url)
+  toast.success('Downloaded ZIP', 'Archive downloaded successfully')
 }
 
+// Remove single item
 const removeItem = (id: string) => {
   items.value = items.value.filter((i) => i.id !== id)
 }
 
+// Clear all
 const clearAll = () => {
   items.value = []
   toast.info('Cleared', 'All items removed')
@@ -246,13 +312,11 @@ const clearAll = () => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header & Breadcrumbs -->
-    <div>
-      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
-        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">
-          Dashboard
-        </NuxtLink>
+  <div class="space-y-6 pb-12 w-full max-w-5xl">
+    <!-- Header Section -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">
+        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
         <span>/</span>
         <span class="text-[var(--text-secondary)] font-medium">Tools</span>
         <span>/</span>
@@ -265,7 +329,7 @@ const clearAll = () => {
             Image Format Converter
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Convert PNG, JPG, WebP, AVIF, BMP, and ICO Favicon formats in batch with instant ZIP export.
+            Convert WebP, PNG, JPG, AVIF, ICO Favicon, SVG, PDF, GIF, and BMP in batch with instant ZIP export.
           </p>
         </div>
 
@@ -294,7 +358,7 @@ const clearAll = () => {
               Drop images here, or <span class="underline underline-offset-4">browse files</span>
             </div>
             <p class="text-xs text-[var(--text-tertiary)]">
-              Convert PNG, JPG, JPEG, WebP, AVIF, BMP, GIF (Max 10 files)
+              Convert WebP, PNG, JPG, AVIF, ICO, SVG, PDF, GIF, BMP (Max 10 files)
             </p>
           </div>
 
@@ -331,27 +395,10 @@ const clearAll = () => {
             </div>
           </div>
 
-          <!-- Quality / ICO Size Controls -->
+          <!-- ICO Dimension & Global Action Buttons -->
           <div class="flex items-center gap-4">
-            <!-- Quality Slider for WebP/JPG -->
-            <div v-if="globalTargetFormat === 'webp' || globalTargetFormat === 'jpeg'" class="w-44 space-y-1">
-              <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                <span>Quality</span>
-                <span class="font-mono text-white font-semibold">{{ globalQuality }}%</span>
-              </div>
-              <input
-                v-model.number="globalQuality"
-                type="range"
-                min="20"
-                max="100"
-                step="5"
-                class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-[#2E2E2E] accent-white"
-                @change="convertAll"
-              />
-            </div>
-
             <!-- ICO Dimension Selector -->
-            <div v-else-if="globalTargetFormat === 'ico'" class="space-y-1">
+            <div v-if="globalTargetFormat === 'ico'" class="space-y-1">
               <label class="block text-xs text-[var(--text-secondary)]">Favicon Dimension</label>
               <select
                 v-model.number="globalIcoSize"

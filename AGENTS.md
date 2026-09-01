@@ -79,10 +79,18 @@ Agents must adhere to the principles defined across these designated skills:
 │   ├── d/                          # Dedicated downloader routes
 │   │   └── [platform].vue          # /d/tiktok, /d/instagram, /d/youtube, etc.
 │   └── tools/                      # Dedicated web utility routes
-│       ├── qr-generator.vue
-│       ├── json-formatter.vue
-│       ├── color-palette.vue
-│       └── hash-encoder.vue
+│       ├── pdf-tools.vue           # PDF Merge, Split, Extract & Images to PDF
+│       ├── svg-optimizer.vue       # SVG Cleaner, Live Preview & Component Generator
+│       ├── device-mockup.vue       # iPhone, MacBook & Clay 3D Mockup Studio
+│       ├── image-compressor.vue    # PNG, JPG, WebP, SVG, AVIF Compressor
+│       ├── image-converter.vue     # Batch Image & ICO Favicon Converter
+│       ├── background-remover.vue  # 100% Client-side AI Background Remover
+│       ├── qr-generator.vue        # Styled QR Code Generator
+│       ├── brat-generator.vue      # Charli XCX Brat Text & GIF Generator
+│       ├── font-library.vue        # Google Fonts & DaFont Explorer & Tester
+│       ├── color-converter.vue     # Bi-directional Color Picker & Shade Matrix
+│       ├── color-palette.vue       # Palette Generator & WCAG Contrast Checker
+│       └── hash-encoder.vue        # Base64, SHA-256 / SHA-512 Hash Studio
 ├── server/
 │   ├── api/
 │   │   ├── download/
@@ -97,6 +105,8 @@ Agents must adhere to the principles defined across these designated skills:
 │       │   ├── youtube.ts
 │       │   ├── twitter.ts
 │       │   ├── capcut.ts
+│       │   ├── facebook.ts
+│       │   ├── terabox.ts
 │       │   └── cobaltFallback.ts
 │       └── types.ts                # Standardized server scraper interfaces
 └── types/
@@ -126,18 +136,21 @@ All platform scrapers in `/server/utils/scrapers/` MUST conform to the standard 
 
 ```typescript
 export interface MediaItem {
-  type: 'video' | 'audio' | 'image';
+  type: 'video' | 'audio' | 'image' | 'file';
   url: string;                  // Direct CDN or Proxied download URL
+  filename?: string;            // Suggested file name
   quality?: string;             // '1080p', '720p', 'HD', 'Original'
-  format?: string;              // 'mp4', 'mp3', 'webp', 'jpg'
+  format?: string;              // 'mp4', 'mp3', 'webp', 'jpg', 'pdf', 'zip'
   size?: number;                // Size in bytes if available
+  thumbnail?: string;
   watermark?: boolean;
 }
 
 export interface ScraperResult {
   success: boolean;
-  platform: 'tiktok' | 'instagram' | 'youtube' | 'twitter' | 'facebook' | 'capcut' | 'spotify' | 'other';
+  platform: 'tiktok' | 'instagram' | 'youtube' | 'twitter' | 'facebook' | 'capcut' | 'spotify' | 'terabox' | 'other';
   title: string;
+  description?: string;
   author?: {
     name: string;
     username: string;
@@ -160,15 +173,16 @@ export interface ScraperResult {
 ### C. Stream Proxy & Memory Protection (`/server/api/proxy.ts`)
 * Media streams MUST be piped directly via `sendStream()` / Web Streams.
 * Never buffer entire video files into server RAM. Set proper `Content-Disposition: attachment; filename="..."` headers.
+* Transcode audio on-the-fly using FFmpeg stream when pure MP3 is requested.
 
 ### D. In-Memory Caching & Sanitization
 * All incoming URLs must pass through `sanitizer.ts` to unshorten and strip tracking parameters (`?utm_...`, `?igsh=...`).
 * Cache resolved scraper results for 10 minutes using Nitro `unstorage` / in-memory cache to prevent redundant scraping.
 
 ### E. Client-Side Tool Privacy Rule
-* Image tools, QR generation, JSON formatters, and Hash utilities MUST run 100% on the client (browser Canvas, Web Workers, or Web Crypto API).
+* Image tools, PDF manipulation, QR generation, SVG optimization, and Hash utilities MUST run 100% on the client (browser Canvas, Web Workers, Web Crypto API, or `pdf-lib`).
 * Multi-image downloads (e.g. Instagram Carousels, TikTok Slides) must be zipped on the client side using `JSZip`.
-* Never send sensitive user data (passwords, JWTs, JSON payloads, images) to the server unless explicitly required (e.g., media downloading).
+* Never send sensitive user data (passwords, JWTs, JSON payloads, images, PDFs) to the server unless explicitly required (e.g., media downloading).
 
 ---
 
@@ -183,10 +197,32 @@ export interface ScraperResult {
   * Strict prohibition on generic bright green/blue/colorful badge tints.
 * **Anti-AI-Slop Iconography Rules:**
   * **Strict Ban on Emojis/Emoticons in UI:** Absolutely forbidden to use generic emojis (e.g. 🎵, 📸, ▶️, 🎬, 📱, 📄, 🎨, ⚡, 🎧) inside cards, buttons, badges, headers, or sidebars.
-  * **Official SVG Brand Logos:** Always use authentic, clean SVG vector brand logos for social platforms (TikTok, Instagram, YouTube, Twitter/X, CapCut, Facebook, Spotify, etc.).
+  * **Official SVG Brand Logos:** Always use authentic, clean SVG vector brand logos for social platforms (TikTok, Instagram, YouTube, Twitter/X, CapCut, Facebook, Spotify, TeraBox, etc.).
   * **Lucide Icons:** Use `lucide-vue-next` for all generic UI icons (Search, Copy, Download, History, Theme, Arrow, Check, Refresh, etc.).
 * Ensure all interactive buttons, cards, and inputs have:
   * Unique and descriptive `id` attributes.
   * Subtle hover states (`150ms` transition).
   * Accessible keyboard navigation (`Enter` to trigger, `Esc` to close modals, `Ctrl+K` for global search).
+
+---
+
+## 7. Git & Version Control Strict Rules
+
+### A. Strict Prohibition on Autonomous Commits & Pushes
+* **No Autonomous Commit/Push:** AI Agents are ABSOLUTELY FORBIDDEN from executing `git commit`, `git push`, `git merge`, `git rebase`, `git tag`, or any remote publishing commands autonomously.
+* **Explicit Prohibition List:** Never run `git commit -m "..."`, `git commit -am "..."`, `git push origin ...`, `gh pr create`, or similar modifying VCS actions without explicit direct user command.
+
+### B. User-Managed Commits Only
+* **Working Directory State:** All code modifications, bug fixes, refactoring, and new feature additions must remain strictly as **uncommitted working directory changes**.
+* **Full User Ownership:** The user retains 100% manual control over:
+  1. Inspecting file diffs (`git diff`, `git status`).
+  2. Staging selected files (`git add`).
+  3. Writing personalized commit messages (`git commit`).
+  4. Pushing to remote repositories (`git push`).
+
+### C. Safe Inspection & Quality Verification Protocol
+* **Allowed Read-Only Commands:** Agents MAY run non-destructive inspection commands when needed: `git status`, `git diff`, `git log -n 5`.
+* **Verification Without Commits:** Always verify code correctness using `vue-tsc --noEmit` or test runners, then report the verified status and changed files list cleanly to the user.
+
+
 

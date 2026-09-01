@@ -297,27 +297,32 @@ const handleDownloadPng = async () => {
 </script>
 
 <template>
-  <div class="space-y-6 max-w-6xl mx-auto pb-12">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[var(--border-subtle)] pb-6">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white">
-            <Sparkles class="w-4.5 h-4.5 text-white" />
-          </div>
+  <div class="space-y-6 pb-12 w-full max-w-5xl">
+    <!-- Header & Breadcrumbs -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">
+        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
+        <span>/</span>
+        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+        <span>/</span>
+        <span class="text-[var(--text-primary)]">SVG Optimizer</span>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
           <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
             SVG Optimizer & Componentizer
           </h1>
+          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+            Clean Figma bloatware, minify path coordinates, preview interactively, and export to Vue 3, React JSX, or 4K PNG.
+          </p>
         </div>
-        <p class="text-xs sm:text-sm text-[var(--text-secondary)]">
-          Clean Figma bloatware, minify path coordinates, preview interactively, and export to Vue 3, React JSX, or 4K PNG.
-        </p>
-      </div>
 
-      <div class="flex items-center gap-2">
-        <Badge variant="badge">
-          100% Client-Side
-        </Badge>
+        <div class="flex items-center gap-2">
+          <Badge variant="badge">
+            100% Client Privacy
+          </Badge>
+        </div>
       </div>
     </div>
 

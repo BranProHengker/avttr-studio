@@ -393,16 +393,17 @@ const handleContainerTouchMove = (e: TouchEvent) => {
 
     <!-- Compression Controls & Presets -->
     <Card class="p-4 sm:p-5">
-      <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
-        <!-- Quality Presets -->
-        <div class="space-y-2 w-full lg:w-auto">
-          <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
-            Quality Preset
+      <!-- Quality Presets & Output Format -->
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <!-- Preset Buttons -->
+        <div class="space-y-2">
+          <label class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] block">
+            Compression Mode
           </label>
           <div class="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
+              class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
               :class="
                 quality === 92
                   ? 'bg-white text-black border-white shadow-xs font-semibold'
@@ -410,12 +411,12 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               "
               @click="quality = 92; reprocessAll()"
             >
-              Smart Lossless (92%)
+              Smart Lossless
             </button>
 
             <button
               type="button"
-              class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
+              class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
               :class="
                 quality === 85
                   ? 'bg-white text-black border-white shadow-xs font-semibold'
@@ -423,12 +424,12 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               "
               @click="quality = 85; reprocessAll()"
             >
-              Recommended (85%)
+              Recommended
             </button>
 
             <button
               type="button"
-              class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
+              class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
               :class="
                 quality === 70
                   ? 'bg-white text-black border-white shadow-xs font-semibold'
@@ -436,31 +437,14 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               "
               @click="quality = 70; reprocessAll()"
             >
-              Max Compression (70%)
+              Max Compression
             </button>
           </div>
         </div>
 
-        <!-- Custom Quality Slider & Output Format -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
-          <!-- Slider -->
+        <!-- Output Format Selector -->
+        <div class="flex items-center gap-3 w-full sm:w-auto">
           <div class="space-y-1.5 min-w-[160px]">
-            <div class="flex items-center justify-between text-xs font-medium text-[var(--text-secondary)]">
-              <span>Fine Tune Quality</span>
-              <span class="font-mono text-white">{{ quality }}%</span>
-            </div>
-            <input
-              type="range"
-              min="10"
-              max="100"
-              v-model.number="quality"
-              @change="reprocessAll"
-              class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white hover:h-2 transition-all"
-            />
-          </div>
-
-          <!-- Output Format -->
-          <div class="space-y-1.5 min-w-[150px]">
             <label class="text-xs font-medium text-[var(--text-secondary)] block">
               Output Format
             </label>
