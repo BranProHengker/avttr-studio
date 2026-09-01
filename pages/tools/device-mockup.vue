@@ -14,8 +14,11 @@ import {
   Palette,
   Sparkles,
   Sliders,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Pipette,
+  Layers
 } from 'lucide-vue-next'
+import { toPng, toBlob } from 'html-to-image'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
@@ -83,8 +86,23 @@ const SAMPLE_IMAGES = {
   },
 }
 
-onMounted(() => {
-  uploadedImage.value = SAMPLE_IMAGES.mobile.url
+const toDataUrl = async (url: string): Promise<string> => {
+  if (!url || url.startsWith('data:')) return url
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return url
+  }
+}
+
+onMounted(async () => {
+  uploadedImage.value = await toDataUrl(SAMPLE_IMAGES.mobile.url)
   uploadedImageName.value = SAMPLE_IMAGES.mobile.name
 })
 
@@ -128,9 +146,9 @@ const handleBgImageUpload = (e: Event) => {
   input.value = ''
 }
 
-const loadSample = (type: 'mobile' | 'desktop') => {
+const loadSample = async (type: 'mobile' | 'desktop') => {
   const sample = SAMPLE_IMAGES[type]
-  uploadedImage.value = sample.url
+  uploadedImage.value = await toDataUrl(sample.url)
   uploadedImageName.value = sample.name
   selectedDevice.value = sample.device
   toast.info('Sample Loaded', `Loaded sample ${sample.name}`)
@@ -190,113 +208,82 @@ const activeBgClass = computed(() => {
   return preset && preset.class ? preset.class : 'bg-[#171717]'
 })
 
-const exportToCanvas = async (scale = 2): Promise<HTMLCanvasElement> => {
-  const mockupContainer = document.getElementById('mockup-render-area')
-  if (!mockupContainer) throw new Error('Render container not found')
-
-  const canvas = document.createElement('canvas')
-  const width = mockupContainer.clientWidth * scale
-  const height = mockupContainer.clientHeight * scale
-  canvas.width = width
-  canvas.height = height
-
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas 2D context unavailable')
-
-  // 1. Draw Background
-  if (bgMode.value === 'transparent') {
-    ctx.clearRect(0, 0, width, height)
-  } else if (bgMode.value === 'color') {
-    ctx.fillStyle = customBgColor.value || '#171717'
-    ctx.fillRect(0, 0, width, height)
-  } else if (currentBgImageUrl.value) {
-    const bgImg = new Image()
-    bgImg.crossOrigin = 'anonymous'
-    bgImg.src = currentBgImageUrl.value
-    await new Promise((res, rej) => { bgImg.onload = res; bgImg.onerror = rej })
-    ctx.save()
-    if (bgBlur.value > 0) ctx.filter = `blur(${bgBlur.value * scale}px)`
-    const imgRatio = bgImg.naturalWidth / bgImg.naturalHeight
-    const canvasRatio = width / height
-    let drawW = width, drawH = height, drawX = 0, drawY = 0
-    if (canvasRatio > imgRatio) { drawH = width / imgRatio; drawY = (height - drawH) / 2 }
-    else { drawW = height * imgRatio; drawX = (width - drawW) / 2 }
-    ctx.drawImage(bgImg, drawX, drawY, drawW, drawH)
-    ctx.restore()
-    if (bgOverlay.value > 0) { ctx.fillStyle = `rgba(0, 0, 0, ${bgOverlay.value / 100})`; ctx.fillRect(0, 0, width, height) }
-  } else {
-    const grad = ctx.createLinearGradient(0, 0, width, height)
-    const preset = BG_PRESETS.find(p => p.id === selectedBgTheme.value)
-    if (preset?.class?.includes('emerald')) { grad.addColorStop(0, '#064e3b'); grad.addColorStop(0.5, '#022c22'); grad.addColorStop(1, '#0f172a') }
-    else if (preset?.class?.includes('sunset')) { grad.addColorStop(0, '#7c2d12'); grad.addColorStop(0.5, '#450a0a'); grad.addColorStop(1, '#1e1b4b') }
-    else if (preset?.class?.includes('studio')) { grad.addColorStop(0, '#1e293b'); grad.addColorStop(0.5, '#0f172a'); grad.addColorStop(1, '#020617') }
-    else if (preset?.class?.includes('violet')) { grad.addColorStop(0, '#4c1d95'); grad.addColorStop(0.5, '#1e1b4b'); grad.addColorStop(1, '#030712') }
-    else if (preset?.class?.includes('cyber')) { grad.addColorStop(0, '#0284c7'); grad.addColorStop(0.5, '#3b0764'); grad.addColorStop(1, '#0f172a') }
-    else { grad.addColorStop(0, '#1c1c1e'); grad.addColorStop(0.5, '#0f0f10'); grad.addColorStop(1, '#050505') }
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, width, height)
-  }
-
-  // 2. Draw Screenshot inside Mockup Frame
-  if (uploadedImage.value) {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.src = uploadedImage.value
-    await new Promise((res, rej) => { img.onload = res; img.onerror = rej })
-    const pad = paddingSize.value * scale
-    const targetW = width - pad * 2, targetH = height - pad * 2
-    ctx.save()
-    if (shadowIntensity.value !== 'none') {
-      ctx.shadowColor = shadowIntensity.value === 'glow' ? 'rgba(59, 130, 246, 0.4)' : 'rgba(0, 0, 0, 0.7)'
-      ctx.shadowBlur = shadowIntensity.value === 'dramatic' ? 40 * scale : 20 * scale
-      ctx.shadowOffsetY = 15 * scale
-    }
-    const frameRadius = (selectedDevice.value === 'iphone' ? 36 : selectedDevice.value === 'macbook' ? 16 : 24) * scale
-    const framePadding = (selectedDevice.value === 'iphone' ? 10 : selectedDevice.value === 'macbook' ? 14 : 12) * scale
-    ctx.fillStyle = deviceColor.value === 'silver' ? '#e2e8f0' : deviceColor.value === 'titanium' ? '#334155' : '#18181b'
-    ctx.beginPath()
-    ctx.roundRect(pad, pad, targetW, targetH, frameRadius)
-    ctx.fill()
-    ctx.shadowColor = 'transparent'
-    const screenX = pad + framePadding, screenY = pad + framePadding
-    const screenW = targetW - framePadding * 2, screenH = targetH - framePadding * 2
-    ctx.beginPath()
-    ctx.roundRect(screenX, screenY, screenW, screenH, Math.max(4, frameRadius - framePadding))
-    ctx.clip()
-    const imgRatio = img.naturalWidth / img.naturalHeight
-    const screenRatio = screenW / screenH
-    let drawW = screenW, drawH = screenH, drawX = screenX, drawY = screenY
-    if (screenRatio > imgRatio) { drawH = screenW / imgRatio; drawY = screenY + (screenH - drawH) / 2 }
-    else { drawW = screenH * imgRatio; drawX = screenX + (screenW - drawW) / 2 }
-    ctx.drawImage(img, drawX, drawY, drawW, drawH)
-    ctx.restore()
-  }
-  return canvas
-}
-
 const handleDownloadPng = async () => {
+  const node = document.getElementById('mockup-render-area')
+  if (!node) return
   isExporting.value = true
   try {
-    const canvas = await exportToCanvas(2)
+    const isTransparent = bgMode.value === 'transparent'
+    const dataUrl = await toPng(node, {
+      pixelRatio: 2.5,
+      cacheBust: true,
+      style: {
+        border: 'none',
+        borderRadius: '0',
+        ...(isTransparent ? { background: 'transparent', backgroundImage: 'none' } : {})
+      }
+    })
     const link = document.createElement('a')
-    link.href = canvas.toDataURL('image/png')
-    link.download = `mockup_${selectedDevice.value}_${selectedAspectRatio.value.replace(':', 'x')}.png`
+    link.href = dataUrl
+    link.download = `mockup_${selectedDevice.value}_${selectedPerspective.value}_${selectedAspectRatio.value.replace(':', 'x')}.png`
     link.click()
-    toast.success('Mockup Exported', 'High-res mockup downloaded successfully!')
-  } catch (err: any) { toast.error('Export Failed', err.message) } finally { isExporting.value = false }
+    toast.success('Mockup Downloaded', 'High-res mockup image downloaded exactly as in preview!')
+  } catch (err: any) {
+    toast.error('Download Failed', err.message || 'Could not export mockup image')
+  } finally {
+    isExporting.value = false
+  }
 }
 
 const handleCopyImage = async () => {
+  const node = document.getElementById('mockup-render-area')
+  if (!node) return
   isExporting.value = true
   try {
-    const canvas = await exportToCanvas(2)
-    canvas.toBlob(async (blob) => {
-      if (!blob) throw new Error('Blob failed')
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+    const isTransparent = bgMode.value === 'transparent'
+    const blob = await toBlob(node, {
+      pixelRatio: 2.5,
+      cacheBust: true,
+      style: {
+        border: 'none',
+        borderRadius: '0',
+        ...(isTransparent ? { background: 'transparent', backgroundImage: 'none' } : {})
+      }
+    })
+    if (!blob) throw new Error('Could not render mockup image blob')
+
+    let isWriteSupported = false
+    if (typeof ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
+      try {
+        const item = new ClipboardItem({ 'image/png': blob })
+        await navigator.clipboard.write([item])
+        isWriteSupported = true
+      } catch (clipErr) {
+        console.warn('Direct clipboard.write not permitted (Firefox restriction):', clipErr)
+        isWriteSupported = false
+      }
+    }
+
+    if (isWriteSupported) {
       isCopied.value = true
-      toast.success('Copied', 'Mockup image copied to clipboard!')
-      setTimeout(() => isCopied.value = false, 2000)
-    }, 'image/png')
-  } catch (err: any) { toast.error('Copy Failed', err.message) } finally { isExporting.value = false }
+      toast.success('Image Copied', 'PNG mockup image copied to clipboard! Paste directly with Ctrl+V.')
+      setTimeout(() => {
+        isCopied.value = false
+      }, 2500)
+    } else {
+      // Graceful fallback for Firefox & unsupported environments: auto-download image
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `mockup_${selectedDevice.value}_${selectedPerspective.value}.png`
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+      toast.info('Auto-Downloaded', 'Firefox membatasi akses clipboard image. Gambar mockup otomatis didownload!')
+    }
+  } catch (err: any) {
+    toast.error('Copy Failed', err.message || 'Could not copy mockup image')
+  } finally {
+    isExporting.value = false
+  }
 }
 </script>
 
@@ -498,39 +485,43 @@ const handleCopyImage = async () => {
             </label>
           </div>
 
-          <!-- Mode Switcher Tabs -->
+          <!-- Mode Switcher Tabs with Icons -->
           <div class="grid grid-cols-4 gap-1 p-1 bg-[#141414] border border-[var(--border-subtle)] rounded-lg text-xs">
             <button
               type="button"
-              class="py-1 rounded-md text-center transition-all cursor-pointer"
-              :class="bgMode === 'preset' ? 'bg-[#2E2E2E] text-white font-semibold' : 'text-[var(--text-tertiary)] hover:text-white'"
+              class="py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              :class="bgMode === 'preset' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
               @click="bgMode = 'preset'"
             >
-              Presets
+              <Sparkles class="w-3.5 h-3.5" />
+              <span>Presets</span>
             </button>
             <button
               type="button"
-              class="py-1 rounded-md text-center transition-all cursor-pointer"
-              :class="bgMode === 'color' ? 'bg-[#2E2E2E] text-white font-semibold' : 'text-[var(--text-tertiary)] hover:text-white'"
+              class="py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              :class="bgMode === 'color' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
               @click="bgMode = 'color'"
             >
-              Color
+              <Pipette class="w-3.5 h-3.5" />
+              <span>Color</span>
             </button>
             <button
               type="button"
-              class="py-1 rounded-md text-center transition-all cursor-pointer"
-              :class="bgMode === 'image' ? 'bg-[#2E2E2E] text-white font-semibold' : 'text-[var(--text-tertiary)] hover:text-white'"
+              class="py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              :class="bgMode === 'image' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
               @click="bgMode = 'image'"
             >
-              Image
+              <ImageIcon class="w-3.5 h-3.5" />
+              <span>Image</span>
             </button>
             <button
               type="button"
-              class="py-1 rounded-md text-center transition-all cursor-pointer"
-              :class="bgMode === 'transparent' ? 'bg-[#2E2E2E] text-white font-semibold' : 'text-[var(--text-tertiary)] hover:text-white'"
+              class="py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              :class="bgMode === 'transparent' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
               @click="bgMode = 'transparent'"
             >
-              Alpha
+              <Layers class="w-3.5 h-3.5" />
+              <span>Transparent</span>
             </button>
           </div>
 
@@ -552,22 +543,30 @@ const handleCopyImage = async () => {
             </button>
           </div>
 
-          <!-- Mode 2: Color Picker -->
+          <!-- Mode 2: Color Picker with Pipette Icon -->
           <div v-else-if="bgMode === 'color'" class="space-y-3 pt-1">
             <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-lg border border-white/20 relative overflow-hidden shrink-0" :style="{ backgroundColor: customBgColor }">
+              <label
+                class="w-9 h-9 rounded-lg border border-white/20 relative flex items-center justify-center shrink-0 cursor-pointer shadow-xs transition-transform hover:scale-105"
+                :style="{ backgroundColor: customBgColor }"
+                title="Click to open color picker"
+              >
+                <Pipette class="w-4 h-4 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]" />
                 <input
                   v-model="customBgColor"
                   type="color"
                   class="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
                 />
+              </label>
+              <div class="relative flex-1">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] font-mono text-xs font-semibold">HEX</span>
+                <input
+                  v-model="customBgColor"
+                  type="text"
+                  class="w-full pl-12 pr-3 py-1.5 bg-[#121212] border border-[var(--border-subtle)] rounded-lg text-xs font-mono text-white uppercase focus:outline-hidden focus:border-white/40"
+                  placeholder="#171717"
+                />
               </div>
-              <input
-                v-model="customBgColor"
-                type="text"
-                class="flex-1 px-3 py-1.5 bg-[#121212] border border-[var(--border-subtle)] rounded-lg text-xs font-mono text-white uppercase focus:outline-hidden focus:border-white/40"
-                placeholder="#171717"
-              />
             </div>
 
             <!-- Quick Swatches -->
@@ -577,7 +576,7 @@ const handleCopyImage = async () => {
                 :key="c"
                 type="button"
                 class="w-6 h-6 rounded-md border transition-all cursor-pointer"
-                :class="customBgColor.toLowerCase() === c.toLowerCase() ? 'border-white ring-2 ring-white/40' : 'border-white/10 hover:border-white/30'"
+                :class="customBgColor.toLowerCase() === c.toLowerCase() ? 'border-white ring-2 ring-white/40 scale-110' : 'border-white/10 hover:border-white/30'"
                 :style="{ backgroundColor: c }"
                 :title="c"
                 @click="customBgColor = c"
@@ -641,7 +640,7 @@ const handleCopyImage = async () => {
 
           <!-- Mode 4: Transparent -->
           <div v-else-if="bgMode === 'transparent'" class="p-3 bg-[#141414] border border-[var(--border-subtle)] rounded-lg text-center space-y-1">
-            <div class="text-xs font-medium text-white">Transparent Alpha Channel</div>
+            <div class="text-xs font-medium text-white">Transparent Background</div>
             <div class="text-[11px] text-[var(--text-tertiary)]">Exports pure transparent PNG mockup with zero background</div>
           </div>
         </Card>
@@ -764,7 +763,7 @@ const handleCopyImage = async () => {
               @click="handleDownloadPng"
             >
               <Download class="w-4 h-4 mr-2" />
-              <span>Download 4K PNG Mockup</span>
+              <span>Download Image</span>
             </Button>
 
             <Button
@@ -775,7 +774,7 @@ const handleCopyImage = async () => {
             >
               <Check v-if="isCopied" class="w-4 h-4 mr-2 text-emerald-400" />
               <Copy v-else class="w-4 h-4 mr-2" />
-              <span>{{ isCopied ? 'Copied to Clipboard!' : 'Copy to Clipboard' }}</span>
+              <span>{{ isCopied ? 'Image Copied!' : 'Copy Image' }}</span>
             </Button>
           </div>
         </Card>
