@@ -179,6 +179,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'audio-cutter',
+        title: 'Audio Extractor & Trimmer',
+        description: 'Extract audio from video, inspect waveforms, and trim audio clips preserving original sample rates.',
+        category: 'image',
+        icon: 'music',
+        route: '/tools/audio-cutter',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'base64-image',
         title: 'Base64 & Hash Encoder',
         description: 'Convert files to Base64, generate SHA-256 / SHA-512 hashes via Web Crypto API.',

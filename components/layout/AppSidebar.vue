@@ -304,6 +304,17 @@ const isRouteActive = (targetRoute: string) => {
               >
                 Spotify & Audio
               </NuxtLink>
+              <NuxtLink
+                to="/tools/audio-cutter"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/audio-cutter')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Audio Extractor & Trimmer
+              </NuxtLink>
             </div>
           </div>
         </div>
@@ -427,6 +438,17 @@ const isRouteActive = (targetRoute: string) => {
                 "
               >
                 Code to Image Studio
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/audio-cutter"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/audio-cutter')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Audio Extractor & Trimmer
               </NuxtLink>
               <NuxtLink
                 to="/tools/hash-encoder"
