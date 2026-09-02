@@ -102,8 +102,17 @@ const exportFileName = ref<string>('')
 const tracks = ref<TrackInfo[]>([
   { id: 'track-1', name: 'A1', isMuted: false }
 ])
+const selectedTrackIndex = ref<number>(0)
 const clips = ref<AudioClip[]>([])
 const selectedClipId = ref<string | null>(null)
+
+const selectTrack = (tIndex: number) => {
+  selectedTrackIndex.value = tIndex
+  const clipOnTrack = clips.value.find(c => c.trackIndex === tIndex)
+  if (clipOnTrack && (!selectedClip.value || selectedClip.value.trackIndex !== tIndex)) {
+    selectedClipId.value = clipOnTrack.id
+  }
+}
 
 // Dragging & Interaction State
 const isDragging = ref(false)
@@ -593,6 +602,7 @@ const seekRelative = (delta: number) => {
 const startClipDrag = (e: MouseEvent, clip: AudioClip, mode: 'move-clip' | 'trim-start' | 'trim-end') => {
   e.stopPropagation()
   selectedClipId.value = clip.id
+  selectedTrackIndex.value = clip.trackIndex
   dragMode.value = mode
   draggingClipId.value = clip.id
   dragStartX = e.clientX
@@ -667,6 +677,7 @@ const onGlobalMouseMove = (e: MouseEvent) => {
     const trackOffset = Math.round(deltaY / trackHeight)
     const newTrackIndex = Math.max(0, Math.min(tracks.value.length - 1, initialTrackIndex + trackOffset))
     clip.trackIndex = newTrackIndex
+    selectedTrackIndex.value = newTrackIndex
 
     drawAllClipWaveforms()
   } else if (dragMode.value === 'trim-start') {
@@ -699,15 +710,48 @@ const onGlobalMouseUp = () => {
   window.removeEventListener('mouseup', onGlobalMouseUp)
 }
 
+// Resolve Target Clip Based on Current Active Track & Selection
+const getTargetClipAtPlayhead = (): AudioClip | null => {
+  // 1. If user currently has a selected clip, check if playhead is within its range
+  if (selectedClipId.value) {
+    const sel = clips.value.find(c => c.id === selectedClipId.value)
+    if (sel) {
+      const dur = sel.sourceEnd - sel.sourceStart
+      if (currentTime.value >= sel.timelineStart && currentTime.value <= sel.timelineStart + dur) {
+        return sel
+      }
+    }
+  }
+
+  // 2. If user focused a track (e.g. A2), prefer clip on that track at playhead
+  if (selectedTrackIndex.value !== null) {
+    const trackClip = clips.value.find(c => {
+      if (c.trackIndex !== selectedTrackIndex.value) return false
+      const dur = c.sourceEnd - c.sourceStart
+      return currentTime.value >= c.timelineStart && currentTime.value <= c.timelineStart + dur
+    })
+    if (trackClip) return trackClip
+  }
+
+  // 3. Fallback: Any clip at playhead
+  return clips.value.find(c => {
+    const dur = c.sourceEnd - c.sourceStart
+    return currentTime.value >= c.timelineStart && currentTime.value <= c.timelineStart + dur
+  }) || null
+}
+
 // CapCut Split / Cut Action (Foto 2 & Foto 3)
 const splitAtPlayhead = () => {
-  const target = clips.value.find(c => {
-    const clipDur = c.sourceEnd - c.sourceStart
-    return currentTime.value > c.timelineStart && currentTime.value < c.timelineStart + clipDur
-  })
+  const target = getTargetClipAtPlayhead()
 
   if (!target) {
-    toast.warning('Split Unavailable', 'Place playhead inside an audio clip to split')
+    toast.warning('Split Unavailable', 'Select a clip or place playhead inside an audio clip to split')
+    return
+  }
+
+  const clipDur = target.sourceEnd - target.sourceStart
+  if (currentTime.value <= target.timelineStart || currentTime.value >= target.timelineStart + clipDur) {
+    toast.warning('Split Out of Bounds', 'Playhead must be inside the selected clip to split')
     return
   }
 
@@ -747,6 +791,7 @@ const splitAtPlayhead = () => {
   const idx = clips.value.findIndex(c => c.id === target.id)
   clips.value.splice(idx, 1, clip1, clip2)
   selectedClipId.value = clip2.id
+  selectedTrackIndex.value = newTrackIdx
 
   recordHistory()
   drawAllClipWaveforms()
@@ -755,13 +800,16 @@ const splitAtPlayhead = () => {
 
 // Split Left (Foto 2 Icon 1)
 const splitLeft = () => {
-  const target = clips.value.find(c => {
-    const clipDur = c.sourceEnd - c.sourceStart
-    return currentTime.value > c.timelineStart && currentTime.value < c.timelineStart + clipDur
-  })
+  const target = getTargetClipAtPlayhead()
 
   if (!target) {
-    toast.warning('Trim Unavailable', 'Place playhead inside an audio clip')
+    toast.warning('Trim Unavailable', 'Select a clip or place playhead inside an audio clip')
+    return
+  }
+
+  const clipDur = target.sourceEnd - target.sourceStart
+  if (currentTime.value <= target.timelineStart || currentTime.value >= target.timelineStart + clipDur) {
+    toast.warning('Trim Out of Bounds', 'Playhead must be inside the clip to trim')
     return
   }
 
@@ -771,18 +819,21 @@ const splitLeft = () => {
 
   recordHistory()
   drawAllClipWaveforms()
-  toast.info('Trim Left', `Cut left portion up to ${formatTimecode(currentTime.value)}`)
+  toast.info('Trim Left', `Cut left portion of ${target.name}`)
 }
 
 // Split Right (Foto 2 Icon 3)
 const splitRight = () => {
-  const target = clips.value.find(c => {
-    const clipDur = c.sourceEnd - c.sourceStart
-    return currentTime.value > c.timelineStart && currentTime.value < c.timelineStart + clipDur
-  })
+  const target = getTargetClipAtPlayhead()
 
   if (!target) {
-    toast.warning('Trim Unavailable', 'Place playhead inside an audio clip')
+    toast.warning('Trim Unavailable', 'Select a clip or place playhead inside an audio clip')
+    return
+  }
+
+  const clipDur = target.sourceEnd - target.sourceStart
+  if (currentTime.value <= target.timelineStart || currentTime.value >= target.timelineStart + clipDur) {
+    toast.warning('Trim Out of Bounds', 'Playhead must be inside the clip to trim')
     return
   }
 
@@ -791,7 +842,7 @@ const splitRight = () => {
 
   recordHistory()
   drawAllClipWaveforms()
-  toast.info('Trim Right', `Cut right portion from ${formatTimecode(currentTime.value)}`)
+  toast.info('Trim Right', `Cut right portion of ${target.name}`)
 }
 
 // Delete Selected Clip (Foto 3 Icon 2)
@@ -1561,10 +1612,15 @@ onUnmounted(() => {
               <div
                 v-for="(track, tIndex) in tracks"
                 :key="track.id"
-                class="p-2 rounded-lg bg-[#18181b] border border-white/5 flex items-center justify-between h-14"
+                class="p-2 rounded-lg transition-all cursor-pointer flex items-center justify-between h-14"
+                :class="selectedTrackIndex === tIndex ? 'bg-[#222226] border border-white/40 ring-1 ring-white/10 shadow-xs' : 'bg-[#18181b] border border-white/5 hover:border-white/20'"
+                @click="selectTrack(tIndex)"
               >
                 <div class="flex items-center gap-1">
-                  <span class="w-5 h-5 rounded bg-white text-black font-mono font-bold text-[10px] flex items-center justify-center">
+                  <span
+                    class="w-5 h-5 rounded font-mono font-bold text-[10px] flex items-center justify-center transition-colors"
+                    :class="selectedTrackIndex === tIndex ? 'bg-white text-black' : 'bg-[#262626] text-white/80'"
+                  >
                     {{ track.name }}
                   </span>
                 </div>
@@ -1574,7 +1630,7 @@ onUnmounted(() => {
                     type="button"
                     class="p-1 rounded hover:bg-white/10 text-[var(--text-secondary)] hover:text-white cursor-pointer"
                     :title="track.isMuted ? 'Unmute Track' : 'Mute Track'"
-                    @click="track.isMuted = !track.isMuted"
+                    @click.stop="track.isMuted = !track.isMuted"
                   >
                     <VolumeX v-if="track.isMuted" class="w-3.5 h-3.5 text-white" />
                     <Volume2 v-else class="w-3.5 h-3.5" />
@@ -1585,7 +1641,7 @@ onUnmounted(() => {
                     type="button"
                     class="p-1 rounded hover:bg-red-500/20 text-[var(--text-tertiary)] hover:text-red-400 cursor-pointer transition-colors"
                     title="Delete Track"
-                    @click="deleteTrack(tIndex)"
+                    @click.stop="deleteTrack(tIndex)"
                   >
                     <X class="w-3.5 h-3.5" />
                   </button>
@@ -1602,7 +1658,9 @@ onUnmounted(() => {
               <div
                 v-for="(track, tIndex) in tracks"
                 :key="track.id"
-                class="h-14 bg-[#0a0a0c] rounded-lg border border-[#222226] relative overflow-hidden"
+                class="h-14 rounded-lg relative overflow-hidden transition-colors"
+                :class="selectedTrackIndex === tIndex ? 'bg-[#0f0f12] border border-white/30' : 'bg-[#0a0a0c] border border-[#222226]'"
+                @mousedown="selectTrack(tIndex)"
               >
                 <!-- Render Clips on this Track -->
                 <div
