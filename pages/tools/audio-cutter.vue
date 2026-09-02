@@ -31,7 +31,11 @@ import {
   Undo2,
   Redo2,
   Plus,
-  X
+  X,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Activity
 } from 'lucide-vue-next'
 import { Mp3Encoder } from '@breezystack/lamejs'
 import { useToast } from '~/composables/useToast'
@@ -40,6 +44,12 @@ import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
+
+interface AudioKeyframe {
+  id: string
+  timeOffset: number   // time in seconds relative to clip start (0 to clipDuration)
+  volume: number       // 0.0 to 2.0 (1.0 = 100% normal)
+}
 
 interface MediaAsset {
   id: string
@@ -59,6 +69,8 @@ interface AudioClip {
   sourceEnd: number        // end seconds in source buffer
   timelineStart: number    // placement on master timeline (seconds)
   trackIndex: number       // 0 for A1, 1 for A2, etc.
+  volume?: number          // base volume multiplier (1.0 default)
+  keyframes?: AudioKeyframe[]
 }
 
 interface TrackInfo {
@@ -84,6 +96,7 @@ let audioCtx: AudioContext | null = null
 const currentAudioBuffer = shallowRef<AudioBuffer | null>(null)
 const mediaAssets = shallowRef<Map<string, MediaAsset>>(new Map())
 let activeSourceNodes: AudioBufferSourceNode[] = []
+let activeGainNodes: GainNode[] = []
 let masterGainNode: GainNode | null = null
 
 const audioDuration = ref<number>(0)
@@ -178,6 +191,204 @@ const selectedClip = computed(() => {
   return clips.value.find(c => c.id === selectedClipId.value) || null
 })
 
+// Calculate Volume at a relative time in a clip with linear interpolation
+const getClipVolumeAtTime = (clip: AudioClip, relativeTime: number): number => {
+  const baseVol = clip.volume !== undefined ? clip.volume : 1.0
+  if (!clip.keyframes || clip.keyframes.length === 0) {
+    return baseVol
+  }
+
+  const kfs = [...clip.keyframes].sort((a, b) => a.timeOffset - b.timeOffset)
+  if (relativeTime <= kfs[0].timeOffset) {
+    return kfs[0].volume
+  }
+  if (relativeTime >= kfs[kfs.length - 1].timeOffset) {
+    return kfs[kfs.length - 1].volume
+  }
+
+  for (let i = 0; i < kfs.length - 1; i++) {
+    const kf1 = kfs[i]
+    const kf2 = kfs[i + 1]
+    if (relativeTime >= kf1.timeOffset && relativeTime <= kf2.timeOffset) {
+      const diff = kf2.timeOffset - kf1.timeOffset
+      if (diff === 0) return kf1.volume
+      const progress = (relativeTime - kf1.timeOffset) / diff
+      return kf1.volume + (kf2.volume - kf1.volume) * progress
+    }
+  }
+  return baseVol
+}
+
+// Check if playhead is currently positioned on a keyframe
+const isPlayheadOnKeyframe = computed(() => {
+  if (!selectedClip.value) return false
+  const clip = selectedClip.value
+  const offset = currentTime.value - clip.timelineStart
+  const clipDur = clip.sourceEnd - clip.sourceStart
+  if (offset < 0 || offset > clipDur) return false
+  const kfs = clip.keyframes || []
+  return kfs.some(k => Math.abs(k.timeOffset - offset) < 0.08)
+})
+
+// Toggle Add/Remove Keyframe at Playhead Position
+const toggleKeyframeAtPlayhead = () => {
+  if (!selectedClip.value) {
+    toast.warning('No Clip Selected', 'Select an audio clip to add keyframes')
+    return
+  }
+  const clip = selectedClip.value
+  const offset = currentTime.value - clip.timelineStart
+  const clipDur = clip.sourceEnd - clip.sourceStart
+
+  if (offset < 0 || offset > clipDur) {
+    toast.warning('Outside Clip', 'Place playhead inside the selected clip to add keyframe')
+    return
+  }
+
+  if (!clip.keyframes) clip.keyframes = []
+
+  const existingIdx = clip.keyframes.findIndex(k => Math.abs(k.timeOffset - offset) < 0.08)
+  if (existingIdx !== -1) {
+    clip.keyframes.splice(existingIdx, 1)
+    recordHistory()
+    drawAllClipWaveforms()
+    toast.info('Keyframe Removed', `Removed keyframe at ${formatTimecode(currentTime.value)}`)
+  } else {
+    const currentVol = getClipVolumeAtTime(clip, offset)
+    clip.keyframes.push({
+      id: `kf-${Date.now()}`,
+      timeOffset: Number(offset.toFixed(3)),
+      volume: Number(currentVol.toFixed(2))
+    })
+    clip.keyframes.sort((a, b) => a.timeOffset - b.timeOffset)
+    recordHistory()
+    drawAllClipWaveforms()
+    toast.success('Keyframe Added', `Added volume keyframe at ${formatTimecode(currentTime.value)}`)
+  }
+}
+
+// Keyframe Preset: Fade In (1.5s)
+const applyFadeIn = (duration = 1.5) => {
+  if (!selectedClip.value) return
+  const clip = selectedClip.value
+  const clipDur = clip.sourceEnd - clip.sourceStart
+  const actualDur = Math.min(duration, clipDur / 2)
+
+  if (!clip.keyframes) clip.keyframes = []
+  // Remove any keyframes within the fade-in zone
+  clip.keyframes = clip.keyframes.filter(k => k.timeOffset > actualDur)
+
+  clip.keyframes.push({
+    id: `kf-${Date.now()}-in-0`,
+    timeOffset: 0,
+    volume: 0
+  })
+  clip.keyframes.push({
+    id: `kf-${Date.now()}-in-1`,
+    timeOffset: Number(actualDur.toFixed(2)),
+    volume: 1.0
+  })
+  clip.keyframes.sort((a, b) => a.timeOffset - b.timeOffset)
+
+  recordHistory()
+  drawAllClipWaveforms()
+  toast.success('Fade In Applied', `Created ${actualDur.toFixed(1)}s smooth fade-in curve`)
+}
+
+// Keyframe Preset: Fade Out (1.5s)
+const applyFadeOut = (duration = 1.5) => {
+  if (!selectedClip.value) return
+  const clip = selectedClip.value
+  const clipDur = clip.sourceEnd - clip.sourceStart
+  const actualDur = Math.min(duration, clipDur / 2)
+  const startTime = clipDur - actualDur
+
+  if (!clip.keyframes) clip.keyframes = []
+  // Remove any keyframes within the fade-out zone
+  clip.keyframes = clip.keyframes.filter(k => k.timeOffset < startTime)
+
+  clip.keyframes.push({
+    id: `kf-${Date.now()}-out-0`,
+    timeOffset: Number(startTime.toFixed(2)),
+    volume: 1.0
+  })
+  clip.keyframes.push({
+    id: `kf-${Date.now()}-out-1`,
+    timeOffset: Number(clipDur.toFixed(2)),
+    volume: 0
+  })
+  clip.keyframes.sort((a, b) => a.timeOffset - b.timeOffset)
+
+  recordHistory()
+  drawAllClipWaveforms()
+  toast.success('Fade Out Applied', `Created ${actualDur.toFixed(1)}s smooth fade-out curve`)
+}
+
+// Keyframe Preset: Audio Ducking (-60% volume)
+const applyDucking = () => {
+  if (!selectedClip.value) return
+  const clip = selectedClip.value
+  const clipDur = clip.sourceEnd - clip.sourceStart
+  if (clipDur < 2) {
+    toast.warning('Clip Too Short', 'Ducking requires clip duration of at least 2 seconds')
+    return
+  }
+
+  if (!clip.keyframes) clip.keyframes = []
+  clip.keyframes = [
+    { id: `kf-${Date.now()}-1`, timeOffset: 0, volume: 1.0 },
+    { id: `kf-${Date.now()}-2`, timeOffset: 0.5, volume: 0.35 },
+    { id: `kf-${Date.now()}-3`, timeOffset: Number((clipDur - 0.5).toFixed(2)), volume: 0.35 },
+    { id: `kf-${Date.now()}-4`, timeOffset: Number(clipDur.toFixed(2)), volume: 1.0 }
+  ]
+
+  recordHistory()
+  drawAllClipWaveforms()
+  toast.success('Ducking Applied', 'Lowered background volume by 65%')
+}
+
+// Clear all keyframes on selected clip
+const clearKeyframes = () => {
+  if (!selectedClip.value) return
+  selectedClip.value.keyframes = []
+  recordHistory()
+  drawAllClipWaveforms()
+  toast.info('Keyframes Cleared', 'Reset volume automation curve')
+}
+
+// Remove single keyframe
+const removeKeyframe = (kfId: string) => {
+  if (!selectedClip.value || !selectedClip.value.keyframes) return
+  selectedClip.value.keyframes = selectedClip.value.keyframes.filter(k => k.id !== kfId)
+  recordHistory()
+  drawAllClipWaveforms()
+}
+
+// Jump to previous keyframe
+const jumpToPrevKeyframe = () => {
+  if (!selectedClip.value || !selectedClip.value.keyframes || selectedClip.value.keyframes.length === 0) return
+  const clip = selectedClip.value
+  const kfs = clip.keyframes || []
+  const offset = currentTime.value - clip.timelineStart
+  const prevKfs = kfs.filter(k => k.timeOffset < offset - 0.05)
+  if (prevKfs.length > 0) {
+    const targetKf = prevKfs[prevKfs.length - 1]
+    currentTime.value = Number((clip.timelineStart + targetKf.timeOffset).toFixed(3))
+  }
+}
+
+// Jump to next keyframe
+const jumpToNextKeyframe = () => {
+  if (!selectedClip.value || !selectedClip.value.keyframes || selectedClip.value.keyframes.length === 0) return
+  const clip = selectedClip.value
+  const kfs = clip.keyframes || []
+  const offset = currentTime.value - clip.timelineStart
+  const nextKf = kfs.find(k => k.timeOffset > offset + 0.05)
+  if (nextKf) {
+    currentTime.value = Number((clip.timelineStart + nextKf.timeOffset).toFixed(3))
+  }
+}
+
 let playbackStartTime = 0
 let playbackOffset = 0
 let animationFrameId: number | null = null
@@ -255,7 +466,7 @@ const drawRuler = () => {
   }
 }
 
-// Draw Mini Waveform for each clip
+// Draw Mini Waveform + Keyframe Envelope Curve for each clip
 const drawClipWaveform = (canvas: HTMLCanvasElement, clip: AudioClip) => {
   const asset = mediaAssets.value.get(clip.mediaId)
   const buffer = asset ? asset.buffer : currentAudioBuffer.value
@@ -314,6 +525,50 @@ const drawClipWaveform = (canvas: HTMLCanvasElement, clip: AudioClip) => {
     ctx.roundRect(barX, barY, barWidth, barHeight, 1)
     ctx.fill()
   }
+
+  // Draw Keyframe Volume Automation Envelope Curve & Diamonds
+  if (clip.keyframes && clip.keyframes.length > 0) {
+    const clipDur = clip.sourceEnd - clip.sourceStart
+    const kfs = [...clip.keyframes].sort((a, b) => a.timeOffset - b.timeOffset)
+
+    // Draw connecting envelope line
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+
+    // Start point
+    const firstVol = kfs[0].volume
+    const firstY = height - Math.max(4, Math.min(height - 4, (firstVol / 1.5) * height))
+    ctx.moveTo(0, firstY)
+
+    kfs.forEach(kf => {
+      const kfX = (kf.timeOffset / clipDur) * width
+      const kfY = height - Math.max(4, Math.min(height - 4, (kf.volume / 1.5) * height))
+      ctx.lineTo(kfX, kfY)
+    })
+
+    // End point
+    const lastVol = kfs[kfs.length - 1].volume
+    const lastY = height - Math.max(4, Math.min(height - 4, (lastVol / 1.5) * height))
+    ctx.lineTo(width, lastY)
+    ctx.stroke()
+
+    // Draw diamond nodes at each keyframe
+    kfs.forEach(kf => {
+      const kfX = (kf.timeOffset / clipDur) * width
+      const kfY = height - Math.max(4, Math.min(height - 4, (kf.volume / 1.5) * height))
+
+      ctx.save()
+      ctx.translate(kfX, kfY)
+      ctx.rotate(Math.PI / 4)
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(-3.5, -3.5, 7, 7)
+      ctx.strokeStyle = '#000000'
+      ctx.lineWidth = 1
+      ctx.strokeRect(-3.5, -3.5, 7, 7)
+      ctx.restore()
+    })
+  }
 }
 
 const drawAllClipWaveforms = () => {
@@ -367,6 +622,7 @@ const processMediaFile = async (file: File) => {
     tracks.value = [
       { id: `track-${Date.now()}`, name: 'A1', isMuted: false }
     ]
+    selectedTrackIndex.value = 0
 
     // Initialize with 1 Master Clip on Track A1
     const newClip: AudioClip = {
@@ -376,7 +632,9 @@ const processMediaFile = async (file: File) => {
       sourceStart: 0,
       sourceEnd: decoded.duration,
       timelineStart: 0,
-      trackIndex: 0
+      trackIndex: 0,
+      volume: 1.0,
+      keyframes: []
     }
     clips.value = [newClip]
     selectedClipId.value = newClip.id
@@ -429,13 +687,14 @@ const addExtraMediaFiles = async (files: FileList | File[]) => {
 
       mediaAssets.value.set(mediaId, newAsset)
 
-      // Auto-assign to a new track or existing track
+      // Auto-assign to a new track
       const targetTrackIdx = tracks.value.length
       tracks.value.push({
         id: `track-${Date.now()}-${i}`,
         name: `A${targetTrackIdx + 1}`,
         isMuted: false
       })
+      selectedTrackIndex.value = targetTrackIdx
 
       const newClip: AudioClip = {
         id: `clip-${Date.now()}-${i}`,
@@ -444,7 +703,9 @@ const addExtraMediaFiles = async (files: FileList | File[]) => {
         sourceStart: 0,
         sourceEnd: decoded.duration,
         timelineStart: currentTime.value || 0,
-        trackIndex: targetTrackIdx
+        trackIndex: targetTrackIdx,
+        volume: 1.0,
+        keyframes: []
       }
 
       clips.value.push(newClip)
@@ -490,7 +751,7 @@ const onDrop = (e: DragEvent) => {
   }
 }
 
-// Multi-Track & Multi-Buffer Playback Engine
+// Multi-Track, Multi-Buffer & Keyframe Automation Playback Engine
 const updatePlaybackPosition = () => {
   if (!isPlaying.value || !audioCtx) return
 
@@ -521,6 +782,7 @@ const playAudio = () => {
   playbackStartTime = ctx.currentTime
 
   activeSourceNodes = []
+  activeGainNodes = []
 
   clips.value.forEach(clip => {
     const track = tracks.value[clip.trackIndex]
@@ -539,9 +801,33 @@ const playAudio = () => {
     source.buffer = buffer
     source.playbackRate.value = playbackSpeed.value
 
+    // Per-clip gain node for volume & keyframe automation
+    const clipGain = ctx.createGain()
+    const baseClipVol = clip.volume !== undefined ? clip.volume : 1.0
+
+    // Connect nodes
+    source.connect(clipGain)
     if (masterGainNode) {
       masterGainNode.gain.value = isMuted.value ? 0 : volume.value
-      source.connect(masterGainNode)
+      clipGain.connect(masterGainNode)
+    } else {
+      clipGain.connect(ctx.destination)
+    }
+
+    const currentOffsetInClip = Math.max(0, currentTime.value - clip.timelineStart)
+    const initialVol = getClipVolumeAtTime(clip, currentOffsetInClip)
+    clipGain.gain.setValueAtTime(initialVol * baseClipVol, ctx.currentTime)
+
+    // Schedule linear ramps for keyframes occurring after currentTime
+    if (clip.keyframes && clip.keyframes.length > 0) {
+      const kfs = [...clip.keyframes].sort((a, b) => a.timeOffset - b.timeOffset)
+      kfs.forEach(kf => {
+        const kfTimelineTime = clip.timelineStart + kf.timeOffset
+        if (kfTimelineTime > currentTime.value) {
+          const delay = (kfTimelineTime - currentTime.value) / playbackSpeed.value
+          clipGain.gain.linearRampToValueAtTime(kf.volume * baseClipVol, ctx.currentTime + delay)
+        }
+      })
     }
 
     if (currentTime.value <= clip.timelineStart) {
@@ -556,6 +842,7 @@ const playAudio = () => {
     }
 
     activeSourceNodes.push(source)
+    activeGainNodes.push(clipGain)
   })
 
   isPlaying.value = true
@@ -582,6 +869,7 @@ const stopPlayback = () => {
     } catch {}
   })
   activeSourceNodes = []
+  activeGainNodes = []
 
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
@@ -712,7 +1000,6 @@ const onGlobalMouseUp = () => {
 
 // Resolve Target Clip Based on Current Active Track & Selection
 const getTargetClipAtPlayhead = (): AudioClip | null => {
-  // 1. If user currently has a selected clip, check if playhead is within its range
   if (selectedClipId.value) {
     const sel = clips.value.find(c => c.id === selectedClipId.value)
     if (sel) {
@@ -723,7 +1010,6 @@ const getTargetClipAtPlayhead = (): AudioClip | null => {
     }
   }
 
-  // 2. If user focused a track (e.g. A2), prefer clip on that track at playhead
   if (selectedTrackIndex.value !== null) {
     const trackClip = clips.value.find(c => {
       if (c.trackIndex !== selectedTrackIndex.value) return false
@@ -733,14 +1019,13 @@ const getTargetClipAtPlayhead = (): AudioClip | null => {
     if (trackClip) return trackClip
   }
 
-  // 3. Fallback: Any clip at playhead
   return clips.value.find(c => {
     const dur = c.sourceEnd - c.sourceStart
     return currentTime.value >= c.timelineStart && currentTime.value <= c.timelineStart + dur
   }) || null
 }
 
-// CapCut Split / Cut Action (Foto 2 & Foto 3)
+// CapCut Split / Cut Action
 const splitAtPlayhead = () => {
   const target = getTargetClipAtPlayhead()
 
@@ -758,7 +1043,6 @@ const splitAtPlayhead = () => {
   const offsetInClip = currentTime.value - target.timelineStart
   const splitSourceTime = target.sourceStart + offsetInClip
 
-  // If there is no track below the target track, automatically create a new track!
   const targetTrackIdx = target.trackIndex
   const newTrackIdx = targetTrackIdx + 1
   if (newTrackIdx >= tracks.value.length) {
@@ -770,14 +1054,15 @@ const splitAtPlayhead = () => {
     })
   }
 
-  // Clip 1 remains on original track up to split point
+  // Clip 1 remains on original track
   const clip1: AudioClip = {
     ...target,
     id: `clip-${Date.now()}-1`,
-    sourceEnd: splitSourceTime
+    sourceEnd: splitSourceTime,
+    keyframes: target.keyframes?.filter(k => k.timeOffset < offsetInClip) || []
   }
 
-  // Clip 2 is moved to the new track below it starting at currentTime
+  // Clip 2 is moved to the track below
   const clip2: AudioClip = {
     id: `clip-${Date.now()}-2`,
     mediaId: target.mediaId,
@@ -785,7 +1070,11 @@ const splitAtPlayhead = () => {
     sourceStart: splitSourceTime,
     sourceEnd: target.sourceEnd,
     timelineStart: currentTime.value,
-    trackIndex: newTrackIdx
+    trackIndex: newTrackIdx,
+    volume: target.volume,
+    keyframes: (target.keyframes || [])
+      .filter(k => k.timeOffset >= offsetInClip)
+      .map(k => ({ ...k, id: `kf-${Date.now()}-${Math.random()}`, timeOffset: k.timeOffset - offsetInClip }))
   }
 
   const idx = clips.value.findIndex(c => c.id === target.id)
@@ -798,7 +1087,7 @@ const splitAtPlayhead = () => {
   toast.success('Audio Split', `Created new clip on Track A${newTrackIdx + 1}`)
 }
 
-// Split Left (Foto 2 Icon 1)
+// Split Left
 const splitLeft = () => {
   const target = getTargetClipAtPlayhead()
 
@@ -817,12 +1106,18 @@ const splitLeft = () => {
   target.sourceStart += offsetInClip
   target.timelineStart = currentTime.value
 
+  if (target.keyframes) {
+    target.keyframes = target.keyframes
+      .filter(k => k.timeOffset >= offsetInClip)
+      .map(k => ({ ...k, timeOffset: k.timeOffset - offsetInClip }))
+  }
+
   recordHistory()
   drawAllClipWaveforms()
   toast.info('Trim Left', `Cut left portion of ${target.name}`)
 }
 
-// Split Right (Foto 2 Icon 3)
+// Split Right
 const splitRight = () => {
   const target = getTargetClipAtPlayhead()
 
@@ -840,12 +1135,16 @@ const splitRight = () => {
   const offsetInClip = currentTime.value - target.timelineStart
   target.sourceEnd = target.sourceStart + offsetInClip
 
+  if (target.keyframes) {
+    target.keyframes = target.keyframes.filter(k => k.timeOffset <= offsetInClip)
+  }
+
   recordHistory()
   drawAllClipWaveforms()
   toast.info('Trim Right', `Cut right portion of ${target.name}`)
 }
 
-// Delete Selected Clip (Foto 3 Icon 2)
+// Delete Selected Clip
 const deleteSelectedClip = () => {
   if (!selectedClipId.value) {
     toast.warning('No Clip Selected', 'Click on a clip in the timeline to select it')
@@ -870,6 +1169,7 @@ const addTrack = () => {
     name: `A${nextNum}`,
     isMuted: false
   })
+  selectedTrackIndex.value = tracks.value.length - 1
   toast.info('Track Added', `Created track A${nextNum}`)
 }
 
@@ -880,7 +1180,6 @@ const deleteTrack = (tIndex: number) => {
     return
   }
 
-  // Move clips on this track to the track above
   const targetTrackIdx = Math.max(0, tIndex - 1)
   clips.value.forEach(clip => {
     if (clip.trackIndex === tIndex) {
@@ -890,13 +1189,11 @@ const deleteTrack = (tIndex: number) => {
     }
   })
 
-  // Remove track
   tracks.value.splice(tIndex, 1)
-
-  // Re-number remaining tracks A1, A2, etc.
   tracks.value.forEach((t, i) => {
     t.name = `A${i + 1}`
   })
+  selectedTrackIndex.value = Math.min(selectedTrackIndex.value, tracks.value.length - 1)
 
   recordHistory()
   drawAllClipWaveforms()
@@ -1000,7 +1297,7 @@ const encodeMp3 = (buffer: AudioBuffer, bitrate = 320): Blob => {
   return new Blob(mp3Data as BlobPart[], { type: 'audio/mp3' })
 }
 
-// Multi-Clip & Multi-Buffer Audio Mashup Exporter
+// Multi-Clip & Multi-Buffer Audio Mashup Exporter with Keyframe Automation
 const handleExportAudio = async () => {
   if (clips.value.length === 0) return
   isExporting.value = true
@@ -1009,7 +1306,6 @@ const handleExportAudio = async () => {
   try {
     const totalDuration = totalTimelineDuration.value
 
-    // Determine max sample rate across all assets
     let maxRate = 44100
     mediaAssets.value.forEach(a => {
       if (a.sampleRate > maxRate) maxRate = a.sampleRate
@@ -1032,7 +1328,25 @@ const handleExportAudio = async () => {
       const sourceNode = offlineCtx.createBufferSource()
       sourceNode.buffer = buffer
 
-      sourceNode.connect(offlineCtx.destination)
+      const clipGain = offlineCtx.createGain()
+      const baseClipVol = clip.volume !== undefined ? clip.volume : 1.0
+
+      // Apply keyframe volume curve on offline render
+      if (clip.keyframes && clip.keyframes.length > 0) {
+        const kfs = [...clip.keyframes].sort((a, b) => a.timeOffset - b.timeOffset)
+        const initialVol = getClipVolumeAtTime(clip, 0)
+        clipGain.gain.setValueAtTime(initialVol * baseClipVol, clip.timelineStart)
+
+        kfs.forEach(kf => {
+          const kfTime = clip.timelineStart + kf.timeOffset
+          clipGain.gain.linearRampToValueAtTime(kf.volume * baseClipVol, kfTime)
+        })
+      } else {
+        clipGain.gain.value = baseClipVol
+      }
+
+      sourceNode.connect(clipGain)
+      clipGain.connect(offlineCtx.destination)
       sourceNode.start(clip.timelineStart, clip.sourceStart, clipDuration)
     })
 
@@ -1101,6 +1415,9 @@ const handleKeydown = (e: KeyboardEvent) => {
   } else if (e.key === ']') {
     e.preventDefault()
     splitRight()
+  } else if (e.altKey && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault()
+    toggleKeyframeAtPlayhead()
   }
 }
 
@@ -1142,7 +1459,7 @@ onUnmounted(() => {
               Audio Extractor & Timeline Trimmer
             </h1>
             <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-              Extract sound from video or audio files, split clips, import multiple tracks, and create music mashups.
+              Extract sound from video or audio files, split clips, import multiple tracks, and create music mashups with keyframe volume automation.
             </p>
           </div>
 
@@ -1217,7 +1534,7 @@ onUnmounted(() => {
               </h1>
             </div>
             <p class="text-xs text-[var(--text-tertiary)] truncate">
-              {{ formatTimecode(totalTimelineDuration) }} • {{ mediaAssets.size }} Media File{{ mediaAssets.size > 1 ? 's' : '' }} • {{ clips.length }} Clip{{ clips.length > 1 ? 's' : '' }}
+              {{ formatTimecode(totalTimelineDuration) }} • {{ mediaAssets.size }} Media • {{ clips.length }} Clip{{ clips.length > 1 ? 's' : '' }}
             </p>
           </div>
         </div>
@@ -1286,15 +1603,18 @@ onUnmounted(() => {
       <!-- Upper Section: Player Stage + Clip Inspector -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <!-- Player Deck (8 cols) -->
-        <div class="lg:col-span-8 rounded-xl bg-[#0e0e10] border border-[#262626] p-6 flex flex-col justify-between space-y-6 min-h-[280px]">
+        <div class="lg:col-span-8 rounded-xl bg-[#0e0e10] border border-[#262626] p-6 flex flex-col justify-between space-y-6 min-h-[300px]">
           <!-- Stage Top Monitor Info -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-white inline-block animate-pulse" />
               <span class="text-xs font-mono text-white/90">AUDIO MONITOR</span>
             </div>
-            <div class="text-xs font-mono text-[var(--text-tertiary)]">
-              Selected Clip: <span class="text-white font-semibold">{{ selectedClip ? formatTimecode(selectedClip.sourceEnd - selectedClip.sourceStart) : 'None' }}</span>
+            <div class="text-xs font-mono text-[var(--text-tertiary)] flex items-center gap-2">
+              <span>Selected Clip: <strong class="text-white">{{ selectedClip ? formatTimecode(selectedClip.sourceEnd - selectedClip.sourceStart) : 'None' }}</strong></span>
+              <span v-if="selectedClip?.keyframes?.length" class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] text-white font-mono">
+                {{ selectedClip.keyframes.length }} KF
+              </span>
             </div>
           </div>
 
@@ -1378,19 +1698,126 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Right Side Properties Inspector Panel (4 cols) -->
-        <div class="lg:col-span-4 rounded-xl bg-[#141416] border border-[#262626] overflow-hidden flex flex-col justify-between">
-          <div class="p-4 space-y-4">
+        <!-- Right Side Properties & Keyframe Inspector Panel (4 cols) -->
+        <div class="lg:col-span-4 rounded-xl bg-[#141416] border border-[#262626] overflow-hidden flex flex-col justify-between max-h-[480px]">
+          <div class="p-4 space-y-4 overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between pb-2 border-b border-[#262626]">
-              <span class="text-xs font-semibold text-white uppercase tracking-wider">Properties</span>
+              <span class="text-xs font-semibold text-white uppercase tracking-wider">Properties & Keyframe</span>
               <span class="text-[11px] font-mono text-[var(--text-tertiary)] truncate max-w-[150px]">
                 {{ selectedClip ? selectedClip.name : 'No Clip Selected' }}
               </span>
             </div>
 
+            <!-- Clip Info Header -->
+            <div v-if="selectedClip" class="p-2.5 rounded-lg bg-[#0e0e10] border border-white/5 space-y-1.5 font-mono text-[11px]">
+              <div class="flex justify-between">
+                <span class="text-[var(--text-tertiary)]">Media Source</span>
+                <span class="text-white truncate max-w-[140px]">{{ selectedClip.name }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-[var(--text-tertiary)]">Track Position</span>
+                <span class="text-white">Track A{{ selectedClip.trackIndex + 1 }} • {{ formatTimecode(selectedClip.timelineStart) }}</span>
+              </div>
+            </div>
+
+            <!-- Keyframe Volume Automation Section -->
+            <div v-if="selectedClip" class="space-y-2.5 p-3 rounded-lg bg-[#0e0e10] border border-[#262626]">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <Activity class="w-3.5 h-3.5 text-white" />
+                  <span class="text-xs font-semibold text-white">Volume Keyframe</span>
+                </div>
+                <!-- Keyframe Add/Remove Diamond Toggle Button -->
+                <button
+                  type="button"
+                  class="p-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-xs font-mono"
+                  :class="isPlayheadOnKeyframe ? 'bg-white text-black font-bold' : 'bg-[#1e1e24] text-white/80 hover:text-white hover:bg-[#2a2a32] border border-white/10'"
+                  :title="isPlayheadOnKeyframe ? 'Remove Keyframe at Playhead (Alt+K)' : 'Add Keyframe at Playhead (Alt+K)'"
+                  @click="toggleKeyframeAtPlayhead"
+                >
+                  <span class="text-sm leading-none">{{ isPlayheadOnKeyframe ? '◆' : '◇' }}</span>
+                  <span>{{ isPlayheadOnKeyframe ? 'Remove KF' : 'Add KF' }}</span>
+                </button>
+              </div>
+
+              <!-- Quick Presets -->
+              <div class="grid grid-cols-3 gap-1 pt-1">
+                <button
+                  type="button"
+                  class="py-1 px-1.5 rounded bg-[#18181b] hover:bg-[#222226] border border-white/5 text-[10px] text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                  @click="applyFadeIn(1.5)"
+                >
+                  <TrendingUp class="w-3 h-3 text-white" />
+                  <span>Fade In</span>
+                </button>
+                <button
+                  type="button"
+                  class="py-1 px-1.5 rounded bg-[#18181b] hover:bg-[#222226] border border-white/5 text-[10px] text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                  @click="applyFadeOut(1.5)"
+                >
+                  <TrendingDown class="w-3 h-3 text-white" />
+                  <span>Fade Out</span>
+                </button>
+                <button
+                  type="button"
+                  class="py-1 px-1.5 rounded bg-[#18181b] hover:bg-[#222226] border border-white/5 text-[10px] text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer flex items-center justify-center gap-1"
+                  @click="applyDucking"
+                >
+                  <Sparkles class="w-3 h-3 text-white" />
+                  <span>Ducking</span>
+                </button>
+              </div>
+
+              <!-- Keyframe Points List -->
+              <div v-if="selectedClip.keyframes && selectedClip.keyframes.length > 0" class="space-y-1.5 pt-1">
+                <div class="flex items-center justify-between text-[10px] font-mono text-[var(--text-tertiary)] uppercase">
+                  <span>Points ({{ selectedClip.keyframes.length }})</span>
+                  <button
+                    type="button"
+                    class="text-red-400 hover:underline cursor-pointer"
+                    @click="clearKeyframes"
+                  >
+                    Clear All
+                  </button>
+                </div>
+                <div class="max-h-28 overflow-y-auto space-y-1 pr-1">
+                  <div
+                    v-for="(kf, kIdx) in selectedClip.keyframes"
+                    :key="kf.id"
+                    class="flex items-center justify-between gap-2 p-1.5 rounded bg-[#141416] border border-white/5 text-[11px] font-mono"
+                  >
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-white text-xs">◆</span>
+                      <span class="text-white">{{ formatTimecode(selectedClip.timelineStart + kf.timeOffset) }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <input
+                        v-model.number="kf.volume"
+                        type="range"
+                        min="0"
+                        max="1.5"
+                        step="0.05"
+                        class="w-14 h-1 bg-[#2E2E2E] rounded appearance-none cursor-pointer accent-white"
+                        @input="drawAllClipWaveforms"
+                        @change="recordHistory"
+                      />
+                      <span class="text-[10px] text-white/90 w-8 text-right">{{ Math.round(kf.volume * 100) }}%</span>
+                      <button
+                        type="button"
+                        class="text-neutral-500 hover:text-red-400 p-0.5 cursor-pointer"
+                        @click="removeKeyframe(kf.id)"
+                      >
+                        <X class="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Speed multiplier -->
             <div class="space-y-1.5">
-              <label class="text-[11px] font-mono text-[var(--text-secondary)] uppercase">Playback Speed</label>
+              <label class="text-[10px] font-mono text-[var(--text-secondary)] uppercase">Playback Speed</label>
               <div class="grid grid-cols-5 gap-1 bg-[#0e0e10] p-1 rounded-lg border border-[#262626]">
                 <button
                   v-for="s in [0.5, 1.0, 1.25, 1.5, 2.0]"
@@ -1402,26 +1829,6 @@ onUnmounted(() => {
                 >
                   {{ s }}x
                 </button>
-              </div>
-            </div>
-
-            <!-- Selected Clip Parameters -->
-            <div v-if="selectedClip" class="p-3 rounded-lg bg-[#0e0e10] border border-white/5 space-y-2 font-mono text-[11px]">
-              <div class="flex justify-between">
-                <span class="text-[var(--text-tertiary)]">Media Source</span>
-                <span class="text-white truncate max-w-[140px]">{{ selectedClip.name }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[var(--text-tertiary)]">Timeline Start</span>
-                <span class="text-white">{{ formatTimecode(selectedClip.timelineStart) }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[var(--text-tertiary)]">Clip Length</span>
-                <span class="text-white">{{ formatTimecode(selectedClip.sourceEnd - selectedClip.sourceStart) }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-[var(--text-tertiary)]">Active Track</span>
-                <span class="text-white">A{{ selectedClip.trackIndex + 1 }}</span>
               </div>
             </div>
           </div>
@@ -1508,7 +1915,7 @@ onUnmounted(() => {
 
             <div class="w-px h-4 bg-[#262626] mx-1" />
 
-            <!-- Split Left (Foto 2 Icon 1) -->
+            <!-- Split Left -->
             <button
               type="button"
               class="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-[#222226] transition-colors cursor-pointer"
@@ -1522,7 +1929,7 @@ onUnmounted(() => {
               </svg>
             </button>
 
-            <!-- Split at Playhead (Foto 2 Icon 2 & Foto 3 Icon 1) -->
+            <!-- Split at Playhead -->
             <button
               type="button"
               class="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-[#222226] transition-colors cursor-pointer"
@@ -1536,7 +1943,7 @@ onUnmounted(() => {
               </svg>
             </button>
 
-            <!-- Split Right (Foto 2 Icon 3) -->
+            <!-- Split Right -->
             <button
               type="button"
               class="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-[#222226] transition-colors cursor-pointer"
@@ -1552,7 +1959,40 @@ onUnmounted(() => {
 
             <div class="w-px h-4 bg-[#262626] mx-1" />
 
-            <!-- Delete Selected Clip (Foto 3 Icon 2) -->
+            <!-- Keyframe Fast Controls -->
+            <button
+              type="button"
+              class="p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-xs"
+              :class="isPlayheadOnKeyframe ? 'bg-white text-black font-bold' : 'text-white/80 hover:text-white hover:bg-[#222226]'"
+              :title="isPlayheadOnKeyframe ? 'Remove Keyframe (Alt+K)' : 'Add Keyframe (Alt+K)'"
+              @click="toggleKeyframeAtPlayhead"
+            >
+              <span class="text-sm leading-none">{{ isPlayheadOnKeyframe ? '◆' : '◇' }}</span>
+              <span class="hidden sm:inline text-[11px]">{{ isPlayheadOnKeyframe ? 'Remove KF' : 'Add KF' }}</span>
+            </button>
+
+            <button
+              v-if="selectedClip?.keyframes?.length"
+              type="button"
+              class="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#222226] transition-colors cursor-pointer text-xs"
+              title="Previous Keyframe"
+              @click="jumpToPrevKeyframe"
+            >
+              ◀◇
+            </button>
+            <button
+              v-if="selectedClip?.keyframes?.length"
+              type="button"
+              class="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#222226] transition-colors cursor-pointer text-xs"
+              title="Next Keyframe"
+              @click="jumpToNextKeyframe"
+            >
+              ◇▶
+            </button>
+
+            <div class="w-px h-4 bg-[#262626] mx-1" />
+
+            <!-- Delete Selected Clip -->
             <button
               type="button"
               class="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-[#222226] transition-colors cursor-pointer"
@@ -1676,12 +2116,18 @@ onUnmounted(() => {
                   @mousedown="(e) => startClipDrag(e, clip, 'move-clip')"
                 >
                   <!-- Clip Top Title Badge -->
-                  <div class="absolute top-1 left-1.5 right-1.5 flex items-center gap-1 pointer-events-none z-10 text-[9px] font-mono text-white/90 truncate">
-                    <Music class="w-2.5 h-2.5 shrink-0" />
-                    <span class="truncate">{{ clip.name }}</span>
+                  <div class="absolute top-1 left-1.5 right-1.5 flex items-center justify-between pointer-events-none z-10 text-[9px] font-mono text-white/90 truncate">
+                    <div class="flex items-center gap-1 truncate">
+                      <Music class="w-2.5 h-2.5 shrink-0" />
+                      <span class="truncate">{{ clip.name }}</span>
+                    </div>
+                    <div v-if="clip.keyframes?.length" class="flex items-center gap-0.5 text-white/80 shrink-0">
+                      <span>◆</span>
+                      <span>{{ clip.keyframes.length }}</span>
+                    </div>
                   </div>
 
-                  <!-- Waveform Canvas for this Clip -->
+                  <!-- Waveform & Keyframe Envelope Canvas for this Clip -->
                   <canvas
                     :id="`canvas-${clip.id}`"
                     class="w-full h-full block opacity-85"
