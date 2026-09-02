@@ -418,6 +418,17 @@ const isRouteActive = (targetRoute: string) => {
                 SVG Optimizer
               </NuxtLink>
               <NuxtLink
+                to="/tools/code-to-image"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/code-to-image')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Code to Image Studio
+              </NuxtLink>
+              <NuxtLink
                 to="/tools/hash-encoder"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="

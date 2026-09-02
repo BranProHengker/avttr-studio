@@ -169,6 +169,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'code-to-image',
+        title: 'Code to Image Studio',
+        description: 'Transform code snippets into aesthetic macOS/Windows screenshots with syntax highlighting & gradient backgrounds.',
+        category: 'image',
+        icon: 'code',
+        route: '/tools/code-to-image',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'base64-image',
         title: 'Base64 & Hash Encoder',
         description: 'Convert files to Base64, generate SHA-256 / SHA-512 hashes via Web Crypto API.',
