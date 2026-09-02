@@ -7,6 +7,7 @@ import {
   Upload,
   Globe,
   FileText,
+  FileCode,
   Palette,
   Info,
   ExternalLink,
@@ -16,6 +17,14 @@ import {
   CheckCircle2,
   AlertCircle
 } from 'lucide-vue-next'
+import Prism from 'prismjs'
+import 'prismjs/components/prism-markup'
+import 'prismjs/components/prism-clike'
+import 'prismjs/components/prism-javascript'
+import 'prismjs/components/prism-typescript'
+import 'prismjs/components/prism-jsx'
+import 'prismjs/components/prism-tsx'
+
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
@@ -25,11 +34,11 @@ const toast = useToast()
 
 type ActivePlatform = 'twitter' | 'discord' | 'whatsapp' | 'linkedin' | 'facebook' | 'google' | 'guide'
 type TwitterCardType = 'summary_large_image' | 'summary'
-type CodeExportFormat = 'html' | 'nuxt' | 'nextjs'
+type CodeExportFormat = 'nextjs' | 'astro' | 'nuxt' | 'react' | 'svelte' | 'remix' | 'html'
 
 const activeTab = ref<ActivePlatform>('twitter')
 const twitterCardType = ref<TwitterCardType>('summary_large_image')
-const codeFormat = ref<CodeExportFormat>('html')
+const codeFormat = ref<CodeExportFormat>('nextjs')
 const isCopied = ref(false)
 
 const url = ref('https://avttr.studio/tools/og-previewer')
@@ -137,57 +146,8 @@ const generatedCode = computed(() => {
   const th = twitterHandle.value
   const c = themeColor.value
 
-  if (codeFormat.value === 'html') {
-    return `<!-- Primary Meta Tags -->
-<title>${t}</title>
-<meta name="title" content="${t}" />
-<meta name="description" content="${d}" />
-<meta name="theme-color" content="${c}" />
-
-<!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
-<meta property="og:type" content="website" />
-<meta property="og:url" content="${u}" />
-<meta property="og:site_name" content="${site}" />
-<meta property="og:title" content="${t}" />
-<meta property="og:description" content="${d}" />
-<meta property="og:image" content="${img}" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-
-<!-- Twitter / X -->
-<meta name="twitter:card" content="${twitterCardType.value}" />
-<meta name="twitter:url" content="${u}" />
-<meta name="twitter:site" content="${th}" />
-<meta name="twitter:creator" content="${th}" />
-<meta name="twitter:title" content="${t}" />
-<meta name="twitter:description" content="${d}" />
-<meta name="twitter:image" content="${img}" />`
-  }
-
-  if (codeFormat.value === 'nuxt') {
-    return `// Nuxt 3 Composition API (pages or app.vue)
-useSeoMeta({
-  title: '${t}',
-  description: '${d}',
-  themeColor: '${c}',
-  ogType: 'website',
-  ogUrl: '${u}',
-  ogSiteName: '${site}',
-  ogTitle: '${t}',
-  ogDescription: '${d}',
-  ogImage: '${img}',
-  ogImageWidth: 1200,
-  ogImageHeight: 630,
-  twitterCard: '${twitterCardType.value}',
-  twitterSite: '${th}',
-  twitterCreator: '${th}',
-  twitterTitle: '${t}',
-  twitterDescription: '${d}',
-  twitterImage: '${img}',
-})`
-  }
-
-  return `// Next.js App Router (app/layout.tsx or app/page.tsx)
+  if (codeFormat.value === 'nextjs') {
+    return `// Next.js App Router (app/layout.tsx or app/page.tsx)
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -218,6 +178,216 @@ export const metadata: Metadata = {
     images: ['${img}'],
   },
 }`
+  }
+
+  if (codeFormat.value === 'astro') {
+    return `---
+// src/layouts/Layout.astro or src/pages/index.astro
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || '${u}');
+---
+
+<head>
+  <!-- Primary Meta Tags -->
+  <title>${t}</title>
+  <meta name="title" content="${t}" />
+  <meta name="description" content="${d}" />
+  <meta name="theme-color" content="${c}" />
+  <link rel="canonical" href={canonicalURL} />
+
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${u}" />
+  <meta property="og:site_name" content="${site}" />
+  <meta property="og:title" content="${t}" />
+  <meta property="og:description" content="${d}" />
+  <meta property="og:image" content="${img}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter / X -->
+  <meta property="twitter:card" content="${twitterCardType.value}" />
+  <meta property="twitter:url" content="${u}" />
+  <meta property="twitter:site" content="${th}" />
+  <meta property="twitter:creator" content="${th}" />
+  <meta property="twitter:title" content="${t}" />
+  <meta property="twitter:description" content="${d}" />
+  <meta property="twitter:image" content="${img}" />
+</head>`
+  }
+
+  if (codeFormat.value === 'nuxt') {
+    return `// Nuxt 3 Composition API (pages or app.vue)
+useSeoMeta({
+  title: '${t}',
+  description: '${d}',
+  themeColor: '${c}',
+  ogType: 'website',
+  ogUrl: '${u}',
+  ogSiteName: '${site}',
+  ogTitle: '${t}',
+  ogDescription: '${d}',
+  ogImage: '${img}',
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
+  twitterCard: '${twitterCardType.value}',
+  twitterSite: '${th}',
+  twitterCreator: '${th}',
+  twitterTitle: '${t}',
+  twitterDescription: '${d}',
+  twitterImage: '${img}',
+})`
+  }
+
+  if (codeFormat.value === 'react') {
+    return `// React 19 Document Metadata or React Helmet (src/App.tsx)
+export default function Page() {
+  return (
+    <>
+      <title>${t}</title>
+      <meta name="description" content="${d}" />
+      <meta name="theme-color" content="${c}" />
+
+      {/* Open Graph */}
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content="${u}" />
+      <meta property="og:site_name" content="${site}" />
+      <meta property="og:title" content="${t}" />
+      <meta property="og:description" content="${d}" />
+      <meta property="og:image" content="${img}" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+
+      {/* Twitter / X */}
+      <meta name="twitter:card" content="${twitterCardType.value}" />
+      <meta name="twitter:site" content="${th}" />
+      <meta name="twitter:creator" content="${th}" />
+      <meta name="twitter:title" content="${t}" />
+      <meta name="twitter:description" content="${d}" />
+      <meta name="twitter:image" content="${img}" />
+    </>
+  );
+}`
+  }
+
+  if (codeFormat.value === 'svelte') {
+    return `<!-- SvelteKit (src/routes/+page.svelte or +layout.svelte) -->
+<svelte:head>
+  <title>${t}</title>
+  <meta name="description" content="${d}" />
+  <meta name="theme-color" content="${c}" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${u}" />
+  <meta property="og:site_name" content="${site}" />
+  <meta property="og:title" content="${t}" />
+  <meta property="og:description" content="${d}" />
+  <meta property="og:image" content="${img}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="${twitterCardType.value}" />
+  <meta name="twitter:site" content="${th}" />
+  <meta name="twitter:creator" content="${th}" />
+  <meta name="twitter:title" content="${t}" />
+  <meta name="twitter:description" content="${d}" />
+  <meta name="twitter:image" content="${img}" />
+</svelte:head>`
+  }
+
+  if (codeFormat.value === 'remix') {
+    return `// Remix / React Router v7 (app/routes/_index.tsx)
+import type { MetaFunction } from '@remix-run/node'
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: '${t}' },
+    { name: 'description', content: '${d}' },
+    { name: 'theme-color', content: '${c}' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: '${u}' },
+    { property: 'og:site_name', content: '${site}' },
+    { property: 'og:title', content: '${t}' },
+    { property: 'og:description', content: '${d}' },
+    { property: 'og:image', content: '${img}' },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
+    { name: 'twitter:card', content: '${twitterCardType.value}' },
+    { name: 'twitter:site', content: '${th}' },
+    { name: 'twitter:creator', content: '${th}' },
+    { name: 'twitter:title', content: '${t}' },
+    { name: 'twitter:description', content: '${d}' },
+    { name: 'twitter:image', content: '${img}' },
+  ]
+}`
+  }
+
+  return `<!-- Primary Meta Tags -->
+<title>${t}</title>
+<meta name="title" content="${t}" />
+<meta name="description" content="${d}" />
+<meta name="theme-color" content="${c}" />
+
+<!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="${u}" />
+<meta property="og:site_name" content="${site}" />
+<meta property="og:title" content="${t}" />
+<meta property="og:description" content="${d}" />
+<meta property="og:image" content="${img}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="${twitterCardType.value}" />
+<meta name="twitter:url" content="${u}" />
+<meta name="twitter:site" content="${th}" />
+<meta name="twitter:creator" content="${th}" />
+<meta name="twitter:title" content="${t}" />
+<meta name="twitter:description" content="${d}" />
+<meta name="twitter:image" content="${img}" />`
+})
+
+const escapeHtml = (str: string) => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+const currentFileTab = computed(() => {
+  switch (codeFormat.value) {
+    case 'nextjs': return { file: 'app/layout.tsx', lang: 'typescript', badge: 'TypeScript' }
+    case 'astro': return { file: 'src/layouts/Layout.astro', lang: 'html', badge: 'Astro' }
+    case 'nuxt': return { file: 'app.vue', lang: 'typescript', badge: 'Vue 3' }
+    case 'react': return { file: 'src/App.tsx', lang: 'tsx', badge: 'React TSX' }
+    case 'svelte': return { file: 'src/routes/+page.svelte', lang: 'html', badge: 'Svelte' }
+    case 'remix': return { file: 'app/routes/_index.tsx', lang: 'typescript', badge: 'Remix TSX' }
+    default: return { file: 'index.html', lang: 'html', badge: 'HTML5' }
+  }
+})
+
+const highlightedGeneratedCode = computed(() => {
+  try {
+    const lang = currentFileTab.value.lang
+    const grammar = Prism.languages[lang] || Prism.languages.typescript || Prism.languages.javascript
+    if (!grammar) return escapeHtml(generatedCode.value)
+    return Prism.highlight(generatedCode.value, grammar, lang)
+  } catch (err) {
+    return escapeHtml(generatedCode.value)
+  }
+})
+
+const codeLines = computed(() => {
+  return generatedCode.value.split('\n')
 })
 
 const copyMetaCode = async () => {
@@ -823,18 +993,26 @@ const OG_REFERENCE_DATA = [
             </div>
 
             <!-- Code Format Tabs -->
-            <div class="flex items-center gap-1 p-0.5 bg-[#141414] border border-[var(--border-subtle)] rounded-lg text-xs">
+            <div class="flex items-center gap-1 p-0.5 bg-[#141414] border border-[var(--border-subtle)] rounded-lg text-xs overflow-x-auto scrollbar-none">
               <button
                 type="button"
-                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer"
-                :class="codeFormat === 'html' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
-                @click="codeFormat = 'html'"
+                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer shrink-0"
+                :class="codeFormat === 'nextjs' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
+                @click="codeFormat = 'nextjs'"
               >
-                HTML
+                Next.js
               </button>
               <button
                 type="button"
-                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer"
+                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer shrink-0"
+                :class="codeFormat === 'astro' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
+                @click="codeFormat = 'astro'"
+              >
+                Astro
+              </button>
+              <button
+                type="button"
+                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer shrink-0"
                 :class="codeFormat === 'nuxt' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
                 @click="codeFormat = 'nuxt'"
               >
@@ -842,31 +1020,142 @@ const OG_REFERENCE_DATA = [
               </button>
               <button
                 type="button"
-                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer"
-                :class="codeFormat === 'nextjs' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
-                @click="codeFormat = 'nextjs'"
+                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer shrink-0"
+                :class="codeFormat === 'react' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
+                @click="codeFormat = 'react'"
               >
-                Next.js
+                React
+              </button>
+              <button
+                type="button"
+                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer shrink-0"
+                :class="codeFormat === 'svelte' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
+                @click="codeFormat = 'svelte'"
+              >
+                SvelteKit
+              </button>
+              <button
+                type="button"
+                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer shrink-0"
+                :class="codeFormat === 'remix' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
+                @click="codeFormat = 'remix'"
+              >
+                Remix
+              </button>
+              <button
+                type="button"
+                class="py-1 px-2.5 rounded-md font-medium transition-all cursor-pointer shrink-0"
+                :class="codeFormat === 'html' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-tertiary)] hover:text-white'"
+                @click="codeFormat = 'html'"
+              >
+                HTML5
               </button>
             </div>
           </div>
 
-          <!-- Code Snippet Box -->
-          <div class="relative rounded-lg overflow-hidden border border-[var(--border-subtle)] bg-[#0d0d0d]">
-            <pre class="p-3.5 text-xs font-mono text-[#e4e4e7] overflow-x-auto leading-relaxed max-h-56"><code>{{ generatedCode }}</code></pre>
+          <!-- IDE Editor Window Frame -->
+          <div class="rounded-xl overflow-hidden border border-[#262626] bg-[#0d0d0e] shadow-xl">
+            <!-- IDE Window Top Bar -->
+            <div class="px-3.5 py-2.5 bg-[#141416] border-b border-[#262626] flex items-center justify-between gap-3 select-none">
+              <!-- Left: macOS Traffic Lights & Active Tab Pill -->
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f56] inline-block opacity-90" />
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#ffbd2e] inline-block opacity-90" />
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#27c93f] inline-block opacity-90" />
+                </div>
 
-            <button
-              type="button"
-              class="absolute top-2.5 right-2.5 p-1.5 rounded-md bg-[#1e1e1e] hover:bg-[#2e2e2e] border border-white/10 text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer flex items-center gap-1.5 text-xs shadow-xs"
-              @click="copyMetaCode"
-            >
-              <Check v-if="isCopied" class="w-3.5 h-3.5 text-emerald-400" />
-              <Copy v-else class="w-3.5 h-3.5" />
-              <span>{{ isCopied ? 'Copied!' : 'Copy Code' }}</span>
-            </button>
+                <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#1e1e22] border border-white/10 text-xs font-mono text-white/90 truncate">
+                  <FileCode class="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  <span class="truncate">{{ currentFileTab.file }}</span>
+                </div>
+              </div>
+
+              <!-- Right: Language Badge & Copy Button -->
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[11px] font-mono text-[var(--text-tertiary)] hidden sm:inline-block">
+                  {{ currentFileTab.badge }}
+                </span>
+
+                <button
+                  type="button"
+                  class="py-1 px-2.5 rounded-md bg-[#222226] hover:bg-[#2e2e34] border border-white/10 text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  @click="copyMetaCode"
+                >
+                  <Check v-if="isCopied" class="w-3.5 h-3.5 text-emerald-400" />
+                  <Copy v-else class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                  <span>{{ isCopied ? 'Copied!' : 'Copy Code' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- IDE Code Body with Line Numbers & Syntax Highlighting -->
+            <div class="p-4 flex overflow-x-auto max-h-72 leading-relaxed text-xs font-mono">
+              <!-- Line Numbers -->
+              <div class="pr-4 select-none font-mono text-right text-[var(--text-tertiary)] opacity-40 shrink-0 space-y-0.5 leading-relaxed">
+                <div v-for="n in codeLines.length" :key="n">{{ n }}</div>
+              </div>
+
+              <!-- Highlighted Code -->
+              <pre class="m-0 p-0 font-mono text-xs whitespace-pre text-[#e4e4e7] leading-relaxed flex-1"><code v-html="highlightedGeneratedCode" /></pre>
+            </div>
           </div>
         </Card>
       </div>
     </div>
   </div>
 </template>
+
+<style>
+/* Syntax Highlighting Tokens */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #6272a4;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #abb2bf;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol {
+  color: #bd93f9;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin {
+  color: #98c379;
+}
+
+.token.operator,
+.token.entity,
+.token.url {
+  color: #56b6c2;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #c678dd;
+  font-weight: 600;
+}
+
+.token.function,
+.token.class-name {
+  color: #61afef;
+}
+
+.token.variable {
+  color: #e06c75;
+}
+</style>
