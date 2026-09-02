@@ -9,6 +9,7 @@
     "preview": "nuxt preview --host"
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "@distube/ytdl-core": "^4.16.12",
     "@vueuse/core": "^12.8.2",
     "@vueuse/nuxt": "^12.8.2",

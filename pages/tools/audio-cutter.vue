@@ -30,8 +30,10 @@ import {
   Trash2,
   Undo2,
   Redo2,
-  Plus
+  Plus,
+  X
 } from 'lucide-vue-next'
+import { Mp3Encoder } from '@breezystack/lamejs'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
@@ -39,8 +41,19 @@ import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
 
+interface MediaAsset {
+  id: string
+  name: string
+  size: number
+  duration: number
+  sampleRate: number
+  channels: number
+  buffer: AudioBuffer
+}
+
 interface AudioClip {
   id: string
+  mediaId: string          // references MediaAsset.id
   name: string
   sourceStart: number      // start seconds in source buffer
   sourceEnd: number        // end seconds in source buffer
@@ -56,6 +69,7 @@ interface TrackInfo {
 
 const rulerCanvasRef = ref<HTMLCanvasElement | null>(null)
 const timelineBodyRef = ref<HTMLDivElement | null>(null)
+const addMediaInputRef = ref<HTMLInputElement | null>(null)
 
 const isDecoding = ref(false)
 const isExporting = ref(false)
@@ -68,6 +82,7 @@ const isVideoSource = ref(false)
 
 let audioCtx: AudioContext | null = null
 const currentAudioBuffer = shallowRef<AudioBuffer | null>(null)
+const mediaAssets = shallowRef<Map<string, MediaAsset>>(new Map())
 let activeSourceNodes: AudioBufferSourceNode[] = []
 let masterGainNode: GainNode | null = null
 
@@ -79,12 +94,13 @@ const currentTime = ref<number>(0)
 const volume = ref<number>(1)
 const isMuted = ref<boolean>(false)
 const playbackSpeed = ref<number>(1)
+const exportFormat = ref<'mp3' | 'wav'>('mp3')
+const mp3Bitrate = ref<number>(320)
 const exportFileName = ref<string>('')
 
-// Multi-Clip & Multi-Track System
+// Multi-Clip & Multi-Track System (Default 1 Track)
 const tracks = ref<TrackInfo[]>([
-  { id: 'track-1', name: 'A1', isMuted: false },
-  { id: 'track-2', name: 'A2', isMuted: false }
+  { id: 'track-1', name: 'A1', isMuted: false }
 ])
 const clips = ref<AudioClip[]>([])
 const selectedClipId = ref<string | null>(null)
@@ -139,7 +155,7 @@ const redo = () => {
   toast.info('Redo', 'Restored timeline change')
 }
 
-// Master Timeline Duration (Dynamic max of audio and clips)
+// Master Timeline Duration (Dynamic max of all clips)
 const totalTimelineDuration = computed(() => {
   let max = audioDuration.value || 10
   for (const c of clips.value) {
@@ -230,9 +246,10 @@ const drawRuler = () => {
   }
 }
 
-// Draw Mini Waveform on each clip canvas
+// Draw Mini Waveform for each clip
 const drawClipWaveform = (canvas: HTMLCanvasElement, clip: AudioClip) => {
-  const buffer = currentAudioBuffer.value
+  const asset = mediaAssets.value.get(clip.mediaId)
+  const buffer = asset ? asset.buffer : currentAudioBuffer.value
   if (!canvas || !buffer) return
 
   const ctx = canvas.getContext('2d')
@@ -301,10 +318,10 @@ const drawAllClipWaveforms = () => {
   })
 }
 
-// Media File Upload Processor
+// Initial Media Upload (Creates new project)
 const processMediaFile = async (file: File) => {
   fileName.value = file.name
-  exportFileName.value = file.name.replace(/\.[^/.]+$/, '') + '_trimmed.wav'
+  exportFileName.value = file.name.replace(/\.[^/.]+$/, '') + `_mashup.${exportFormat.value}`
   fileSize.value = file.size
   isVideoSource.value = file.type.startsWith('video/')
 
@@ -322,9 +339,30 @@ const processMediaFile = async (file: File) => {
     channelCount.value = decoded.numberOfChannels
     currentTime.value = 0
 
+    // Store in Media Pool
+    const mediaId = `media-${Date.now()}`
+    const newAsset: MediaAsset = {
+      id: mediaId,
+      name: file.name,
+      size: file.size,
+      duration: decoded.duration,
+      sampleRate: decoded.sampleRate,
+      channels: decoded.numberOfChannels,
+      buffer: decoded
+    }
+    const newPool = new Map<string, MediaAsset>()
+    newPool.set(mediaId, newAsset)
+    mediaAssets.value = newPool
+
+    // Reset tracks to 1 track on new upload
+    tracks.value = [
+      { id: `track-${Date.now()}`, name: 'A1', isMuted: false }
+    ]
+
     // Initialize with 1 Master Clip on Track A1
     const newClip: AudioClip = {
       id: `clip-${Date.now()}`,
+      mediaId,
       name: file.name,
       sourceStart: 0,
       sourceEnd: decoded.duration,
@@ -351,6 +389,73 @@ const processMediaFile = async (file: File) => {
   }
 }
 
+// Add Extra Media for Mashup (Append to project)
+const addExtraMediaFiles = async (files: FileList | File[]) => {
+  if (!currentAudioBuffer.value) {
+    if (files.length > 0) {
+      await processMediaFile(files[0])
+    }
+    return
+  }
+
+  isDecoding.value = true
+  try {
+    const ctx = getAudioContext()
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const arrayBuffer = await file.arrayBuffer()
+      const decoded = await ctx.decodeAudioData(arrayBuffer)
+
+      const mediaId = `media-${Date.now()}-${i}`
+      const newAsset: MediaAsset = {
+        id: mediaId,
+        name: file.name,
+        size: file.size,
+        duration: decoded.duration,
+        sampleRate: decoded.sampleRate,
+        channels: decoded.numberOfChannels,
+        buffer: decoded
+      }
+
+      mediaAssets.value.set(mediaId, newAsset)
+
+      // Auto-assign to a new track or existing track
+      const targetTrackIdx = tracks.value.length
+      tracks.value.push({
+        id: `track-${Date.now()}-${i}`,
+        name: `A${targetTrackIdx + 1}`,
+        isMuted: false
+      })
+
+      const newClip: AudioClip = {
+        id: `clip-${Date.now()}-${i}`,
+        mediaId,
+        name: file.name,
+        sourceStart: 0,
+        sourceEnd: decoded.duration,
+        timelineStart: currentTime.value || 0,
+        trackIndex: targetTrackIdx
+      }
+
+      clips.value.push(newClip)
+      selectedClipId.value = newClip.id
+    }
+
+    recordHistory()
+    toast.success('Media Added', `Imported ${files.length} audio file(s) for mashup`)
+    await nextTick()
+    setTimeout(() => {
+      drawAllClipWaveforms()
+      drawRuler()
+    }, 60)
+  } catch (err: any) {
+    toast.error('Import Failed', err.message || 'Unable to decode one or more media files.')
+  } finally {
+    isDecoding.value = false
+  }
+}
+
 const handleFileInputChange = (e: Event) => {
   const input = e.target as HTMLInputElement
   if (!input.files || input.files.length === 0) return
@@ -358,14 +463,25 @@ const handleFileInputChange = (e: Event) => {
   input.value = ''
 }
 
+const handleAddMediaInputChange = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) return
+  addExtraMediaFiles(input.files)
+  input.value = ''
+}
+
 const onDrop = (e: DragEvent) => {
   isDragging.value = false
   if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-    processMediaFile(e.dataTransfer.files[0])
+    if (currentAudioBuffer.value) {
+      addExtraMediaFiles(e.dataTransfer.files)
+    } else {
+      processMediaFile(e.dataTransfer.files[0])
+    }
   }
 }
 
-// Multi-Track Playback Engine
+// Multi-Track & Multi-Buffer Playback Engine
 const updatePlaybackPosition = () => {
   if (!isPlaying.value || !audioCtx) return
 
@@ -387,8 +503,7 @@ const updatePlaybackPosition = () => {
 }
 
 const playAudio = () => {
-  const buffer = currentAudioBuffer.value
-  if (!buffer || clips.value.length === 0) return
+  if (clips.value.length === 0) return
   const ctx = getAudioContext()
 
   stopPlayback()
@@ -398,16 +513,18 @@ const playAudio = () => {
 
   activeSourceNodes = []
 
-  // Schedule every clip whose timeline duration encompasses or comes after currentTime
   clips.value.forEach(clip => {
-    // Check if track is muted
     const track = tracks.value[clip.trackIndex]
     if (track && track.isMuted) return
+
+    const asset = mediaAssets.value.get(clip.mediaId)
+    const buffer = asset ? asset.buffer : currentAudioBuffer.value
+    if (!buffer) return
 
     const clipDuration = clip.sourceEnd - clip.sourceStart
     const clipTimelineEnd = clip.timelineStart + clipDuration
 
-    if (clipTimelineEnd <= currentTime.value) return // already ended
+    if (clipTimelineEnd <= currentTime.value) return // already finished
 
     const source = ctx.createBufferSource()
     source.buffer = buffer
@@ -419,11 +536,11 @@ const playAudio = () => {
     }
 
     if (currentTime.value <= clip.timelineStart) {
-      // Plays in the future
+      // Starts in the future
       const delay = (clip.timelineStart - currentTime.value) / playbackSpeed.value
       source.start(ctx.currentTime + delay, clip.sourceStart, clipDuration)
     } else {
-      // Already inside this clip
+      // Currently inside this clip
       const offsetInClip = currentTime.value - clip.timelineStart
       const remainingClipDuration = clipDuration - offsetInClip
       source.start(ctx.currentTime, clip.sourceStart + offsetInClip, remainingClipDuration)
@@ -561,7 +678,8 @@ const onGlobalMouseMove = (e: MouseEvent) => {
     drawAllClipWaveforms()
   } else if (dragMode.value === 'trim-end') {
     // Drag Right Trim Handle
-    const maxSource = currentAudioBuffer.value ? currentAudioBuffer.value.duration : 1000
+    const asset = mediaAssets.value.get(clip.mediaId)
+    const maxSource = asset ? asset.duration : (currentAudioBuffer.value ? currentAudioBuffer.value.duration : 1000)
     const newSourceEnd = Math.min(maxSource, Math.max(initialSourceStart + 0.2, initialSourceEnd + deltaSec))
     clip.sourceEnd = Number(newSourceEnd.toFixed(3))
     drawAllClipWaveforms()
@@ -571,6 +689,9 @@ const onGlobalMouseMove = (e: MouseEvent) => {
 const onGlobalMouseUp = () => {
   if (dragMode.value === 'move-clip' || dragMode.value === 'trim-start' || dragMode.value === 'trim-end') {
     recordHistory()
+  }
+  if (dragMode.value === 'playhead' && isPlaying.value) {
+    playAudio()
   }
   dragMode.value = null
   draggingClipId.value = null
@@ -593,20 +714,34 @@ const splitAtPlayhead = () => {
   const offsetInClip = currentTime.value - target.timelineStart
   const splitSourceTime = target.sourceStart + offsetInClip
 
-  // Create 2 distinct split clips
+  // If there is no track below the target track, automatically create a new track!
+  const targetTrackIdx = target.trackIndex
+  const newTrackIdx = targetTrackIdx + 1
+  if (newTrackIdx >= tracks.value.length) {
+    const nextNum = tracks.value.length + 1
+    tracks.value.push({
+      id: `track-${Date.now()}`,
+      name: `A${nextNum}`,
+      isMuted: false
+    })
+  }
+
+  // Clip 1 remains on original track up to split point
   const clip1: AudioClip = {
     ...target,
     id: `clip-${Date.now()}-1`,
     sourceEnd: splitSourceTime
   }
 
+  // Clip 2 is moved to the new track below it starting at currentTime
   const clip2: AudioClip = {
     id: `clip-${Date.now()}-2`,
+    mediaId: target.mediaId,
     name: target.name,
     sourceStart: splitSourceTime,
     sourceEnd: target.sourceEnd,
     timelineStart: currentTime.value,
-    trackIndex: target.trackIndex
+    trackIndex: newTrackIdx
   }
 
   const idx = clips.value.findIndex(c => c.id === target.id)
@@ -615,7 +750,7 @@ const splitAtPlayhead = () => {
 
   recordHistory()
   drawAllClipWaveforms()
-  toast.success('Audio Split', `Created 2 clips at ${formatTimecode(currentTime.value)}`)
+  toast.success('Audio Split', `Created new clip on Track A${newTrackIdx + 1}`)
 }
 
 // Split Left (Foto 2 Icon 1)
@@ -687,17 +822,149 @@ const addTrack = () => {
   toast.info('Track Added', `Created track A${nextNum}`)
 }
 
-// Multi-Clip Lossless WAV Exporter (Mixes all timeline clips together)
+// Delete Track Lane
+const deleteTrack = (tIndex: number) => {
+  if (tracks.value.length <= 1) {
+    toast.warning('Cannot Delete', 'At least 1 audio track is required')
+    return
+  }
+
+  // Move clips on this track to the track above
+  const targetTrackIdx = Math.max(0, tIndex - 1)
+  clips.value.forEach(clip => {
+    if (clip.trackIndex === tIndex) {
+      clip.trackIndex = targetTrackIdx
+    } else if (clip.trackIndex > tIndex) {
+      clip.trackIndex -= 1
+    }
+  })
+
+  // Remove track
+  tracks.value.splice(tIndex, 1)
+
+  // Re-number remaining tracks A1, A2, etc.
+  tracks.value.forEach((t, i) => {
+    t.name = `A${i + 1}`
+  })
+
+  recordHistory()
+  drawAllClipWaveforms()
+  toast.info('Track Removed', 'Track removed and clips adjusted')
+}
+
+// 16-bit PCM WAV Encoder
+const encodeWav = (buffer: AudioBuffer): Blob => {
+  const numChannels = buffer.numberOfChannels
+  const sampleRate = buffer.sampleRate
+  const format = 1
+  const bitDepth = 16
+
+  const length = buffer.length * numChannels * (bitDepth / 8)
+  const arrayBuffer = new ArrayBuffer(44 + length)
+  const view = new DataView(arrayBuffer)
+
+  const writeString = (offset: number, string: string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i))
+    }
+  }
+
+  writeString(0, 'RIFF')
+  view.setUint32(4, 36 + length, true)
+  writeString(8, 'WAVE')
+  writeString(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, format, true)
+  view.setUint16(22, numChannels, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true)
+  view.setUint16(32, numChannels * (bitDepth / 8), true)
+  view.setUint16(34, bitDepth, true)
+  writeString(36, 'data')
+  view.setUint32(40, length, true)
+
+  const channels: Float32Array[] = []
+  for (let i = 0; i < numChannels; i++) {
+    channels.push(buffer.getChannelData(i))
+  }
+
+  let offset = 44
+  for (let i = 0; i < buffer.length; i++) {
+    for (let channel = 0; channel < numChannels; channel++) {
+      let sample = channels[channel][i]
+      sample = Math.max(-1, Math.min(1, sample))
+      const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7fff
+      view.setInt16(offset, intSample, true)
+      offset += 2
+    }
+  }
+
+  return new Blob([view], { type: 'audio/wav' })
+}
+
+// Client-Side MP3 Encoder
+const encodeMp3 = (buffer: AudioBuffer, bitrate = 320): Blob => {
+  const numChannels = buffer.numberOfChannels
+  const sampleRate = buffer.sampleRate
+  const mp3Encoder = new Mp3Encoder(numChannels, sampleRate, bitrate)
+
+  const mp3Data: Uint8Array[] = []
+  const sampleBlockSize = 1152
+
+  const leftChannel = buffer.getChannelData(0)
+  const rightChannel = numChannels > 1 ? buffer.getChannelData(1) : leftChannel
+
+  const leftInt16 = new Int16Array(leftChannel.length)
+  const rightInt16 = new Int16Array(rightChannel.length)
+
+  for (let i = 0; i < leftChannel.length; i++) {
+    const l = Math.max(-1, Math.min(1, leftChannel[i]))
+    leftInt16[i] = l < 0 ? l * 0x8000 : l * 0x7fff
+
+    const r = Math.max(-1, Math.min(1, rightChannel[i]))
+    rightInt16[i] = r < 0 ? r * 0x8000 : r * 0x7fff
+  }
+
+  for (let i = 0; i < leftInt16.length; i += sampleBlockSize) {
+    const leftChunk = leftInt16.subarray(i, i + sampleBlockSize)
+    const rightChunk = rightInt16.subarray(i, i + sampleBlockSize)
+
+    let mp3buf: Uint8Array
+    if (numChannels === 1) {
+      mp3buf = mp3Encoder.encodeBuffer(leftChunk)
+    } else {
+      mp3buf = mp3Encoder.encodeBuffer(leftChunk, rightChunk)
+    }
+
+    if (mp3buf.length > 0) {
+      mp3Data.push(mp3buf)
+    }
+  }
+
+  const endBuf = mp3Encoder.flush()
+  if (endBuf.length > 0) {
+    mp3Data.push(endBuf)
+  }
+
+  return new Blob(mp3Data as BlobPart[], { type: 'audio/mp3' })
+}
+
+// Multi-Clip & Multi-Buffer Audio Mashup Exporter
 const handleExportAudio = async () => {
-  const buffer = currentAudioBuffer.value
-  if (!buffer || clips.value.length === 0) return
+  if (clips.value.length === 0) return
   isExporting.value = true
   stopPlayback()
 
   try {
     const totalDuration = totalTimelineDuration.value
-    const origRate = buffer.sampleRate
-    const numChannels = buffer.numberOfChannels
+
+    // Determine max sample rate across all assets
+    let maxRate = 44100
+    mediaAssets.value.forEach(a => {
+      if (a.sampleRate > maxRate) maxRate = a.sampleRate
+    })
+    const origRate = maxRate
+    const numChannels = 2
     const totalFrames = Math.floor(totalDuration * origRate)
 
     const offlineCtx = new OfflineAudioContext(numChannels, totalFrames, origRate)
@@ -705,6 +972,10 @@ const handleExportAudio = async () => {
     clips.value.forEach(clip => {
       const track = tracks.value[clip.trackIndex]
       if (track && track.isMuted) return
+
+      const asset = mediaAssets.value.get(clip.mediaId)
+      const buffer = asset ? asset.buffer : currentAudioBuffer.value
+      if (!buffer) return
 
       const clipDuration = clip.sourceEnd - clip.sourceStart
       const sourceNode = offlineCtx.createBufferSource()
@@ -716,56 +987,26 @@ const handleExportAudio = async () => {
 
     const renderedBuffer = await offlineCtx.startRendering()
 
-    // 16-bit PCM WAV encode
-    const length = renderedBuffer.length * numChannels * 2
-    const arrayBuffer = new ArrayBuffer(44 + length)
-    const view = new DataView(arrayBuffer)
+    let audioBlob: Blob
+    const ext = exportFormat.value
 
-    const writeString = (offset: number, string: string) => {
-      for (let i = 0; i < string.length; i++) {
-        view.setUint8(offset + i, string.charCodeAt(i))
-      }
+    if (ext === 'mp3') {
+      audioBlob = encodeMp3(renderedBuffer, mp3Bitrate.value)
+    } else {
+      audioBlob = encodeWav(renderedBuffer)
     }
 
-    writeString(0, 'RIFF')
-    view.setUint32(4, 36 + length, true)
-    writeString(8, 'WAVE')
-    writeString(12, 'fmt ')
-    view.setUint32(16, 16, true)
-    view.setUint16(20, 1, true)
-    view.setUint16(22, numChannels, true)
-    view.setUint32(24, origRate, true)
-    view.setUint32(28, origRate * numChannels * 2, true)
-    view.setUint16(32, numChannels * 2, true)
-    view.setUint16(34, 16, true)
-    writeString(36, 'data')
-    view.setUint32(40, length, true)
-
-    const channels: Float32Array[] = []
-    for (let i = 0; i < numChannels; i++) {
-      channels.push(renderedBuffer.getChannelData(i))
-    }
-
-    let offset = 44
-    for (let i = 0; i < renderedBuffer.length; i++) {
-      for (let channel = 0; channel < numChannels; channel++) {
-        let sample = channels[channel][i]
-        sample = Math.max(-1, Math.min(1, sample))
-        const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7fff
-        view.setInt16(offset, intSample, true)
-        offset += 2
-      }
-    }
-
-    const wavBlob = new Blob([view], { type: 'audio/wav' })
     const link = document.createElement('a')
-    link.href = URL.createObjectURL(wavBlob)
-    const targetName = exportFileName.value.trim() || 'capcut_audio_export.wav'
-    link.download = targetName.endsWith('.wav') ? targetName : `${targetName}.wav`
+    link.href = URL.createObjectURL(audioBlob)
+    let targetName = exportFileName.value.trim() || `mashup_audio_export.${ext}`
+    if (!targetName.endsWith(`.${ext}`)) {
+      targetName = targetName.replace(/\.[^/.]+$/, '') + `.${ext}`
+    }
+    link.download = targetName
     link.click()
 
     setTimeout(() => URL.revokeObjectURL(link.href), 1500)
-    toast.success('Audio Exported', `Saved ${formatTimecode(totalDuration)} timeline at original ${origRate} Hz`)
+    toast.success('Audio Exported', `Saved ${formatTimecode(totalDuration)} mashup as ${ext.toUpperCase()}`)
   } catch (err: any) {
     toast.error('Export Failed', err.message || 'Could not render audio')
   } finally {
@@ -850,7 +1091,7 @@ onUnmounted(() => {
               Audio Extractor & Timeline Trimmer
             </h1>
             <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-              Extract sound from video or audio files, split clips, and drag to rearrange on multi-track timeline.
+              Extract sound from video or audio files, split clips, import multiple tracks, and create music mashups.
             </p>
           </div>
 
@@ -925,16 +1166,31 @@ onUnmounted(() => {
               </h1>
             </div>
             <p class="text-xs text-[var(--text-tertiary)] truncate">
-              {{ formatTimecode(totalTimelineDuration) }} • {{ formatFileSize(fileSize) }}
+              {{ formatTimecode(totalTimelineDuration) }} • {{ mediaAssets.size }} Media File{{ mediaAssets.size > 1 ? 's' : '' }} • {{ clips.length }} Clip{{ clips.length > 1 ? 's' : '' }}
             </p>
           </div>
         </div>
 
         <!-- Header Action Controls -->
         <div class="flex items-center gap-2 shrink-0">
-          <label class="py-1.5 px-3 rounded-lg bg-[#222226] hover:bg-[#2e2e34] border border-white/10 text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5">
-            <FolderOpen class="w-3.5 h-3.5 text-white/80" />
-            <span>Replace Media</span>
+          <!-- Add Extra Media / Import Song for Mashup -->
+          <label class="py-1.5 px-3 rounded-lg bg-[#222226] hover:bg-[#2e2e34] border border-white/10 text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-xs">
+            <Plus class="w-3.5 h-3.5 text-white/90" />
+            <span>Add Media</span>
+            <input
+              ref="addMediaInputRef"
+              type="file"
+              multiple
+              accept="audio/*,video/mp4,video/webm,video/quicktime"
+              class="hidden"
+              @change="handleAddMediaInputChange"
+            />
+          </label>
+
+          <!-- Replace Project Media -->
+          <label class="py-1.5 px-3 rounded-lg bg-[#1a1a1e] hover:bg-[#222226] border border-white/5 text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer flex items-center gap-1.5">
+            <FolderOpen class="w-3.5 h-3.5 text-white/70" />
+            <span>Replace</span>
             <input
               type="file"
               accept="audio/*,video/mp4,video/webm,video/quicktime"
@@ -942,6 +1198,26 @@ onUnmounted(() => {
               @change="handleFileInputChange"
             />
           </label>
+
+          <!-- Format Selector Pill -->
+          <div class="flex items-center bg-[#222226] border border-white/10 rounded-lg p-0.5">
+            <button
+              type="button"
+              class="px-2 py-1 rounded-md text-[11px] font-mono transition-colors cursor-pointer"
+              :class="exportFormat === 'mp3' ? 'bg-white text-black font-bold' : 'text-white/60 hover:text-white'"
+              @click="exportFormat = 'mp3'"
+            >
+              MP3
+            </button>
+            <button
+              type="button"
+              class="px-2 py-1 rounded-md text-[11px] font-mono transition-colors cursor-pointer"
+              :class="exportFormat === 'wav' ? 'bg-white text-black font-bold' : 'text-white/60 hover:text-white'"
+              @click="exportFormat = 'wav'"
+            >
+              WAV
+            </button>
+          </div>
 
           <Button
             variant="primary"
@@ -951,7 +1227,7 @@ onUnmounted(() => {
             @click="handleExportAudio"
           >
             <Download class="w-3.5 h-3.5 mr-1.5" />
-            <span>{{ isExporting ? 'Exporting...' : 'Export WAV' }}</span>
+            <span>{{ isExporting ? 'Exporting...' : `Export ${exportFormat.toUpperCase()}` }}</span>
           </Button>
         </div>
       </div>
@@ -1056,7 +1332,7 @@ onUnmounted(() => {
           <div class="p-4 space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-[#262626]">
               <span class="text-xs font-semibold text-white uppercase tracking-wider">Properties</span>
-              <span class="text-[11px] font-mono text-[var(--text-tertiary)]">
+              <span class="text-[11px] font-mono text-[var(--text-tertiary)] truncate max-w-[150px]">
                 {{ selectedClip ? selectedClip.name : 'No Clip Selected' }}
               </span>
             </div>
@@ -1081,6 +1357,10 @@ onUnmounted(() => {
             <!-- Selected Clip Parameters -->
             <div v-if="selectedClip" class="p-3 rounded-lg bg-[#0e0e10] border border-white/5 space-y-2 font-mono text-[11px]">
               <div class="flex justify-between">
+                <span class="text-[var(--text-tertiary)]">Media Source</span>
+                <span class="text-white truncate max-w-[140px]">{{ selectedClip.name }}</span>
+              </div>
+              <div class="flex justify-between">
                 <span class="text-[var(--text-tertiary)]">Timeline Start</span>
                 <span class="text-white">{{ formatTimecode(selectedClip.timelineStart) }}</span>
               </div>
@@ -1096,13 +1376,41 @@ onUnmounted(() => {
           </div>
 
           <!-- Bottom Inspector Export Action Bar -->
-          <div class="p-3 bg-[#0e0e10] border-t border-[#262626] space-y-2">
-            <input
-              v-model="exportFileName"
-              type="text"
-              placeholder="Filename"
-              class="w-full px-2.5 py-1.5 rounded-md bg-[#18181b] border border-white/10 text-xs font-mono text-white focus:outline-hidden focus:border-white/30"
-            />
+          <div class="p-3 bg-[#0e0e10] border-t border-[#262626] space-y-2.5">
+            <!-- Format Choice -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-mono text-[var(--text-tertiary)] uppercase block">Export Format</label>
+              <div class="grid grid-cols-2 gap-1 bg-[#18181b] p-0.5 rounded-lg border border-white/5">
+                <button
+                  type="button"
+                  class="py-1 text-[11px] font-mono rounded text-center transition-colors cursor-pointer"
+                  :class="exportFormat === 'mp3' ? 'bg-white text-black font-bold' : 'text-white/60 hover:text-white'"
+                  @click="exportFormat = 'mp3'"
+                >
+                  MP3 (320 kbps)
+                </button>
+                <button
+                  type="button"
+                  class="py-1 text-[11px] font-mono rounded text-center transition-colors cursor-pointer"
+                  :class="exportFormat === 'wav' ? 'bg-white text-black font-bold' : 'text-white/60 hover:text-white'"
+                  @click="exportFormat = 'wav'"
+                >
+                  WAV (Lossless)
+                </button>
+              </div>
+            </div>
+
+            <!-- Filename Input -->
+            <div class="space-y-1">
+              <label class="text-[10px] font-mono text-[var(--text-tertiary)] uppercase block">File Name</label>
+              <input
+                v-model="exportFileName"
+                type="text"
+                placeholder="Filename"
+                class="w-full px-2.5 py-1.5 rounded-md bg-[#18181b] border border-white/10 text-xs font-mono text-white focus:outline-hidden focus:border-white/30"
+              />
+            </div>
+
             <Button
               variant="primary"
               size="sm"
@@ -1111,7 +1419,7 @@ onUnmounted(() => {
               @click="handleExportAudio"
             >
               <Download class="w-3.5 h-3.5 mr-1.5" />
-              <span>{{ isExporting ? 'Rendering...' : 'Download Export (WAV)' }}</span>
+              <span>{{ isExporting ? 'Rendering...' : `Download ${exportFormat.toUpperCase()}` }}</span>
             </Button>
           </div>
         </div>
@@ -1212,6 +1520,16 @@ onUnmounted(() => {
               <Plus class="w-3 h-3" />
               <span>Add Track</span>
             </button>
+
+            <!-- Add Media to Timeline Button -->
+            <button
+              type="button"
+              class="py-1 px-2.5 rounded-md bg-[#222226] hover:bg-[#2e2e34] border border-white/10 text-[11px] font-medium text-white transition-colors cursor-pointer flex items-center gap-1 ml-1 shadow-xs"
+              @click="addMediaInputRef?.click()"
+            >
+              <FileAudio class="w-3.5 h-3.5 text-white/90" />
+              <span>Import Audio</span>
+            </button>
           </div>
 
           <!-- Right: Instructions -->
@@ -1225,7 +1543,7 @@ onUnmounted(() => {
         <div class="p-3 space-y-2 bg-[#121214]">
           <!-- Timecode Ruler Row -->
           <div class="flex items-center gap-3">
-            <div class="w-16 shrink-0 text-[10px] font-mono uppercase text-[var(--text-tertiary)]">
+            <div class="w-20 shrink-0 text-[10px] font-mono uppercase text-[var(--text-tertiary)]">
               RULER
             </div>
             <div
@@ -1239,9 +1557,9 @@ onUnmounted(() => {
           <!-- Track Lanes Container with Multi-Clip Layout -->
           <div class="flex items-start gap-3 relative">
             <!-- Left Track Headers Column -->
-            <div class="w-16 shrink-0 space-y-1.5 select-none">
+            <div class="w-20 shrink-0 space-y-1.5 select-none">
               <div
-                v-for="track in tracks"
+                v-for="(track, tIndex) in tracks"
                 :key="track.id"
                 class="p-2 rounded-lg bg-[#18181b] border border-white/5 flex items-center justify-between h-14"
               >
@@ -1250,15 +1568,28 @@ onUnmounted(() => {
                     {{ track.name }}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  class="p-1 rounded hover:bg-white/10 text-[var(--text-secondary)] hover:text-white cursor-pointer"
-                  :title="track.isMuted ? 'Unmute Track' : 'Mute Track'"
-                  @click="track.isMuted = !track.isMuted"
-                >
-                  <VolumeX v-if="track.isMuted" class="w-3.5 h-3.5 text-white" />
-                  <Volume2 v-else class="w-3.5 h-3.5" />
-                </button>
+                <div class="flex items-center gap-1">
+                  <!-- Mute Button -->
+                  <button
+                    type="button"
+                    class="p-1 rounded hover:bg-white/10 text-[var(--text-secondary)] hover:text-white cursor-pointer"
+                    :title="track.isMuted ? 'Unmute Track' : 'Mute Track'"
+                    @click="track.isMuted = !track.isMuted"
+                  >
+                    <VolumeX v-if="track.isMuted" class="w-3.5 h-3.5 text-white" />
+                    <Volume2 v-else class="w-3.5 h-3.5" />
+                  </button>
+                  <!-- Delete Track Button (Only when more than 1 track) -->
+                  <button
+                    v-if="tracks.length > 1"
+                    type="button"
+                    class="p-1 rounded hover:bg-red-500/20 text-[var(--text-tertiary)] hover:text-red-400 cursor-pointer transition-colors"
+                    title="Delete Track"
+                    @click="deleteTrack(tIndex)"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
 
