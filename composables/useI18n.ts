@@ -95,8 +95,8 @@ const translations: Record<Locale, Translations> = {
     quickSearch: 'Quick Search',
     userProfile: 'avttr',
 
-    heroTitle: 'Avttr Studio Dashboard',
-    heroSubtitle: 'High-performance Swiss Army knife for fast social media downloading and client-side browser developer utilities.',
+    heroTitle: 'Fast media tools, processed locally.',
+    heroSubtitle: 'Universal downloader, audio trimmer, and asset optimizer without server tracking.',
     pastePlaceholder: 'Paste TikTok, Instagram, YouTube, Twitter/X, CapCut, Facebook, or Spotify link...',
     pasteBtn: 'Fetch Media',
     fetchingMedia: 'Resolving Media...',
@@ -167,8 +167,8 @@ const translations: Record<Locale, Translations> = {
     quickSearch: 'Pencarian Cepat',
     userProfile: 'avttr',
 
-    heroTitle: 'Dashboard Avttr Studio',
-    heroSubtitle: 'Alat serbaguna berkinerja tinggi untuk mengunduh media sosial cepat dan utilitas developer browser client-side.',
+    heroTitle: 'Alat olah media cepat, diproses langsung di perangkat.',
+    heroSubtitle: 'Downloader serbaguna, pemotong audio, dan pengoptimal aset tanpa pelacakan server.',
     pastePlaceholder: 'Tempel link TikTok, Instagram, YouTube, Twitter/X, CapCut, Facebook, atau Spotify...',
     pasteBtn: 'Ambil Media',
     fetchingMedia: 'Mengambil Media...',
