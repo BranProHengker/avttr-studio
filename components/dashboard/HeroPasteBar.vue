@@ -90,9 +90,9 @@ const submitBatch = () => {
 </script>
 
 <template>
-  <div class="w-full space-y-2.5">
-    <!-- Header Mode Switcher Tabs (Placed Above Card) -->
-    <div class="flex items-center justify-between px-1">
+  <div class="w-full space-y-3">
+    <!-- Header Mode Switcher Tabs -->
+    <div class="flex items-center px-0.5">
       <div class="flex items-center bg-[#171717] border border-[#262626] rounded-lg p-0.5">
         <button
           type="button"
@@ -117,18 +117,12 @@ const submitBatch = () => {
           </span>
         </button>
       </div>
-
-      <span class="text-xs text-neutral-500 font-mono hidden sm:inline">
-        {{ mode === 'single' ? 'Auto-detects platform' : 'Process up to 20 links' }}
-      </span>
     </div>
 
-    <!-- Main Card -->
-    <div class="w-full bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] p-4 sm:p-5 shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all space-y-3.5">
-      <!-- Mode 1: Single Link Input -->
-      <div v-if="mode === 'single'" class="flex flex-col sm:flex-row items-center gap-3">
-        <!-- Input Wrapper -->
-        <div class="relative w-full flex-1 flex items-center">
+    <!-- Mode 1: Single Link Input -->
+    <div v-if="mode === 'single'" class="flex flex-col sm:flex-row items-center gap-2.5">
+      <!-- Input Wrapper -->
+      <div class="relative w-full flex-1 flex items-center">
         <!-- Platform Icon or Link Icon -->
         <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-primary)]">
           <BrandIcon v-if="platform" :name="platform" :size="18" />
@@ -141,7 +135,7 @@ const submitBatch = () => {
           :value="modelValue"
           type="url"
           :placeholder="t.pastePlaceholder"
-          class="w-full h-12 pl-10 pr-20 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-lg text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 disabled:opacity-50"
+          class="w-full h-12 pl-10 pr-12 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-50 shadow-xs"
           :disabled="loading"
           @input="handleSingleInput"
           @keydown.enter="emit('submit')"
@@ -151,7 +145,7 @@ const submitBatch = () => {
         <button
           type="button"
           title="Paste from Clipboard"
-          class="absolute right-3 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+          class="absolute right-3 p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
           @click="pasteFromClipboard"
         >
           <Clipboard class="w-4 h-4" />
@@ -160,13 +154,14 @@ const submitBatch = () => {
 
       <!-- Submit Trigger -->
       <Button
-        variant="primary"
-        size="lg"
-        class="w-full sm:w-auto shrink-0 font-semibold px-6"
+        variant="secondary"
+        size="default"
+        class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
         :loading="loading"
         @click="emit('submit')"
       >
-        {{ t.download }}
+        <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
+        <span>{{ t.download }}</span>
       </Button>
     </div>
 
@@ -177,10 +172,10 @@ const submitBatch = () => {
           v-model="batchText"
           rows="4"
           placeholder="Paste multiple social media links here, separated by new lines...&#10;https://www.tiktok.com/@user/video/...&#10;https://www.instagram.com/reel/...&#10;https://youtu.be/..."
-          class="w-full p-3.5 pr-14 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-lg text-xs font-mono transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10"
+          class="w-full p-4 pr-14 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10 shadow-xs"
         />
 
-        <div class="absolute right-2.5 bottom-2.5 flex items-center gap-1">
+        <div class="absolute right-3 bottom-3 flex items-center gap-1.5">
           <button
             v-if="batchText"
             type="button"
@@ -202,7 +197,7 @@ const submitBatch = () => {
         </div>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="text-xs font-mono text-[var(--text-secondary)]">
           <span v-if="detectedBatchUrls.length > 0" class="text-white font-semibold">
             {{ detectedBatchUrls.length }} link(s) detected and ready to queue
@@ -213,20 +208,20 @@ const submitBatch = () => {
         </div>
 
         <Button
-          variant="primary"
+          variant="secondary"
           size="default"
-          class="font-semibold px-5"
+          class="font-medium px-5 h-10 rounded-xl cursor-pointer"
           :disabled="detectedBatchUrls.length === 0"
           @click="submitBatch"
         >
+          <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
           <span>Start Batch Queue ({{ detectedBatchUrls.length }})</span>
-          <ArrowRight class="w-3.5 h-3.5 ml-1.5" />
         </Button>
       </div>
     </div>
 
     <!-- Supported Platform Tags -->
-    <div class="pt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--text-tertiary)] font-mono">
+    <div class="pt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--text-tertiary)] font-mono px-0.5">
       <span>Supported:</span>
       <span class="hover:text-[var(--text-secondary)]">TikTok (No WM)</span>
       <span>•</span>
@@ -240,8 +235,9 @@ const submitBatch = () => {
       <span>•</span>
       <span class="hover:text-[var(--text-secondary)]">Spotify</span>
       <span>•</span>
+      <span class="hover:text-[var(--text-secondary)]">SoundCloud</span>
+      <span>•</span>
       <span class="hover:text-[var(--text-secondary)]">TeraBox</span>
     </div>
-  </div>
   </div>
 </template>

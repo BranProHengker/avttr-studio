@@ -470,7 +470,7 @@ const isRouteActive = (targetRoute: string) => {
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                Video to GIF Studio
+                Video to GIF
               </NuxtLink>
               <NuxtLink
                 to="/tools/hash-encoder"

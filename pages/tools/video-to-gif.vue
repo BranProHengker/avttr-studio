@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import {
   Film,
   Play,
@@ -9,56 +9,51 @@ import {
   Upload,
   Copy,
   Check,
-  Sparkles,
-  Sliders,
-  Scissors,
-  Layers,
-  Clock,
-  FileVideo,
-  Eye,
-  Trash2,
-  Maximize2,
-  RefreshCw,
-  Zap,
-  ArrowRight
+  ArrowRight,
+  Link as LinkIcon,
+  FolderOpen
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
-import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
 
-// Video state
+// Source state
 const videoFile = ref<File | null>(null)
 const videoUrl = ref<string>('')
 const videoElementRef = ref<HTMLVideoElement | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+// URL input state
+const videoUrlInput = ref('')
+const isFetchingUrl = ref(false)
+const isDragging = ref(false)
+
+// Playback state
 const isPlaying = ref(false)
 const currentTime = ref(0)
 const totalDuration = ref(0)
 const videoNaturalWidth = ref(0)
 const videoNaturalHeight = ref(0)
-const isLoopingSegment = ref(true)
+const isLooping = ref(true)
 
-// Trimmer range
+// Trimmer range (in seconds)
 const startTime = ref(0)
-const endTime = ref(5)
+const endTime = ref(4)
 
 // GIF Options
 const fps = ref<number>(15)
 const resolutionPreset = ref<'original' | '720p' | '480p' | '360p' | '240p'>('480p')
 const playbackSpeed = ref<number>(1.0)
 
-// Progress & Generation state
+// Generation state
 const isGenerating = ref(false)
 const generationProgress = ref(0)
 const statusMessage = ref('Preparing frames...')
 const generatedGifUrl = ref<string>('')
 const generatedGifSize = ref<number>(0)
 const isCopied = ref(false)
-
-// Sample video for 1-click test
-const sampleVideoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
 
 const clipDuration = computed(() => {
   const d = Math.max(0, endTime.value - startTime.value)
@@ -115,7 +110,7 @@ const formatBytes = (bytes: number): string => {
 
 // Handle file upload
 const handleFileUpload = (file: File) => {
-  if (!file.type.startsWith('video/')) {
+  if (!file.type.startsWith('video/') && !/\.(mp4|webm|mov|mkv|avi)$/i.test(file.name)) {
     toast.error('Invalid File', 'Please select a valid MP4, WebM, or MOV video file')
     return
   }
@@ -137,11 +132,32 @@ const onFileInputChange = (e: Event) => {
   }
 }
 
-const loadSampleVideo = () => {
-  videoFile.value = null
-  videoUrl.value = sampleVideoUrl
-  generatedGifUrl.value = ''
-  toast.info('Sample Video Loaded', 'Ready to trim and convert to animated GIF')
+// Fetch Video from URL
+const fetchVideoFromUrl = async () => {
+  const url = videoUrlInput.value.trim()
+  if (!url) return
+
+  isFetchingUrl.value = true
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const blob = await res.blob()
+    const filename = url.split('/').pop()?.split('?')[0] || `video_${Date.now()}.mp4`
+    const file = new File([blob], filename, { type: blob.type || 'video/mp4' })
+    handleFileUpload(file)
+    videoUrlInput.value = ''
+  } catch {
+    try {
+      videoFile.value = new File([], url.split('/').pop()?.split('?')[0] || 'remote_video.mp4')
+      videoUrl.value = url
+      videoUrlInput.value = ''
+      toast.success('Video Stream Linked', 'Loaded remote video')
+    } catch {
+      toast.error('Fetch Failed', 'Unable to fetch video from URL. Check if link is public.')
+    }
+  } finally {
+    isFetchingUrl.value = false
+  }
 }
 
 // Video player events
@@ -162,8 +178,7 @@ const onVideoTimeUpdate = () => {
   if (!vid) return
   currentTime.value = vid.currentTime
 
-  // Loop trimmed section if enabled
-  if (isLoopingSegment.value && isPlaying.value) {
+  if (isLooping.value && isPlaying.value) {
     if (vid.currentTime >= endTime.value) {
       vid.currentTime = startTime.value
       vid.play()
@@ -189,21 +204,55 @@ const togglePlayPause = () => {
 const seekTo = (sec: number) => {
   const vid = videoElementRef.value
   if (!vid) return
-  vid.currentTime = Math.max(0, Math.min(sec, totalDuration.value))
-  currentTime.value = vid.currentTime
+  const safeSec = Math.max(0, Math.min(sec, totalDuration.value || 60))
+  vid.currentTime = safeSec
+  currentTime.value = safeSec
 }
 
-const jumpToStart = () => {
-  seekTo(startTime.value)
+// Set start / end to current playback position
+const setStartToCurrent = () => {
+  const t = Math.round(currentTime.value * 10) / 10
+  if (t < endTime.value) {
+    startTime.value = t
+    toast.info('Start Cut Updated', `${t}s`)
+  } else {
+    toast.warning('Invalid Range', 'Start cut must be before End cut')
+  }
 }
 
-const jumpToEnd = () => {
-  seekTo(endTime.value)
+const setEndToCurrent = () => {
+  const t = Math.round(currentTime.value * 10) / 10
+  if (t > startTime.value) {
+    endTime.value = t
+    toast.info('End Cut Updated', `${t}s`)
+  } else {
+    toast.warning('Invalid Range', 'End cut must be after Start cut')
+  }
+}
+
+// Number input handlers with safety clamping
+const updateStartTime = (val: number) => {
+  if (isNaN(val)) return
+  const rounded = Math.round(val * 10) / 10
+  if (rounded >= 0 && rounded < endTime.value) {
+    startTime.value = rounded
+    seekTo(rounded)
+  }
+}
+
+const updateEndTime = (val: number) => {
+  if (isNaN(val)) return
+  const rounded = Math.round(val * 10) / 10
+  const max = totalDuration.value || 60
+  if (rounded > startTime.value && rounded <= max) {
+    endTime.value = rounded
+    seekTo(rounded)
+  }
 }
 
 const resetTrim = () => {
   startTime.value = 0
-  endTime.value = Math.min(totalDuration.value, 4)
+  endTime.value = Math.min(totalDuration.value || 4, 4)
   seekTo(0)
 }
 
@@ -214,10 +263,6 @@ const generateGif = async () => {
   if (clipDuration.value <= 0) {
     toast.error('Invalid Trim', 'End time must be greater than start time')
     return
-  }
-
-  if (clipDuration.value > 20) {
-    toast.warning('Long Clip Warning', 'GIFs over 15 seconds can be very large. Consider trimming to < 10 seconds.')
   }
 
   isGenerating.value = true
@@ -231,7 +276,7 @@ const generateGif = async () => {
     const { width, height } = targetDimensions.value
     const durationSec = clipDuration.value
 
-    statusMessage.value = `Extracting frames (${fps.value} FPS)...`
+    statusMessage.value = `Capturing frames (${fps.value} FPS)...`
 
     gifshot.createGIF(
       {
@@ -245,11 +290,11 @@ const generateGif = async () => {
         progressCallback: (captureProgress: number) => {
           generationProgress.value = Math.round(captureProgress * 100)
           if (captureProgress < 0.6) {
-            statusMessage.value = `Capturing video frames... ${generationProgress.value}%`
+            statusMessage.value = `Capturing frames... ${generationProgress.value}%`
           } else if (captureProgress < 0.9) {
-            statusMessage.value = `Quantizing 256-color palette... ${generationProgress.value}%`
+            statusMessage.value = `Quantizing palette... ${generationProgress.value}%`
           } else {
-            statusMessage.value = `Assembling GIF89a animation... ${generationProgress.value}%`
+            statusMessage.value = `Encoding GIF89a... ${generationProgress.value}%`
           }
         },
       },
@@ -258,7 +303,6 @@ const generateGif = async () => {
         if (!obj.error) {
           generatedGifUrl.value = obj.image
 
-          // Approximate size from base64 string
           const base64Str = obj.image.split(',')[1] || ''
           generatedGifSize.value = Math.round((base64Str.length * 3) / 4)
 
@@ -284,7 +328,7 @@ const downloadGif = () => {
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
-  toast.success('Downloaded', 'Animated GIF saved to your device')
+  toast.success('Downloaded', 'Animated GIF saved to device')
 }
 
 // Copy GIF to clipboard
@@ -297,14 +341,13 @@ const copyGifToClipboard = async () => {
       new ClipboardItem({ 'image/gif': blob })
     ])
     isCopied.value = true
-    toast.success('Copied to Clipboard', 'You can now paste the GIF into Slack, Discord, or Figma!')
+    toast.success('Copied to Clipboard', 'Ready to paste into Slack, Discord, or Figma!')
     setTimeout(() => { isCopied.value = false }, 2500)
   } catch {
     toast.error('Clipboard Error', 'Please use Download GIF button')
   }
 }
 
-// Cleanup object URLs on unmount
 onUnmounted(() => {
   if (videoUrl.value && videoUrl.value.startsWith('blob:')) {
     URL.revokeObjectURL(videoUrl.value)
@@ -320,253 +363,307 @@ onUnmounted(() => {
       <span>/</span>
       <span>Tools</span>
       <span>/</span>
-      <span class="text-white">Video to GIF Studio</span>
+      <span class="text-white">Video to GIF</span>
     </div>
 
-    <!-- Header Row -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <!-- Hidden File Input -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept="video/mp4,video/webm,video/quicktime,video/mov,video/mkv,video/avi"
+      class="hidden"
+      @change="onFileInputChange"
+    />
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-          Video to GIF Studio
+          Video to GIF
         </h1>
-        <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-          Convert MP4, WebM, and MOV video clips into crisp animated GIFs with client-side trimming, FPS control, and palette optimization.
+        <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5">
+          Trim video clips and convert into animated GIFs with FPS and resolution controls.
         </p>
       </div>
 
-      <div class="flex items-center gap-2">
-        <button
-          v-if="!videoUrl"
-          type="button"
-          class="px-3 py-1.5 rounded-lg bg-[#222226] hover:bg-[#2c2c32] border border-white/10 text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5"
-          @click="loadSampleVideo"
+      <div v-if="videoUrl" class="flex items-center gap-2 shrink-0">
+        <Button
+          variant="secondary"
+          size="default"
+          class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
+          @click="fileInputRef?.click()"
         >
-          <Sparkles class="w-3.5 h-3.5 text-amber-400" />
-          <span>Try Sample Video</span>
-        </button>
-
-        <button
-          v-else
-          type="button"
-          class="px-3 py-1.5 rounded-lg bg-[#222226] hover:bg-[#2c2c32] border border-white/10 text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5"
-          @click="videoUrl = ''; generatedGifUrl = ''"
-        >
-          <RotateCcw class="w-3.5 h-3.5" />
-          <span>Upload Another Video</span>
-        </button>
+          <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
+          <span>Change Video</span>
+        </Button>
       </div>
     </div>
 
-    <!-- State 1: Dropzone Upload Box (When no video loaded) -->
-    <div
-      v-if="!videoUrl"
-      class="border-2 border-dashed border-[#2E2E2E] hover:border-white/40 rounded-[14px] p-10 sm:p-14 text-center transition-all bg-[var(--bg-card)] flex flex-col items-center justify-center space-y-4"
-      @dragover.prevent
-      @drop.prevent="(e) => e.dataTransfer?.files[0] && handleFileUpload(e.dataTransfer.files[0])"
-    >
-      <div class="w-16 h-16 rounded-2xl bg-[#222226] border border-white/10 flex items-center justify-center text-white/80 shadow-md">
-        <Film class="w-8 h-8" />
-      </div>
-
-      <div class="space-y-1.5 max-w-md">
-        <h3 class="text-base font-semibold text-white">
-          Drop your video file here
-        </h3>
-        <p class="text-xs text-[var(--text-secondary)]">
-          Supports MP4, WebM, and MOV up to 100MB. Processing happens 100% locally in your browser.
-        </p>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-        <label class="cursor-pointer">
+    <!-- State 1: Upload Stage (When No Video Loaded) -->
+    <div v-if="!videoUrl" class="space-y-4">
+      <!-- URL Input Omnibox -->
+      <div class="flex flex-col sm:flex-row items-center gap-2.5">
+        <div class="relative w-full flex-1 flex items-center">
+          <LinkIcon class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
-            type="file"
-            accept="video/mp4,video/webm,video/quicktime,video/mov"
-            class="hidden"
-            @change="onFileInputChange"
+            v-model="videoUrlInput"
+            type="url"
+            placeholder="Paste direct video URL (e.g. https://.../video.mp4)..."
+            class="w-full h-11 pl-10 pr-4 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            @keydown.enter="fetchVideoFromUrl"
           />
-          <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors shadow-xs">
-            <Upload class="w-4 h-4" />
-            <span>Browse Video</span>
-          </span>
-        </label>
-
-        <button
-          type="button"
-          class="px-4 py-2 rounded-lg bg-[#222226] hover:bg-[#2c2c32] border border-white/10 text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-2"
-          @click="loadSampleVideo"
+        </div>
+        <Button
+          variant="secondary"
+          size="default"
+          class="w-full sm:w-auto h-11 px-5 rounded-xl font-medium text-xs shrink-0 cursor-pointer"
+          :disabled="!videoUrlInput.trim() || isFetchingUrl"
+          :loading="isFetchingUrl"
+          @click="fetchVideoFromUrl"
         >
-          <Sparkles class="w-4 h-4 text-amber-400" />
-          <span>Load Sample Video</span>
-        </button>
+          <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
+          <span>Fetch Video</span>
+        </Button>
+      </div>
+
+      <!-- Divider -->
+      <div class="flex items-center gap-3 text-xs font-mono text-neutral-500">
+        <div class="flex-1 h-px bg-[#262626]" />
+        <span>OR DROP FILE</span>
+        <div class="flex-1 h-px bg-[#262626]" />
+      </div>
+
+      <!-- Dropzone -->
+      <div
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none"
+        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : 'border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]'"
+        @dragover.prevent="isDragging = true"
+        @dragleave.prevent="isDragging = false"
+        @drop.prevent="(e) => { isDragging = false; if (e.dataTransfer?.files[0]) handleFileUpload(e.dataTransfer.files[0]) }"
+        @click="fileInputRef?.click()"
+      >
+        <div class="max-w-md mx-auto space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+            <Film class="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+              Drop your video file here or browse
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] mt-1">
+              Supports MP4, WebM, MOV, and AVI up to 100MB. 100% processed client-side.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- State 2: Active Video Trimmer & GIF Tuning Workspace -->
-    <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- Left Column: Video Player & Dual Trimmer (7 cols) -->
-      <div class="lg:col-span-7 space-y-4">
-        <Card class="p-4 sm:p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
-          <!-- Video Monitor Screen -->
-          <div class="relative w-full aspect-video rounded-xl bg-black overflow-hidden border border-white/10 flex items-center justify-center group">
-            <video
-              ref="videoElementRef"
-              :src="videoUrl"
-              class="w-full h-full object-contain cursor-pointer"
-              playsinline
-              @click="togglePlayPause"
-              @loadedmetadata="onVideoLoadedMetadata"
-              @timeupdate="onVideoTimeUpdate"
-            />
+    <!-- State 2: Clean, Unified Video to GIF Studio -->
+    <div v-else class="space-y-5">
+      <!-- Video Monitor Player Box -->
+      <div class="rounded-xl bg-[#141416] border border-[#262626] p-3 sm:p-4 space-y-3">
+        <!-- Video Screen Container -->
+        <div class="relative w-full rounded-lg bg-black overflow-hidden border border-white/10 flex items-center justify-center max-h-[420px] aspect-video">
+          <video
+            ref="videoElementRef"
+            :src="videoUrl"
+            class="w-full h-full object-contain cursor-pointer"
+            playsinline
+            @click="togglePlayPause"
+            @loadedmetadata="onVideoLoadedMetadata"
+            @timeupdate="onVideoTimeUpdate"
+          />
 
-            <!-- Play / Pause Overlay Icon -->
-            <button
-              type="button"
-              class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              @click="togglePlayPause"
-            >
-              <div class="w-14 h-14 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white backdrop-blur-xs shadow-xl">
-                <Play v-if="!isPlaying" class="w-6 h-6 ml-0.5" />
-                <Pause v-else class="w-6 h-6" />
-              </div>
-            </button>
-
-            <!-- Current Timecode Indicator -->
-            <div class="absolute bottom-2.5 left-3 px-2 py-0.5 rounded-md bg-black/80 border border-white/10 text-[11px] font-mono text-white backdrop-blur-xs">
-              {{ formatTime(currentTime) }} / {{ formatTime(totalDuration) }}
+          <!-- Play/Pause Click Overlay -->
+          <button
+            type="button"
+            class="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+            @click="togglePlayPause"
+          >
+            <div class="w-12 h-12 rounded-full bg-black/70 border border-white/20 flex items-center justify-center text-white backdrop-blur-xs shadow-lg">
+              <Play v-if="!isPlaying" class="w-5 h-5 ml-0.5" />
+              <Pause v-else class="w-5 h-5" />
             </div>
+          </button>
 
-            <!-- Resolution Stamp -->
-            <div class="absolute top-2.5 right-3 px-2 py-0.5 rounded-md bg-black/80 border border-white/10 text-[10px] font-mono text-neutral-400 backdrop-blur-xs">
-              {{ videoNaturalWidth }}x{{ videoNaturalHeight }}
-            </div>
+          <!-- Current Time Indicator -->
+          <div class="absolute bottom-2.5 left-3 px-2 py-0.5 rounded-md bg-black/80 border border-white/10 text-[11px] font-mono text-white backdrop-blur-xs">
+            {{ formatTime(currentTime) }} / {{ formatTime(totalDuration) }}
           </div>
 
-          <!-- Video Controls Toolbar -->
-          <div class="flex items-center justify-between gap-2 pt-1 border-b border-[#262626] pb-3">
-            <div class="flex items-center gap-1.5">
-              <button
-                type="button"
-                class="p-2 rounded-lg bg-[#222226] hover:bg-[#2c2c32] text-white cursor-pointer transition-colors"
-                title="Play/Pause"
-                @click="togglePlayPause"
-              >
-                <Play v-if="!isPlaying" class="w-4 h-4" />
-                <Pause v-else class="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                class="px-2.5 py-1.5 rounded-lg bg-[#222226] hover:bg-[#2c2c32] text-xs font-mono text-neutral-300 hover:text-white cursor-pointer transition-colors"
-                title="Jump to Start Trim"
-                @click="jumpToStart"
-              >
-                Start: {{ formatTime(startTime) }}
-              </button>
-
-              <button
-                type="button"
-                class="px-2.5 py-1.5 rounded-lg bg-[#222226] hover:bg-[#2c2c32] text-xs font-mono text-neutral-300 hover:text-white cursor-pointer transition-colors"
-                title="Jump to End Trim"
-                @click="jumpToEnd"
-              >
-                End: {{ formatTime(endTime) }}
-              </button>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <!-- Loop Segment Toggle -->
-              <button
-                type="button"
-                class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer border"
-                :class="isLoopingSegment ? 'bg-[#2E2E2E] border-white/20 text-white' : 'bg-transparent border-transparent text-neutral-400 hover:text-white'"
-                @click="isLoopingSegment = !isLoopingSegment"
-              >
-                <RotateCcw class="w-3.5 h-3.5" />
-                <span>Loop Segment</span>
-              </button>
-
-              <button
-                type="button"
-                class="p-1.5 text-neutral-500 hover:text-neutral-300 cursor-pointer"
-                title="Reset Trim Range"
-                @click="resetTrim"
-              >
-                <RefreshCw class="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <!-- Video Specs -->
+          <div class="absolute top-2.5 right-3 px-2 py-0.5 rounded-md bg-black/80 border border-white/10 text-[10px] font-mono text-neutral-400 backdrop-blur-xs">
+            {{ videoNaturalWidth }}×{{ videoNaturalHeight }}
           </div>
+        </div>
 
-          <!-- Trimmer Scrubbers -->
-          <div class="space-y-3 pt-1">
-            <div class="flex items-center justify-between text-xs font-mono">
-              <span class="text-neutral-400">Trim Interval</span>
-              <span class="text-emerald-400 font-semibold">Clip Length: {{ clipDuration }}s ({{ estimatedFrames }} frames)</span>
-            </div>
+        <!-- Video Scrub Track -->
+        <div class="flex items-center gap-3 pt-1">
+          <button
+            type="button"
+            class="w-9 h-9 rounded-lg bg-[#222226] hover:bg-[#2c2c32] text-white flex items-center justify-center cursor-pointer transition-colors shrink-0"
+            @click="togglePlayPause"
+          >
+            <Pause v-if="isPlaying" class="w-4 h-4 fill-current" />
+            <Play v-else class="w-4 h-4 fill-current ml-0.5" />
+          </button>
 
-            <!-- Dual Range Sliders -->
-            <div class="space-y-2">
-              <div class="space-y-1">
-                <div class="flex justify-between text-[11px] font-mono text-neutral-400">
-                  <span>Start Cut:</span>
-                  <span class="text-white">{{ formatTime(startTime) }}</span>
-                </div>
-                <input
-                  v-model.number="startTime"
-                  type="range"
-                  :min="0"
-                  :max="endTime - 0.2"
-                  step="0.1"
-                  class="w-full accent-white cursor-pointer"
-                  @input="seekTo(startTime)"
-                />
-              </div>
+          <input
+            type="range"
+            min="0"
+            :max="totalDuration || 60"
+            step="0.05"
+            :value="currentTime"
+            class="flex-1 accent-white cursor-pointer"
+            @input="(e) => seekTo(Number((e.target as HTMLInputElement).value))"
+          />
 
-              <div class="space-y-1">
-                <div class="flex justify-between text-[11px] font-mono text-neutral-400">
-                  <span>End Cut:</span>
-                  <span class="text-white">{{ formatTime(endTime) }}</span>
-                </div>
-                <input
-                  v-model.number="endTime"
-                  type="range"
-                  :min="startTime + 0.2"
-                  :max="totalDuration || 10"
-                  step="0.1"
-                  class="w-full accent-white cursor-pointer"
-                  @input="seekTo(endTime)"
-                />
-              </div>
-            </div>
-          </div>
-        </Card>
+          <button
+            type="button"
+            class="p-2 rounded-lg border text-xs font-mono transition-colors cursor-pointer shrink-0"
+            :class="isLooping ? 'bg-[#2E2E2E] border-white/20 text-white' : 'bg-[#18181b] border-transparent text-neutral-400 hover:text-white'"
+            title="Toggle Segment Loop"
+            @click="isLooping = !isLooping"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
-      <!-- Right Column: GIF Tuning Deck & Render Action (5 cols) -->
-      <div class="lg:col-span-5 space-y-4">
-        <Card class="p-4 sm:p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-5">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-semibold text-white uppercase tracking-wider block">
-              GIF Output Configuration
-            </label>
-            <Badge variant="badge">GIF89a</Badge>
+      <!-- Clean Trim Controls (With Sliders + Number Inputs) -->
+      <div class="rounded-xl bg-[#141416] border border-[#262626] p-4 sm:p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#262626] pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">
+              Trim Range
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-[#222226] text-white border border-white/10">
+              Duration: {{ clipDuration }}s ({{ estimatedFrames }} frames)
+            </span>
           </div>
 
-          <!-- 1. Resolution Presets -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-[var(--text-secondary)] font-medium">Output Resolution</span>
-              <span class="font-mono text-white text-[11px]">
-                {{ targetDimensions.width }} × {{ targetDimensions.height }} px
-              </span>
+          <button
+            type="button"
+            class="text-xs font-mono text-neutral-400 hover:text-white cursor-pointer flex items-center gap-1 transition-colors"
+            @click="resetTrim"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+            <span>Reset Range</span>
+          </button>
+        </div>
+
+        <!-- Two Columns: Start Cut & End Cut with Range + Number Input -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Start Cut -->
+          <div class="p-3.5 rounded-lg bg-[#18181b] border border-white/5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-mono text-[var(--text-secondary)]">Start Cut</label>
+              <div class="flex items-center gap-1.5">
+                <!-- Number Input for Precise Seconds -->
+                <div class="flex items-center gap-1">
+                  <input
+                    :value="startTime"
+                    type="number"
+                    min="0"
+                    :max="Math.max(0, endTime - 0.1)"
+                    step="0.1"
+                    class="w-20 h-7.5 px-2 bg-[#121214] border border-[#2E2E2E] focus:border-white/40 text-white font-mono text-xs rounded-md text-center focus:outline-none"
+                    @change="(e) => updateStartTime(Number((e.target as HTMLInputElement).value))"
+                  />
+                  <span class="text-xs font-mono text-neutral-500">sec</span>
+                </div>
+
+                <!-- Quick Button to Set to Current Playhead -->
+                <button
+                  type="button"
+                  class="px-2 py-1 rounded bg-[#252528] hover:bg-[#303034] text-[11px] font-mono text-white/80 hover:text-white border border-white/10 cursor-pointer transition-colors"
+                  title="Set Start Cut to current playhead"
+                  @click="setStartToCurrent"
+                >
+                  Set Current
+                </button>
+              </div>
             </div>
-            <div class="grid grid-cols-3 gap-1.5">
+
+            <!-- Start Range Slider -->
+            <input
+              v-model.number="startTime"
+              type="range"
+              min="0"
+              :max="Math.max(0, endTime - 0.1)"
+              step="0.1"
+              class="w-full accent-white cursor-pointer"
+              @input="seekTo(startTime)"
+            />
+          </div>
+
+          <!-- End Cut -->
+          <div class="p-3.5 rounded-lg bg-[#18181b] border border-white/5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-mono text-[var(--text-secondary)]">End Cut</label>
+              <div class="flex items-center gap-1.5">
+                <!-- Number Input for Precise Seconds -->
+                <div class="flex items-center gap-1">
+                  <input
+                    :value="endTime"
+                    type="number"
+                    :min="startTime + 0.1"
+                    :max="totalDuration || 60"
+                    step="0.1"
+                    class="w-20 h-7.5 px-2 bg-[#121214] border border-[#2E2E2E] focus:border-white/40 text-white font-mono text-xs rounded-md text-center focus:outline-none"
+                    @change="(e) => updateEndTime(Number((e.target as HTMLInputElement).value))"
+                  />
+                  <span class="text-xs font-mono text-neutral-500">sec</span>
+                </div>
+
+                <!-- Quick Button to Set to Current Playhead -->
+                <button
+                  type="button"
+                  class="px-2 py-1 rounded bg-[#252528] hover:bg-[#303034] text-[11px] font-mono text-white/80 hover:text-white border border-white/10 cursor-pointer transition-colors"
+                  title="Set End Cut to current playhead"
+                  @click="setEndToCurrent"
+                >
+                  Set Current
+                </button>
+              </div>
+            </div>
+
+            <!-- End Range Slider -->
+            <input
+              v-model.number="endTime"
+              type="range"
+              :min="startTime + 0.1"
+              :max="totalDuration || 60"
+              step="0.1"
+              class="w-full accent-white cursor-pointer"
+              @input="seekTo(endTime)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- GIF Format & Resolution Settings (Clean Compact Grid) -->
+      <div class="rounded-xl bg-[#141416] border border-[#262626] p-4 sm:p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[#262626] pb-3">
+          <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">
+            GIF Export Settings
+          </span>
+          <span class="text-xs font-mono text-[var(--text-tertiary)]">
+            Output: {{ targetDimensions.width }}×{{ targetDimensions.height }}px
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- 1. Resolution -->
+          <div class="space-y-2">
+            <label class="text-xs font-mono text-[var(--text-secondary)] block">Resolution</label>
+            <div class="grid grid-cols-3 gap-1">
               <button
                 v-for="res in (['original', '720p', '480p', '360p', '240p'] as const)"
                 :key="res"
                 type="button"
-                class="py-1.5 px-2 rounded-lg text-xs font-mono font-medium border transition-all cursor-pointer text-center"
-                :class="resolutionPreset === res ? 'bg-white text-black font-bold border-white shadow-xs' : 'bg-[#141416] border-white/10 text-neutral-400 hover:text-white'"
+                class="py-1.5 px-2 rounded-lg text-xs font-mono border transition-all cursor-pointer text-center"
+                :class="resolutionPreset === res ? 'bg-white text-black font-bold border-white shadow-xs' : 'bg-[#18181b] border-white/10 text-neutral-400 hover:text-white'"
                 @click="resolutionPreset = res"
               >
                 {{ res.toUpperCase() }}
@@ -574,136 +671,107 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- 2. Frame Rate (FPS) Selector -->
+          <!-- 2. FPS -->
           <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-[var(--text-secondary)] font-medium">Frame Rate (FPS)</span>
-              <span class="font-mono text-white text-[11px]">{{ fps }} Frames / Sec</span>
-            </div>
-            <div class="grid grid-cols-4 gap-1.5">
+            <label class="text-xs font-mono text-[var(--text-secondary)] block">Frame Rate (FPS)</label>
+            <div class="grid grid-cols-4 gap-1">
               <button
                 v-for="rate in [10, 15, 20, 24]"
                 :key="rate"
                 type="button"
-                class="py-1.5 px-2 rounded-lg text-xs font-mono font-medium border transition-all cursor-pointer text-center"
-                :class="fps === rate ? 'bg-white text-black font-bold border-white shadow-xs' : 'bg-[#141416] border-white/10 text-neutral-400 hover:text-white'"
+                class="py-1.5 px-2 rounded-lg text-xs font-mono border transition-all cursor-pointer text-center"
+                :class="fps === rate ? 'bg-white text-black font-bold border-white shadow-xs' : 'bg-[#18181b] border-white/10 text-neutral-400 hover:text-white'"
                 @click="fps = rate"
               >
-                {{ rate }} FPS
+                {{ rate }}
               </button>
             </div>
           </div>
 
-          <!-- 3. Playback Speed Multiplier -->
+          <!-- 3. Speed -->
           <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-[var(--text-secondary)] font-medium">Speed Multiplier</span>
-              <span class="font-mono text-white text-[11px]">{{ playbackSpeed }}x Speed</span>
-            </div>
+            <label class="text-xs font-mono text-[var(--text-secondary)] block">Speed</label>
             <div class="grid grid-cols-5 gap-1">
               <button
                 v-for="spd in [0.5, 0.75, 1.0, 1.25, 1.5]"
                 :key="spd"
                 type="button"
-                class="py-1 px-1 rounded-md text-xs font-mono border transition-all cursor-pointer text-center"
-                :class="playbackSpeed === spd ? 'bg-white text-black font-bold border-white' : 'bg-[#141416] border-white/10 text-neutral-400 hover:text-white'"
+                class="py-1.5 px-1 rounded-lg text-xs font-mono border transition-all cursor-pointer text-center"
+                :class="playbackSpeed === spd ? 'bg-white text-black font-bold border-white shadow-xs' : 'bg-[#18181b] border-white/10 text-neutral-400 hover:text-white'"
                 @click="playbackSpeed = spd"
               >
                 {{ spd }}x
               </button>
             </div>
           </div>
+        </div>
 
-          <!-- Summary Metric Box -->
-          <div class="p-3 rounded-xl bg-[#141416] border border-[#262626] space-y-1.5 text-xs font-mono">
-            <div class="flex justify-between text-neutral-400">
-              <span>Selected Segment:</span>
-              <span class="text-white">{{ clipDuration }} seconds</span>
-            </div>
-            <div class="flex justify-between text-neutral-400">
-              <span>Total GIF Frames:</span>
-              <span class="text-white">{{ estimatedFrames }} frames</span>
-            </div>
-            <div class="flex justify-between text-neutral-400">
-              <span>Dimensions:</span>
-              <span class="text-white">{{ targetDimensions.width }} × {{ targetDimensions.height }}</span>
-            </div>
+        <!-- Encoding Progress Bar -->
+        <div v-if="isGenerating" class="space-y-2 pt-2 border-t border-[#262626]">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-white/80">{{ statusMessage }}</span>
+            <span class="text-white font-bold">{{ generationProgress }}%</span>
           </div>
-
-          <!-- Progress Bar (During Generation) -->
-          <div v-if="isGenerating" class="space-y-2 pt-2">
-            <div class="flex justify-between text-xs font-mono">
-              <span class="text-amber-400">{{ statusMessage }}</span>
-              <span class="text-white font-bold">{{ generationProgress }}%</span>
-            </div>
-            <div class="w-full h-2 bg-[#222226] rounded-full overflow-hidden">
-              <div
-                class="h-full bg-white transition-all duration-200"
-                :style="{ width: `${generationProgress}%` }"
-              />
-            </div>
+          <div class="w-full h-1.5 bg-[#222226] rounded-full overflow-hidden">
+            <div
+              class="h-full bg-white transition-all duration-200"
+              :style="{ width: `${generationProgress}%` }"
+            />
           </div>
+        </div>
 
-          <!-- Generate Action Button -->
+        <!-- Action Button (Matching user's preferred secondary arrow style) -->
+        <div v-if="!generatedGifUrl" class="pt-2">
           <Button
-            variant="primary"
-            size="lg"
-            class="w-full font-semibold shadow-xs"
+            variant="secondary"
+            size="default"
+            class="w-full h-11 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
             :disabled="isGenerating || clipDuration <= 0"
             :loading="isGenerating"
             @click="generateGif"
           >
-            <Sparkles class="w-4 h-4 mr-2" />
-            <span>{{ isGenerating ? 'Encoding Animated GIF...' : 'Generate Animated GIF' }}</span>
+            <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
+            <span>{{ isGenerating ? 'Encoding GIF...' : 'Generate GIF' }}</span>
           </Button>
-        </Card>
+        </div>
 
-        <!-- Output Result Card (When GIF is ready) -->
-        <Card
-          v-if="generatedGifUrl"
-          class="p-4 sm:p-5 bg-[var(--bg-card)] border border-emerald-500/30 space-y-4"
-        >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span class="text-xs font-semibold text-white uppercase tracking-wider">Ready for Export</span>
-            </div>
-            <span class="text-xs font-mono text-emerald-400 font-semibold">{{ formatBytes(generatedGifSize) }}</span>
+        <!-- Rendered Output Card -->
+        <div v-else class="p-4 rounded-xl bg-[#18181b] border border-white/15 space-y-3 pt-3">
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="text-white font-semibold">GIF Ready</span>
+            <span class="text-[var(--text-tertiary)]">{{ formatBytes(generatedGifSize) }}</span>
           </div>
 
-          <!-- Animated GIF Looping Preview -->
-          <div class="w-full rounded-xl bg-black border border-white/10 overflow-hidden flex items-center justify-center p-2">
+          <div class="w-full rounded-lg bg-black border border-white/10 overflow-hidden flex items-center justify-center p-2 max-h-56">
             <img
               :src="generatedGifUrl"
-              alt="Generated Animated GIF"
-              class="max-w-full max-h-64 object-contain rounded-lg shadow-lg"
+              alt="Generated GIF"
+              class="max-w-full max-h-52 object-contain rounded"
             />
           </div>
 
-          <!-- Action Buttons -->
-          <div class="grid grid-cols-2 gap-2.5">
-            <Button
-              variant="primary"
-              size="default"
-              class="font-semibold"
-              @click="downloadGif"
-            >
-              <Download class="w-4 h-4 mr-1.5" />
-              <span>Download GIF</span>
-            </Button>
-
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Button
               variant="secondary"
               size="default"
-              class="font-medium"
+              class="h-10 rounded-xl font-medium text-xs cursor-pointer"
+              @click="downloadGif"
+            >
+              <Download class="w-3.5 h-3.5 mr-1.5" />
+              <span>Download GIF</span>
+            </Button>
+            <Button
+              variant="secondary"
+              size="default"
+              class="h-10 rounded-xl font-medium text-xs cursor-pointer"
               @click="copyGifToClipboard"
             >
-              <Check v-if="isCopied" class="w-4 h-4 mr-1.5 text-emerald-400" />
-              <Copy v-else class="w-4 h-4 mr-1.5" />
-              <span>{{ isCopied ? 'Copied!' : 'Copy GIF' }}</span>
+              <Check v-if="isCopied" class="w-3.5 h-3.5 mr-1.5 text-white" />
+              <Copy v-else class="w-3.5 h-3.5 mr-1.5" />
+              <span>{{ isCopied ? 'Copied' : 'Copy GIF' }}</span>
             </Button>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   </div>

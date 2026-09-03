@@ -201,12 +201,12 @@ export const ALL_CATEGORIES: ToolCategory[] = [
       },
       {
         id: 'video-to-gif',
-        title: 'Video to GIF Studio',
+        title: 'Video to GIF',
         description: 'Convert MP4, WebM, and MOV video clips into crisp animated GIFs with trimming, FPS, and speed controls.',
         category: 'image',
         icon: 'video-to-gif',
         route: '/tools/video-to-gif',
-        badge: 'Studio',
+        badge: 'New',
         popular: true,
       },
       {
