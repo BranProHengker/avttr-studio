@@ -10,6 +10,7 @@ import { facebookScraper } from '~/server/utils/scrapers/facebook'
 import { spotifyScraper } from '~/server/utils/scrapers/spotify'
 import { soundcloudScraper } from '~/server/utils/scrapers/soundcloud'
 import { teraboxScraper } from '~/server/utils/scrapers/terabox'
+import { tenorScraper } from '~/server/utils/scrapers/tenor'
 import { resolveCobalt } from '~/server/utils/scrapers/cobaltFallback'
 
 const scrapers = [
@@ -22,6 +23,7 @@ const scrapers = [
   spotifyScraper,
   soundcloudScraper,
   teraboxScraper,
+  tenorScraper,
 ]
 
 export default defineEventHandler(async (event) => {

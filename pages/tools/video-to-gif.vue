@@ -132,29 +132,62 @@ const onFileInputChange = (e: Event) => {
   }
 }
 
-// Fetch Video from URL
+// Fetch Video from URL (Supports direct MP4/WebM URLs and Social Media posts e.g. Twitter/X, TikTok)
 const fetchVideoFromUrl = async () => {
-  const url = videoUrlInput.value.trim()
-  if (!url) return
+  const inputUrl = videoUrlInput.value.trim()
+  if (!inputUrl) return
 
   isFetchingUrl.value = true
   try {
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const blob = await res.blob()
-    const filename = url.split('/').pop()?.split('?')[0] || `video_${Date.now()}.mp4`
+    let directMediaUrl = inputUrl
+
+    // 1. If it's a social media post (X/Twitter, TikTok, Instagram, YouTube, Tenor, etc.), resolve video first
+    const isPlatformUrl = /(?:twitter\.com|x\.com|tiktok\.com|instagram\.com|youtube\.com|youtu\.be|facebook\.com|fb\.watch|tenor\.com|giphy\.com)/i.test(inputUrl)
+    if (isPlatformUrl) {
+      toast.info('Resolving Link', 'Extracting video from platform...')
+      const resolveRes = await $fetch<any>('/api/download/resolve', {
+        method: 'POST',
+        body: { url: inputUrl },
+      })
+
+      if (resolveRes && resolveRes.success && resolveRes.medias?.length > 0) {
+        const foundVid = resolveRes.medias.find((m: any) => m.type === 'video') || resolveRes.medias[0]
+        if (foundVid && foundVid.url) {
+          directMediaUrl = foundVid.url
+          toast.success('Video Found', resolveRes.title || 'Platform video resolved')
+        } else {
+          throw new Error('No video found in this post')
+        }
+      } else {
+        throw new Error(resolveRes?.error || 'Could not extract video from link')
+      }
+    }
+
+    // 2. Fetch the video blob (try direct fetch, fallback to proxy if CORS-blocked)
+    let response: Response | null = null
+    try {
+      response = await fetch(directMediaUrl, { mode: 'cors' })
+      if (!response.ok) response = null
+    } catch {
+      response = null
+    }
+
+    if (!response || !response.ok) {
+      const proxyUrl = `/api/proxy?url=${encodeURIComponent(directMediaUrl)}`
+      response = await fetch(proxyUrl)
+    }
+
+    if (!response || !response.ok) throw new Error('Could not download video stream')
+
+    const blob = await response.blob()
+    const rawName = directMediaUrl.split('/').pop()?.split('?')[0] || `video_${Date.now()}.mp4`
+    const filename = rawName.includes('.') ? rawName : `${rawName}.mp4`
     const file = new File([blob], filename, { type: blob.type || 'video/mp4' })
+
     handleFileUpload(file)
     videoUrlInput.value = ''
-  } catch {
-    try {
-      videoFile.value = new File([], url.split('/').pop()?.split('?')[0] || 'remote_video.mp4')
-      videoUrl.value = url
-      videoUrlInput.value = ''
-      toast.success('Video Stream Linked', 'Loaded remote video')
-    } catch {
-      toast.error('Fetch Failed', 'Unable to fetch video from URL. Check if link is public.')
-    }
+  } catch (err: any) {
+    toast.error('Fetch Failed', err.message || 'Unable to fetch video from URL. Check if link is public.')
   } finally {
     isFetchingUrl.value = false
   }
@@ -408,7 +441,7 @@ onUnmounted(() => {
           <input
             v-model="videoUrlInput"
             type="url"
-            placeholder="Paste direct video URL (e.g. https://.../video.mp4)..."
+            placeholder="Paste direct video URL, Twitter/X post, or social link..."
             class="w-full h-11 pl-10 pr-4 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
             @keydown.enter="fetchVideoFromUrl"
           />
@@ -460,6 +493,7 @@ onUnmounted(() => {
           <video
             ref="videoElementRef"
             :src="videoUrl"
+            crossorigin="anonymous"
             class="w-full h-full object-contain cursor-pointer"
             playsinline
             @click="togglePlayPause"
