@@ -3,7 +3,7 @@ import { ref, defineAsyncComponent } from 'vue'
 import { useDownloader } from '~/composables/useDownloader'
 import { useBatchDownloader } from '~/composables/useBatchDownloader'
 import { useI18n } from '~/composables/useI18n'
-import { ALL_CATEGORIES } from '~/composables/useSearch'
+import { useSearch } from '~/composables/useSearch'
 import HeroPasteBar from '~/components/dashboard/HeroPasteBar.vue'
 import CategorySection from '~/components/dashboard/CategorySection.vue'
 import Badge from '~/components/ui/Badge.vue'
@@ -14,6 +14,7 @@ const LazyBatchQueueModal = defineAsyncComponent(() => import('~/components/down
 const { url, loading, result, error, resolveMedia } = useDownloader()
 const { addUrls, startProcessing, isModalOpen: isBatchModalOpen } = useBatchDownloader()
 const { t } = useI18n()
+const { categories } = useSearch()
 const isModalOpen = ref(false)
 
 const handleResolve = async () => {
@@ -97,7 +98,7 @@ const handleBatchSubmit = (urls: string[]) => {
     <!-- Categorized Tool Sections (Delphi Style) -->
     <div class="space-y-10 pt-2">
       <CategorySection
-        v-for="category in ALL_CATEGORIES"
+        v-for="category in categories"
         :key="category.id"
         :category="category"
       />

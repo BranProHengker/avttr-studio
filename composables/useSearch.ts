@@ -1,4 +1,6 @@
+import { ref, computed } from 'vue'
 import type { ToolCategory, ToolItem } from '~/types'
+import { useI18n } from '~/composables/useI18n'
 
 export const ALL_CATEGORIES: ToolCategory[] = [
   {
@@ -282,16 +284,36 @@ export const ALL_CATEGORIES: ToolCategory[] = [
 export function useSearch() {
   const searchQuery = ref('')
   const isPaletteOpen = ref(false)
+  const { t } = useI18n()
+
+  const localizedCategories = computed<ToolCategory[]>(() => {
+    return ALL_CATEGORIES.map((cat) => {
+      const catMeta = t.value.categories?.[cat.id]
+      return {
+        ...cat,
+        name: catMeta?.name || cat.name,
+        description: catMeta?.description || cat.description,
+        tools: cat.tools.map((tool) => {
+          const toolMeta = t.value.tools?.[tool.id]
+          return {
+            ...tool,
+            title: toolMeta?.title || tool.title,
+            description: toolMeta?.description || tool.description,
+          }
+        }),
+      }
+    })
+  })
 
   const allTools = computed<ToolItem[]>(() => {
-    return ALL_CATEGORIES.flatMap((c) => c.tools)
+    return localizedCategories.value.flatMap((c) => c.tools)
   })
 
   const filteredCategories = computed(() => {
-    if (!searchQuery.value.trim()) return ALL_CATEGORIES
+    if (!searchQuery.value.trim()) return localizedCategories.value
 
     const q = searchQuery.value.toLowerCase()
-    return ALL_CATEGORIES.map((cat) => ({
+    return localizedCategories.value.map((cat) => ({
       ...cat,
       tools: cat.tools.filter(
         (t) =>
@@ -315,7 +337,7 @@ export function useSearch() {
     searchQuery,
     isPaletteOpen,
     allTools,
-    categories: ALL_CATEGORIES,
+    categories: localizedCategories,
     filteredCategories,
     openPalette,
     closePalette,

@@ -2,6 +2,7 @@
 import { useRoute } from 'vue-router'
 import { computed, ref, defineAsyncComponent } from 'vue'
 import { useDownloader } from '~/composables/useDownloader'
+import { useI18n } from '~/composables/useI18n'
 import HeroPasteBar from '~/components/dashboard/HeroPasteBar.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
 import Card from '~/components/ui/Card.vue'
@@ -11,79 +12,122 @@ import Badge from '~/components/ui/Badge.vue'
 const LazyMediaPreviewModal = defineAsyncComponent(() => import('~/components/downloaders/MediaPreviewModal.vue'))
 
 const route = useRoute()
+const { locale } = useI18n()
 const platformParam = computed(() => (route.params.platform as string) || 'tiktok')
 
 const platformInfo = computed(() => {
+  const isId = locale.value === 'id'
+
   switch (platformParam.value) {
     case 'tiktok':
       return {
         name: 'TikTok',
-        subtitle: 'Download TikTok HD Videos without watermark, Audio MP3, and Photo Carousels',
+        subtitle: isId
+          ? 'Download video TikTok HD tanpa watermark, audio MP3, dan photo slide'
+          : 'Download TikTok HD Videos without watermark, Audio MP3, and Photo Carousels',
         placeholder: 'Paste TikTok video link (e.g. https://www.tiktok.com/@user/video/...)',
-        features: ['1080p Full HD', 'Zero Watermark', 'High Bitrate Audio MP3', 'Photo Slide Batch ZIP'],
+        features: isId
+          ? ['1080p Full HD', 'Tanpa Watermark', 'Audio MP3 Berkualitas', 'Slide Foto ZIP']
+          : ['1080p Full HD', 'Zero Watermark', 'High Bitrate Audio MP3', 'Photo Slide Batch ZIP'],
       }
     case 'instagram':
       return {
         name: 'Instagram',
-        subtitle: 'Download Instagram Reels, Carousel Photos, Stories, and Audio Tracks',
+        subtitle: isId
+          ? 'Download Instagram Reels, postingan Carousel, foto, dan audio'
+          : 'Download Instagram Reels, Carousel Photos, Stories, and Audio Tracks',
         placeholder: 'Paste Instagram post or reel link (e.g. https://www.instagram.com/reel/...)',
-        features: ['Reels HD (MP4)', 'Multi-Image Carousel ZIP', 'Original Audio', 'Zero Login Required'],
+        features: isId
+          ? ['Reels HD (MP4)', 'Multi-Image Carousel ZIP', 'Audio Asli', 'Tanpa Login']
+          : ['Reels HD (MP4)', 'Multi-Image Carousel ZIP', 'Original Audio', 'Zero Login Required'],
       }
     case 'youtube':
       return {
         name: 'YouTube',
-        subtitle: 'Download YouTube Videos, Shorts, and Audio MP3 streams',
+        subtitle: isId
+          ? 'Download video YouTube, Shorts, dan audio MP3'
+          : 'Download YouTube Videos, Shorts, and Audio MP3 streams',
         placeholder: 'Paste YouTube video link (e.g. https://youtu.be/... or youtube.com/watch?v=...)',
-        features: ['Shorts Support', 'Audio Extraction (MP3)', 'Fast Streaming'],
+        features: isId
+          ? ['Mendukung Shorts', 'Ekstraksi Audio (MP3)', 'Streaming Cepat']
+          : ['Shorts Support', 'Audio Extraction (MP3)', 'Fast Streaming'],
       }
     case 'twitter':
       return {
         name: 'Twitter / X',
-        subtitle: 'Download Twitter (X) videos, GIFs, and media attachments in original quality',
+        subtitle: isId
+          ? 'Download video Twitter (X), animasi GIF, dan media kualitas asli'
+          : 'Download Twitter (X) videos, GIFs, and media attachments in original quality',
         placeholder: 'Paste Twitter/X status link (e.g. https://x.com/user/status/...)',
-        features: ['HD Video Stream', 'GIF Support', 'Direct Proxy Stream', 'No App Install Needed'],
+        features: isId
+          ? ['HD Video Stream', 'Mendukung GIF', 'Direct Stream', 'Tanpa Aplikasi']
+          : ['HD Video Stream', 'GIF Support', 'Direct Proxy Stream', 'No App Install Needed'],
       }
     case 'capcut':
       return {
         name: 'CapCut',
-        subtitle: 'Extract clean CapCut templates and video exports without app overlays',
+        subtitle: isId
+          ? 'Ekstrak video template CapCut bersih tanpa watermark'
+          : 'Extract clean CapCut templates and video exports without app overlays',
         placeholder: 'Paste CapCut template link (e.g. https://www.capcut.com/template-detail/...)',
-        features: ['Clean Template Video', 'No CapCut Logo', 'Original Resolution', 'Fast Extraction'],
+        features: isId
+          ? ['Video Template Bersih', 'Tanpa Logo CapCut', 'Resolusi Asli', 'Ekstraksi Cepat']
+          : ['Clean Template Video', 'No CapCut Logo', 'Original Resolution', 'Fast Extraction'],
       }
     case 'facebook':
       return {
         name: 'Facebook',
-        subtitle: 'Download public Facebook videos and reels in high definition',
+        subtitle: isId
+          ? 'Download video dan reels publik Facebook kualitas HD'
+          : 'Download public Facebook videos and reels in high definition',
         placeholder: 'Paste Facebook video link (e.g. https://www.facebook.com/watch?v=...)',
-        features: ['HD & SD Video', 'Reels Support', 'Direct MP4 File', 'No Account Required'],
+        features: isId
+          ? ['Video HD & SD', 'Mendukung Reels', 'File MP4 Langsung', 'Tanpa Akun']
+          : ['HD & SD Video', 'Reels Support', 'Direct MP4 File', 'No Account Required'],
       }
     case 'terabox':
       return {
         name: 'TeraBox',
-        subtitle: 'Direct high-speed download links for TeraBox files, folders, and shared videos',
+        subtitle: isId
+          ? 'Link download langsung cepat untuk file, folder, dan video TeraBox'
+          : 'Direct high-speed download links for TeraBox files, folders, and shared videos',
         placeholder: 'Paste TeraBox share link (e.g. https://terabox.com/s/... or https://terabox.app/s/...)',
-        features: ['Fast Direct Link', 'HD Video Stream', 'Multi-File Folder Support', 'Apify & Direct Engine'],
+        features: isId
+          ? ['Link Download Langsung', 'HD Video Stream', 'Mendukung Multi-File', 'Dual Engine']
+          : ['Fast Direct Link', 'HD Video Stream', 'Multi-File Folder Support', 'Apify & Direct Engine'],
       }
     case 'soundcloud':
       return {
         name: 'SoundCloud',
-        subtitle: 'Download SoundCloud tracks, podcast episodes, and 500x500 Ultra HD cover artwork',
+        subtitle: isId
+          ? 'Download lagu SoundCloud, podcast, DJ mix, dan cover artwork HD'
+          : 'Download SoundCloud tracks, podcast episodes, and 500x500 Ultra HD cover artwork',
         placeholder: 'Paste SoundCloud track link (e.g. https://soundcloud.com/artist/track)...',
-        features: ['MP3 Audio Stream', 'Ultra HD Artwork', 'Track Info', 'Direct Proxy'],
+        features: isId
+          ? ['Stream Audio MP3', 'Cover Art HD', 'Info Lagu', 'Direct Stream']
+          : ['MP3 Audio Stream', 'Ultra HD Artwork', 'Track Info', 'Direct Proxy'],
       }
     case 'spotify':
       return {
         name: 'Spotify',
-        subtitle: 'Fetch track metadata, Ultra HD album cover artwork, and 320kbps MP3 audio streams',
+        subtitle: isId
+          ? 'Ambil metadata lagu, cover album HD, dan stream audio MP3'
+          : 'Fetch track metadata, Ultra HD album cover artwork, and 320kbps MP3 audio streams',
         placeholder: 'Paste Spotify track link (e.g. https://open.spotify.com/track/...)...',
-        features: ['320kbps MP3 Audio', 'HQ 30s Preview', 'Ultra HD Album Art', 'Fast Stream'],
+        features: isId
+          ? ['Audio MP3 Berkualitas', 'Preview 30 Detik', 'Cover Album HD', 'Stream Cepat']
+          : ['320kbps MP3 Audio', 'HQ 30s Preview', 'Ultra HD Album Art', 'Fast Stream'],
       }
     default:
       return {
         name: 'Media Downloader',
-        subtitle: 'Universal media scraper and high-resolution stream extractor',
+        subtitle: isId
+          ? 'Pengunduh media serbaguna dan stream extractor resolusi tinggi'
+          : 'Universal media scraper and high-resolution stream extractor',
         placeholder: 'Paste media link...',
-        features: ['Direct Stream', 'Original Quality', 'Client Privacy', 'Fast Processing'],
+        features: isId
+          ? ['Direct Stream', 'Kualitas Asli', 'Client Privacy', 'Proses Cepat']
+          : ['Direct Stream', 'Original Quality', 'Client Privacy', 'Fast Processing'],
       }
   }
 })

@@ -28,10 +28,12 @@ import {
 } from 'lucide-vue-next'
 import { Mp3Encoder } from '@breezystack/lamejs'
 import { useToast } from '~/composables/useToast'
+import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
+const { t, locale } = useI18n()
 
 interface AudioKeyframe {
   id: string
@@ -1205,20 +1207,20 @@ onUnmounted(() => {
           <span>/</span>
           <span>Tools</span>
           <span>/</span>
-          <span class="text-white">Audio Extractor & Trimmer</span>
+          <span class="text-white">{{ t.tools['audio-cutter']?.title || 'Audio Extractor & Trimmer' }}</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-              Audio Extractor & Trimmer
+              {{ t.tools['audio-cutter']?.title || 'Audio Extractor & Trimmer' }}
             </h1>
             <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-              Extract sound from video or audio files, split clips, import multiple tracks, and create music mashups with keyframe volume automation.
+              {{ t.tools['audio-cutter']?.description || 'Extract sound from video or audio files, split clips, import multiple tracks, and create music mashups with keyframe volume automation.' }}
             </p>
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <Badge variant="badge">Client Privacy</Badge>
+            <Badge variant="badge">{{ t.clientPrivacy }}</Badge>
           </div>
         </div>
       </div>
@@ -1237,10 +1239,10 @@ onUnmounted(() => {
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
-              Drop your audio or video file here or browse
+              {{ t.dropzoneBrowse }}
             </h3>
             <p class="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
-              Supports MP4, WebM, MOV, MP3, WAV, AAC, M4A, OGG, and FLAC. 100% processed client-side.
+              {{ t.dropzoneAudioDesc }}
             </p>
           </div>
         </div>
@@ -1267,7 +1269,7 @@ onUnmounted(() => {
           <!-- Add Media Button -->
           <Button variant="secondary" size="sm" class="font-medium cursor-pointer" @click="triggerAddMedia">
             <Plus class="w-3.5 h-3.5 mr-1.5" />
-            <span>Add Media</span>
+            <span>{{ t.addMedia }}</span>
           </Button>
 
           <!-- Replace Button -->

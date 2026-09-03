@@ -18,6 +18,7 @@ import {
   Plus
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { useI18n } from '~/composables/useI18n'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
@@ -40,6 +41,7 @@ interface CompressedItem {
 }
 
 const toast = useToast()
+const { t, locale } = useI18n()
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
 const items = ref<CompressedItem[]>([])
@@ -368,17 +370,17 @@ const handleContainerTouchMove = (e: TouchEvent) => {
       <span>/</span>
       <span>Tools</span>
       <span>/</span>
-      <span class="text-white">Image Compressor</span>
+      <span class="text-white">{{ t.tools['image-compressor']?.title || 'Image Compressor' }}</span>
     </div>
 
     <!-- Title Row with Client Privacy Badge -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-          Image Compressor
+          {{ t.tools['image-compressor']?.title || 'Image Compressor' }}
         </h1>
         <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-          Smart visually-lossless compression without losing original resolution or clarity. 100% Client-Side.
+          {{ t.tools['image-compressor']?.description || 'Smart visually-lossless compression without losing original resolution or clarity.' }}
         </p>
       </div>
 
@@ -391,9 +393,9 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           @click="fileInputRef?.click()"
         >
           <Plus class="w-3.5 h-3.5 mr-1.5 text-white/70" />
-          <span>Add Images</span>
+          <span>{{ t.addImages }}</span>
         </Button>
-        <Badge variant="badge">Client Privacy</Badge>
+        <Badge variant="badge">{{ t.clientPrivacy }}</Badge>
       </div>
     </div>
 
@@ -423,10 +425,10 @@ const handleContainerTouchMove = (e: TouchEvent) => {
 
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
-              Drop your images here or browse
+              {{ t.dropzoneBrowse }}
             </h3>
             <p class="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
-              Supports PNG, JPG, JPEG, WebP, SVG, and AVIF up to 20MB. 100% processed client-side.
+              {{ t.dropzoneImageDesc }}
             </p>
           </div>
         </div>
@@ -441,7 +443,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           <!-- Preset Buttons -->
           <div class="space-y-2">
             <label class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] block">
-              Compression Mode
+              {{ t.compressionMode }}
             </label>
             <div class="flex flex-wrap items-center gap-2">
               <button
@@ -454,7 +456,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
                 "
                 @click="quality = 92; reprocessAll()"
               >
-                Smart Lossless
+                {{ t.smartLossless }}
               </button>
 
               <button
@@ -467,7 +469,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
                 "
                 @click="quality = 85; reprocessAll()"
               >
-                Recommended
+                {{ t.recommended }}
               </button>
 
               <button
@@ -480,7 +482,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
                 "
                 @click="quality = 70; reprocessAll()"
               >
-                Max Compression
+                {{ t.maxCompression }}
               </button>
             </div>
           </div>
@@ -489,7 +491,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           <div class="flex items-center gap-3 w-full sm:w-auto">
             <div class="space-y-1.5 min-w-[160px]">
               <label class="text-xs font-medium text-[var(--text-secondary)] block">
-                Output Format
+                {{ t.outputFormat }}
               </label>
               <select
                 v-model="outputFormat"
@@ -531,7 +533,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
             class="text-[var(--text-secondary)] hover:text-red-400"
           >
             <Trash2 class="w-3.5 h-3.5 mr-1" />
-            Clear All
+            {{ t.clearAll }}
           </Button>
 
           <Button
@@ -542,7 +544,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
             class="flex-1 sm:flex-initial"
           >
             <Download class="w-3.5 h-3.5 mr-1.5" />
-            Download All (ZIP)
+            {{ t.downloadAllZip }}
           </Button>
         </div>
       </div>

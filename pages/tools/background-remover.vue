@@ -20,11 +20,13 @@ import {
   FolderOpen
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { useI18n } from '~/composables/useI18n'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
+const { t, locale } = useI18n()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
@@ -327,17 +329,17 @@ const resetAll = () => {
       <span>/</span>
       <span>Tools</span>
       <span>/</span>
-      <span class="text-white">Background Remover</span>
+      <span class="text-white">{{ t.tools['background-remover']?.title || 'Background Remover' }}</span>
     </div>
 
     <!-- Title Row with Client Privacy Badge -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-          Background Remover
+          {{ t.tools['background-remover']?.title || 'Background Remover' }}
         </h1>
         <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-          High-precision background removal powered by Remove.bg API. Upload files, enter links, or paste with Ctrl+V.
+          {{ t.tools['background-remover']?.description || '100% Client-side AI neural segmentation to remove backgrounds instantly without server uploads.' }}
         </p>
       </div>
 
@@ -350,9 +352,9 @@ const resetAll = () => {
           @click="resetAll"
         >
           <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
-          <span>Upload Another</span>
+          <span>{{ locale === 'id' ? 'Upload Foto Lain' : 'Upload Another' }}</span>
         </Button>
-        <Badge variant="badge">Client Privacy</Badge>
+        <Badge variant="badge">{{ t.clientPrivacy }}</Badge>
       </div>
     </div>
 
@@ -381,14 +383,14 @@ const resetAll = () => {
           <input
             v-model="imageUrlInput"
             type="url"
-            placeholder="Paste image link (URL) or press Ctrl+V anywhere..."
+            :placeholder="locale === 'id' ? 'Tempel link foto (URL) atau tekan Ctrl+V di mana saja...' : 'Paste image link (URL) or press Ctrl+V anywhere...'"
             class="w-full h-11 pl-10 pr-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
           />
           <button
             type="button"
             class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
             @click="pasteFromClipboard"
-            title="Paste from clipboard"
+            :title="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
           >
             <Clipboard class="w-4 h-4" />
           </button>
@@ -403,7 +405,7 @@ const resetAll = () => {
           :loading="isFetchingUrl"
         >
           <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
-          <span>Fetch & Cutout</span>
+          <span>{{ locale === 'id' ? 'Ambil Foto' : 'Fetch & Cutout' }}</span>
         </Button>
       </form>
 
@@ -422,10 +424,10 @@ const resetAll = () => {
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
-              Drop your image here or browse
+              {{ t.dropzoneBrowse }}
             </h3>
             <p class="text-xs text-[var(--text-secondary)] mt-1">
-              Supports PNG, JPG, JPEG, and WebP up to 20MB.
+              {{ t.dropzoneImageDesc }}
             </p>
           </div>
         </div>

@@ -15,10 +15,12 @@ import {
   FolderOpen
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
+const { t, locale } = useI18n()
 
 // Source state
 const videoFile = ref<File | null>(null)
@@ -429,10 +431,10 @@ onUnmounted(() => {
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-          Video to GIF
+          {{ t.tools['video-to-gif']?.title || 'Video to GIF' }}
         </h1>
         <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5">
-          Trim video clips and convert into animated GIFs with FPS and resolution controls.
+          {{ t.tools['video-to-gif']?.description || 'Trim video clips and convert into animated GIFs with FPS and resolution controls.' }}
         </p>
       </div>
 
@@ -444,7 +446,7 @@ onUnmounted(() => {
           @click="fileInputRef?.click()"
         >
           <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
-          <span>Change Video</span>
+          <span>{{ locale === 'id' ? 'Ganti Video' : 'Change Video' }}</span>
         </Button>
       </div>
     </div>
@@ -458,7 +460,7 @@ onUnmounted(() => {
           <input
             v-model="videoUrlInput"
             type="url"
-            placeholder="Paste direct video URL, Twitter/X post, or social link..."
+            :placeholder="locale === 'id' ? 'Tempel link video langsung, Twitter/X, atau link medsos...' : 'Paste direct video URL, Twitter/X post, or social link...'"
             class="w-full h-11 pl-10 pr-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
             @keydown.enter="fetchVideoFromUrl"
           />
@@ -466,7 +468,7 @@ onUnmounted(() => {
             type="button"
             class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
             @click="pasteFromClipboard"
-            title="Paste from clipboard"
+            :title="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
           >
             <Clipboard class="w-4 h-4" />
           </button>
@@ -480,7 +482,7 @@ onUnmounted(() => {
           @click="fetchVideoFromUrl"
         >
           <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
-          <span>Fetch Video</span>
+          <span>{{ t.fetchVideo }}</span>
         </Button>
       </div>
 
@@ -499,10 +501,10 @@ onUnmounted(() => {
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
-              Drop your video file here or browse
+              {{ t.dropzoneBrowse }}
             </h3>
             <p class="text-xs text-[var(--text-secondary)] mt-1">
-              Supports MP4, WebM, MOV, and AVI up to 100MB. 100% processed client-side.
+              {{ t.dropzoneVideoDesc }}
             </p>
           </div>
         </div>
