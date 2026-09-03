@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Columns,
   Maximize2,
+  Plus
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
@@ -360,158 +361,154 @@ const handleContainerTouchMove = (e: TouchEvent) => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header & Breadcrumbs -->
-    <div>
-      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
-        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">
-          Dashboard
-        </NuxtLink>
-        <span>/</span>
-        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
-        <span>/</span>
-        <span class="text-[var(--text-primary)]">Image Compressor</span>
+  <div class="space-y-6 pb-12 w-full">
+    <!-- Header & Breadcrumbs (Standard Design Mandate) -->
+    <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-tertiary)]">
+      <NuxtLink to="/" class="hover:text-white transition-colors">Dashboard</NuxtLink>
+      <span>/</span>
+      <span>Tools</span>
+      <span>/</span>
+      <span class="text-white">Image Compressor</span>
+    </div>
+
+    <!-- Title Row with Client Privacy Badge -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+          Image Compressor
+        </h1>
+        <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+          Smart visually-lossless compression without losing original resolution or clarity. 100% Client-Side.
+        </p>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            Image Compressor
-          </h1>
-          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Smart visually-lossless compression without losing original resolution or clarity. 100% Client-Side.
-          </p>
-        </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <Button
+          v-if="items.length > 0"
+          variant="secondary"
+          size="default"
+          class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
+          @click="fileInputRef?.click()"
+        >
+          <Plus class="w-3.5 h-3.5 mr-1.5 text-white/70" />
+          <span>Add Images</span>
+        </Button>
+        <Badge variant="badge">Client Privacy</Badge>
+      </div>
+    </div>
 
-        <div class="flex items-center gap-2">
-          <Badge variant="secondary">
-            {{ items.length }} / 5 Files
-          </Badge>
+    <!-- Empty Upload State -->
+    <div v-if="items.length === 0">
+      <div
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
+        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+        @dragover.prevent="isDragging = true"
+        @dragleave.prevent="isDragging = false"
+        @drop.prevent="onDrop"
+        @click="fileInputRef?.click()"
+      >
+        <input
+          ref="fileInputRef"
+          type="file"
+          multiple
+          accept="image/*,.svg"
+          class="hidden"
+          @change="onFileInputChange"
+        />
+
+        <div class="max-w-md mx-auto space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+            <FileImage class="w-6 h-6 text-white" />
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+              Drop your images here or browse
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+              Supports PNG, JPG, JPEG, WebP, SVG, and AVIF up to 20MB. 100% processed client-side.
+            </p>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Compression Controls & Presets -->
-    <Card class="p-4 sm:p-5">
-      <!-- Quality Presets & Output Format -->
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        <!-- Preset Buttons -->
-        <div class="space-y-2">
-          <label class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] block">
-            Compression Mode
-          </label>
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
-              :class="
-                quality === 92
-                  ? 'bg-white text-black border-white shadow-xs font-semibold'
-                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white hover:border-[var(--border-card-hover)]'
-              "
-              @click="quality = 92; reprocessAll()"
-            >
-              Smart Lossless
-            </button>
-
-            <button
-              type="button"
-              class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
-              :class="
-                quality === 85
-                  ? 'bg-white text-black border-white shadow-xs font-semibold'
-                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white hover:border-[var(--border-card-hover)]'
-              "
-              @click="quality = 85; reprocessAll()"
-            >
-              Recommended
-            </button>
-
-            <button
-              type="button"
-              class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
-              :class="
-                quality === 70
-                  ? 'bg-white text-black border-white shadow-xs font-semibold'
-                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white hover:border-[var(--border-card-hover)]'
-              "
-              @click="quality = 70; reprocessAll()"
-            >
-              Max Compression
-            </button>
-          </div>
-        </div>
-
-        <!-- Output Format Selector -->
-        <div class="flex items-center gap-3 w-full sm:w-auto">
-          <div class="space-y-1.5 min-w-[160px]">
-            <label class="text-xs font-medium text-[var(--text-secondary)] block">
-              Output Format
+    <!-- Active Compression Dashboard -->
+    <div v-else class="space-y-5">
+      <!-- Top Settings Bar (Quality Presets & Output Format) -->
+      <Card class="p-4 sm:p-5">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <!-- Preset Buttons -->
+          <div class="space-y-2">
+            <label class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] block">
+              Compression Mode
             </label>
-            <select
-              v-model="outputFormat"
-              @change="reprocessAll"
-              class="w-full h-9 px-3 bg-[var(--bg-input)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg text-xs font-medium focus:outline-none focus:border-white transition-colors cursor-pointer"
-            >
-              <option value="auto">Auto (Smart WebP)</option>
-              <option value="original">Original Format</option>
-              <option value="webp">WebP (Smallest)</option>
-              <option value="jpeg">JPEG / JPG</option>
-              <option value="png">PNG (Lossless)</option>
-            </select>
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
+                :class="
+                  quality === 92
+                    ? 'bg-white text-black border-white shadow-xs font-semibold'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white hover:border-[var(--border-card-hover)]'
+                "
+                @click="quality = 92; reprocessAll()"
+              >
+                Smart Lossless
+              </button>
+
+              <button
+                type="button"
+                class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
+                :class="
+                  quality === 85
+                    ? 'bg-white text-black border-white shadow-xs font-semibold'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white hover:border-[var(--border-card-hover)]'
+                "
+                @click="quality = 85; reprocessAll()"
+              >
+                Recommended
+              </button>
+
+              <button
+                type="button"
+                class="px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer border"
+                :class="
+                  quality === 70
+                    ? 'bg-white text-black border-white shadow-xs font-semibold'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white hover:border-[var(--border-card-hover)]'
+                "
+                @click="quality = 70; reprocessAll()"
+              >
+                Max Compression
+              </button>
+            </div>
+          </div>
+
+          <!-- Output Format Selector -->
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <div class="space-y-1.5 min-w-[160px]">
+              <label class="text-xs font-medium text-[var(--text-secondary)] block">
+                Output Format
+              </label>
+              <select
+                v-model="outputFormat"
+                @change="reprocessAll"
+                class="w-full h-9 px-3 bg-[var(--bg-input)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-lg text-xs font-medium focus:outline-none focus:border-white transition-colors cursor-pointer"
+              >
+                <option value="auto">Auto (Smart WebP)</option>
+                <option value="original">Original Format</option>
+                <option value="webp">WebP (Smallest)</option>
+                <option value="jpeg">JPEG / JPG</option>
+                <option value="png">PNG (Lossless)</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
 
-    <!-- Upload Zone (Max 5 files) -->
-    <div
-      class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-12 text-center transition-all cursor-pointer select-none"
-      :class="
-        isDragging
-          ? 'border-white bg-[var(--bg-card-hover)]'
-          : 'border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[var(--border-card-hover)]'
-      "
-      @dragover.prevent="isDragging = true"
-      @dragleave.prevent="isDragging = false"
-      @drop.prevent="onDrop"
-      @click="fileInputRef?.click()"
-    >
-      <input
-        ref="fileInputRef"
-        type="file"
-        multiple
-        accept="image/*,.svg"
-        class="hidden"
-        @change="onFileInputChange"
-      />
-
-      <div class="max-w-md mx-auto space-y-4">
-        <div class="w-14 h-14 mx-auto rounded-2xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-md">
-          <UploadCloud class="w-7 h-7 text-white" />
-        </div>
-
-        <div>
-          <h3 class="text-base font-semibold text-[var(--text-primary)]">
-            Drop your images here or browse
-          </h3>
-          <p class="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
-            Support PNG, JPG, JPEG, WebP, SVG, AVIF, GIF, BMP. Maximum 5 photos per batch.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-[#212121] text-[var(--text-secondary)] border border-[var(--border-subtle)]">PNG</span>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-[#212121] text-[var(--text-secondary)] border border-[var(--border-subtle)]">JPG / JPEG</span>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-[#212121] text-[var(--text-secondary)] border border-[var(--border-subtle)]">WEBP</span>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-[#212121] text-[var(--text-secondary)] border border-[var(--border-subtle)]">SVG</span>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-[#212121] text-[var(--text-secondary)] border border-[var(--border-subtle)]">AVIF</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Compressed Files List -->
-    <div v-if="items.length > 0" class="space-y-4">
+      <!-- Compressed Files List -->
+      <div class="space-y-4">
       <!-- List Header & Actions -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px]">
         <div>
@@ -631,8 +628,9 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Enhanced Pixel-Perfect Comparison Modal -->
+  <!-- Enhanced Pixel-Perfect Comparison Modal -->
     <Modal
       :model-value="compareModalOpen"
       max-width="4xl"

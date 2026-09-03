@@ -1200,47 +1200,48 @@ onUnmounted(() => {
     <!-- State 1: Empty Dropzone -->
     <div v-if="!currentAudioBuffer" class="space-y-6">
       <div class="space-y-2">
-        <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">
-          <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
+        <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-tertiary)]">
+          <NuxtLink to="/" class="hover:text-white transition-colors">Dashboard</NuxtLink>
           <span>/</span>
-          <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+          <span>Tools</span>
           <span>/</span>
-          <span class="text-[var(--text-primary)]">Audio Studio</span>
+          <span class="text-white">Audio Extractor & Trimmer</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-              Audio Extractor & Multi-Track Studio
+              Audio Extractor & Trimmer
             </h1>
             <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
               Extract sound from video or audio files, split clips, import multiple tracks, and create music mashups with keyframe volume automation.
             </p>
           </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <Badge variant="badge">Client Privacy</Badge>
+          </div>
         </div>
       </div>
 
       <div
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none"
-        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : 'border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[var(--border-card-hover)]'"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
+        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="(e) => { isDragging = false; if (e.dataTransfer?.files[0]) processMediaFile(e.dataTransfer.files[0]) }"
         @click="fileInputRef?.click()"
       >
-        <div class="max-w-md mx-auto space-y-4">
-          <div class="w-14 h-14 mx-auto rounded-2xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-md">
-            <Upload class="w-7 h-7 text-white" />
+        <div class="max-w-md mx-auto space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+            <Music class="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 class="text-base font-semibold text-[var(--text-primary)]">Drop your audio or video file here or browse</h3>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+              Drop your audio or video file here or browse
+            </h3>
             <p class="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
-              Support MP4, WebM, MOV, MP3, WAV, AAC, M4A, OGG, and FLAC. 100% client-side.
+              Supports MP4, WebM, MOV, MP3, WAV, AAC, M4A, OGG, and FLAC. 100% processed client-side.
             </p>
-          </div>
-          <div class="flex flex-wrap items-center justify-center gap-1.5 pt-1">
-            <span v-for="fmt in ['MP4', 'WEBM', 'MP3', 'WAV', 'AAC', 'M4A', 'FLAC']" :key="fmt" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-[#212121] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
-              {{ fmt }}
-            </span>
           </div>
         </div>
       </div>

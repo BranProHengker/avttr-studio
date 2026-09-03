@@ -15,7 +15,9 @@ import {
   Clipboard,
   Link as LinkIcon,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  ArrowRight,
+  FolderOpen
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
@@ -49,11 +51,6 @@ const gradients = [
   'linear-gradient(to top, #0ba360 0%, #3cba92 100%)',
   'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)',
   'linear-gradient(135deg, #171717 0%, #2E2E2E 100%)',
-]
-
-// Quick Sample Images for 1-click test
-const sampleImages = [
-  { name: 'Mio Character', url: '/mio.png' },
 ]
 
 // File drop & upload handler
@@ -323,28 +320,39 @@ const resetAll = () => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header & Breadcrumbs -->
-    <div>
-      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
-        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">
-          Dashboard
-        </NuxtLink>
-        <span>/</span>
-        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
-        <span>/</span>
-        <span class="text-[var(--text-primary)]">Background Remover</span>
+  <div class="space-y-6 pb-12 w-full">
+    <!-- Header & Breadcrumbs (Standard Design Mandate) -->
+    <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-tertiary)]">
+      <NuxtLink to="/" class="hover:text-white transition-colors">Dashboard</NuxtLink>
+      <span>/</span>
+      <span>Tools</span>
+      <span>/</span>
+      <span class="text-white">Background Remover</span>
+    </div>
+
+    <!-- Title Row with Client Privacy Badge -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+          Background Remover
+        </h1>
+        <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+          High-precision background removal powered by Remove.bg API. Upload files, enter links, or paste with Ctrl+V.
+        </p>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            Background Remover
-          </h1>
-          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            High-precision background removal powered by Remove.bg API. Upload files, enter links, or paste with Ctrl+V.
-          </p>
-        </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <Button
+          v-if="originalImageUrl"
+          variant="secondary"
+          size="default"
+          class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
+          @click="resetAll"
+        >
+          <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
+          <span>Upload Another</span>
+        </Button>
+        <Badge variant="badge">Client Privacy</Badge>
       </div>
     </div>
 
@@ -366,38 +374,38 @@ const resetAll = () => {
 
     <!-- Empty Upload & URL Input Workspace -->
     <div v-if="!originalImageUrl" class="space-y-4">
-      <!-- 1. Quick URL & Clipboard Paste Bar -->
-      <Card :hoverable="false" class="p-4">
-        <form @submit.prevent="fetchImageFromUrl()" class="flex flex-col sm:flex-row items-center gap-2.5">
-          <div class="relative flex-1 w-full">
-            <LinkIcon class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              v-model="imageUrlInput"
-              type="url"
-              placeholder="Paste image link (URL) or press Ctrl+V anywhere..."
-              class="w-full pl-10 pr-12 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 font-mono"
-            />
-            <button
-              type="button"
-              class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
-              @click="pasteFromClipboard"
-              title="Paste from clipboard"
-            >
-              <Clipboard class="w-4 h-4" />
-            </button>
-          </div>
-
-          <Button
-            type="submit"
-            variant="primary"
-            class="w-full sm:w-auto font-semibold text-xs shrink-0 py-2.5"
-            :disabled="!imageUrlInput || isFetchingUrl"
+      <!-- 1. Standalone URL & Clipboard Paste Omnibox (No Outer Card) -->
+      <form @submit.prevent="fetchImageFromUrl()" class="flex flex-col sm:flex-row items-center gap-2.5">
+        <div class="relative w-full flex-1 flex items-center">
+          <LinkIcon class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            v-model="imageUrlInput"
+            type="url"
+            placeholder="Paste image link (URL) or press Ctrl+V anywhere..."
+            class="w-full h-11 pl-10 pr-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+          />
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+            @click="pasteFromClipboard"
+            title="Paste from clipboard"
           >
-            <Sparkles class="w-3.5 h-3.5 mr-1.5" />
-            Fetch & Cutout
-          </Button>
-        </form>
-      </Card>
+            <Clipboard class="w-4 h-4" />
+          </button>
+        </div>
+
+        <Button
+          type="submit"
+          variant="secondary"
+          size="default"
+          class="w-full sm:w-auto h-11 px-5 rounded-xl font-medium text-xs shrink-0 cursor-pointer"
+          :disabled="!imageUrlInput.trim() || isFetchingUrl"
+          :loading="isFetchingUrl"
+        >
+          <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
+          <span>Fetch & Cutout</span>
+        </Button>
+      </form>
 
       <!-- 2. Main Standardized Dropzone -->
       <div
@@ -410,34 +418,19 @@ const resetAll = () => {
       >
         <div class="max-w-md mx-auto space-y-3">
           <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <Sparkles class="w-6 h-6 text-white" />
+            <ImageIcon class="w-6 h-6 text-white" />
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
               Drop your image here or browse
             </h3>
             <p class="text-xs text-[var(--text-secondary)] mt-1">
-              Supports PNG, JPG, JPEG, and WebP up to 20MB. 100% processed client-side.
+              Supports PNG, JPG, JPEG, and WebP up to 20MB.
             </p>
           </div>
         </div>
 
         <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
-      </div>
-
-      <!-- 3. Quick Sample Try Section -->
-      <div class="flex items-center gap-2 pt-1 text-xs text-[var(--text-tertiary)]">
-        <span>No image at hand? Try with sample:</span>
-        <button
-          v-for="s in sampleImages"
-          :key="s.name"
-          type="button"
-          class="px-2.5 py-1 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-white/40 rounded-lg text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5"
-          @click="fetchImageFromUrl(s.url)"
-        >
-          <img :src="s.url" :alt="s.name" class="w-4 h-4 rounded object-cover" />
-          <span>{{ s.name }}</span>
-        </button>
       </div>
     </div>
 
