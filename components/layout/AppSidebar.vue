@@ -302,7 +302,18 @@ const isRouteActive = (targetRoute: string) => {
                     : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                Spotify & Audio
+                Spotify
+              </NuxtLink>
+              <NuxtLink
+                to="/d/soundcloud"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/d/soundcloud')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                SoundCloud
               </NuxtLink>
               <NuxtLink
                 to="/tools/audio-cutter"
@@ -449,6 +460,17 @@ const isRouteActive = (targetRoute: string) => {
                 "
               >
                 Audio Extractor & Trimmer
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/video-to-gif"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/video-to-gif')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Video to GIF Studio
               </NuxtLink>
               <NuxtLink
                 to="/tools/hash-encoder"

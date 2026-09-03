@@ -6,7 +6,9 @@ import { instagramScraper } from '~/server/utils/scrapers/instagram'
 import { youtubeScraper } from '~/server/utils/scrapers/youtube'
 import { twitterScraper } from '~/server/utils/scrapers/twitter'
 import { capcutScraper } from '~/server/utils/scrapers/capcut'
-import { facebookScraper, spotifyScraper } from '~/server/utils/scrapers/facebook'
+import { facebookScraper } from '~/server/utils/scrapers/facebook'
+import { spotifyScraper } from '~/server/utils/scrapers/spotify'
+import { soundcloudScraper } from '~/server/utils/scrapers/soundcloud'
 import { teraboxScraper } from '~/server/utils/scrapers/terabox'
 import { resolveCobalt } from '~/server/utils/scrapers/cobaltFallback'
 
@@ -18,6 +20,7 @@ const scrapers = [
   capcutScraper,
   facebookScraper,
   spotifyScraper,
+  soundcloudScraper,
   teraboxScraper,
 ]
 

@@ -64,13 +64,26 @@ const platformInfo = computed(() => {
         placeholder: 'Paste TeraBox share link (e.g. https://terabox.com/s/... or https://terabox.app/s/...)',
         features: ['Fast Direct Link', 'HD Video Stream', 'Multi-File Folder Support', 'Apify & Direct Engine'],
       }
+    case 'soundcloud':
+      return {
+        name: 'SoundCloud',
+        subtitle: 'Download SoundCloud tracks, podcast episodes, and 500x500 Ultra HD cover artwork',
+        placeholder: 'Paste SoundCloud track link (e.g. https://soundcloud.com/artist/track)...',
+        features: ['MP3 Audio Stream', 'Ultra HD Artwork', 'Track Info', 'Direct Proxy'],
+      }
     case 'spotify':
+      return {
+        name: 'Spotify',
+        subtitle: 'Fetch track metadata, Ultra HD album cover artwork, and 320kbps MP3 audio streams',
+        placeholder: 'Paste Spotify track link (e.g. https://open.spotify.com/track/...)...',
+        features: ['320kbps MP3 Audio', 'HQ 30s Preview', 'Ultra HD Album Art', 'Fast Stream'],
+      }
     default:
       return {
-        name: 'Spotify & Audio',
-        subtitle: 'Fetch track metadata, album cover artwork, and audio streams',
-        placeholder: 'Paste Spotify or SoundCloud link...',
-        features: ['Audio Stream', 'HD Album Art', 'Track Info', 'Fast Processing'],
+        name: 'Media Downloader',
+        subtitle: 'Universal media scraper and high-resolution stream extractor',
+        placeholder: 'Paste media link...',
+        features: ['Direct Stream', 'Original Quality', 'Client Privacy', 'Fast Processing'],
       }
   }
 })

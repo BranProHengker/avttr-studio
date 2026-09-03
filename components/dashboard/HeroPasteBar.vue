@@ -90,13 +90,13 @@ const submitBatch = () => {
 </script>
 
 <template>
-  <div class="w-full bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] p-4 sm:p-5 shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all space-y-3.5">
-    <!-- Header Mode Switcher Tabs -->
-    <div class="flex items-center justify-between">
+  <div class="w-full space-y-2.5">
+    <!-- Header Mode Switcher Tabs (Placed Above Card) -->
+    <div class="flex items-center justify-between px-1">
       <div class="flex items-center bg-[#171717] border border-[#262626] rounded-lg p-0.5">
         <button
           type="button"
-          class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
           :class="mode === 'single' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white'"
           @click="mode = 'single'"
         >
@@ -106,7 +106,7 @@ const submitBatch = () => {
 
         <button
           type="button"
-          class="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
           :class="mode === 'batch' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white'"
           @click="mode = 'batch'"
         >
@@ -123,10 +123,12 @@ const submitBatch = () => {
       </span>
     </div>
 
-    <!-- Mode 1: Single Link Input -->
-    <div v-if="mode === 'single'" class="flex flex-col sm:flex-row items-center gap-3">
-      <!-- Input Wrapper -->
-      <div class="relative w-full flex-1 flex items-center">
+    <!-- Main Card -->
+    <div class="w-full bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] p-4 sm:p-5 shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all space-y-3.5">
+      <!-- Mode 1: Single Link Input -->
+      <div v-if="mode === 'single'" class="flex flex-col sm:flex-row items-center gap-3">
+        <!-- Input Wrapper -->
+        <div class="relative w-full flex-1 flex items-center">
         <!-- Platform Icon or Link Icon -->
         <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-primary)]">
           <BrandIcon v-if="platform" :name="platform" :size="18" />
@@ -240,5 +242,6 @@ const submitBatch = () => {
       <span>•</span>
       <span class="hover:text-[var(--text-secondary)]">TeraBox</span>
     </div>
+  </div>
   </div>
 </template>

@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
+import { PanelLeft } from 'lucide-vue-next'
 import Badge from '~/components/ui/Badge.vue'
 
 defineEmits<{
@@ -43,9 +44,7 @@ onMounted(() => {
         @click="$emit('toggle-sidebar')"
         aria-label="Toggle navigation"
       >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
+        <PanelLeft class="w-5 h-5" />
       </button>
 
       <div class="flex items-center gap-2 shrink-0">
