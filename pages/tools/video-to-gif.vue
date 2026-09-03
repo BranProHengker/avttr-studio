@@ -9,6 +9,7 @@ import {
   Upload,
   Copy,
   Check,
+  Clipboard,
   ArrowRight,
   Link as LinkIcon,
   FolderOpen
@@ -190,6 +191,22 @@ const fetchVideoFromUrl = async () => {
     toast.error('Fetch Failed', err.message || 'Unable to fetch video from URL. Check if link is public.')
   } finally {
     isFetchingUrl.value = false
+  }
+}
+
+// Paste from Clipboard Button Handler
+const pasteFromClipboard = async () => {
+  try {
+    const text = await navigator.clipboard.readText()
+    if (text && text.trim()) {
+      videoUrlInput.value = text.trim()
+      toast.info('Pasted from Clipboard', text.trim().slice(0, 40) + '...')
+      fetchVideoFromUrl()
+    } else {
+      toast.warning('Clipboard Empty', 'No URL found in clipboard')
+    }
+  } catch {
+    toast.error('Clipboard Access', 'Use Ctrl+V / ⌘V to paste directly')
   }
 }
 
@@ -442,9 +459,17 @@ onUnmounted(() => {
             v-model="videoUrlInput"
             type="url"
             placeholder="Paste direct video URL, Twitter/X post, or social link..."
-            class="w-full h-11 pl-10 pr-4 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            class="w-full h-11 pl-10 pr-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
             @keydown.enter="fetchVideoFromUrl"
           />
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+            @click="pasteFromClipboard"
+            title="Paste from clipboard"
+          >
+            <Clipboard class="w-4 h-4" />
+          </button>
         </div>
         <Button
           variant="secondary"

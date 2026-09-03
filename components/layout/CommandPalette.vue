@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue'
 import { useSearch } from '~/composables/useSearch'
 import { useI18n } from '~/composables/useI18n'
 import Badge from '~/components/ui/Badge.vue'
@@ -59,21 +59,35 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
+const focusInput = () => {
+  nextTick(() => {
+    inputRef.value?.focus()
+    setTimeout(() => {
+      inputRef.value?.focus()
+    }, 50)
+    setTimeout(() => {
+      inputRef.value?.focus()
+    }, 150)
+  })
+}
+
 watch(
   () => props.isOpen,
   (val) => {
     if (val) {
       selectedIndex.value = 0
-      setTimeout(() => {
-        inputRef.value?.focus()
-      }, 50)
+      focusInput()
     }
-  }
+  },
+  { immediate: true }
 )
 
 onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeydown)
+  }
+  if (props.isOpen) {
+    focusInput()
   }
 })
 
@@ -117,6 +131,7 @@ onUnmounted(() => {
               ref="inputRef"
               v-model="searchQuery"
               type="text"
+              autofocus
               :placeholder="t.searchPlaceholder"
               class="w-full bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none"
             />
