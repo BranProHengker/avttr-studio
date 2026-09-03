@@ -187,7 +187,14 @@ export interface ScraperResult {
 ---
 
 ## 6. UI & Aesthetic Guardrails (DESIGN.md Mandate)
-* **Strict Mandate on `DESIGN.md`:** All pages, components, and tools MUST strictly follow the design tokens, typography, and spacing defined in `DESIGN.md`.
+* **MANDATORY CO-READING OF `DESIGN.md`:** Whenever an AI Agent reads Rules or `AGENTS.md`, the agent MUST ALSO read `DESIGN.md`. Design consistency, tokens, and layouts defined in `DESIGN.md` are strictly binding across all pages, components, and tools without exception.
+* **Standardized File Upload & Dropzone Standard (DESIGN.md Section 10):**
+  * All tools requiring local file uploads MUST use the standardized standalone dashed dropzone (`relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none`).
+  * Never wrap the dashed box inside an extra `<Card>`.
+  * Center Tile: `w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs` with a 24px Lucide icon.
+  * Headline: `text-sm font-semibold text-[var(--text-primary)]` (`Drop your [type] file here or browse`).
+  * Subtitle: `text-xs text-[var(--text-secondary)] mt-1` (`Supports [formats] up to [size]. 100% processed client-side.`).
+  * Strictly forbidden to insert unnecessary divider lines or text like `"OR DROP FILE"` between URL omniboxes and dropzones.
 * **Uniform Page Layout & Full-Width Fluid Standard:** 
   * All sub-pages, downloader routes, and tools MUST use the standardized full-width container: `class="space-y-6 pb-12 w-full"`.
   * **Strict Ban on Narrow Max-Widths & `mx-auto` on Page Roots:** Never place `max-w-5xl`, `max-w-4xl`, or `mx-auto` on top-level page containers. Interfaces must utilize the full content width fluidly.

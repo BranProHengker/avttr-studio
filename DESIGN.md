@@ -272,3 +272,34 @@ To maintain instant initial page loads and 60fps animations across devices, the 
 * **Native Lazy Loading:** All `<img>` tags (thumbnails in history, avatars, media gallery previews) MUST include `loading="lazy"` and `decoding="async"`.
 * **Skeleton Loading Pulse:** Temporary fetching states must use the `<Skeleton>` component (`bg-[#27272A]/60 rounded-md animate-pulse`) to prevent layout shift (CLS = 0).
 
+---
+
+## 10. Standardized File Upload & Dropzone Architecture
+
+All tools requiring local file uploads (Video to GIF, Audio Cutter, Image Converter, Image Compressor, Background Remover, PDF Tools, etc.) MUST use this unified, minimalist dropzone specification:
+
+### A. Layout & Geometry Standard
+* **Outer Container:** Standalone dashed box — **NEVER** wrap inside an extra `<Card>`.
+  ```html
+  <div
+    class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
+    :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+    @dragover.prevent="isDragging = true"
+    @dragleave.prevent="isDragging = false"
+    @drop.prevent="onDrop"
+    @click="fileInputRef?.click()"
+  >
+  ```
+* **Center Icon Tile:** Crisp 48px square tile with 24px Lucide icon:
+  ```html
+  <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+    <ComponentIcon class="w-6 h-6 text-white" />
+  </div>
+  ```
+* **Typography & Copy Structure:**
+  * Headline (`text-sm font-semibold text-[var(--text-primary)]`): `Drop your [type] file here or browse`
+  * Subtitle (`text-xs text-[var(--text-secondary)] mt-1`): `Supports [formats] up to [size]. 100% processed client-side.`
+* **Prohibition on Unnecessary Dividers:**
+  * **Strictly Forbidden:** Never include decorative divider lines with text like `"OR DROP FILE"` between URL bars and dropzones. The spatial hierarchy alone separates the inputs cleanly.
+
+

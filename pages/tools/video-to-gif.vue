@@ -426,13 +426,6 @@ onUnmounted(() => {
         </Button>
       </div>
 
-      <!-- Divider -->
-      <div class="flex items-center gap-3 text-xs font-mono text-neutral-500">
-        <div class="flex-1 h-px bg-[#262626]" />
-        <span>OR DROP FILE</span>
-        <div class="flex-1 h-px bg-[#262626]" />
-      </div>
-
       <!-- Dropzone -->
       <div
         class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none"

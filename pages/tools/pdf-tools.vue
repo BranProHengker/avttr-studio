@@ -474,29 +474,29 @@ const handleExecuteImgToPdf = async () => {
 
     <!-- TAB 1: MERGE PDF -->
     <div v-if="activeTab === 'merge'" class="space-y-6">
-      <!-- Upload Dropzone -->
-      <Card class="p-6 sm:p-8 border-dashed border-2 border-[var(--border-subtle)] hover:border-white/30 transition-all text-center">
-        <label class="flex flex-col items-center justify-center gap-3 cursor-pointer">
-          <div class="w-12 h-12 rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-[var(--text-secondary)] group-hover:text-white transition-colors">
-            <Upload class="w-6 h-6" />
+      <!-- Standardized Upload Dropzone -->
+      <label class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]">
+        <div class="max-w-md mx-auto space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+            <Upload class="w-6 h-6 text-white" />
           </div>
-          <div class="space-y-1">
-            <p class="text-sm font-semibold text-[var(--text-primary)]">
-              Click or drag & drop PDF files to combine
-            </p>
-            <p class="text-xs text-[var(--text-tertiary)]">
-              Support multiple PDF files • Up to 200MB+ per file
+          <div>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+              Drop your PDF files here or browse
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] mt-1">
+              Supports multiple PDF files up to 200MB+ per file. 100% processed client-side.
             </p>
           </div>
-          <input
-            type="file"
-            multiple
-            accept=".pdf,application/pdf"
-            class="hidden"
-            @change="handleMergeFileUpload"
-          />
-        </label>
-      </Card>
+        </div>
+        <input
+          type="file"
+          multiple
+          accept=".pdf,application/pdf"
+          class="hidden"
+          @change="handleMergeFileUpload"
+        />
+      </label>
 
       <!-- Files List -->
       <div v-if="mergeFiles.length > 0" class="space-y-4">
@@ -599,31 +599,31 @@ const handleExecuteImgToPdf = async () => {
 
     <!-- TAB 2: SPLIT & EXTRACT -->
     <div v-if="activeTab === 'split'" class="space-y-6">
-      <!-- Upload Dropzone -->
-      <Card
+      <!-- Standardized Upload Dropzone -->
+      <label
         v-if="!splitFile"
-        class="p-6 sm:p-8 border-dashed border-2 border-[var(--border-subtle)] hover:border-white/30 transition-all text-center"
+        class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
       >
-        <label class="flex flex-col items-center justify-center gap-3 cursor-pointer">
-          <div class="w-12 h-12 rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-[var(--text-secondary)] group-hover:text-white transition-colors">
-            <Scissors class="w-6 h-6" />
+        <div class="max-w-md mx-auto space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+            <Scissors class="w-6 h-6 text-white" />
           </div>
-          <div class="space-y-1">
-            <p class="text-sm font-semibold text-[var(--text-primary)]">
-              Click or drag & drop 1 PDF file to extract pages
-            </p>
-            <p class="text-xs text-[var(--text-tertiary)]">
-              Specify custom page ranges or extract single pages
+          <div>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+              Drop your PDF file here or browse
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] mt-1">
+              Extract single pages or custom ranges. 100% processed client-side.
             </p>
           </div>
-          <input
-            type="file"
-            accept=".pdf,application/pdf"
-            class="hidden"
-            @change="handleSplitFileUpload"
-          />
-        </label>
-      </Card>
+        </div>
+        <input
+          type="file"
+          accept=".pdf,application/pdf"
+          class="hidden"
+          @change="handleSplitFileUpload"
+        />
+      </label>
 
       <!-- Loaded Split File Controls -->
       <div v-else class="space-y-4">
@@ -702,29 +702,29 @@ const handleExecuteImgToPdf = async () => {
 
     <!-- TAB 3: IMAGES TO PDF -->
     <div v-if="activeTab === 'img2pdf'" class="space-y-6">
-      <!-- Upload Dropzone -->
-      <Card class="p-6 sm:p-8 border-dashed border-2 border-[var(--border-subtle)] hover:border-white/30 transition-all text-center">
-        <label class="flex flex-col items-center justify-center gap-3 cursor-pointer">
-          <div class="w-12 h-12 rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-[var(--text-secondary)] group-hover:text-white transition-colors">
-            <ImageIcon class="w-6 h-6" />
+      <!-- Standardized Upload Dropzone -->
+      <label class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]">
+        <div class="max-w-md mx-auto space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+            <ImageIcon class="w-6 h-6 text-white" />
           </div>
-          <div class="space-y-1">
-            <p class="text-sm font-semibold text-[var(--text-primary)]">
-              Click or drag & drop images to convert into PDF
-            </p>
-            <p class="text-xs text-[var(--text-tertiary)]">
-              Supports JPG, PNG, WebP, BMP photos • Multi-image upload
+          <div>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+              Drop your images here or browse
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] mt-1">
+              Supports JPG, PNG, WebP, and BMP photos. 100% processed client-side.
             </p>
           </div>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            class="hidden"
-            @change="handleImageUpload"
-          />
-        </label>
-      </Card>
+        </div>
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          class="hidden"
+          @change="handleImageUpload"
+        />
+      </label>
 
       <!-- Images List & Settings -->
       <div v-if="imageFiles.length > 0" class="space-y-6">

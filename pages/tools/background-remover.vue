@@ -24,6 +24,9 @@ import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
 
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const isDragging = ref(false)
+
 const originalImageFile = ref<File | null>(null)
 const originalImageUrl = ref<string | null>(null)
 const processedImageUrl = ref<string | null>(null)
@@ -396,29 +399,31 @@ const resetAll = () => {
         </form>
       </Card>
 
-      <!-- 2. Main Dropzone Card -->
-      <Card :hoverable="false" class="p-8 sm:p-12 text-center">
-        <label
-          class="border-2 border-dashed border-[var(--border-card)] hover:border-white/40 rounded-2xl p-10 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors group"
-          @dragover.prevent
-          @drop.prevent="handleDrop"
-        >
-          <div class="w-14 h-14 rounded-2xl bg-[var(--bg-input)] border border-[var(--border-subtle)] flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-xs">
+      <!-- 2. Main Standardized Dropzone -->
+      <div
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
+        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+        @dragover.prevent="isDragging = true"
+        @dragleave.prevent="isDragging = false"
+        @drop.prevent="(e) => { isDragging = false; handleDrop(e) }"
+        @click="fileInputRef?.click()"
+      >
+        <div class="max-w-md mx-auto space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
             <Sparkles class="w-6 h-6 text-white" />
           </div>
-
-          <div class="space-y-1 mt-2">
-            <div class="text-sm font-semibold text-white">
-              Drop your image here, <span class="underline underline-offset-4">browse file</span>, or paste with <kbd class="px-1.5 py-0.5 text-xs bg-[#2E2E2E] rounded border border-[#3E3E3E]">Ctrl+V</kbd>
-            </div>
-            <p class="text-xs text-[var(--text-tertiary)]">
-              Supports PNG, JPG, JPEG, WebP (Max 20MB)
+          <div>
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+              Drop your image here or browse
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] mt-1">
+              Supports PNG, JPG, JPEG, and WebP up to 20MB. 100% processed client-side.
             </p>
           </div>
+        </div>
 
-          <input type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
-        </label>
-      </Card>
+        <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
+      </div>
 
       <!-- 3. Quick Sample Try Section -->
       <div class="flex items-center gap-2 pt-1 text-xs text-[var(--text-tertiary)]">
