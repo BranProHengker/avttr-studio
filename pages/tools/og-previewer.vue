@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Sparkles,
   RefreshCw,
+  RotateCcw,
   Image as ImageIcon,
   CheckCircle2,
   AlertCircle
@@ -91,6 +92,17 @@ const loadPreset = (preset: typeof PRESETS[0]) => {
   themeColor.value = preset.themeColor
   twitterHandle.value = preset.twitterHandle
   toast.info('Preset Loaded', `Loaded ${preset.name} metadata`)
+}
+
+const resetForm = () => {
+  url.value = ''
+  title.value = ''
+  description.value = ''
+  siteName.value = ''
+  imageUrl.value = ''
+  themeColor.value = '#3b82f6'
+  twitterHandle.value = ''
+  toast.info('Form Reset', 'All metadata fields have been cleared')
 }
 
 const handleImageUpload = (e: Event) => {
@@ -438,12 +450,6 @@ const OG_REFERENCE_DATA = [
             Simulate, test, and inspect how your website link renders across Twitter/X, Discord, WhatsApp, LinkedIn, Facebook, and Google Search.
           </p>
         </div>
-
-        <div class="flex items-center gap-2">
-          <Badge variant="badge">
-            Client Privacy
-          </Badge>
-        </div>
       </div>
     </div>
 
@@ -473,11 +479,21 @@ const OG_REFERENCE_DATA = [
           </div>
         </Card>
 
-        <!-- 2. Metadata Inputs -->
         <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
-          <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
-            Page Information
-          </label>
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
+              Page Information
+            </label>
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono text-neutral-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+              title="Clear all fields"
+              @click="resetForm"
+            >
+              <RotateCcw class="w-3 h-3" />
+              <span>Reset</span>
+            </button>
+          </div>
 
           <!-- Page URL -->
           <div class="space-y-1.5">

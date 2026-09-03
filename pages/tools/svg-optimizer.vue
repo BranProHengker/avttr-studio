@@ -317,12 +317,6 @@ const handleDownloadPng = async () => {
             Clean Figma bloatware, minify path coordinates, preview interactively, and export to Vue 3, React JSX, or 4K PNG.
           </p>
         </div>
-
-        <div class="flex items-center gap-2">
-          <Badge variant="badge">
-            Client Privacy
-          </Badge>
-        </div>
       </div>
     </div>
 

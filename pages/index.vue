@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, defineAsyncComponent } from 'vue'
 import { useDownloader } from '~/composables/useDownloader'
+import { useBatchDownloader } from '~/composables/useBatchDownloader'
 import { useI18n } from '~/composables/useI18n'
 import { ALL_CATEGORIES } from '~/composables/useSearch'
 import HeroPasteBar from '~/components/dashboard/HeroPasteBar.vue'
@@ -8,8 +9,10 @@ import CategorySection from '~/components/dashboard/CategorySection.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const LazyMediaPreviewModal = defineAsyncComponent(() => import('~/components/downloaders/MediaPreviewModal.vue'))
+const LazyBatchQueueModal = defineAsyncComponent(() => import('~/components/downloaders/BatchQueueModal.vue'))
 
 const { url, loading, result, error, resolveMedia } = useDownloader()
+const { addUrls, startProcessing, isModalOpen: isBatchModalOpen } = useBatchDownloader()
 const { t } = useI18n()
 const isModalOpen = ref(false)
 
@@ -20,11 +23,18 @@ const handleResolve = async () => {
     isModalOpen.value = true
   }
 }
+
+const handleBatchSubmit = (urls: string[]) => {
+  if (!urls || urls.length === 0) return
+  addUrls(urls)
+  isBatchModalOpen.value = true
+  startProcessing()
+}
 </script>
 
 <template>
   <div class="space-y-8 pb-12">
-    <!-- Header Banner with 100% Client Privacy badge -->
+    <!-- Header Banner with 100% Client Privacy badge (Only on All Dashboard) -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div class="space-y-1.5">
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -48,6 +58,7 @@ const handleResolve = async () => {
         v-model="url"
         :loading="loading"
         @submit="handleResolve"
+        @submit-batch="handleBatchSubmit"
       />
 
       <!-- Error / Cookie Expired Alert Box -->
@@ -92,11 +103,17 @@ const handleResolve = async () => {
       />
     </div>
 
-    <!-- Lazy Loaded Media Download Preview Modal -->
+    <!-- Lazy Loaded Single Media Download Preview Modal -->
     <LazyMediaPreviewModal
       v-if="isModalOpen"
       v-model="isModalOpen"
       :result="result"
+    />
+
+    <!-- Lazy Loaded Batch Downloader Queue Modal -->
+    <LazyBatchQueueModal
+      v-if="isBatchModalOpen"
+      v-model="isBatchModalOpen"
     />
   </div>
 </template>

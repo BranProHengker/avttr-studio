@@ -461,12 +461,6 @@ const handleCopyCode = async () => {
             Transform raw code snippets into high-end macOS & Windows window screenshots with syntax highlighting and gradients.
           </p>
         </div>
-
-        <div class="flex items-center gap-2">
-          <Badge variant="badge">
-            Client Privacy
-          </Badge>
-        </div>
       </div>
     </div>
 

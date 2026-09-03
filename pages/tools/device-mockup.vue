@@ -350,12 +350,6 @@ const handleCopyImage = async () => {
             Wrap your screenshots into high-end Phone, Desktop, and minimal 3D mockups for portfolio showcase.
           </p>
         </div>
-
-        <div class="flex items-center gap-2">
-          <Badge variant="badge">
-            Client Privacy
-          </Badge>
-        </div>
       </div>
     </div>
 

@@ -436,12 +436,6 @@ const handleExecuteImgToPdf = async () => {
             Merge, split, extract pages, and convert photos to PDF completely in your browser with 100% client privacy.
           </p>
         </div>
-
-        <div class="flex items-center gap-2">
-          <Badge variant="badge">
-            Client Privacy
-          </Badge>
-        </div>
       </div>
     </div>
 

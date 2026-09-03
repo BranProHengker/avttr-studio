@@ -1216,7 +1216,6 @@ onUnmounted(() => {
               Extract sound from video or audio files, split clips, import multiple tracks, and create music mashups with keyframe volume automation.
             </p>
           </div>
-          <Badge variant="badge">Client Privacy</Badge>
         </div>
       </div>
 

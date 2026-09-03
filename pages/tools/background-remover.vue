@@ -372,16 +372,15 @@ const resetAll = () => {
               v-model="imageUrlInput"
               type="url"
               placeholder="Paste image link (URL) or press Ctrl+V anywhere..."
-              class="w-full pl-10 pr-24 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 font-mono"
+              class="w-full pl-10 pr-12 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 font-mono"
             />
             <button
               type="button"
-              class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-[#2E2E2E] hover:bg-[#3F3F46] text-white rounded text-[11px] font-medium transition-colors cursor-pointer flex items-center gap-1"
+              class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
               @click="pasteFromClipboard"
               title="Paste from clipboard"
             >
-              <Clipboard class="w-3 h-3" />
-              <span>Paste</span>
+              <Clipboard class="w-4 h-4" />
             </button>
           </div>
 
