@@ -18,7 +18,7 @@ import {
   FileText,
   AlertCircle,
   RefreshCw,
-  ExternalLink,
+  ImageIcon,
   ShieldCheck,
   Zap,
   Users,
@@ -129,6 +129,9 @@ const copyShareUrl = async () => {
 }
 
 // Camera QR Scanner Handler
+const qrImageInputRef = ref<HTMLInputElement | null>(null)
+let lastScanTimestamp = 0
+
 const startCameraScanner = async () => {
   cameraError.value = ''
   showScannerModal.value = true
@@ -151,14 +154,15 @@ const startCameraScanner = async () => {
       scannerVideoRef.value.srcObject = stream
       scannerVideoRef.value.setAttribute('playsinline', 'true')
       await scannerVideoRef.value.play()
+      lastScanTimestamp = 0
       scanAnimFrame = requestAnimationFrame(scanVideoFrame)
     }
   } catch (err: any) {
     console.error('Camera error:', err)
     isScanning.value = false
     cameraError.value = err.name === 'NotAllowedError'
-      ? 'Camera access was denied. Please allow camera permissions in your browser.'
-      : 'Unable to access camera on this device. You can join using a Room Code instead.'
+      ? 'Camera access was denied. Please allow camera permissions in your browser or select a photo of the QR code.'
+      : 'Unable to access camera on this device. You can select a QR photo or join with a room code.'
   }
 }
 
@@ -179,48 +183,110 @@ const closeScannerModal = () => {
   showScannerModal.value = false
 }
 
+const handleScannedCode = (scannedRaw: string) => {
+  const trimmed = scannedRaw.trim()
+  let targetRoom = trimmed
+
+  try {
+    const parsedUrl = new URL(trimmed)
+    const roomParam = parsedUrl.searchParams.get('room')
+    if (roomParam) {
+      targetRoom = roomParam
+    }
+  } catch {
+    // Plain text room code
+  }
+
+  if (targetRoom) {
+    closeScannerModal()
+    connect(targetRoom)
+    toast.success('Room Joined', `Connected to room: ${targetRoom}`)
+  }
+}
+
 const scanVideoFrame = () => {
   if (!isScanning.value || !scannerVideoRef.value || !scannerCanvasRef.value) return
   const video = scannerVideoRef.value
 
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+  const now = performance.now()
+  // Throttle jsQR scanning to ~8-10 scans/sec to prevent CPU/memory lockup on mobile
+  if (now - lastScanTimestamp >= 100 && video.readyState >= 2 && video.videoWidth > 0) {
+    lastScanTimestamp = now
     const canvas = scannerCanvasRef.value
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
     if (ctx) {
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert',
+      const maxDim = 640
+      let w = video.videoWidth
+      let h = video.videoHeight
+      if (w > maxDim || h > maxDim) {
+        const scale = Math.min(maxDim / w, maxDim / h)
+        w = Math.floor(w * scale)
+        h = Math.floor(h * scale)
+      }
+
+      if (canvas.width !== w) canvas.width = w
+      if (canvas.height !== h) canvas.height = h
+
+      ctx.drawImage(video, 0, 0, w, h)
+      const imageData = ctx.getImageData(0, 0, w, h)
+
+      // Use attemptBoth so both dark-on-light and light-on-dark (Avttr Studio theme) decode instantly
+      const code = jsQR(imageData.data, w, h, {
+        inversionAttempts: 'attemptBoth',
       })
 
       if (code && code.data) {
-        const scannedRaw = code.data.trim()
-        let targetRoom = scannedRaw
-
-        try {
-          const parsedUrl = new URL(scannedRaw)
-          const roomParam = parsedUrl.searchParams.get('room')
-          if (roomParam) {
-            targetRoom = roomParam
-          }
-        } catch {
-          // Plain text code
-        }
-
-        if (targetRoom) {
-          closeScannerModal()
-          connect(targetRoom)
-          toast.success('Room Joined', `Connected to room: ${targetRoom}`)
-          return
-        }
+        handleScannedCode(code.data)
+        return
       }
     }
   }
 
   scanAnimFrame = requestAnimationFrame(scanVideoFrame)
+}
+
+// Upload & scan QR image from device gallery / files
+const onQrImageUploaded = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    const img = new window.Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (!ctx) return
+
+      const maxDim = 1024
+      let w = img.width
+      let h = img.height
+      if (w > maxDim || h > maxDim) {
+        const scale = Math.min(maxDim / w, maxDim / h)
+        w = Math.floor(w * scale)
+        h = Math.floor(h * scale)
+      }
+
+      canvas.width = w
+      canvas.height = h
+      ctx.drawImage(img, 0, 0, w, h)
+      const imageData = ctx.getImageData(0, 0, w, h)
+
+      const code = jsQR(imageData.data, w, h, {
+        inversionAttempts: 'attemptBoth',
+      })
+
+      if (code && code.data) {
+        handleScannedCode(code.data)
+      } else {
+        toast.error('Scan Failed', 'Could not detect a valid QR code in this image')
+      }
+    }
+    img.src = reader.result as string
+  }
+  reader.readAsDataURL(file)
 }
 
 // Join Code Handler
@@ -336,12 +402,7 @@ const saveName = () => {
   isEditingName.value = false
 }
 
-// Open Test Peer in New Tab
-const openTestPeerTab = () => {
-  if (typeof window !== 'undefined') {
-    window.open(currentShareUrl.value, '_blank')
-  }
-}
+
 
 // Format bytes
 const formatSize = (bytes: number): string => {
@@ -477,17 +538,6 @@ onUnmounted(() => {
           <Check v-if="copiedUrl" class="w-3.5 h-3.5 mr-1.5 text-white" />
           <Share2 v-else class="w-3.5 h-3.5 mr-1.5 text-white" />
           <span>{{ copiedUrl ? 'Copied' : 'Share Link' }}</span>
-        </Button>
-
-        <Button
-          size="sm"
-          variant="outline"
-          class="text-xs hidden lg:inline-flex"
-          title="Open a second test peer in another tab"
-          @click="openTestPeerTab"
-        >
-          <ExternalLink class="w-3.5 h-3.5 mr-1.5" />
-          <span>2nd Tab</span>
         </Button>
       </div>
     </div>
@@ -878,11 +928,26 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="flex items-center justify-between gap-2 pt-1">
-          <Button variant="outline" class="text-xs" @click="closeScannerModal(); openJoinCodeModal()">
-            <Hash class="w-3.5 h-3.5 mr-1" />
-            Use Code Instead
-          </Button>
+        <!-- Hidden gallery photo input -->
+        <input
+          ref="qrImageInputRef"
+          type="file"
+          accept="image/*"
+          class="hidden"
+          @change="onQrImageUploaded"
+        />
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div class="flex items-center gap-2">
+            <Button variant="outline" class="text-xs" @click="qrImageInputRef?.click()">
+              <ImageIcon class="w-3.5 h-3.5 mr-1" />
+              Upload QR Image
+            </Button>
+            <Button variant="outline" class="text-xs" @click="closeScannerModal(); openJoinCodeModal()">
+              <Hash class="w-3.5 h-3.5 mr-1" />
+              Use Code
+            </Button>
+          </div>
           <Button variant="secondary" class="text-xs" @click="closeScannerModal">
             Cancel
           </Button>

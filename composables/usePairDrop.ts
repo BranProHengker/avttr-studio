@@ -246,6 +246,51 @@ export function usePairDrop() {
     }
   }
 
+  // ICE Candidates Queue (buffers candidates until remote description is set)
+  const iceCandidateQueue = new Map<string, RTCIceCandidateInit[]>()
+
+  const queueIceCandidate = (peerId: string, candidate: RTCIceCandidateInit) => {
+    if (!iceCandidateQueue.has(peerId)) {
+      iceCandidateQueue.set(peerId, [])
+    }
+    iceCandidateQueue.get(peerId)!.push(candidate)
+  }
+
+  const drainIceCandidates = async (peerId: string, pc: RTCPeerConnection) => {
+    const queue = iceCandidateQueue.get(peerId)
+    if (queue && queue.length > 0) {
+      for (const cand of queue) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(cand))
+        } catch {
+          // Ignore candidate errors
+        }
+      }
+      iceCandidateQueue.delete(peerId)
+    }
+  }
+
+  // Base64 Helpers for Signaling Chunk Relay Fallback
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    let binary = ''
+    const bytes = new Uint8Array(buffer)
+    const len = bytes.byteLength
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    return btoa(binary)
+  }
+
+  const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
+    const binary = atob(base64)
+    const len = binary.length
+    const bytes = new Uint8Array(len)
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes.buffer
+  }
+
   // WebRTC Peer Connection Factory
   const getOrCreatePeerConnection = (targetPeerId: string): RTCPeerConnection => {
     let pc = peerConnections.get(targetPeerId)
@@ -285,7 +330,9 @@ export function usePairDrop() {
 
     dc.onmessage = (event) => {
       if (typeof event.data === 'string') {
-        handleControlMessage(targetPeerId, JSON.parse(event.data))
+        try {
+          handleControlMessage(targetPeerId, JSON.parse(event.data))
+        } catch {}
       } else if (event.data instanceof ArrayBuffer) {
         handleBinaryChunk(targetPeerId, event.data)
       }
@@ -302,23 +349,39 @@ export function usePairDrop() {
 
     switch (payload.type) {
       case 'offer':
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
-        const answer = await pc.createAnswer()
-        await pc.setLocalDescription(answer)
-        await sendSignal(fromPeerId, {
-          type: 'answer',
-          sdp: answer,
-        })
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+          await drainIceCandidates(fromPeerId, pc)
+          const answer = await pc.createAnswer()
+          await pc.setLocalDescription(answer)
+          await sendSignal(fromPeerId, {
+            type: 'answer',
+            sdp: answer,
+          })
+        } catch (err) {
+          console.error('Error handling WebRTC offer:', err)
+        }
         break
 
       case 'answer':
-        await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp))
+          await drainIceCandidates(fromPeerId, pc)
+        } catch (err) {
+          console.error('Error handling WebRTC answer:', err)
+        }
         break
 
       case 'ice-candidate':
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(payload.candidate))
-        } catch {}
+        if (!pc.remoteDescription) {
+          queueIceCandidate(fromPeerId, payload.candidate)
+        } else {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(payload.candidate))
+          } catch {
+            queueIceCandidate(fromPeerId, payload.candidate)
+          }
+        }
         break
 
       case 'file-request':
@@ -350,6 +413,21 @@ export function usePairDrop() {
         }
         break
 
+      case 'transfer-start':
+        handleControlMessage(fromPeerId, payload)
+        break
+
+      case 'file-chunk':
+        if (payload.transferId && payload.chunk) {
+          const rawBuffer = base64ToArrayBuffer(payload.chunk)
+          handleBinaryChunk(fromPeerId, rawBuffer, payload.transferId)
+        }
+        break
+
+      case 'transfer-cancel':
+        handleControlMessage(fromPeerId, payload)
+        break
+
       case 'text-message':
         incomingText.value = {
           fromPeer: sender || {
@@ -367,7 +445,7 @@ export function usePairDrop() {
     }
   }
 
-  // Handle Control Packets over DataChannel
+  // Handle Control Packets
   const handleControlMessage = (fromPeerId: string, data: any) => {
     switch (data.type) {
       case 'transfer-start':
@@ -404,12 +482,12 @@ export function usePairDrop() {
     }
   }
 
-  // Handle Incoming Binary Chunks over DataChannel
-  const handleBinaryChunk = (fromPeerId: string, chunk: ArrayBuffer) => {
-    const transfer = activeTransfer.value
-    if (!transfer || transfer.direction !== 'receive') return
+  // Handle Incoming Binary Chunks (WebRTC DataChannel or Signal Relay)
+  const handleBinaryChunk = (fromPeerId: string, chunk: ArrayBuffer, transferIdOverride?: string) => {
+    const tId = transferIdOverride || activeTransfer.value?.transferId
+    if (!tId) return
 
-    const buffer = incomingBuffers.get(transfer.transferId)
+    const buffer = incomingBuffers.get(tId)
     if (!buffer) return
 
     buffer.chunks.push(chunk)
@@ -417,20 +495,24 @@ export function usePairDrop() {
 
     const now = Date.now()
     const dt = (now - buffer.lastTime) / 1000
-    if (dt >= 0.3) {
-      const bytesDiff = buffer.receivedBytes - buffer.lastBytes
-      transfer.speed = Math.round(bytesDiff / dt)
-      buffer.lastTime = now
-      buffer.lastBytes = buffer.receivedBytes
-    }
 
-    transfer.bytesTransferred = buffer.receivedBytes
-    transfer.progress = Math.min(100, Math.round((buffer.receivedBytes / buffer.metadata.size) * 100))
+    if (activeTransfer.value && activeTransfer.value.transferId === tId) {
+      if (dt >= 0.25) {
+        const bytesDiff = buffer.receivedBytes - buffer.lastBytes
+        activeTransfer.value.speed = Math.max(0, Math.round(bytesDiff / dt))
+        buffer.lastTime = now
+        buffer.lastBytes = buffer.receivedBytes
+      }
+      activeTransfer.value.bytesTransferred = buffer.receivedBytes
+      activeTransfer.value.progress = Math.min(100, Math.round((buffer.receivedBytes / buffer.metadata.size) * 100))
+    }
 
     // Check complete
     if (buffer.receivedBytes >= buffer.metadata.size) {
-      transfer.status = 'completed'
-      transfer.progress = 100
+      if (activeTransfer.value && activeTransfer.value.transferId === tId) {
+        activeTransfer.value.status = 'completed'
+        activeTransfer.value.progress = 100
+      }
 
       // Assemble final file Blob and trigger browser download
       const finalBlob = new Blob(buffer.chunks, { type: buffer.metadata.mimeType || 'application/octet-stream' })
@@ -438,17 +520,19 @@ export function usePairDrop() {
       const a = document.createElement('a')
       a.href = downloadUrl
       a.download = buffer.metadata.name
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(downloadUrl)
 
       toast.success('Transfer Complete', `Downloaded ${buffer.metadata.name}`)
-      incomingBuffers.delete(transfer.transferId)
+      incomingBuffers.delete(tId)
 
       setTimeout(() => {
-        if (activeTransfer.value?.transferId === transfer.transferId) {
+        if (activeTransfer.value?.transferId === tId) {
           activeTransfer.value = null
         }
-      }, 3000)
+      }, 2500)
     }
   }
 
@@ -474,10 +558,10 @@ export function usePairDrop() {
       status: 'pending',
     }
 
-    // Connect WebRTC if not yet established
-    await ensureDataChannel(targetPeer.peerId)
+    // Pre-negotiate WebRTC connection in background (non-blocking)
+    ensureDataChannel(targetPeer.peerId, 2000).catch(() => {})
 
-    // Request consent from receiver
+    // Send instant consent request to receiver via signaling
     await sendSignal(targetPeer.peerId, {
       type: 'file-request',
       transferId,
@@ -490,60 +574,108 @@ export function usePairDrop() {
     })
   }
 
-  // Ensure WebRTC DataChannel is ready
-  const ensureDataChannel = async (targetPeerId: string): Promise<RTCDataChannel> => {
+  // Ensure WebRTC DataChannel is ready with timeout fallback
+  const ensureDataChannel = async (targetPeerId: string, timeoutMs = 3000): Promise<RTCDataChannel | null> => {
     let dc = dataChannels.get(targetPeerId)
     if (dc && dc.readyState === 'open') {
       return dc
     }
 
     const pc = getOrCreatePeerConnection(targetPeerId)
-    dc = pc.createDataChannel('pairdrop-channel')
-    setupDataChannel(targetPeerId, dc)
 
-    const offer = await pc.createOffer()
-    await pc.setLocalDescription(offer)
-    await sendSignal(targetPeerId, {
-      type: 'offer',
-      sdp: offer,
-    })
+    if (!dc || dc.readyState === 'closed') {
+      try {
+        dc = pc.createDataChannel('pairdrop-channel')
+        setupDataChannel(targetPeerId, dc)
+
+        const offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+        await sendSignal(targetPeerId, {
+          type: 'offer',
+          sdp: offer,
+        })
+      } catch (err) {
+        console.warn('WebRTC offer error:', err)
+      }
+    }
 
     return new Promise((resolve) => {
-      if (dc!.readyState === 'open') {
-        resolve(dc!)
+      if (dc && dc.readyState === 'open') {
+        resolve(dc)
         return
       }
-      dc!.onopen = () => {
-        resolve(dc!)
+
+      let timer: any = null
+
+      const onOpen = () => {
+        if (timer) clearTimeout(timer)
+        resolve(dc || null)
       }
+
+      if (dc) {
+        dc.addEventListener('open', onOpen, { once: true })
+      }
+
+      timer = setTimeout(() => {
+        if (dc) {
+          dc.removeEventListener('open', onOpen)
+        }
+        resolve(dc && dc.readyState === 'open' ? dc : null)
+      }, timeoutMs)
     })
   }
 
-  // Stream file chunks via DataChannel with backpressure control
+  // Stream file chunks via DataChannel (or Signal Relay fallback if P2P NAT fails)
   const startStreamingFile = async (targetPeerId: string, file: File, transferId: string) => {
-    const dc = await ensureDataChannel(targetPeerId)
     if (!activeTransfer.value || activeTransfer.value.transferId !== transferId) return
 
     activeTransfer.value.status = 'transferring'
 
-    // Notify receiver about transfer start
-    dc.send(
-      JSON.stringify({
-        type: 'transfer-start',
-        transferId,
-        name: file.name,
-        size: file.size,
-        mimeType: file.type,
-      })
-    )
+    // Try WebRTC DataChannel (max 2.5s wait)
+    const dc = await ensureDataChannel(targetPeerId, 2500)
+    const useWebRTC = dc !== null && dc.readyState === 'open'
+
+    const startPayload = {
+      type: 'transfer-start',
+      transferId,
+      name: file.name,
+      size: file.size,
+      mimeType: file.type,
+    }
+
+    if (useWebRTC) {
+      dc!.send(JSON.stringify(startPayload))
+    } else {
+      // Direct signal relay fallback
+      await sendSignal(targetPeerId, startPayload)
+    }
 
     let offset = 0
     let lastTime = Date.now()
     let lastBytes = 0
 
-    const readAndSendNextChunk = () => {
+    const updateProgress = (currentOffset: number) => {
+      if (!activeTransfer.value || activeTransfer.value.transferId !== transferId) return
+      activeTransfer.value.bytesTransferred = currentOffset
+      activeTransfer.value.progress = Math.min(100, Math.round((currentOffset / file.size) * 100))
+
+      const now = Date.now()
+      const dt = (now - lastTime) / 1000
+      if (dt >= 0.25) {
+        const diff = currentOffset - lastBytes
+        activeTransfer.value.speed = Math.max(0, Math.round(diff / dt))
+        lastTime = now
+        lastBytes = currentOffset
+      }
+    }
+
+    const streamNextChunk = async () => {
       if (isSendingCancelled || !activeTransfer.value || activeTransfer.value.transferId !== transferId) {
-        dc.send(JSON.stringify({ type: 'transfer-cancel', transferId }))
+        if (useWebRTC && dc?.readyState === 'open') {
+          dc.send(JSON.stringify({ type: 'transfer-cancel', transferId }))
+        } else {
+          await sendSignal(targetPeerId, { type: 'transfer-cancel', transferId })
+        }
         return
       }
 
@@ -556,50 +688,49 @@ export function usePairDrop() {
             activeTransfer.value = null
             currentSendFile = null
           }
-        }, 3000)
+        }, 2500)
         return
       }
 
-      // Backpressure check (prevent buffer overflow in browser memory)
-      if (dc.bufferedAmount > 8 * CHUNK_SIZE) {
+      // WebRTC flow control & backpressure
+      if (useWebRTC && dc && dc.bufferedAmount > 8 * CHUNK_SIZE) {
         dc.onbufferedamountlow = () => {
           dc.onbufferedamountlow = null
-          readAndSendNextChunk()
+          streamNextChunk()
         }
         return
       }
 
-      const slice = file.slice(offset, offset + CHUNK_SIZE)
-      const reader = new FileReader()
+      const chunkSize = useWebRTC ? CHUNK_SIZE : 48 * 1024
+      const slice = file.slice(offset, offset + chunkSize)
 
-      reader.onload = () => {
-        if (reader.result instanceof ArrayBuffer) {
-          dc.send(reader.result)
-          offset += reader.result.byteLength
+      try {
+        const arrayBuffer = await slice.arrayBuffer()
 
-          if (activeTransfer.value) {
-            activeTransfer.value.bytesTransferred = offset
-            activeTransfer.value.progress = Math.min(100, Math.round((offset / file.size) * 100))
-
-            const now = Date.now()
-            const dt = (now - lastTime) / 1000
-            if (dt >= 0.3) {
-              const diff = offset - lastBytes
-              activeTransfer.value.speed = Math.round(diff / dt)
-              lastTime = now
-              lastBytes = offset
-            }
-          }
-
-          // Continue streaming
-          setTimeout(readAndSendNextChunk, 0)
+        if (useWebRTC && dc?.readyState === 'open') {
+          dc.send(arrayBuffer)
+          offset += arrayBuffer.byteLength
+          updateProgress(offset)
+          setTimeout(streamNextChunk, 0)
+        } else {
+          // Signaling relay transmission
+          const base64Chunk = arrayBufferToBase64(arrayBuffer)
+          await sendSignal(targetPeerId, {
+            type: 'file-chunk',
+            transferId,
+            chunk: base64Chunk,
+            offset,
+          })
+          offset += arrayBuffer.byteLength
+          updateProgress(offset)
+          setTimeout(streamNextChunk, 8)
         }
+      } catch (err) {
+        console.error('Error streaming chunk:', err)
       }
-
-      reader.readAsArrayBuffer(slice)
     }
 
-    readAndSendNextChunk()
+    streamNextChunk()
   }
 
   // Receiver actions
@@ -608,7 +739,31 @@ export function usePairDrop() {
     const req = incomingRequest.value
     incomingRequest.value = null
 
-    await ensureDataChannel(req.fromPeer.peerId)
+    // Prepare buffer on receiver
+    incomingBuffers.set(req.transferId, {
+      metadata: req.file,
+      chunks: [],
+      receivedBytes: 0,
+      startTime: Date.now(),
+      lastTime: Date.now(),
+      lastBytes: 0,
+    })
+
+    activeTransfer.value = {
+      transferId: req.transferId,
+      direction: 'receive',
+      peerId: req.fromPeer.peerId,
+      peerName: req.fromPeer.name,
+      fileName: req.file.name,
+      fileSize: req.file.size,
+      mimeType: req.file.mimeType,
+      progress: 0,
+      bytesTransferred: 0,
+      speed: 0,
+      status: 'transferring',
+    }
+
+    // Send immediate acceptance to sender
     await sendSignal(req.fromPeer.peerId, {
       type: 'file-accepted',
       transferId: req.transferId,
@@ -633,6 +788,8 @@ export function usePairDrop() {
       const dc = dataChannels.get(peerId)
       if (dc && dc.readyState === 'open') {
         dc.send(JSON.stringify({ type: 'transfer-cancel', transferId }))
+      } else {
+        sendSignal(peerId, { type: 'transfer-cancel', transferId })
       }
       activeTransfer.value = null
       currentSendFile = null
