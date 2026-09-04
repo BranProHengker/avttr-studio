@@ -53,7 +53,7 @@ const NOUNS = [
   'Cheetah', 'Leopard', 'Owl', 'Gazelle', 'Orion', 'Viper', 'Condor', 'Stag'
 ]
 
-const CHUNK_SIZE = 64 * 1024 // 64KB chunks for optimal WebRTC throughput
+const CHUNK_SIZE = 16 * 1024 // 16KB universally safe SCTP packet size for mobile & desktop WebRTC
 
 function generateRandomName(): string {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
@@ -122,6 +122,8 @@ export function usePairDrop() {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
     ],
   }
 
@@ -204,6 +206,15 @@ export function usePairDrop() {
     }
   }
 
+  // Callbacks for peer lifecycle events
+  type PeerJoinedCallback = (peer: PeerDevice) => void
+  const peerJoinedCallbacks = new Set<PeerJoinedCallback>()
+
+  const onPeerJoined = (cb: PeerJoinedCallback) => {
+    peerJoinedCallbacks.add(cb)
+    return () => peerJoinedCallbacks.delete(cb)
+  }
+
   // Handle incoming signaling messages from SSE
   const handleServerMessage = async (msg: any) => {
     switch (msg.type) {
@@ -214,8 +225,18 @@ export function usePairDrop() {
 
       case 'peer-joined':
         if (msg.peer && msg.peer.peerId !== myPeerId.value) {
+          const isNew = !peers.value.some((p) => p.peerId === msg.peer.peerId)
           peers.value = peers.value.filter((p) => p.peerId !== msg.peer.peerId)
           peers.value.push(msg.peer)
+          if (isNew) {
+            peerJoinedCallbacks.forEach((cb) => {
+              try {
+                cb(msg.peer)
+              } catch (err) {
+                console.error('peerJoined callback error:', err)
+              }
+            })
+          }
         }
         break
 
@@ -230,20 +251,25 @@ export function usePairDrop() {
     }
   }
 
-  // Send signal to another peer via HTTP POST
-  const sendSignal = async (toPeerId: string, payload: any) => {
-    try {
-      await $fetch('/api/pairdrop/signal', {
-        method: 'POST',
-        body: {
-          from: myPeerId.value,
-          to: toPeerId,
-          payload,
-        },
-      })
-    } catch {
-      // Signal send failed
+  // Send signal to another peer via HTTP POST with automatic retry
+  const sendSignal = async (toPeerId: string, payload: any, retries = 2): Promise<boolean> => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        await $fetch('/api/pairdrop/signal', {
+          method: 'POST',
+          body: {
+            from: myPeerId.value,
+            to: toPeerId,
+            payload,
+          },
+        })
+        return true
+      } catch (err) {
+        if (attempt === retries) return false
+        await new Promise((resolve) => setTimeout(resolve, 80 * (attempt + 1)))
+      }
     }
+    return false
   }
 
   // ICE Candidates Queue (buffers candidates until remote description is set)
@@ -326,6 +352,7 @@ export function usePairDrop() {
   // Setup WebRTC DataChannel handlers
   const setupDataChannel = (targetPeerId: string, dc: RTCDataChannel) => {
     dc.binaryType = 'arraybuffer'
+    dc.bufferedAmountLowThreshold = 64 * 1024
     dataChannels.set(targetPeerId, dc)
 
     dc.onmessage = (event) => {
@@ -633,7 +660,7 @@ export function usePairDrop() {
 
     // Try WebRTC DataChannel (max 2.5s wait)
     const dc = await ensureDataChannel(targetPeerId, 2500)
-    const useWebRTC = dc !== null && dc.readyState === 'open'
+    let useWebRTC = dc !== null && dc.readyState === 'open'
 
     const startPayload = {
       type: 'transfer-start',
@@ -644,7 +671,12 @@ export function usePairDrop() {
     }
 
     if (useWebRTC) {
-      dc!.send(JSON.stringify(startPayload))
+      try {
+        dc!.send(JSON.stringify(startPayload))
+      } catch {
+        useWebRTC = false
+        await sendSignal(targetPeerId, startPayload)
+      }
     } else {
       // Direct signal relay fallback
       await sendSignal(targetPeerId, startPayload)
@@ -661,7 +693,7 @@ export function usePairDrop() {
 
       const now = Date.now()
       const dt = (now - lastTime) / 1000
-      if (dt >= 0.25) {
+      if (dt >= 0.2) {
         const diff = currentOffset - lastBytes
         activeTransfer.value.speed = Math.max(0, Math.round(diff / dt))
         lastTime = now
@@ -672,7 +704,9 @@ export function usePairDrop() {
     const streamNextChunk = async () => {
       if (isSendingCancelled || !activeTransfer.value || activeTransfer.value.transferId !== transferId) {
         if (useWebRTC && dc?.readyState === 'open') {
-          dc.send(JSON.stringify({ type: 'transfer-cancel', transferId }))
+          try {
+            dc.send(JSON.stringify({ type: 'transfer-cancel', transferId }))
+          } catch {}
         } else {
           await sendSignal(targetPeerId, { type: 'transfer-cancel', transferId })
         }
@@ -692,41 +726,60 @@ export function usePairDrop() {
         return
       }
 
-      // WebRTC flow control & backpressure
-      if (useWebRTC && dc && dc.bufferedAmount > 8 * CHUNK_SIZE) {
-        dc.onbufferedamountlow = () => {
-          dc.onbufferedamountlow = null
+      // WebRTC flow control & backpressure with safety timeout
+      if (useWebRTC && dc && dc.bufferedAmount > 256 * 1024) {
+        let resumed = false
+        const resume = () => {
+          if (resumed) return
+          resumed = true
+          if (dc) dc.onbufferedamountlow = null
           streamNextChunk()
         }
+        dc.onbufferedamountlow = resume
+        setTimeout(resume, 60)
         return
       }
 
-      const chunkSize = useWebRTC ? CHUNK_SIZE : 48 * 1024
+      const chunkSize = useWebRTC ? CHUNK_SIZE : 32 * 1024
       const slice = file.slice(offset, offset + chunkSize)
 
       try {
         const arrayBuffer = await slice.arrayBuffer()
 
         if (useWebRTC && dc?.readyState === 'open') {
-          dc.send(arrayBuffer)
-          offset += arrayBuffer.byteLength
-          updateProgress(offset)
-          setTimeout(streamNextChunk, 0)
-        } else {
-          // Signaling relay transmission
-          const base64Chunk = arrayBufferToBase64(arrayBuffer)
-          await sendSignal(targetPeerId, {
-            type: 'file-chunk',
-            transferId,
-            chunk: base64Chunk,
-            offset,
-          })
-          offset += arrayBuffer.byteLength
-          updateProgress(offset)
-          setTimeout(streamNextChunk, 8)
+          try {
+            dc.send(arrayBuffer)
+            offset += arrayBuffer.byteLength
+            updateProgress(offset)
+            setTimeout(streamNextChunk, 0)
+            return
+          } catch (dcErr) {
+            console.warn('WebRTC DataChannel send failed, switching to signaling relay fallback:', dcErr)
+            useWebRTC = false
+          }
         }
-      } catch (err) {
+
+        // Signaling relay transmission with automatic retry
+        const base64Chunk = arrayBufferToBase64(arrayBuffer)
+        const sent = await sendSignal(targetPeerId, {
+          type: 'file-chunk',
+          transferId,
+          chunk: base64Chunk,
+          offset,
+        }, 3)
+
+        if (!sent) {
+          throw new Error('Failed to deliver chunk via signaling relay')
+        }
+
+        offset += arrayBuffer.byteLength
+        updateProgress(offset)
+        setTimeout(streamNextChunk, 8)
+      } catch (err: any) {
         console.error('Error streaming chunk:', err)
+        activeTransfer.value.status = 'error'
+        activeTransfer.value.error = err?.message || 'Transfer failed'
+        toast.error('Transfer Failed', 'File transfer was interrupted. Please try again.')
       }
     }
 
@@ -864,5 +917,6 @@ export function usePairDrop() {
     rejectIncoming,
     cancelTransfer,
     closeIncomingText,
+    onPeerJoined,
   }
 }

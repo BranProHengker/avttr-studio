@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   Wifi,
   WifiOff,
@@ -62,6 +62,7 @@ const {
   rejectIncoming,
   cancelTransfer,
   closeIncomingText,
+  onPeerJoined,
 } = usePairDrop()
 
 // Modals State
@@ -85,6 +86,31 @@ const isScanning = ref(false)
 const cameraError = ref('')
 let mediaStream: MediaStream | null = null
 let scanAnimFrame: number | null = null
+
+// Auto-close QR modal / room code modal when another device connects, and notify
+onPeerJoined((peer) => {
+  if (showQrModal.value || showRoomModal.value || showJoinCodeModal.value) {
+    showQrModal.value = false
+    showRoomModal.value = false
+    showJoinCodeModal.value = false
+    toast.success('Device Connected', `${peer.name} successfully joined via QR code!`)
+  } else {
+    toast.info('New Device Connected', `${peer.name} joined the room`)
+  }
+})
+
+watch(
+  () => peers.value.length,
+  (newCount, oldCount) => {
+    if (newCount > oldCount && (showQrModal.value || showRoomModal.value || showJoinCodeModal.value)) {
+      const newlyJoined = peers.value[peers.value.length - 1]
+      showQrModal.value = false
+      showRoomModal.value = false
+      showJoinCodeModal.value = false
+      toast.success('Device Connected', `${newlyJoined?.name || 'New device'} joined the room!`)
+    }
+  }
+)
 
 // Hidden File Input
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -572,23 +598,9 @@ onUnmounted(() => {
             <h3 class="text-sm font-semibold text-white">
               Scanning for Nearby Devices
             </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-1">
+            <p class="text-xs text-[var(--text-secondary)] mt-1 max-w-xs mx-auto">
               Open PairDrop on your phone, tablet, or another laptop connected to the same Wi-Fi network.
             </p>
-          </div>
-          <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
-            <Button size="sm" variant="primary" class="text-xs" @click="startCameraScanner">
-              <Camera class="w-3.5 h-3.5 mr-1 text-black" />
-              Scan Camera
-            </Button>
-            <Button size="sm" variant="secondary" class="text-xs" @click="openJoinCodeModal">
-              <Hash class="w-3.5 h-3.5 mr-1 text-white" />
-              Enter Code
-            </Button>
-            <Button size="sm" variant="secondary" class="text-xs" @click="showQrModal = true">
-              <QrCode class="w-3.5 h-3.5 mr-1 text-white" />
-              Show QR
-            </Button>
           </div>
         </div>
 
