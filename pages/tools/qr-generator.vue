@@ -555,12 +555,6 @@ onMounted(async () => {
         >
           <Sparkles class="w-3.5 h-3.5" />
           <span>QRBTF Parametric</span>
-          <span
-            class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-mono font-semibold"
-            :class="generatorMode === 'artistic' ? 'bg-black/10 text-black' : 'bg-white/10 text-white/70'"
-          >
-            Art
-          </span>
         </button>
 
         <button
