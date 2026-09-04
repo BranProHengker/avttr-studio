@@ -407,6 +407,17 @@ const isRouteActive = (targetRoute: string) => {
                 QR Code Generator
               </NuxtLink>
               <NuxtLink
+                to="/tools/pairdrop"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/pairdrop')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                PairDrop (P2P Transfer)
+              </NuxtLink>
+              <NuxtLink
                 to="/tools/brat-generator"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="

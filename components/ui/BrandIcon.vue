@@ -135,6 +135,24 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3zm-5.5-8.5h-3v3.5H7.5l4.5 4.5 4.5-4.5h-3z"/>
     </svg>
 
+    <!-- PairDrop / P2P AirDrop Vector -->
+    <svg
+      v-else-if="normalized === 'pairdrop' || normalized === 'airdrop' || normalized === 'p2p-drop'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <path d="M4.93 4.93a10 10 0 0 1 14.14 0" />
+      <path d="M7.76 7.76a6 6 0 0 1 8.48 0" />
+      <path d="M10.59 10.59a2 2 0 0 1 2.82 0" />
+      <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+      <path d="M12 14v2.5" />
+    </svg>
+
     <!-- QR Code / Scanner Vector -->
     <svg
       v-else-if="normalized === 'qr-generator' || normalized === 'qrcode'"

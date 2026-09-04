@@ -132,6 +132,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'pairdrop',
+        title: 'PairDrop (P2P File Transfer)',
+        description: 'Encrypted direct peer-to-peer file and text transfer over local Wi-Fi. Zero server storage.',
+        category: 'image',
+        icon: 'pairdrop',
+        route: '/tools/pairdrop',
+        badge: 'P2P',
+        popular: true,
+      },
+      {
         id: 'background-remover',
         title: 'Background Remover',
         description: '100% Client-side AI neural segmentation to remove backgrounds instantly without server uploads.',
