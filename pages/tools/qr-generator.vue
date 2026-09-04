@@ -80,7 +80,7 @@ const qrPayload = computed(() => {
 })
 
 // Artistic Parametric State (QRBTF Engine)
-const selectedArtisticStyle = ref<ArtisticStyle>('lines')
+const selectedArtisticStyle = ref<ArtisticStyle>('default')
 const selectedAnchorStyle = ref<AnchorStyle>('rounded')
 const selectedLineDirection = ref<LineDirection>('horizontal')
 const dotScale = ref(0.88)
@@ -93,16 +93,16 @@ interface ArtisticStyleMeta {
   id: ArtisticStyle
   name: string
   subtitle: string
-  tag: string
 }
 
 const artisticStylesList: ArtisticStyleMeta[] = [
-  { id: 'lines', name: 'Fluid Lines', subtitle: 'Continuous connected ribbons', tag: 'A2' },
-  { id: 'isometric', name: '2.5D Isometric', subtitle: 'Architectural 3D shaded cubes', tag: 'SP-1' },
-  { id: 'radar', name: 'Concentric Radar', subtitle: 'Orbital rings & scanner beams', tag: 'B1' },
-  { id: 'circuit', name: 'Cyber Circuit', subtitle: 'PCB motherboard solder traces', tag: 'Func' },
-  { id: 'halftone', name: 'Optical Halftone', subtitle: 'Wave-modulated dot matrix', tag: 'C1' },
-  { id: 'diamond', name: 'Crystal Rhombus', subtitle: '45° faceted diamond prisms', tag: 'Geo' },
+  { id: 'default', name: 'Default', subtitle: 'Standard high-contrast matrix' },
+  { id: 'lines', name: 'Fluid Lines', subtitle: 'Continuous connected ribbons' },
+  { id: 'isometric', name: '2.5D Isometric', subtitle: 'Architectural 3D shaded cubes' },
+  { id: 'radar', name: 'Concentric Radar', subtitle: 'Orbital rings & scanner beams' },
+  { id: 'circuit', name: 'Cyber Circuit', subtitle: 'PCB motherboard solder traces' },
+  { id: 'halftone', name: 'Optical Halftone', subtitle: 'Wave-modulated dot matrix' },
+  { id: 'diamond', name: 'Crystal Rhombus', subtitle: '45° faceted diamond prisms' },
 ]
 
 // Anchor Styles Metadata
@@ -821,14 +821,8 @@ onMounted(async () => {
                 @click="selectedArtisticStyle = styleItem.id"
               >
                 <div class="flex items-center justify-between w-full">
-                  <span class="text-xs font-bold text-white tracking-tight flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-white tracking-tight">
                     {{ styleItem.name }}
-                  </span>
-                  <span
-                    class="text-[10px] font-mono px-2 py-0.5 rounded-full"
-                    :class="selectedArtisticStyle === styleItem.id ? 'bg-white text-black font-bold' : 'bg-[#2E2E2E] text-white/70'"
-                  >
-                    {{ styleItem.tag }}
                   </span>
                 </div>
                 <p class="text-[11px] text-[var(--text-secondary)] leading-tight">

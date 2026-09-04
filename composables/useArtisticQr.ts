@@ -1,6 +1,6 @@
 import QRCode from 'qrcode'
 
-export type ArtisticStyle = 'lines' | 'isometric' | 'radar' | 'circuit' | 'halftone' | 'diamond'
+export type ArtisticStyle = 'default' | 'lines' | 'isometric' | 'radar' | 'circuit' | 'halftone' | 'diamond'
 export type AnchorStyle = 'square' | 'circle' | 'rounded' | 'minimal'
 export type LineDirection = 'horizontal' | 'vertical' | 'interlock'
 
@@ -55,7 +55,7 @@ export function useArtisticQr() {
   const generateArtisticSvg = (options: ArtisticQrOptions): string => {
     const {
       text = 'https://github.com/BranProHengker/avttr-studio',
-      style = 'lines',
+      style = 'default',
       anchorStyle = 'rounded',
       lineDirection = 'horizontal',
       fgColor = '#000000',
@@ -102,6 +102,22 @@ export function useArtisticQr() {
     const fillAttr = useGradient ? 'url(#artisticQrGrad)' : fgColor
 
     let dataElements = ''
+
+    // 0. DEFAULT (Clean Standard Matrix)
+    if (style === 'default') {
+      const pad = (cellW * (1 - dotScale)) / 2
+      const w = cellW * dotScale
+      const rx = (cellW * 0.15).toFixed(2)
+      for (let r = 0; r < matrixSize; r++) {
+        for (let c = 0; c < matrixSize; c++) {
+          if (isDark(r, c) && !isFinderPattern(r, c, matrixSize)) {
+            const x = (c + effectiveMargin) * cellW + pad
+            const y = (r + effectiveMargin) * cellW + pad
+            dataElements += `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${w.toFixed(2)}" rx="${rx}" ry="${rx}" fill="${fillAttr}" />\n`
+          }
+        }
+      }
+    }
 
     // 1. FLUID CONNECTING LINES (A2 Style)
     if (style === 'lines') {
