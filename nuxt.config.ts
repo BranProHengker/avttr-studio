@@ -33,8 +33,8 @@ export default defineNuxtConfig({
         { property: 'og:title', content: 'Avttr Studio — All-in-One Productivity Hub & Media Downloader' },
         { property: 'og:description', content: 'High-performance, ad-free personal web suite and multi-downloader for TikTok, Instagram, YouTube, Spotify, with AI background remover, QR code generator, and 80+ fonts.' },
         { property: 'og:image', content: '/og-image.png' },
-        { property: 'og:image:width', content: '1200' },
-        { property: 'og:image:height', content: '630' },
+        { property: 'og:image:width', content: '1280' },
+        { property: 'og:image:height', content: '720' },
         { property: 'og:image:type', content: 'image/png' },
         // Twitter Cards
         { name: 'twitter:card', content: 'summary_large_image' },
