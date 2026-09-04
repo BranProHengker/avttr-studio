@@ -533,9 +533,6 @@ onMounted(async () => {
         </div>
 
         <div class="flex items-center gap-2">
-          <Badge variant="badge">
-            Client Privacy
-          </Badge>
           <Badge variant="secondary">
             1200px PNG & Infinite SVG
           </Badge>

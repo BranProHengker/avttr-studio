@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   Wifi,
   WifiOff,
@@ -21,8 +21,13 @@ import {
   ExternalLink,
   ShieldCheck,
   Zap,
-  Users
+  Users,
+  Camera,
+  Hash,
+  ScanLine,
+  KeyRound
 } from 'lucide-vue-next'
+import jsQR from 'jsqr'
 import { usePairDrop, type PeerDevice } from '~/composables/usePairDrop'
 import { useArtisticQr } from '~/composables/useArtisticQr'
 import { useClipboard } from '~/composables/useClipboard'
@@ -63,11 +68,23 @@ const {
 const showQrModal = ref(false)
 const showRoomModal = ref(false)
 const showSendTextModal = ref(false)
+const showScannerModal = ref(false)
+const showJoinCodeModal = ref(false)
+
 const targetPeerForText = ref<PeerDevice | null>(null)
 const textToSend = ref('')
 const newRoomInput = ref('')
+const roomCodeInput = ref('')
 const isEditingName = ref(false)
 const editNameInput = ref('')
+
+// Camera Scanner state
+const scannerVideoRef = ref<HTMLVideoElement | null>(null)
+const scannerCanvasRef = ref<HTMLCanvasElement | null>(null)
+const isScanning = ref(false)
+const cameraError = ref('')
+let mediaStream: MediaStream | null = null
+let scanAnimFrame: number | null = null
 
 // Hidden File Input
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -109,6 +126,125 @@ const copyShareUrl = async () => {
   setTimeout(() => {
     copiedUrl.value = false
   }, 2000)
+}
+
+// Camera QR Scanner Handler
+const startCameraScanner = async () => {
+  cameraError.value = ''
+  showScannerModal.value = true
+  isScanning.value = true
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+      audio: false,
+    })
+    mediaStream = stream
+
+    await nextTick()
+
+    if (scannerVideoRef.value) {
+      scannerVideoRef.value.srcObject = stream
+      scannerVideoRef.value.setAttribute('playsinline', 'true')
+      await scannerVideoRef.value.play()
+      scanAnimFrame = requestAnimationFrame(scanVideoFrame)
+    }
+  } catch (err: any) {
+    console.error('Camera error:', err)
+    isScanning.value = false
+    cameraError.value = err.name === 'NotAllowedError'
+      ? 'Camera access was denied. Please allow camera permissions in your browser.'
+      : 'Unable to access camera on this device. You can join using a Room Code instead.'
+  }
+}
+
+const stopCameraScanner = () => {
+  isScanning.value = false
+  if (scanAnimFrame) {
+    cancelAnimationFrame(scanAnimFrame)
+    scanAnimFrame = null
+  }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach((track) => track.stop())
+    mediaStream = null
+  }
+}
+
+const closeScannerModal = () => {
+  stopCameraScanner()
+  showScannerModal.value = false
+}
+
+const scanVideoFrame = () => {
+  if (!isScanning.value || !scannerVideoRef.value || !scannerCanvasRef.value) return
+  const video = scannerVideoRef.value
+
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    const canvas = scannerCanvasRef.value
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+
+    if (ctx) {
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert',
+      })
+
+      if (code && code.data) {
+        const scannedRaw = code.data.trim()
+        let targetRoom = scannedRaw
+
+        try {
+          const parsedUrl = new URL(scannedRaw)
+          const roomParam = parsedUrl.searchParams.get('room')
+          if (roomParam) {
+            targetRoom = roomParam
+          }
+        } catch {
+          // Plain text code
+        }
+
+        if (targetRoom) {
+          closeScannerModal()
+          connect(targetRoom)
+          toast.success('Room Joined', `Connected to room: ${targetRoom}`)
+          return
+        }
+      }
+    }
+  }
+
+  scanAnimFrame = requestAnimationFrame(scanVideoFrame)
+}
+
+// Join Code Handler
+const openJoinCodeModal = () => {
+  roomCodeInput.value = ''
+  showJoinCodeModal.value = true
+}
+
+const submitJoinCode = () => {
+  const code = roomCodeInput.value.trim().toUpperCase()
+  if (!code) return
+  connect(code)
+  showJoinCodeModal.value = false
+  roomCodeInput.value = ''
+  toast.success('Room Joined', `Connected to room #${code}`)
+}
+
+const generateRandomRoomCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let randomCode = ''
+  for (let i = 0; i < 6; i++) {
+    randomCode += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  roomCodeInput.value = randomCode
 }
 
 // Device Icon Resolver
@@ -221,7 +357,6 @@ const formatSpeed = (bytesPerSec: number): string => {
 }
 
 onMounted(() => {
-  // Check URL query parameters for custom room code
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search)
     const roomParam = urlParams.get('room')
@@ -229,6 +364,10 @@ onMounted(() => {
       connect(roomParam)
     }
   }
+})
+
+onUnmounted(() => {
+  stopCameraScanner()
 })
 </script>
 
@@ -256,12 +395,8 @@ onMounted(() => {
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2.5">
-            <span>PairDrop</span>
-            <span
-              class="w-2.5 h-2.5 rounded-full shrink-0"
-              :class="isConnected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-amber-500'"
-            />
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+            PairDrop
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
             Zero-cloud, encrypted peer-to-peer file & text transfer over local Wi-Fi. No file size limits, zero server storage.
@@ -275,24 +410,21 @@ onMounted(() => {
           <Badge variant="secondary">
             Zero Server Bandwidth
           </Badge>
-          <Badge variant="outline">
-            Client Privacy
-          </Badge>
         </div>
       </div>
     </div>
 
-    <!-- Top Action Bar (Room status, QR pair, Rename) -->
+    <!-- Top Action Bar (Room status, Camera scan, Join code, QR pair, Share link) -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#171717] border border-[var(--border-subtle)] rounded-xl">
       <!-- Room Info -->
-      <div class="flex items-center gap-2 text-xs">
+      <div class="flex items-center gap-2.5 text-xs">
         <div class="p-1.5 rounded-lg bg-white/5 border border-white/10 text-[var(--text-secondary)]">
-          <Radio class="w-4 h-4 text-emerald-400" />
+          <Radio class="w-4 h-4 text-white/80" />
         </div>
         <div>
           <div class="text-[11px] text-[var(--text-tertiary)]">Active Network / Room</div>
-          <div class="font-semibold text-white flex items-center gap-1.5">
-            <span>{{ currentRoom === 'auto' ? 'Local Wi-Fi (Auto Subnet)' : `Room #${currentRoom}` }}</span>
+          <div class="font-semibold text-white flex items-center gap-1.5 font-mono">
+            <span>{{ currentRoom === 'auto' ? 'Local Wi-Fi (Auto)' : `Room #${currentRoom}` }}</span>
             <button
               type="button"
               class="text-[11px] text-[var(--text-tertiary)] hover:text-white underline cursor-pointer ml-1"
@@ -305,7 +437,27 @@ onMounted(() => {
       </div>
 
       <!-- Quick Action Buttons -->
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        <Button
+          size="sm"
+          variant="primary"
+          class="text-xs font-semibold"
+          @click="startCameraScanner"
+        >
+          <Camera class="w-3.5 h-3.5 mr-1.5 text-black" />
+          <span>Scan Camera</span>
+        </Button>
+
+        <Button
+          size="sm"
+          variant="secondary"
+          class="text-xs"
+          @click="openJoinCodeModal"
+        >
+          <Hash class="w-3.5 h-3.5 mr-1.5 text-white" />
+          <span>Join Code</span>
+        </Button>
+
         <Button
           size="sm"
           variant="secondary"
@@ -313,7 +465,7 @@ onMounted(() => {
           @click="showQrModal = true"
         >
           <QrCode class="w-3.5 h-3.5 mr-1.5 text-white" />
-          <span>QR Pair</span>
+          <span>Show QR</span>
         </Button>
 
         <Button
@@ -322,20 +474,20 @@ onMounted(() => {
           class="text-xs"
           @click="copyShareUrl"
         >
-          <Check v-if="copiedUrl" class="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-          <Share2 v-else class="w-3.5 h-3.5 mr-1.5" />
+          <Check v-if="copiedUrl" class="w-3.5 h-3.5 mr-1.5 text-white" />
+          <Share2 v-else class="w-3.5 h-3.5 mr-1.5 text-white" />
           <span>{{ copiedUrl ? 'Copied' : 'Share Link' }}</span>
         </Button>
 
         <Button
           size="sm"
           variant="outline"
-          class="text-xs hidden md:inline-flex"
+          class="text-xs hidden lg:inline-flex"
           title="Open a second test peer in another tab"
           @click="openTestPeerTab"
         >
           <ExternalLink class="w-3.5 h-3.5 mr-1.5" />
-          <span>Test in New Tab</span>
+          <span>2nd Tab</span>
         </Button>
       </div>
     </div>
@@ -343,7 +495,7 @@ onMounted(() => {
     <!-- Central Orbital Radar Arena -->
     <div class="relative w-full rounded-[14px] border border-[#212121] bg-[#121214] overflow-hidden min-h-[440px] sm:min-h-[500px] flex flex-col justify-between p-6 sm:p-10 select-none">
       <!-- Background Concentric Orbital Rings Animation -->
-      <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
         <div class="w-[260px] h-[260px] sm:w-[340px] sm:h-[340px] rounded-full border border-white/20 animate-ping [animation-duration:4s]" />
         <div class="absolute w-[380px] h-[380px] sm:w-[480px] sm:h-[480px] rounded-full border border-white/10" />
         <div class="absolute w-[520px] h-[520px] sm:w-[640px] sm:h-[640px] rounded-full border border-white/5" />
@@ -351,9 +503,8 @@ onMounted(() => {
 
       <!-- Top Radar Status Notice -->
       <div class="relative z-10 flex items-center justify-between text-xs text-[var(--text-tertiary)]">
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>{{ peers.length }} nearby {{ peers.length === 1 ? 'device' : 'devices' }} discovered</span>
+        <div class="flex items-center gap-2 font-mono">
+          <span>{{ peers.length }} {{ peers.length === 1 ? 'device' : 'devices' }} discovered</span>
         </div>
         <div class="hidden sm:block text-[11px]">
           Click or drop files onto any device to transfer
@@ -375,14 +526,18 @@ onMounted(() => {
               Open PairDrop on your phone, tablet, or another laptop connected to the same Wi-Fi network.
             </p>
           </div>
-          <div class="flex items-center justify-center gap-2 pt-1">
-            <Button size="sm" variant="secondary" class="text-xs" @click="showQrModal = true">
-              <QrCode class="w-3.5 h-3.5 mr-1" />
-              Scan with Phone
+          <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+            <Button size="sm" variant="primary" class="text-xs" @click="startCameraScanner">
+              <Camera class="w-3.5 h-3.5 mr-1 text-black" />
+              Scan Camera
             </Button>
-            <Button size="sm" variant="outline" class="text-xs" @click="openTestPeerTab">
-              <ExternalLink class="w-3.5 h-3.5 mr-1" />
-              Open 2nd Tab
+            <Button size="sm" variant="secondary" class="text-xs" @click="openJoinCodeModal">
+              <Hash class="w-3.5 h-3.5 mr-1 text-white" />
+              Enter Code
+            </Button>
+            <Button size="sm" variant="secondary" class="text-xs" @click="showQrModal = true">
+              <QrCode class="w-3.5 h-3.5 mr-1 text-white" />
+              Show QR
             </Button>
           </div>
         </div>
@@ -395,7 +550,7 @@ onMounted(() => {
             class="group relative flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer w-[140px] sm:w-[170px]"
             :class="[
               dragTargetPeerId === peer.peerId
-                ? 'bg-emerald-500/20 border-emerald-400 scale-105 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                ? 'bg-white/10 border-white scale-105 shadow-[0_0_20px_rgba(255,255,255,0.15)]'
                 : 'bg-[#18181b] border-[#2e2e32] hover:border-white/50 hover:bg-[#202024] hover:scale-102 shadow-xs'
             ]"
             @click="triggerFileSelect(peer)"
@@ -406,7 +561,6 @@ onMounted(() => {
             <!-- Device Avatar Icon -->
             <div class="relative w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white mb-2.5 transition-transform group-hover:scale-110">
               <component :is="getDeviceIcon(peer.deviceType)" class="w-6 h-6" />
-              <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#18181b]" />
             </div>
 
             <!-- Device Name -->
@@ -425,7 +579,7 @@ onMounted(() => {
             <div class="mt-2.5 flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <button
                 type="button"
-                class="px-2 py-1 rounded bg-white/10 hover:bg-white text-white hover:text-black text-[11px] font-medium transition-colors"
+                class="px-2 py-1 rounded bg-white/10 hover:bg-white text-white hover:text-black text-[11px] font-medium transition-colors cursor-pointer"
                 title="Send File"
                 @click.stop="triggerFileSelect(peer)"
               >
@@ -433,7 +587,7 @@ onMounted(() => {
               </button>
               <button
                 type="button"
-                class="p-1 rounded bg-white/10 hover:bg-white text-white hover:text-black transition-colors"
+                class="p-1 rounded bg-white/10 hover:bg-white text-white hover:text-black transition-colors cursor-pointer"
                 title="Send Text Message"
                 @click.stop="openSendText(peer)"
               >
@@ -494,7 +648,7 @@ onMounted(() => {
         </div>
 
         <div class="text-xs text-[var(--text-secondary)] flex items-center gap-2">
-          <ShieldCheck class="w-4 h-4 text-emerald-400 shrink-0" />
+          <ShieldCheck class="w-4 h-4 text-white/60 shrink-0" />
           <span>End-to-End Direct P2P Encryption</span>
         </div>
       </div>
@@ -509,7 +663,7 @@ onMounted(() => {
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
             <FileUp v-if="activeTransfer.direction === 'send'" class="w-4 h-4 text-white" />
-            <Download v-else class="w-4 h-4 text-emerald-400" />
+            <Download v-else class="w-4 h-4 text-white" />
           </div>
           <div class="min-w-0">
             <div class="text-xs font-bold text-white truncate">
@@ -523,7 +677,7 @@ onMounted(() => {
 
         <button
           type="button"
-          class="text-white/60 hover:text-white p-1"
+          class="text-white/60 hover:text-white p-1 cursor-pointer"
           @click="cancelTransfer"
         >
           <X class="w-4 h-4" />
@@ -534,7 +688,7 @@ onMounted(() => {
       <div class="space-y-1">
         <div class="h-2 w-full rounded-full bg-white/10 overflow-hidden">
           <div
-            class="h-full bg-emerald-500 rounded-full transition-all duration-150"
+            class="h-full bg-white rounded-full transition-all duration-150"
             :style="{ width: `${activeTransfer.progress}%` }"
           />
         </div>
@@ -640,7 +794,7 @@ onMounted(() => {
       </div>
     </Modal>
 
-    <!-- QR Code Scan Modal -->
+    <!-- QR Code Display Modal (for other devices to scan) -->
     <Modal
       v-model="showQrModal"
       title="Scan to Connect Phone"
@@ -667,6 +821,138 @@ onMounted(() => {
           </Button>
           <Button variant="primary" class="w-full text-xs" @click="showQrModal = false">
             Done
+          </Button>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Camera QR Code Scanner Modal (Mobile / Webcam scan) -->
+    <Modal
+      v-model="showScannerModal"
+      title="Scan Room QR Code"
+      @close="closeScannerModal"
+    >
+      <div class="space-y-4">
+        <p class="text-xs text-[var(--text-secondary)]">
+          Point your camera at a PairDrop QR code displayed on another device or screen to join automatically.
+        </p>
+
+        <!-- Camera Viewfinder Container -->
+        <div class="relative w-full aspect-square max-w-[340px] mx-auto rounded-2xl bg-black border border-[#2e2e32] overflow-hidden flex items-center justify-center">
+          <video
+            ref="scannerVideoRef"
+            autoplay
+            playsinline
+            muted
+            class="w-full h-full object-cover"
+          />
+          <!-- Hidden Canvas for jsQR Frame Processing -->
+          <canvas
+            ref="scannerCanvasRef"
+            class="hidden"
+          />
+
+          <!-- Reticle / Target Viewfinder Frame -->
+          <div v-if="isScanning && !cameraError" class="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
+            <div class="relative w-44 h-44 sm:w-52 sm:h-52 border-2 border-white/50 rounded-2xl flex items-center justify-center">
+              <!-- Animated Scanning Laser Line -->
+              <div class="absolute inset-x-2 h-0.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse top-1/2 -translate-y-1/2" />
+              <!-- Corner indicators -->
+              <div class="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-white" />
+              <div class="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-white" />
+              <div class="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-white" />
+              <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-white" />
+            </div>
+          </div>
+
+          <!-- Error Message if Camera Access Fails -->
+          <div v-if="cameraError" class="absolute inset-0 bg-[#141416]/95 p-6 flex flex-col items-center justify-center text-center space-y-3">
+            <AlertCircle class="w-8 h-8 text-white/60" />
+            <div class="text-xs text-white/90 leading-relaxed font-medium">
+              {{ cameraError }}
+            </div>
+            <Button size="sm" variant="secondary" class="text-xs" @click="closeScannerModal(); openJoinCodeModal()">
+              <Hash class="w-3.5 h-3.5 mr-1.5" />
+              Enter Code Manually
+            </Button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-1">
+          <Button variant="outline" class="text-xs" @click="closeScannerModal(); openJoinCodeModal()">
+            <Hash class="w-3.5 h-3.5 mr-1" />
+            Use Code Instead
+          </Button>
+          <Button variant="secondary" class="text-xs" @click="closeScannerModal">
+            Cancel
+          </Button>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Join Room with Code Modal -->
+    <Modal
+      v-model="showJoinCodeModal"
+      title="Join Room with Code"
+      @close="showJoinCodeModal = false"
+    >
+      <div class="space-y-4">
+        <p class="text-xs text-[var(--text-secondary)]">
+          Enter a room code or custom name to connect with devices anywhere, even across different Wi-Fi networks.
+        </p>
+
+        <div class="space-y-2">
+          <div class="relative">
+            <input
+              v-model="roomCodeInput"
+              type="text"
+              maxlength="25"
+              placeholder="e.g. 7X9K2 or OFFICE"
+              class="w-full p-3.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-white text-center font-mono text-lg font-bold tracking-widest uppercase rounded-xl focus:outline-none focus:border-white placeholder:normal-case placeholder:font-normal placeholder:text-sm placeholder:tracking-normal"
+              autofocus
+              @keyup.enter="submitJoinCode"
+            />
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-[var(--text-tertiary)] pt-1">
+            <span>Need a fresh room?</span>
+            <button
+              type="button"
+              class="text-xs text-white hover:underline cursor-pointer flex items-center gap-1"
+              @click="generateRandomRoomCode"
+            >
+              <RefreshCw class="w-3 h-3" />
+              Generate 6-character Code
+            </button>
+          </div>
+        </div>
+
+        <!-- Current Room Notice -->
+        <div class="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
+          <div>
+            <div class="text-[11px] text-[var(--text-tertiary)]">Your Current Room</div>
+            <div class="font-mono font-bold text-white">
+              {{ currentRoom === 'auto' ? 'Local Wi-Fi (Auto)' : `#${currentRoom}` }}
+            </div>
+          </div>
+          <Button
+            v-if="currentRoom !== 'auto'"
+            size="sm"
+            variant="outline"
+            class="text-xs h-7 px-2"
+            @click="copy(currentRoom); toast.success('Copied', 'Room code copied to clipboard')"
+          >
+            <Copy class="w-3 h-3 mr-1" />
+            Copy Code
+          </Button>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <Button variant="secondary" @click="showJoinCodeModal = false">
+            Cancel
+          </Button>
+          <Button variant="primary" :disabled="!roomCodeInput.trim()" @click="submitJoinCode">
+            Join Room
           </Button>
         </div>
       </div>
