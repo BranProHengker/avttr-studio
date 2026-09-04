@@ -17,13 +17,28 @@ import {
   Image as ImageIcon,
   ChevronDown,
   RefreshCw,
-  Zap
+  Zap,
+  Layers,
+  Cpu,
+  Box,
+  Radio,
+  Activity,
+  Compass
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
+import {
+  useArtisticQr,
+  type ArtisticStyle,
+  type AnchorStyle,
+  type LineDirection
+} from '~/composables/useArtisticQr'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
+
+// Engine Mode: QRBTF Parametric vs Classic Styled
+const generatorMode = ref<'artistic' | 'classic'>('artistic')
 
 // Dynamic import of QRCodeStyling for SSR safety
 let QRCodeStyling: any = null
@@ -33,6 +48,7 @@ let qrCodeInstance: any = null
 
 const toast = useToast()
 const { copy } = useClipboard()
+const { generateArtisticSvg, exportSvgToPng } = useArtisticQr()
 
 // Active Type Tab
 const activeType = ref<'url' | 'email' | 'phone' | 'sms'>('url')
@@ -63,17 +79,114 @@ const qrPayload = computed(() => {
   }
 })
 
+// Artistic Parametric State (QRBTF Engine)
+const selectedArtisticStyle = ref<ArtisticStyle>('lines')
+const selectedAnchorStyle = ref<AnchorStyle>('rounded')
+const selectedLineDirection = ref<LineDirection>('horizontal')
+const dotScale = ref(0.88)
+const cubeHeight = ref(8)
+const customAnchorColor = ref('')
+const useCustomAnchorColor = ref(false)
+
+// Artistic Style Metadata (Inspired by QRBTF)
+interface ArtisticStyleMeta {
+  id: ArtisticStyle
+  name: string
+  subtitle: string
+  tag: string
+}
+
+const artisticStylesList: ArtisticStyleMeta[] = [
+  { id: 'lines', name: 'Fluid Lines', subtitle: 'Continuous connected ribbons', tag: 'A2' },
+  { id: 'isometric', name: '2.5D Isometric', subtitle: 'Architectural 3D shaded cubes', tag: 'SP-1' },
+  { id: 'radar', name: 'Concentric Radar', subtitle: 'Orbital rings & scanner beams', tag: 'B1' },
+  { id: 'circuit', name: 'Cyber Circuit', subtitle: 'PCB motherboard solder traces', tag: 'Func' },
+  { id: 'halftone', name: 'Optical Halftone', subtitle: 'Wave-modulated dot matrix', tag: 'C1' },
+  { id: 'diamond', name: 'Crystal Rhombus', subtitle: '45° faceted diamond prisms', tag: 'Geo' },
+]
+
+// Anchor Styles Metadata
+interface AnchorMeta {
+  id: AnchorStyle
+  name: string
+  desc: string
+}
+
+const anchorStylesList: AnchorMeta[] = [
+  { id: 'rounded', name: 'Squircle', desc: 'Smooth rounded finder eyes' },
+  { id: 'circle', name: 'Planet', desc: 'Concentric circular rings' },
+  { id: 'square', name: 'Framed', desc: 'Geometric square boundary' },
+  { id: 'minimal', name: 'Crosshair', desc: 'Minimalist precision target' },
+]
+
+// Artistic Preset Palettes
+interface ArtisticPalette {
+  name: string
+  fg: string
+  bg: string
+  gradient?: boolean
+  grad2?: string
+  anchor?: string
+}
+
+const artisticPalettes: ArtisticPalette[] = [
+  { name: 'Cyber Neon', fg: '#00FFCC', bg: '#0A0E17', gradient: true, grad2: '#FF007F', anchor: '#00FFCC' },
+  { name: 'Tokyo Dusk', fg: '#818CF8', bg: '#0B0F19', gradient: true, grad2: '#C084FC', anchor: '#818CF8' },
+  { name: 'Emerald Matrix', fg: '#10B981', bg: '#051A10', gradient: true, grad2: '#34D399', anchor: '#10B981' },
+  { name: 'Solar Flare', fg: '#F59E0B', bg: '#170E08', gradient: true, grad2: '#EF4444', anchor: '#F59E0B' },
+  { name: 'Glacier Blue', fg: '#38BDF8', bg: '#081426', gradient: true, grad2: '#818CF8', anchor: '#38BDF8' },
+  { name: 'Obsidian Dark', fg: '#FFFFFF', bg: '#121214', gradient: false, anchor: '#FFFFFF' },
+  { name: 'Paper Mono', fg: '#18181B', bg: '#FFFFFF', gradient: false, anchor: '#18181B' },
+]
+
+const applyArtisticPalette = (p: ArtisticPalette) => {
+  fgColor.value = p.fg
+  bgColor.value = p.bg
+  isTransparentBg.value = false
+  useGradient.value = !!p.gradient
+  if (p.grad2) gradientColor2.value = p.grad2
+  if (p.anchor) {
+    customAnchorColor.value = p.anchor
+    useCustomAnchorColor.value = true
+  } else {
+    useCustomAnchorColor.value = false
+  }
+  toast.success('Palette Applied', `Active: ${p.name}`)
+}
+
+// Reactive Computed Artistic SVG
+const artisticSvgContent = computed(() => {
+  if (generatorMode.value !== 'artistic') return ''
+  return generateArtisticSvg({
+    text: qrPayload.value,
+    style: selectedArtisticStyle.value,
+    anchorStyle: selectedAnchorStyle.value,
+    lineDirection: selectedLineDirection.value,
+    fgColor: fgColor.value,
+    bgColor: isTransparentBg.value ? 'transparent' : bgColor.value,
+    anchorColor: useCustomAnchorColor.value && customAnchorColor.value ? customAnchorColor.value : fgColor.value,
+    isTransparentBg: isTransparentBg.value,
+    useGradient: useGradient.value,
+    gradientColor2: gradientColor2.value,
+    size: 400,
+    margin: Math.max(1, Math.round(margin.value / 5)),
+    errorCorrectionLevel: errorCorrection.value,
+    dotScale: dotScale.value,
+    cubeHeight: cubeHeight.value,
+  })
+})
+
 // Customization Options State
 const size = ref(300)
 const margin = ref(10)
 const errorCorrection = ref<'L' | 'M' | 'Q' | 'H'>('M')
 
 // Colors
-const fgColor = ref('#000000')
-const bgColor = ref('#ffffff')
+const fgColor = ref('#00FFCC')
+const bgColor = ref('#0A0E17')
 const isTransparentBg = ref(false)
-const useGradient = ref(false)
-const gradientColor2 = ref('#1447E6')
+const useGradient = ref(true)
+const gradientColor2 = ref('#FF007F')
 const gradientType = ref<'linear' | 'radial'>('linear')
 
 // Shapes
@@ -91,6 +204,8 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 
 // Accordion sections
 const openSections = ref<Record<string, boolean>>({
+  artisticStyle: true,
+  artisticParams: true,
   shapes: true,
   colours: true,
   logo: true,
@@ -256,6 +371,23 @@ const updateQRCode = async () => {
 
 // Export Download Actions
 const downloadPNG = async () => {
+  if (generatorMode.value === 'artistic') {
+    if (!artisticSvgContent.value) return
+    try {
+      const blob = await exportSvgToPng(artisticSvgContent.value, 1200)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `artistic-qr-${selectedArtisticStyle.value}.png`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Downloaded', 'High-res 1200px Artistic QR Code saved as PNG')
+    } catch (err: any) {
+      toast.error('Download Failed', err?.message || 'Could not export PNG')
+    }
+    return
+  }
+
   if (!qrCodeInstance) return
   await qrCodeInstance.download({
     name: 'custom-qrcode',
@@ -265,6 +397,19 @@ const downloadPNG = async () => {
 }
 
 const downloadSVG = async () => {
+  if (generatorMode.value === 'artistic') {
+    if (!artisticSvgContent.value) return
+    const blob = new Blob([artisticSvgContent.value], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `artistic-qr-${selectedArtisticStyle.value}.svg`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Downloaded', 'Infinite-res Vector QR Code saved as SVG')
+    return
+  }
+
   if (!qrCodeInstance) return
   await qrCodeInstance.download({
     name: 'custom-qrcode',
@@ -274,6 +419,30 @@ const downloadSVG = async () => {
 }
 
 const copyQRCodeImage = async () => {
+  if (generatorMode.value === 'artistic') {
+    if (!artisticSvgContent.value) return
+    try {
+      const blob = await exportSvgToPng(artisticSvgContent.value, 1000)
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.clipboard &&
+        typeof window !== 'undefined' &&
+        window.isSecureContext &&
+        typeof ClipboardItem !== 'undefined'
+      ) {
+        const item = new ClipboardItem({ 'image/png': blob })
+        await navigator.clipboard.write([item])
+        toast.success('Image Copied', 'Artistic QR Code copied to clipboard (ready to paste as image)')
+        return
+      }
+      await downloadPNG()
+      toast.info('File PNG Di-download', 'Browser membatasi copy gambar otomatis di LAN. File PNG langsung diunduh.')
+    } catch (err: any) {
+      toast.error('Copy Failed', err?.message || 'Failed to copy image')
+    }
+    return
+  }
+
   if (!qrCodeInstance) return
 
   // 1. Try modern Binary PNG image copy (Works in Secure Context: https or localhost)
@@ -318,13 +487,24 @@ watch(
     logoMargin,
   ],
   () => {
-    updateQRCode()
+    if (generatorMode.value === 'classic') {
+      updateQRCode()
+    }
   }
 )
 
+watch(generatorMode, async (newMode) => {
+  if (newMode === 'classic') {
+    await nextTick()
+    updateQRCode()
+  }
+})
+
 onMounted(async () => {
   await nextTick()
-  updateQRCode()
+  if (generatorMode.value === 'classic') {
+    updateQRCode()
+  }
 })
 </script>
 
@@ -348,59 +528,94 @@ onMounted(async () => {
             QR Code Generator
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Create customized vector QR codes with custom bit shapes, corner eyes, colors, and embedded logos.
+            Parametric artistic vector QR studio inspired by QRBTF and custom bit styling. 100% client-side privacy.
           </p>
         </div>
 
         <div class="flex items-center gap-2">
+          <Badge variant="badge">
+            Client Privacy
+          </Badge>
           <Badge variant="secondary">
-            PNG & SVG Export
+            1200px PNG & Infinite SVG
           </Badge>
         </div>
       </div>
     </div>
 
-    <!-- Type Selection Tabs (URL, Email, Phone, SMS) -->
-    <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
-      <button
-        type="button"
-        class="flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-        :class="activeType === 'url' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
-        @click="activeType = 'url'"
-      >
-        <Link class="w-3.5 h-3.5" />
-        <span>URL / Link</span>
-      </button>
+    <!-- Mode Switcher & Content Type Tabs Row -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <!-- Engine Mode Switcher -->
+      <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+          :class="generatorMode === 'artistic' ? 'bg-white text-black font-bold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+          @click="generatorMode = 'artistic'"
+        >
+          <Sparkles class="w-3.5 h-3.5" />
+          <span>QRBTF Parametric</span>
+          <span
+            class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-mono font-semibold"
+            :class="generatorMode === 'artistic' ? 'bg-black/10 text-black' : 'bg-white/10 text-white/70'"
+          >
+            Art
+          </span>
+        </button>
 
-      <button
-        type="button"
-        class="flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-        :class="activeType === 'email' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
-        @click="activeType = 'email'"
-      >
-        <Mail class="w-3.5 h-3.5" />
-        <span>Email</span>
-      </button>
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+          :class="generatorMode === 'classic' ? 'bg-white text-black font-bold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+          @click="generatorMode = 'classic'"
+        >
+          <Sliders class="w-3.5 h-3.5" />
+          <span>Classic Styled</span>
+        </button>
+      </div>
 
-      <button
-        type="button"
-        class="flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-        :class="activeType === 'phone' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
-        @click="activeType = 'phone'"
-      >
-        <Phone class="w-3.5 h-3.5" />
-        <span>Phone</span>
-      </button>
+      <!-- Type Selection Tabs (URL, Email, Phone, SMS) -->
+      <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+          :class="activeType === 'url' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+          @click="activeType = 'url'"
+        >
+          <Link class="w-3.5 h-3.5" />
+          <span>URL</span>
+        </button>
 
-      <button
-        type="button"
-        class="flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-        :class="activeType === 'sms' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
-        @click="activeType = 'sms'"
-      >
-        <MessageSquare class="w-3.5 h-3.5" />
-        <span>SMS</span>
-      </button>
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+          :class="activeType === 'email' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+          @click="activeType = 'email'"
+        >
+          <Mail class="w-3.5 h-3.5" />
+          <span>Email</span>
+        </button>
+
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+          :class="activeType === 'phone' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+          @click="activeType = 'phone'"
+        >
+          <Phone class="w-3.5 h-3.5" />
+          <span>Phone</span>
+        </button>
+
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
+          :class="activeType === 'sms' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+          @click="activeType = 'sms'"
+        >
+          <MessageSquare class="w-3.5 h-3.5" />
+          <span>SMS</span>
+        </button>
+      </div>
     </div>
 
     <!-- Main Bento Grid Workspace -->
@@ -411,18 +626,32 @@ onMounted(async () => {
         <Card :hoverable="false" class="p-6 flex flex-col items-center justify-center space-y-6">
           <div class="w-full flex items-center justify-between">
             <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">
-              Preview
+              Live Preview
             </span>
-            <Badge variant="badge" size="sm">Live Vector</Badge>
+            <Badge variant="badge" size="sm">
+              {{ generatorMode === 'artistic' ? 'Artistic Vector' : 'Classic Vector' }}
+            </Badge>
           </div>
 
           <!-- QR Canvas Viewport -->
           <div
-            class="p-4 rounded-2xl border border-[var(--border-subtle)] flex items-center justify-center min-h-[290px] w-full max-w-[300px] shadow-sm relative overflow-hidden transition-all"
+            class="p-4 rounded-2xl border border-[var(--border-subtle)] flex items-center justify-center min-h-[300px] w-full max-w-[320px] shadow-sm relative overflow-hidden transition-all"
             :class="isTransparentBg ? 'bg-[radial-gradient(#333_1px,transparent_1px)] [background-size:16px_16px] bg-[#1a1a1a]' : ''"
             :style="!isTransparentBg ? { backgroundColor: bgColor } : {}"
           >
-            <div ref="qrContainerRef" class="flex items-center justify-center select-none" />
+            <!-- Artistic SVG Preview -->
+            <div
+              v-if="generatorMode === 'artistic'"
+              class="w-full h-full flex items-center justify-center select-none [&>svg]:w-full [&>svg]:h-full [&>svg]:max-w-[280px] [&>svg]:max-h-[280px]"
+              v-html="artisticSvgContent"
+            />
+
+            <!-- Classic Canvas Preview -->
+            <div
+              v-else
+              ref="qrContainerRef"
+              class="flex items-center justify-center select-none"
+            />
           </div>
 
           <!-- Export Action Buttons -->
@@ -456,16 +685,34 @@ onMounted(async () => {
           </div>
         </Card>
 
-        <!-- Quick Styles Palette -->
+        <!-- Quick Styles / Artistic Palettes -->
         <Card :hoverable="false" class="p-5 space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-1.5">
               <Sparkles class="w-3.5 h-3.5 text-white" />
-              Quick Styles
+              {{ generatorMode === 'artistic' ? 'Artistic Palettes' : 'Quick Styles' }}
             </span>
           </div>
 
-          <div class="grid grid-cols-3 gap-2">
+          <!-- Artistic Mode Palettes -->
+          <div v-if="generatorMode === 'artistic'" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button
+              v-for="p in artisticPalettes"
+              :key="p.name"
+              type="button"
+              class="p-2.5 rounded-lg text-xs font-medium border border-[var(--border-subtle)] bg-[var(--bg-input)] hover:border-white hover:text-white transition-all cursor-pointer text-left group"
+              @click="applyArtisticPalette(p)"
+            >
+              <div class="flex items-center gap-1.5 mb-1.5">
+                <span class="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" :style="{ backgroundColor: p.fg }" />
+                <span v-if="p.grad2" class="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" :style="{ backgroundColor: p.grad2 }" />
+              </div>
+              <span class="block truncate text-white/90 group-hover:text-white text-[11px] font-semibold">{{ p.name }}</span>
+            </button>
+          </div>
+
+          <!-- Classic Mode Quick Styles -->
+          <div v-else class="grid grid-cols-3 gap-2">
             <button
               v-for="s in quickStyles"
               :key="s.name"
@@ -546,8 +793,165 @@ onMounted(async () => {
           </div>
         </Card>
 
-        <!-- 2. Accordion: Shapes & Geometry -->
-        <Card :hoverable="false" class="p-5 space-y-4">
+        <!-- 2A. Artistic Geometry Accordion (QRBTF Mode Only) -->
+        <Card v-if="generatorMode === 'artistic'" :hoverable="false" class="p-5 space-y-4">
+          <div class="flex items-center justify-between cursor-pointer group" @click="toggleSection('artisticStyle')">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
+              <Sparkles class="w-3.5 h-3.5 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+              Parametric Styles (QRBTF)
+            </h3>
+            <ChevronDown
+              class="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-white transition-transform duration-200"
+              :class="openSections.artisticStyle ? 'rotate-180' : ''"
+            />
+          </div>
+
+          <div v-show="openSections.artisticStyle" class="space-y-3 pt-2 border-t border-[var(--border-subtle)]">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                v-for="styleItem in artisticStylesList"
+                :key="styleItem.id"
+                type="button"
+                class="p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 relative overflow-hidden"
+                :class="
+                  selectedArtisticStyle === styleItem.id
+                    ? 'border-white bg-[#252528] ring-1 ring-white/20'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-input)] hover:border-white/40 hover:bg-[#1f1f22]'
+                "
+                @click="selectedArtisticStyle = styleItem.id"
+              >
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-xs font-bold text-white tracking-tight flex items-center gap-1.5">
+                    {{ styleItem.name }}
+                  </span>
+                  <span
+                    class="text-[10px] font-mono px-2 py-0.5 rounded-full"
+                    :class="selectedArtisticStyle === styleItem.id ? 'bg-white text-black font-bold' : 'bg-[#2E2E2E] text-white/70'"
+                  >
+                    {{ styleItem.tag }}
+                  </span>
+                </div>
+                <p class="text-[11px] text-[var(--text-secondary)] leading-tight">
+                  {{ styleItem.subtitle }}
+                </p>
+              </button>
+            </div>
+          </div>
+        </Card>
+
+        <!-- 2B. Artistic Parameters & Anchors Accordion (QRBTF Mode Only) -->
+        <Card v-if="generatorMode === 'artistic'" :hoverable="false" class="p-5 space-y-4">
+          <div class="flex items-center justify-between cursor-pointer group" @click="toggleSection('artisticParams')">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
+              <Sliders class="w-3.5 h-3.5 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+              Fine-Tuning & Anchors
+            </h3>
+            <ChevronDown
+              class="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-white transition-transform duration-200"
+              :class="openSections.artisticParams ? 'rotate-180' : ''"
+            />
+          </div>
+
+          <div v-show="openSections.artisticParams" class="space-y-4 pt-2 border-t border-[var(--border-subtle)]">
+            <!-- Finder Anchor Style (4 styles) -->
+            <div class="space-y-1.5">
+              <label class="block text-xs text-[var(--text-secondary)]">
+                Finder Anchor Marker (Eyes)
+              </label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  v-for="anchorItem in anchorStylesList"
+                  :key="anchorItem.id"
+                  type="button"
+                  class="py-2 px-2 text-xs font-medium rounded-lg border transition-all cursor-pointer text-center"
+                  :class="
+                    selectedAnchorStyle === anchorItem.id
+                      ? 'bg-white text-black border-white font-bold shadow-xs'
+                      : 'bg-[var(--bg-input)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white'
+                  "
+                  @click="selectedAnchorStyle = anchorItem.id"
+                >
+                  {{ anchorItem.name }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Direction for Fluid Lines -->
+            <div v-if="selectedArtisticStyle === 'lines'" class="space-y-1.5">
+              <label class="block text-xs text-[var(--text-secondary)]">
+                Flow Direction
+              </label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="dir in [
+                    { id: 'horizontal', label: 'Horizontal' },
+                    { id: 'vertical', label: 'Vertical' },
+                    { id: 'interlock', label: 'Interlocking' },
+                  ] as const"
+                  :key="dir.id"
+                  type="button"
+                  class="py-2 text-xs font-medium rounded-lg border transition-all cursor-pointer text-center"
+                  :class="
+                    selectedLineDirection === dir.id
+                      ? 'bg-white text-black border-white font-bold shadow-xs'
+                      : 'bg-[var(--bg-input)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-white'
+                  "
+                  @click="selectedLineDirection = dir.id"
+                >
+                  {{ dir.label }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Isometric Cube Height -->
+            <div v-if="selectedArtisticStyle === 'isometric'" class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                <span>3D Cube Extrusion Height</span>
+                <span class="font-mono text-white">{{ cubeHeight }}px</span>
+              </div>
+              <input
+                v-model.number="cubeHeight"
+                type="range"
+                min="3"
+                max="14"
+                step="1"
+                class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-[#2E2E2E] accent-white"
+              />
+            </div>
+
+            <!-- Dot / Ribbon Scale Slider -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs text-[var(--text-secondary)]">
+                <span>Element Scale</span>
+                <span class="font-mono text-white">{{ Math.round(dotScale * 100) }}%</span>
+              </div>
+              <input
+                v-model.number="dotScale"
+                type="range"
+                min="0.65"
+                max="1.0"
+                step="0.02"
+                class="w-full h-2 rounded-lg appearance-none cursor-pointer bg-[#2E2E2E] accent-white"
+              />
+            </div>
+
+            <!-- Custom Anchor Color Toggle -->
+            <div class="pt-2 border-t border-[var(--border-subtle)]/50 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-[var(--text-secondary)]">Custom Anchor Eye Color</span>
+                <input type="checkbox" v-model="useCustomAnchorColor" class="rounded accent-white cursor-pointer" />
+              </div>
+
+              <div v-if="useCustomAnchorColor" class="flex items-center gap-2 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg p-2">
+                <input v-model="customAnchorColor" type="color" class="w-7 h-7 rounded border-0 cursor-pointer bg-transparent" />
+                <input v-model="customAnchorColor" type="text" placeholder="#FFFFFF" class="w-full text-xs font-mono text-white uppercase bg-transparent focus:outline-none" />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <!-- 2C. Shapes & Geometry (Classic Mode Only) -->
+        <Card v-if="generatorMode === 'classic'" :hoverable="false" class="p-5 space-y-4">
           <div class="flex items-center justify-between cursor-pointer group" @click="toggleSection('shapes')">
             <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
               <Eye class="w-3.5 h-3.5 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
@@ -644,7 +1048,7 @@ onMounted(async () => {
           </div>
         </Card>
 
-        <!-- 3. Accordion: Colours & Gradients -->
+        <!-- 3. Accordion: Colours & Gradients (Shared) -->
         <Card :hoverable="false" class="p-5 space-y-4">
           <div class="flex items-center justify-between cursor-pointer group" @click="toggleSection('colours')">
             <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
@@ -736,8 +1140,8 @@ onMounted(async () => {
           </div>
         </Card>
 
-        <!-- 4. Accordion: Logo / Image -->
-        <Card :hoverable="false" class="p-5 space-y-4">
+        <!-- 4. Accordion: Logo / Image (Classic Mode Only) -->
+        <Card v-if="generatorMode === 'classic'" :hoverable="false" class="p-5 space-y-4">
           <div class="flex items-center justify-between cursor-pointer group" @click="toggleSection('logo')">
             <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
               <ImageIcon class="w-3.5 h-3.5 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
@@ -832,7 +1236,7 @@ onMounted(async () => {
           </div>
         </Card>
 
-        <!-- 5. Accordion: Basics (Size, Padding, Error Correction) -->
+        <!-- 5. Accordion: Basics & Settings (Shared) -->
         <Card :hoverable="false" class="p-5 space-y-4">
           <div class="flex items-center justify-between cursor-pointer group" @click="toggleSection('basics')">
             <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
@@ -880,9 +1284,12 @@ onMounted(async () => {
 
             <!-- Error Correction Level -->
             <div class="space-y-1.5">
-              <label class="block text-xs text-[var(--text-secondary)]">
-                Error Correction Redundancy
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="block text-xs text-[var(--text-secondary)]">
+                  Error Correction Redundancy
+                </label>
+                <span class="text-[11px] text-[var(--text-tertiary)]">Higher = more scannable</span>
+              </div>
               <div class="grid grid-cols-4 gap-2">
                 <button
                   v-for="lvl in ['L', 'M', 'Q', 'H'] as const"
