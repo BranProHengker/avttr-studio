@@ -322,7 +322,7 @@ const clearSvg = () => {
       <span class="text-white">SVG Optimizer</span>
     </div>
 
-    <!-- Title Row with Client Privacy Badge -->
+    <!-- Title Header Row -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -333,9 +333,8 @@ const clearSvg = () => {
         </p>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
+      <div v-if="optimizedSvg" class="flex items-center gap-2 shrink-0">
         <Button
-          v-if="optimizedSvg"
           variant="secondary"
           size="default"
           class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
@@ -344,7 +343,6 @@ const clearSvg = () => {
           <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
           <span>Upload Another</span>
         </Button>
-        <Badge variant="badge">Client Privacy</Badge>
       </div>
     </div>
 

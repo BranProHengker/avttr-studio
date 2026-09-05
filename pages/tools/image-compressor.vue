@@ -373,7 +373,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
       <span class="text-white">{{ t.tools['image-compressor']?.title || 'Image Compressor' }}</span>
     </div>
 
-    <!-- Title Row with Client Privacy Badge -->
+    <!-- Title Header Row -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -384,9 +384,8 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         </p>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
+      <div v-if="items.length > 0" class="flex items-center gap-2 shrink-0">
         <Button
-          v-if="items.length > 0"
           variant="secondary"
           size="default"
           class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
@@ -395,7 +394,6 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           <Plus class="w-3.5 h-3.5 mr-1.5 text-white/70" />
           <span>{{ t.addImages }}</span>
         </Button>
-        <Badge variant="badge">{{ t.clientPrivacy }}</Badge>
       </div>
     </div>
 

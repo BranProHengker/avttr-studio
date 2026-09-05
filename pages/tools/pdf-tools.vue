@@ -433,7 +433,7 @@ const handleExecuteImgToPdf = async () => {
             PDF Studio
           </h1>
           <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Merge, split, extract pages, and convert photos to PDF completely in your browser with 100% client privacy.
+            Merge, split, extract pages, and convert photos to PDF completely in your browser.
           </p>
         </div>
       </div>

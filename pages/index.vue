@@ -35,7 +35,7 @@ const handleBatchSubmit = (urls: string[]) => {
 
 <template>
   <div class="space-y-8 pb-12">
-    <!-- Header Banner with 100% Client Privacy badge (Only on All Dashboard) -->
+    <!-- Header Banner -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div class="space-y-1.5">
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -44,12 +44,6 @@ const handleBatchSubmit = (urls: string[]) => {
         <p class="text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
           {{ t.heroSubtitle }}
         </p>
-      </div>
-
-      <div class="flex items-center gap-2 shrink-0">
-        <Badge variant="badge">
-          Client Privacy
-        </Badge>
       </div>
     </div>
 

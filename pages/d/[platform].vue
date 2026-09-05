@@ -126,8 +126,8 @@ const platformInfo = computed(() => {
           : 'Universal media scraper and high-resolution stream extractor',
         placeholder: 'Paste media link...',
         features: isId
-          ? ['Direct Stream', 'Kualitas Asli', 'Client Privacy', 'Proses Cepat']
-          : ['Direct Stream', 'Original Quality', 'Client Privacy', 'Fast Processing'],
+          ? ['Direct Stream', 'Kualitas Asli', 'Tanpa Iklan', 'Proses Cepat']
+          : ['Direct Stream', 'Original Quality', 'Ad-Free', 'Fast Processing'],
       }
   }
 })

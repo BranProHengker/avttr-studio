@@ -332,7 +332,7 @@ const resetAll = () => {
       <span class="text-white">{{ t.tools['background-remover']?.title || 'Background Remover' }}</span>
     </div>
 
-    <!-- Title Row with Client Privacy Badge -->
+    <!-- Title Header Row -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -343,9 +343,8 @@ const resetAll = () => {
         </p>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
+      <div v-if="originalImageUrl" class="flex items-center gap-2 shrink-0">
         <Button
-          v-if="originalImageUrl"
           variant="secondary"
           size="default"
           class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
@@ -354,7 +353,6 @@ const resetAll = () => {
           <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
           <span>{{ locale === 'id' ? 'Upload Foto Lain' : 'Upload Another' }}</span>
         </Button>
-        <Badge variant="badge">{{ t.clientPrivacy }}</Badge>
       </div>
     </div>
 
