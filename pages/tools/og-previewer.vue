@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Image as ImageIcon,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-vue-next'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-markup'
@@ -501,14 +502,25 @@ const OG_REFERENCE_DATA = [
               <span class="text-[var(--text-secondary)] font-medium">Target URL</span>
               <span class="font-mono text-[var(--text-tertiary)] text-[11px]">og:url</span>
             </div>
-            <div class="relative">
+            <div class="relative flex items-center">
               <Globe class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
               <input
                 v-model="url"
                 type="url"
-                class="w-full pl-9 pr-3 py-2 bg-[#121212] border border-[var(--border-subtle)] rounded-lg text-xs font-mono text-white placeholder-[var(--text-tertiary)] focus:outline-hidden focus:border-white/40 transition-colors"
+                class="w-full pl-9 py-2 bg-[#121212] border border-[var(--border-subtle)] rounded-lg text-xs font-mono text-white placeholder-[var(--text-tertiary)] focus:outline-hidden focus:border-white/40 transition-colors"
+                :class="url ? 'pr-8' : 'pr-3'"
                 placeholder="https://example.com/page"
               />
+              <button
+                v-if="url"
+                type="button"
+                class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-md hover:bg-white/10 active:scale-95"
+                title="Clear URL"
+                aria-label="Clear URL"
+                @click="url = ''"
+              >
+                <X class="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 

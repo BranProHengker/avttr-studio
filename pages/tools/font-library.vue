@@ -18,7 +18,8 @@ import {
   Loader2,
   Sun,
   Moon,
-  Info
+  Info,
+  X
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
@@ -484,14 +485,25 @@ onMounted(() => {
       <!-- Search & Sample Text Bar -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
         <!-- Search Input -->
-        <div class="lg:col-span-4 relative">
+        <div class="lg:col-span-4 relative flex items-center">
           <Search class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search fonts across Google Fonts & DaFont..."
-            class="w-full pl-10 pr-3 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-glow)] placeholder-[var(--text-tertiary)]"
+            class="w-full pl-10 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-glow)] placeholder-[var(--text-tertiary)]"
+            :class="searchQuery ? 'pr-9' : 'pr-3'"
           />
+          <button
+            v-if="searchQuery"
+            type="button"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-md hover:bg-white/10 active:scale-95"
+            title="Clear search"
+            aria-label="Clear search"
+            @click="searchQuery = ''"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <!-- Custom Sample Text Input -->

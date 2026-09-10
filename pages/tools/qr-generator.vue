@@ -23,7 +23,8 @@ import {
   Box,
   Radio,
   Activity,
-  Compass
+  Compass,
+  X
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
@@ -726,13 +727,24 @@ onMounted(async () => {
           </label>
 
           <!-- URL Input -->
-          <div v-if="activeType === 'url'">
+          <div v-if="activeType === 'url'" class="relative flex items-center">
             <input
               v-model="urlText"
               type="url"
               placeholder="https://example.com"
               class="w-full p-3 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-sm transition-all focus:outline-none focus:border-white focus:ring-2 focus:ring-white/10 font-mono"
+              :class="urlText ? 'pr-10' : ''"
             />
+            <button
+              v-if="urlText"
+              type="button"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-md hover:bg-white/10 active:scale-95"
+              title="Clear URL"
+              aria-label="Clear URL"
+              @click="urlText = ''"
+            >
+              <X class="w-4 h-4" />
+            </button>
           </div>
 
           <!-- Email Input -->

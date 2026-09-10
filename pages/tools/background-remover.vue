@@ -17,7 +17,8 @@ import {
   Zap,
   AlertTriangle,
   ArrowRight,
-  FolderOpen
+  FolderOpen,
+  X
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
@@ -382,16 +383,30 @@ const resetAll = () => {
             v-model="imageUrlInput"
             type="url"
             :placeholder="locale === 'id' ? 'Tempel link foto (URL) atau tekan Ctrl+V di mana saja...' : 'Paste image link (URL) or press Ctrl+V anywhere...'"
-            class="w-full h-11 pl-10 pr-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            class="w-full h-11 pl-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            :class="imageUrlInput ? 'pr-20' : 'pr-10'"
           />
-          <button
-            type="button"
-            class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
-            @click="pasteFromClipboard"
-            :title="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
-          >
-            <Clipboard class="w-4 h-4" />
-          </button>
+          <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <button
+              v-if="imageUrlInput"
+              type="button"
+              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+              title="Clear input"
+              aria-label="Clear input"
+              @click="imageUrlInput = ''"
+            >
+              <X class="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+              @click="pasteFromClipboard"
+              :title="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
+              :aria-label="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
+            >
+              <Clipboard class="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <Button

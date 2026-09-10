@@ -4,7 +4,7 @@ import { detectPlatform } from '~/server/utils/sanitizer'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
-import { Zap, Layers, Trash2, Clipboard, ArrowRight } from 'lucide-vue-next'
+import { Zap, Layers, Trash2, Clipboard, ArrowRight, X } from 'lucide-vue-next'
 
 interface Props {
   modelValue: string
@@ -81,6 +81,10 @@ const pasteFromClipboard = async () => {
   }
 }
 
+const clearInput = () => {
+  emit('update:modelValue', '')
+}
+
 const submitBatch = () => {
   const urls = detectedBatchUrls.value
   if (urls.length === 0) return
@@ -135,21 +139,38 @@ const submitBatch = () => {
           :value="modelValue"
           type="url"
           :placeholder="t.pastePlaceholder"
-          class="w-full h-12 pl-10 pr-12 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-50 shadow-xs"
+          class="w-full h-12 pl-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-50 shadow-xs"
+          :class="modelValue ? 'pr-20' : 'pr-12'"
           :disabled="loading"
           @input="handleSingleInput"
           @keydown.enter="emit('submit')"
         />
 
-        <!-- Paste Action Button -->
-        <button
-          type="button"
-          title="Paste from Clipboard"
-          class="absolute right-3 p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
-          @click="pasteFromClipboard"
-        >
-          <Clipboard class="w-4 h-4" />
-        </button>
+        <!-- Action Buttons Container (Right) -->
+        <div class="absolute right-2.5 flex items-center gap-1">
+          <!-- Clear Button (X) -->
+          <button
+            v-if="modelValue"
+            type="button"
+            title="Clear input"
+            aria-label="Clear input"
+            class="p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+            @click="clearInput"
+          >
+            <X class="w-4 h-4" />
+          </button>
+
+          <!-- Paste Action Button -->
+          <button
+            type="button"
+            title="Paste from Clipboard"
+            aria-label="Paste from clipboard"
+            class="p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+            @click="pasteFromClipboard"
+          >
+            <Clipboard class="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <!-- Submit Trigger -->
@@ -172,24 +193,26 @@ const submitBatch = () => {
           v-model="batchText"
           rows="4"
           placeholder="Paste multiple social media links here, separated by new lines...&#10;https://www.tiktok.com/@user/video/...&#10;https://www.instagram.com/reel/...&#10;https://youtu.be/..."
-          class="w-full p-4 pr-14 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10 shadow-xs"
+          class="w-full p-4 pr-16 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10 shadow-xs"
         />
 
-        <div class="absolute right-3 bottom-3 flex items-center gap-1.5">
+        <div class="absolute right-2.5 bottom-3 flex items-center gap-1">
           <button
             v-if="batchText"
             type="button"
-            class="p-1.5 text-neutral-400 hover:text-red-400 cursor-pointer flex items-center justify-center transition-colors"
+            class="p-1.5 text-neutral-400 hover:text-white cursor-pointer flex items-center justify-center transition-colors rounded-lg hover:bg-white/10 active:scale-95"
             title="Clear input"
+            aria-label="Clear input"
             @click="batchText = ''"
           >
-            <Trash2 class="w-4 h-4" />
+            <X class="w-4 h-4" />
           </button>
 
           <button
             type="button"
-            class="p-1.5 text-neutral-400 hover:text-white cursor-pointer flex items-center justify-center transition-colors"
+            class="p-1.5 text-neutral-400 hover:text-white cursor-pointer flex items-center justify-center transition-colors rounded-lg hover:bg-white/10 active:scale-95"
             title="Paste Clipboard"
+            aria-label="Paste from clipboard"
             @click="pasteFromClipboard"
           >
             <Clipboard class="w-4 h-4" />

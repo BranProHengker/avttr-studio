@@ -5,6 +5,7 @@ import { useSearch } from '~/composables/useSearch'
 import { useI18n } from '~/composables/useI18n'
 import Badge from '~/components/ui/Badge.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
+import { X } from 'lucide-vue-next'
 
 interface Props {
   isOpen: boolean
@@ -123,8 +124,8 @@ onUnmounted(() => {
           class="relative w-full max-w-xl bg-[var(--bg-surface-elevated)] border border-[var(--border-card)] rounded-[14px] shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden z-10 flex flex-col max-h-[75vh]"
         >
           <!-- Search Input Bar -->
-          <div class="flex items-center px-4 py-3.5 border-b border-[var(--border-subtle)] gap-3">
-            <svg class="w-4 h-4 text-[var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="flex items-center px-4 py-3.5 border-b border-[var(--border-subtle)] gap-2.5">
+            <svg class="w-4 h-4 text-[var(--text-tertiary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -135,7 +136,17 @@ onUnmounted(() => {
               :placeholder="t.searchPlaceholder"
               class="w-full bg-transparent text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none"
             />
-            <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded text-[var(--text-tertiary)]">ESC</kbd>
+            <button
+              v-if="searchQuery"
+              type="button"
+              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-md hover:bg-white/10 shrink-0 active:scale-95"
+              title="Clear search"
+              aria-label="Clear search"
+              @click="searchQuery = ''; inputRef?.focus()"
+            >
+              <X class="w-3.5 h-3.5" />
+            </button>
+            <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded text-[var(--text-tertiary)] shrink-0">ESC</kbd>
           </div>
 
           <!-- Tool Results List -->
