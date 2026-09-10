@@ -4,6 +4,7 @@ import AppSidebar from '~/components/layout/AppSidebar.vue'
 import AppNavbar from '~/components/layout/AppNavbar.vue'
 import ToastContainer from '~/components/layout/ToastContainer.vue'
 import { useSearch } from '~/composables/useSearch'
+import { useSidebar } from '~/composables/useSidebar'
 
 const LazyCommandPalette = defineAsyncComponent(() => import('~/components/layout/CommandPalette.vue'))
 const LazyHistoryDrawer = defineAsyncComponent(() => import('~/components/dashboard/HistoryDrawer.vue'))
@@ -11,6 +12,7 @@ const LazyHistoryDrawer = defineAsyncComponent(() => import('~/components/dashbo
 const isSidebarOpen = ref(false)
 const isHistoryOpen = ref(false)
 const { isPaletteOpen, openPalette, closePalette } = useSearch()
+const { isCollapsed } = useSidebar()
 
 const handleGlobalKeydown = (e: KeyboardEvent) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -47,7 +49,10 @@ onUnmounted(() => {
     />
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0 lg:pl-64 transition-all duration-200">
+    <div
+      class="flex-1 flex flex-col min-w-0 transition-all duration-200"
+      :class="isCollapsed ? 'lg:pl-16' : 'lg:pl-64'"
+    >
       <AppNavbar
         @toggle-sidebar="isSidebarOpen = !isSidebarOpen"
         @open-palette="openPalette"

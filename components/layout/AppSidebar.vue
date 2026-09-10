@@ -1,8 +1,27 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Scissors,
+  Image as ImageIcon,
+  RefreshCw,
+  Wand2,
+  QrCode,
+  Type,
+  FileText,
+  FileCode,
+  Code2,
+  Hash,
+  Smartphone,
+  Pipette,
+  Globe,
+} from 'lucide-vue-next'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
+import { useSidebar } from '~/composables/useSidebar'
+import RadialSubmenu, { type RadialItem } from '~/components/layout/RadialSubmenu.vue'
 
 interface Props {
   isOpen: boolean
@@ -18,6 +37,7 @@ const emit = defineEmits<{
 const route = useRoute()
 const { history } = useHistory()
 const { t } = useI18n()
+const { isCollapsed, toggleCollapse } = useSidebar()
 
 const shortcutKey = ref('Ctrl+K')
 
@@ -28,7 +48,7 @@ onMounted(() => {
   }
 })
 
-// Accordion state for collapsible menus
+// Accordion state for collapsible menus in expanded mode
 const openMenus = ref<Record<string, boolean>>({
   'dashboard': true,
   'video-reels': true,
@@ -46,6 +66,122 @@ const isRouteActive = (targetRoute: string) => {
   if (targetRoute !== '/' && route.path === targetRoute) return true
   return false
 }
+
+const isCategoryActive = (category: string) => {
+  if (category === 'dashboard') {
+    return route.path === '/'
+  }
+  if (category === 'video-reels') {
+    return route.path.startsWith('/d/') && !['/d/spotify', '/d/soundcloud'].includes(route.path)
+  }
+  if (category === 'feeds-audio') {
+    return ['/d/spotify', '/d/soundcloud'].includes(route.path) || route.path === '/tools/audio-cutter'
+  }
+  if (category === 'assets') {
+    return [
+      '/tools/image-compressor',
+      '/tools/image-converter',
+      '/tools/background-remover',
+      '/tools/qr-generator',
+      '/tools/pairdrop',
+      '/tools/brat-generator',
+      '/tools/pdf-tools',
+      '/tools/svg-optimizer',
+      '/tools/code-to-image',
+      '/tools/video-to-gif',
+      '/tools/hash-encoder',
+    ].includes(route.path)
+  }
+  if (category === 'design') {
+    return [
+      '/tools/device-mockup',
+      '/tools/font-library',
+      '/tools/color-converter',
+      '/tools/color-palette',
+      '/tools/og-previewer',
+    ].includes(route.path)
+  }
+  return false
+}
+
+// Radial orbital submenu state (matching user photo 2)
+const activeRadialCategory = ref<string | null>(null)
+const radialOriginX = ref(32)
+const radialOriginY = ref(200)
+
+const openRadialMenu = (categoryKey: string, event: MouseEvent) => {
+  const target = event.currentTarget as HTMLElement
+  if (target) {
+    const rect = target.getBoundingClientRect()
+    radialOriginX.value = Math.round(rect.left + rect.width / 2)
+    radialOriginY.value = Math.round(rect.top + rect.height / 2)
+  }
+  activeRadialCategory.value = categoryKey
+}
+
+const closeRadialMenu = () => {
+  activeRadialCategory.value = null
+}
+
+watch(isCollapsed, (val) => {
+  if (!val) {
+    activeRadialCategory.value = null
+  }
+})
+
+const radialCategories = computed<Record<string, { title: string, items: RadialItem[] }>>(() => ({
+  'video-reels': {
+    title: t.value.videoSocials,
+    items: [
+      { path: '/d/tiktok', label: 'TikTok', brandName: 'tiktok' },
+      { path: '/d/instagram', label: 'Instagram', brandName: 'instagram' },
+      { path: '/d/youtube', label: 'YouTube', brandName: 'youtube' },
+      { path: '/d/twitter', label: 'Twitter / X', brandName: 'twitter' },
+      { path: '/d/capcut', label: 'CapCut', brandName: 'capcut' },
+      { path: '/d/facebook', label: 'Facebook', brandName: 'facebook' },
+      { path: '/d/terabox', label: 'TeraBox', brandName: 'terabox' },
+    ],
+  },
+  'feeds-audio': {
+    title: t.value.audioMusic,
+    items: [
+      { path: '/d/spotify', label: 'Spotify', brandName: 'spotify' },
+      { path: '/d/soundcloud', label: 'SoundCloud', brandName: 'soundcloud' },
+      { path: '/tools/audio-cutter', label: 'Audio Extractor', iconComponent: Scissors },
+    ],
+  },
+  'assets': {
+    title: t.value.clientUtilities,
+    items: [
+      { path: '/tools/image-compressor', label: 'Image Compressor', iconComponent: ImageIcon },
+      { path: '/tools/image-converter', label: 'Image Converter', iconComponent: RefreshCw },
+      { path: '/tools/background-remover', label: 'Background Remover', iconComponent: Wand2 },
+      { path: '/tools/qr-generator', label: 'QR Generator', iconComponent: QrCode },
+      { path: '/tools/pairdrop', label: 'PairDrop (P2P)', brandName: 'pairdrop' },
+      { path: '/tools/brat-generator', label: 'Brat Generator', iconComponent: Type },
+      { path: '/tools/pdf-tools', label: 'PDF Studio', iconComponent: FileText },
+      { path: '/tools/svg-optimizer', label: 'SVG Optimizer', iconComponent: FileCode },
+      { path: '/tools/code-to-image', label: 'Code to Image', iconComponent: Code2 },
+      { path: '/tools/video-to-gif', label: 'Video to GIF', brandName: 'video-to-gif' },
+      { path: '/tools/hash-encoder', label: 'Hash Encoder', iconComponent: Hash },
+    ],
+  },
+  'design': {
+    title: t.value.designSystem,
+    items: [
+      { path: '/tools/device-mockup', label: 'Device Mockup', iconComponent: Smartphone },
+      { path: '/tools/font-library', label: 'Font Library', iconComponent: Type },
+      { path: '/tools/color-converter', label: 'Color Converter', iconComponent: Pipette },
+      { path: '/tools/color-palette', label: 'Color Palette', brandName: 'color-palette' },
+      { path: '/tools/og-previewer', label: 'OG Previewer', iconComponent: Globe },
+    ],
+  },
+}))
+
+const activeRadialData = computed(() => {
+  if (!activeRadialCategory.value) return null
+  return radialCategories.value[activeRadialCategory.value] || null
+})
 </script>
 
 <template>
@@ -59,11 +195,234 @@ const isRouteActive = (targetRoute: string) => {
 
     <!-- Sidebar Container -->
     <aside
-      class="fixed top-0 bottom-0 left-0 z-40 w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border-subtle)] flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 select-none"
-      :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
+      class="fixed top-0 bottom-0 left-0 z-40 bg-[var(--bg-sidebar)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-200 ease-in-out select-none"
+      :class="[
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        isCollapsed ? 'w-64 lg:w-16' : 'w-64'
+      ]"
     >
-      <!-- Top Brand Header (Flat threeui style: Logo + Title + GitHub Link) -->
-      <div class="px-4 py-3.5 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
+      <!-- Floating Collapse / Expand Chevron Toggle Button on Right Border -->
+      <button
+        type="button"
+        id="sidebar-collapse-toggle"
+        class="hidden lg:flex absolute -right-3 top-4 w-6 h-6 rounded-full bg-[#212121] border border-[#2E2E2E] shadow-md items-center justify-center text-neutral-400 hover:text-white hover:border-white/40 cursor-pointer z-50 transition-all hover:scale-110 active:scale-95"
+        :title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        @click="toggleCollapse"
+      >
+        <ChevronRight v-if="isCollapsed" class="w-3.5 h-3.5" />
+        <ChevronLeft v-else class="w-3.5 h-3.5" />
+      </button>
+
+      <!-- Desktop Collapsed View (Slim Activity Rail) -->
+      <div v-if="isCollapsed" class="hidden lg:flex flex-col flex-1 min-h-0 items-center w-full">
+        <!-- Top Logo Header -->
+        <div class="h-14 w-full flex items-center justify-center border-b border-[var(--border-subtle)] shrink-0">
+          <NuxtLink
+            to="/"
+            class="w-8 h-8 rounded-lg overflow-hidden bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 shadow-xs hover:border-white/30 transition-colors"
+            title="Avttr Studio"
+          >
+            <img
+              src="/mio.png"
+              alt="Avttr Studio Logo"
+              class="w-full h-full object-cover"
+            />
+          </NuxtLink>
+        </div>
+
+        <!-- Search Quick Trigger -->
+        <div class="w-full py-3 flex justify-center border-b border-[var(--border-subtle)]/50 shrink-0">
+          <button
+            type="button"
+            id="collapsed-search-btn"
+            class="relative group w-10 h-10 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent hover:border-[#2E2E2E] transition-all cursor-pointer shadow-xs"
+            @click="emit('open-palette')"
+          >
+            <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <!-- Floating Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-2">
+              <span>Search tools</span>
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[#2E2E2E] text-neutral-300 rounded font-semibold">{{ shortcutKey }}</kbd>
+            </div>
+          </button>
+        </div>
+
+        <!-- Collapsed Rail Icons Stack -->
+        <div class="flex-1 w-full overflow-y-auto py-3 px-2 space-y-2 flex flex-col items-center">
+          <!-- 1. Dashboard -->
+          <div class="relative group">
+            <NuxtLink
+              to="/"
+              class="w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+              :class="
+                isRouteActive('/')
+                  ? 'bg-[#2E2E2E] text-white border border-white/10 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent'
+              "
+            >
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </NuxtLink>
+
+            <!-- Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
+              {{ t.dashboard }}
+            </div>
+          </div>
+
+          <!-- 2. Video & Socials (Click opens Radial Submenu) -->
+          <div class="relative group">
+            <button
+              type="button"
+              class="w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+              :class="
+                isCategoryActive('video-reels') || activeRadialCategory === 'video-reels'
+                  ? 'bg-[#2E2E2E] text-white border border-white/10 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent'
+              "
+              :title="t.videoSocials"
+              @click="openRadialMenu('video-reels', $event)"
+            >
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
+
+            <!-- Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
+              {{ t.videoSocials }}
+            </div>
+          </div>
+
+          <!-- 3. Audio & Music (Click opens Radial Submenu) -->
+          <div class="relative group">
+            <button
+              type="button"
+              class="w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+              :class="
+                isCategoryActive('feeds-audio') || activeRadialCategory === 'feeds-audio'
+                  ? 'bg-[#2E2E2E] text-white border border-white/10 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent'
+              "
+              :title="t.audioMusic"
+              @click="openRadialMenu('feeds-audio', $event)"
+            >
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+            </button>
+
+            <!-- Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
+              {{ t.audioMusic }}
+            </div>
+          </div>
+
+          <!-- 4. Client Utilities / Assets (Click opens Radial Submenu) -->
+          <div class="relative group">
+            <button
+              type="button"
+              class="w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+              :class="
+                isCategoryActive('assets') || activeRadialCategory === 'assets'
+                  ? 'bg-[#2E2E2E] text-white border border-white/10 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent'
+              "
+              :title="t.clientUtilities"
+              @click="openRadialMenu('assets', $event)"
+            >
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+            </button>
+
+            <!-- Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
+              {{ t.clientUtilities }}
+            </div>
+          </div>
+
+          <!-- 5. Design Studio (Click opens Radial Submenu) -->
+          <div class="relative group">
+            <button
+              type="button"
+              class="w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+              :class="
+                isCategoryActive('design') || activeRadialCategory === 'design'
+                  ? 'bg-[#2E2E2E] text-white border border-white/10 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent'
+              "
+              :title="t.designSystem"
+              @click="openRadialMenu('design', $event)"
+            >
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4 5 5 0 015-5h4a5 5 0 015 5 4 4 0 01-4 4H7zM16 3.13a4 4 0 010 7.75M21 14v1a4 4 0 01-4 4h-1" />
+              </svg>
+            </button>
+
+            <!-- Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
+              {{ t.designSystem }}
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="w-8 border-b border-[#2E2E2E]/60 my-1"></div>
+
+          <!-- 6. History Drawer Trigger -->
+          <div class="relative group">
+            <button
+              type="button"
+              id="collapsed-history-btn"
+              class="w-10 h-10 rounded-xl flex items-center justify-center relative text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
+              @click="emit('open-history')"
+            >
+              <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span
+                v-if="history.length > 0"
+                class="absolute top-2 right-2 w-2 h-2 rounded-full bg-white shadow-xs"
+              />
+            </button>
+
+            <!-- Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-1.5">
+              <span>{{ t.downloadHistory }}</span>
+              <span v-if="history.length > 0" class="px-1.5 py-0.2 font-mono text-[10px] bg-[#2E2E2E] rounded text-neutral-300">
+                {{ history.length }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 7. GitHub Link -->
+          <div class="relative group">
+            <a
+              href="https://github.com/BranProHengker/avttr-studio"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
+            >
+              <svg class="w-4.5 h-4.5 fill-current" viewBox="0 0 24 24">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+            </a>
+
+            <!-- Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
+              GitHub Repository
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full Expanded View (Accordion Sidebar) -->
+      <div :class="isCollapsed ? 'flex flex-col flex-1 min-h-0 lg:hidden' : 'flex flex-col flex-1 min-h-0'">
+        <!-- Top Brand Header (Flat threeui style: Logo + Title + GitHub Link) -->
+        <div class="px-4 py-3.5 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
         <NuxtLink
           to="/"
           class="flex items-center gap-2.5 min-w-0 group cursor-pointer"
@@ -611,6 +970,17 @@ const isRouteActive = (targetRoute: string) => {
           </div>
         </div>
       </div>
-    </aside>
+    </div>
+  </aside>
+
+  <!-- Radial Orbital Submenu (Speed Dial like user Photo 2) -->
+    <RadialSubmenu
+      :is-open="!!activeRadialCategory && isCollapsed"
+      :origin-x="radialOriginX"
+      :origin-y="radialOriginY"
+      :category-title="activeRadialData?.title || ''"
+      :items="activeRadialData?.items || []"
+      @close="closeRadialMenu"
+    />
   </div>
 </template>
