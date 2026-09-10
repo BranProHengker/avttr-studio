@@ -63,10 +63,12 @@ export const twitterScraper: PlatformScraper = {
             if (medias.length > 0) {
               const mainThumb = tweet.media?.all?.[0]?.thumbnail_url || tweet.author?.avatar_url
               const tweetDuration = tweet.media?.all?.[0]?.duration || undefined
+              const tweetText = tweet.text?.trim()
+              const tweetTitle = tweetText || (tweet.author?.name ? `Video by ${tweet.author.name}` : 'Twitter Video')
               return {
                 success: true,
                 platform: 'twitter',
-                title: tweet.text || 'Twitter / X Post',
+                title: tweetTitle,
                 description: tweet.text || undefined,
                 thumbnail: mainThumb,
                 duration: tweetDuration,
@@ -120,10 +122,12 @@ export const twitterScraper: PlatformScraper = {
 
           if (medias.length > 0) {
             const thumb = data.media_extended?.[0]?.thumbnail_url || data.mediaURLs?.[0]
+            const vxText = data.text?.trim()
+            const vxTitle = vxText || (data.user_name ? `Video by ${data.user_name}` : 'Twitter Video')
             return {
               success: true,
               platform: 'twitter',
-              title: data.text || 'Twitter / X Media',
+              title: vxTitle,
               thumbnail: thumb,
               author: {
                 name: data.user_name || 'Twitter User',

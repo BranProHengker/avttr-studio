@@ -72,10 +72,13 @@ export const tiktokScraper: PlatformScraper = {
           })
         }
 
+        const cleanTiktokTitle = data.title?.trim()
+        const tiktokTitle = cleanTiktokTitle || (data.author?.nickname ? `Video by ${data.author.nickname}` : 'TikTok Video')
+
         return {
           success: true,
           platform: 'tiktok',
-          title: data.title || 'TikTok Video',
+          title: tiktokTitle,
           author: {
             name: data.author?.nickname || 'TikTok Creator',
             username: data.author?.unique_id || 'unknown',

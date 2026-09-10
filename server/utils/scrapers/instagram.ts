@@ -119,7 +119,8 @@ export const instagramScraper: PlatformScraper = {
           const medias = parseMediaItems(dataObj, dataObj?.thumb || meta?.thumb)
 
           if (medias.length > 0) {
-            const title = meta.title || dataObj?.title || json?.title || 'Instagram Post'
+            const rawInstaTitle = (meta.title || dataObj?.title || json?.title)?.trim()
+            const title = rawInstaTitle || (meta.username ? `Instagram Post by ${meta.username}` : 'Instagram Post')
             const thumbnail = unwrapCdnUrl(dataObj?.thumb || meta.thumb || medias[0]?.thumbnail || medias[0]?.url)
             const author = meta.username
               ? {
@@ -169,7 +170,7 @@ export const instagramScraper: PlatformScraper = {
             return {
               success: true,
               platform: 'instagram',
-              title: meta.title || item?.title || 'Instagram Carousel',
+              title: (meta.title || item?.title)?.trim() || 'Instagram Media',
               thumbnail: unwrapCdnUrl(item?.thumb || medias[0]?.thumbnail || medias[0]?.url),
               medias,
             }

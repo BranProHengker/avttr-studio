@@ -173,12 +173,18 @@ export function useBatchDownloader() {
       if (!item.result) return
       const media = item.result.medias[item.selectedMediaIndex] || item.result.medias[0]
       if (media) {
-        // Assign distinct filename if missing
-        const safeTitle = (item.result.title || 'media').replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30)
+        // Assign clean filename based on media title
+        const cleanTitle = (item.result.title || item.platform || 'media')
+          .replace(/https?:\/\/\S+/gi, '')
+          .replace(/[\\/:*?"<>|\r\n\t#]/g, '_')
+          .replace(/\s+/g, '_')
+          .trim()
+          .substring(0, 60)
+          .replace(/^[-_.]+|[-_.]+$/g, '')
         const ext = media.format || (media.type === 'video' ? 'mp4' : media.type === 'audio' ? 'mp3' : 'jpg')
         mediaToZip.push({
           ...media,
-          filename: media.filename || `${item.platform}_${safeTitle}_${item.id.slice(-4)}.${ext}`
+          filename: media.filename || `${cleanTitle}_${item.id.slice(-4)}.${ext}`
         })
       }
     })

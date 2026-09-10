@@ -351,7 +351,7 @@ watch(
             <Button
               variant="primary"
               size="sm"
-              @click="downloadMediaItem(item, `${result.platform}_${idx + 1}`)"
+              @click="downloadMediaItem(item, videoMedias.length > 1 && item.quality ? `${result.title || result.platform} [${item.quality}]` : (result.title || result.platform))"
             >
               Download
             </Button>
@@ -376,7 +376,7 @@ watch(
             <Button
               variant="primary"
               size="sm"
-              @click="downloadMediaItem(item, `${result.title || result.platform}_photo`)"
+              @click="downloadMediaItem(item, result.title || `${result.platform}_photo`)"
             >
               Download Photo
             </Button>
@@ -400,7 +400,7 @@ watch(
             <Button
               variant="secondary"
               size="sm"
-              @click="downloadMediaItem(item, `${result.title || result.platform}`)"
+              @click="downloadMediaItem(item, result.title ? `${result.title} [Audio]` : result.platform)"
             >
               Download {{ item.format?.toUpperCase() || 'Audio' }}
             </Button>
@@ -434,7 +434,7 @@ watch(
               variant="primary"
               size="sm"
               class="shrink-0"
-              @click="downloadMediaItem(item, item.filename || `${result.platform}_file_${idx + 1}`)"
+              @click="downloadMediaItem(item, item.filename || result.title || `${result.platform}_file_${idx + 1}`)"
             >
               Download
             </Button>
