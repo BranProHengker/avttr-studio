@@ -19,7 +19,8 @@ import {
   Info,
   RefreshCw,
   Palette,
-  Maximize2
+  Maximize2,
+  Ban
 } from 'lucide-vue-next'
 import confetti from 'canvas-confetti'
 import { useToast } from '~/composables/useToast'
@@ -100,6 +101,14 @@ const sampleImages = [
 
 // Preset Stroke Colors
 const strokeColorPresets = ['#FFFFFF', '#000000', '#FFE600', '#00F0FF', '#FF0055', '#25D366']
+
+// Select Stroke Color & auto-enable stroke if currently 0
+const selectStrokeColor = (color: string) => {
+  strokeColor.value = color
+  if (strokeWidth.value === 0) {
+    strokeWidth.value = 10
+  }
+}
 
 // Load Image from Blob or URL
 const loadImage = (url: string, fileObj?: File) => {
@@ -646,43 +655,101 @@ onUnmounted(() => {
               <Layers class="w-4 h-4 text-white" />
               <h2 class="text-sm font-semibold text-[var(--text-primary)]">Sticker Outline & Pop Shadow</h2>
             </div>
-            <span class="text-xs text-[var(--text-secondary)] font-mono">{{ strokeWidth }}px outline</span>
+            <span
+              class="text-xs font-mono transition-colors"
+              :class="strokeWidth === 0 ? 'text-amber-400 font-medium' : 'text-[var(--text-secondary)]'"
+            >
+              {{ strokeWidth === 0 ? 'No outline' : `${strokeWidth}px outline` }}
+            </span>
           </div>
 
-          <!-- Stroke Width Slider -->
-          <div class="space-y-1.5">
+          <!-- Stroke Width Slider & Quick Presets -->
+          <div class="space-y-2.5">
             <div class="flex justify-between text-xs text-[var(--text-secondary)]">
-              <span>White Outline Thickness</span>
-              <span class="font-mono text-white">{{ strokeWidth }}px</span>
+              <span>Outline Thickness</span>
+              <span class="font-mono text-white">{{ strokeWidth === 0 ? 'None (0px)' : `${strokeWidth}px` }}</span>
             </div>
+
+            <!-- Quick Presets -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                class="px-2.5 py-1 text-xs rounded-lg border transition-all flex items-center gap-1.5"
+                :class="strokeWidth === 0 ? 'border-amber-500/60 bg-amber-500/15 text-amber-300 font-medium ring-1 ring-amber-500/30' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                @click="strokeWidth = 0"
+              >
+                <Ban class="w-3.5 h-3.5 text-red-400" />
+                <span>No Outline</span>
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1 text-xs rounded-lg border transition-all"
+                :class="strokeWidth === 4 ? 'border-white bg-white text-black font-medium' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                @click="strokeWidth = 4"
+              >
+                Thin (4px)
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1 text-xs rounded-lg border transition-all"
+                :class="strokeWidth === 10 ? 'border-white bg-white text-black font-medium' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                @click="strokeWidth = 10"
+              >
+                Medium (10px)
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1 text-xs rounded-lg border transition-all"
+                :class="strokeWidth === 18 ? 'border-white bg-white text-black font-medium' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                @click="strokeWidth = 18"
+              >
+                Thick (18px)
+              </button>
+            </div>
+
             <input
               v-model.number="strokeWidth"
               type="range"
               min="0"
               max="24"
               step="1"
-              class="w-full accent-white bg-[#2E2E2E] h-1.5 rounded-lg appearance-none cursor-pointer"
+              class="w-full accent-white bg-[#2E2E2E] h-1.5 rounded-lg appearance-none cursor-pointer mt-1"
             />
           </div>
 
           <!-- Stroke Color Selector -->
           <div class="space-y-2">
-            <label class="text-xs text-[var(--text-secondary)] block">Outline Color</label>
+            <div class="flex items-center justify-between">
+              <label class="text-xs text-[var(--text-secondary)] block">Outline Color</label>
+              <span v-if="strokeWidth === 0" class="text-[11px] text-amber-400/80">Click a color to enable outline</span>
+            </div>
             <div class="flex items-center gap-2 flex-wrap">
+              <!-- No Outline Swatch -->
+              <button
+                type="button"
+                class="w-6 h-6 rounded-full border border-[#2E2E2E] flex items-center justify-center transition-transform bg-[#1A1A1A]"
+                :class="{ 'ring-2 ring-amber-400 scale-110': strokeWidth === 0 }"
+                title="No Outline (0px)"
+                @click="strokeWidth = 0"
+              >
+                <Ban class="w-3.5 h-3.5 text-red-400" />
+              </button>
+
               <button
                 v-for="color in strokeColorPresets"
                 :key="color"
                 type="button"
                 class="w-6 h-6 rounded-full border border-[#2E2E2E] transition-transform"
-                :class="{ 'ring-2 ring-white scale-110': strokeColor.toLowerCase() === color.toLowerCase() }"
+                :class="{ 'ring-2 ring-white scale-110': strokeWidth > 0 && strokeColor.toLowerCase() === color.toLowerCase() }"
                 :style="{ backgroundColor: color }"
-                @click="strokeColor = color"
+                @click="selectStrokeColor(color)"
               />
               <input
                 v-model="strokeColor"
                 type="color"
                 class="w-7 h-7 rounded border border-[#2E2E2E] bg-transparent cursor-pointer"
                 title="Custom color"
+                @input="if (strokeWidth === 0) strokeWidth = 10"
               />
             </div>
           </div>

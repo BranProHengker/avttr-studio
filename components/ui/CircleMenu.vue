@@ -130,7 +130,8 @@ const positionedItems = computed(() => {
       <div
         v-for="(item, index) in positionedItems"
         :key="`circle-item-${index}`"
-        class="absolute pointer-events-auto"
+        class="absolute pointer-events-auto transition-[z-index]"
+        :class="hoveredIndex === index ? 'z-50' : 'z-20'"
         :style="{
           '--tx': `${item.x}px`,
           '--ty': `${item.y}px`,

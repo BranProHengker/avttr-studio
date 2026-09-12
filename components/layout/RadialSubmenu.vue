@@ -118,6 +118,7 @@ const positionedItems = computed(() => {
 
 // Stable hover grace with no premature retract jitter
 const isClosing = ref(false)
+const hoveredIndex = ref<number | null>(null)
 let closeTimer: ReturnType<typeof setTimeout> | null = null
 let retractTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -137,6 +138,15 @@ const cancelClose = () => {
   if (isClosing.value) {
     isClosing.value = false
   }
+}
+
+const handleItemMouseEnter = (index: number) => {
+  cancelClose()
+  hoveredIndex.value = index
+}
+
+const handleItemMouseLeave = () => {
+  hoveredIndex.value = null
 }
 
 const scheduleClose = (delay = 220) => {
@@ -217,7 +227,8 @@ onUnmounted(() => {
       <div
         v-for="(item, index) in positionedItems"
         :key="item.path"
-        class="radial-menu-item fixed z-50 -translate-x-1/2 -translate-y-1/2 group pointer-events-auto"
+        class="radial-menu-item fixed -translate-x-1/2 -translate-y-1/2 group pointer-events-auto"
+        :class="hoveredIndex === index ? 'z-[100]' : 'z-50'"
         :style="{
           left: `${originX + item.dx}px`,
           top: `${originY + item.dy}px`,
@@ -228,7 +239,8 @@ onUnmounted(() => {
             ? `sidebarSpringRetract 0.14s cubic-bezier(0.4, 0, 1, 1) ${(positionedItems.length - 1 - index) * 12}ms forwards`
             : `sidebarSpringBlossom 0.3s cubic-bezier(0.22, 1.3, 0.36, 1) ${index * 14}ms backwards`,
         }"
-        @mouseenter="cancelClose"
+        @mouseenter="handleItemMouseEnter(index)"
+        @mouseleave="handleItemMouseLeave"
       >
         <NuxtLink
           :to="item.path"
@@ -250,7 +262,7 @@ onUnmounted(() => {
 
         <!-- Floating Tooltip -->
         <div
-          class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-150 absolute left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#18181A] border border-[#2E2E2E] text-xs font-medium text-white whitespace-nowrap shadow-2xl pointer-events-none z-50"
+          class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-150 absolute left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#18181A] border border-[#2E2E2E] text-xs font-medium text-white whitespace-nowrap shadow-2xl pointer-events-none z-[110]"
           :class="item.dy < 0 ? 'bottom-full mb-2' : 'top-full mt-2'"
         >
           {{ item.label }}
