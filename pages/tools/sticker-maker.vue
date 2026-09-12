@@ -45,7 +45,7 @@ useHead({
 })
 
 const toast = useToast()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // Canvas References
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -1370,17 +1370,22 @@ onUnmounted(() => {
         </Card>
 
         <!-- Quick Usage Guide Card -->
-        <Card class="p-4 text-xs text-[var(--text-secondary)] space-y-2">
+        <Card class="p-4 text-xs text-[var(--text-secondary)] space-y-2.5">
           <div class="flex items-center gap-1.5 text-[var(--text-primary)] font-semibold">
-            <Info class="w-3.5 h-3.5" />
-            <span>How to use in WhatsApp</span>
+            <Info class="w-3.5 h-3.5 text-white" />
+            <span>{{ locale === 'id' ? 'Cara Kirim Sebagai Stiker (Biar Nggak Jadi Foto)' : 'How to Send as a Real Sticker (Avoid Photo Mode)' }}</span>
           </div>
-          <p class="leading-relaxed">
-            • <strong>WhatsApp Web:</strong> Drag & drop the downloaded file directly into chat, or click Copy above and press <kbd class="px-1 py-0.5 bg-[#2E2E2E] rounded text-white">Ctrl+V</kbd>.
-          </p>
-          <p class="leading-relaxed">
-            • <strong>Mobile:</strong> The exported WebP file has official <code class="text-white">net.whatsapp.WhatsApp</code> EXIF metadata embedded, allowing WhatsApp sticker apps or direct file sharing to recognize it as a native sticker.
-          </p>
+          <div class="space-y-2 leading-relaxed">
+            <p>
+              • <strong>WhatsApp Web:</strong> {{ locale === 'id' ? 'Jangan drag & drop langsung. Klik tombol' : 'Do not drag & drop directly. Click the' }} <kbd class="px-1.5 py-0.5 bg-[#2E2E2E] rounded text-white font-mono">+</kbd> {{ locale === 'id' ? 'di sebelah kolom chat &rarr; Pilih menu' : 'attachment button &rarr; Select' }} <strong>"New Sticker" / "Stiker"</strong> {{ locale === 'id' ? '(icon stiker) &rarr; Pilih file' : '(sticker icon) &rarr; Choose the' }} <code class="text-white font-mono">.webp</code> {{ locale === 'id' ? 'ini agar terkirim transparan.' : 'file to send as a floating sticker.' }}
+            </p>
+            <p>
+              • <strong>WhatsApp Mobile (HP):</strong> {{ locale === 'id' ? 'Kirim stiker ke diri sendiri lewat WhatsApp Web, lalu di HP cukup tekan & tahan stikernya &rarr; pilih' : 'Send the sticker to your chat via WhatsApp Web, then on your phone tap & hold it &rarr; choose' }} <strong>{{ locale === 'id' ? '"Tambah ke Favorit" (⭐)' : '"Add to Favorites" (⭐)' }}</strong> {{ locale === 'id' ? 'agar tersimpan permanen di HP.' : 'to save it permanently.' }}
+            </p>
+            <p>
+              • <strong>Telegram:</strong> {{ locale === 'id' ? 'Kirim file' : 'Send this' }} <code class="text-white font-mono">.webp</code> {{ locale === 'id' ? '512×512 ini ke bot' : '512×512 file to the' }} <strong>@Stickers</strong> {{ locale === 'id' ? 'dengan mode' : 'bot as a' }} <strong>{{ locale === 'id' ? 'File / Dokumen (Tanpa Kompresi)' : 'File / Document (Uncompressed)' }}</strong> {{ locale === 'id' ? 'untuk dimasukkan ke stiker pack kamu.' : 'to add it to your official sticker pack.' }}
+            </p>
+          </div>
         </Card>
       </div>
     </div>
