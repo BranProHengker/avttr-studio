@@ -110,6 +110,12 @@ const selectStrokeColor = (color: string) => {
   }
 }
 
+const handleCustomColorInput = () => {
+  if (strokeWidth.value === 0) {
+    strokeWidth.value = 10
+  }
+}
+
 // Load Image from Blob or URL
 const loadImage = (url: string, fileObj?: File) => {
   const img = new Image()
@@ -749,7 +755,7 @@ onUnmounted(() => {
                 type="color"
                 class="w-7 h-7 rounded border border-[#2E2E2E] bg-transparent cursor-pointer"
                 title="Custom color"
-                @input="if (strokeWidth === 0) strokeWidth = 10"
+                @input="handleCustomColorInput"
               />
             </div>
           </div>
