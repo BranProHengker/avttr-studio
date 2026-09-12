@@ -20,7 +20,10 @@ import {
   RefreshCw,
   Palette,
   Maximize2,
-  Ban
+  Link as LinkIcon,
+  Clipboard,
+  X,
+  ArrowRight
 } from 'lucide-vue-next'
 import confetti from 'canvas-confetti'
 import { useToast } from '~/composables/useToast'
@@ -93,11 +96,16 @@ const emojiTags = ref<string>('🔥, 😎')
 // Target Format
 const targetFormat = ref<'whatsapp' | 'telegram' | 'png'>('whatsapp')
 
-// Quick Sample Images
+// Quick Sample Images (Distinct Real Assets)
 const sampleImages = [
-  { name: 'Mio Mascot', url: '/mio.png', isCutout: true },
-  { name: 'Logo Favicon', url: '/favicon.png', isCutout: true }
+  { name: 'Mio Mascot', url: '/mio.png' },
+  { name: 'Mio 404 Scene', url: '/mio-404-scene.webp' },
+  { name: 'Editorial Card', url: '/og-image-editorial.png' }
 ]
+
+// URL Input & Clipboard Paste State
+const imageUrlInput = ref('')
+const isFetchingUrl = ref(false)
 
 // Preset Stroke Colors
 const strokeColorPresets = ['#FFFFFF', '#000000', '#FFE600', '#00F0FF', '#FF0055', '#25D366']
@@ -119,15 +127,17 @@ const handleCustomColorInput = () => {
 // Load Image from Blob or URL
 const loadImage = (url: string, fileObj?: File) => {
   const img = new Image()
-  img.crossOrigin = 'anonymous'
+  if (/^https?:\/\//i.test(url)) {
+    img.crossOrigin = 'anonymous'
+  }
   img.onload = () => {
     sourceImage.value = img
     if (fileObj) {
       originalFile.value = fileObj
     } else {
-      originalFile.value = new File([], 'sticker_sample.png', { type: 'image/png' })
+      const name = url.split('/').pop()?.split('?')[0] || 'sticker_sample.png'
+      originalFile.value = new File([], name, { type: 'image/png' })
     }
-    // Auto-fit scale
     autoFitImage(img)
     nextTick(() => {
       renderSticker()
@@ -135,9 +145,114 @@ const loadImage = (url: string, fileObj?: File) => {
     toast.success('Image Loaded', 'Customize your sticker with outlines and text')
   }
   img.onerror = () => {
+    if (img.crossOrigin) {
+      const fallback = new Image()
+      fallback.onload = () => {
+        sourceImage.value = fallback
+        autoFitImage(fallback)
+        nextTick(() => renderSticker())
+        toast.success('Image Loaded', 'Customize your sticker with outlines and text')
+      }
+      fallback.onerror = () => {
+        toast.error('Image Error', 'Could not load image')
+      }
+      fallback.src = url
+      return
+    }
     toast.error('Image Error', 'Could not load image')
   }
   img.src = url
+}
+
+// Fetch Image from URL (supports HTTP/HTTPS with proxy fallback, data URLs, and relative assets)
+const fetchImageFromUrl = async (urlToFetch?: string) => {
+  const target = (urlToFetch || imageUrlInput.value).trim()
+  if (!target) return
+
+  const isHttp = /^https?:\/\//i.test(target)
+  const isRelative = target.startsWith('/') || target.startsWith('./')
+  const isDataUrl = target.startsWith('data:image/')
+
+  if (!isHttp && !isRelative && !isDataUrl) {
+    toast.error('Invalid URL', 'Please enter a valid HTTP/HTTPS link or image URL')
+    return
+  }
+
+  isFetchingUrl.value = true
+  try {
+    let response: Response | null = null
+
+    if (isDataUrl) {
+      const res = await fetch(target)
+      const blob = await res.blob()
+      const file = new File([blob], 'online_sticker.png', { type: blob.type || 'image/png' })
+      processSelectedFile(file)
+      imageUrlInput.value = ''
+      return
+    }
+
+    if (isRelative) {
+      response = await fetch(target)
+    } else {
+      try {
+        response = await fetch(target, { mode: 'cors' })
+        if (!response.ok) response = null
+      } catch {
+        response = null
+      }
+
+      if (!response) {
+        const proxyUrl = `/api/proxy?url=${encodeURIComponent(target)}`
+        response = await fetch(proxyUrl)
+      }
+    }
+
+    if (!response || !response.ok) throw new Error('Could not download image from link')
+
+    const blob = await response.blob()
+    const fileName = target.split('/').pop()?.split('?')[0] || 'online_sticker.png'
+    const file = new File([blob], fileName, { type: blob.type || 'image/png' })
+
+    processSelectedFile(file)
+    imageUrlInput.value = ''
+  } catch (err: any) {
+    toast.error('Fetch Failed', err.message || 'Could not load image from link')
+  } finally {
+    isFetchingUrl.value = false
+  }
+}
+
+// Paste Image from Clipboard
+const pasteFromClipboard = async () => {
+  try {
+    const clipboardItems = await navigator.clipboard.read()
+    for (const item of clipboardItems) {
+      const imageType = item.types.find((t) => t.startsWith('image/'))
+      if (imageType) {
+        const blob = await item.getType(imageType)
+        const file = new File([blob], `pasted_sticker_${Date.now()}.png`, { type: imageType })
+        toast.info('Image Pasted', 'Loading image from clipboard...')
+        processSelectedFile(file)
+        return
+      }
+    }
+
+    const text = await navigator.clipboard.readText()
+    if (text && /^https?:\/\//i.test(text.trim())) {
+      imageUrlInput.value = text.trim()
+      fetchImageFromUrl(text.trim())
+      return
+    }
+
+    toast.warning('No Image in Clipboard', 'Please copy an image or image URL first')
+  } catch (err) {
+    toast.error('Clipboard Access', 'Use Ctrl+V / ⌘V to paste directly')
+  }
+}
+
+// Load Distinct Sample Asset
+const loadSample = (url: string) => {
+  fetchImageFromUrl(url)
 }
 
 // Auto Fit Image into 512x512 with 24px safe padding
@@ -574,38 +689,94 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Standard Upload Dropzone (DESIGN.md Section 10) -->
-    <div
-      id="sticker-dropzone"
-      class="relative border-2 border-dashed rounded-[14px] p-6 sm:p-10 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-all duration-150"
-      :class="{ 'border-white/40 bg-white/5': isDragging }"
-      @dragover.prevent="isDragging = true"
-      @dragleave.prevent="isDragging = false"
-      @drop.prevent="handleDrop"
-      @click="triggerFileInput"
-    >
-      <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-        <Upload class="w-6 h-6" />
-      </div>
-      <h3 class="text-sm font-semibold text-[var(--text-primary)] mt-3">
-        Drop your image here or browse
-      </h3>
-      <p class="text-xs text-[var(--text-secondary)] mt-1">
-        Supports PNG, JPG, WebP up to 10MB. 100% processed client-side.
-      </p>
+    <!-- URL Omnibox & Paste Clipboard Control -->
+    <div class="space-y-3">
+      <form @submit.prevent="fetchImageFromUrl()" class="flex flex-col sm:flex-row items-center gap-2.5">
+        <div class="relative w-full flex-1 flex items-center">
+          <LinkIcon class="w-4 h-4 text-[var(--text-secondary)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            v-model="imageUrlInput"
+            type="url"
+            placeholder="Paste image URL (https://...) or press Ctrl+V anywhere..."
+            class="w-full h-11 pl-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            :class="imageUrlInput ? 'pr-20' : 'pr-12'"
+          />
+          <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <button
+              v-if="imageUrlInput"
+              type="button"
+              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10"
+              title="Clear input"
+              @click="imageUrlInput = ''"
+            >
+              <X class="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              class="p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10"
+              title="Paste from clipboard"
+              @click="pasteFromClipboard"
+            >
+              <Clipboard class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
-      <!-- Quick Sample Buttons -->
-      <div class="mt-4 flex items-center justify-center gap-2 flex-wrap" @click.stop>
-        <span class="text-xs text-[var(--text-secondary)]">Or try sample:</span>
-        <button
-          v-for="sample in sampleImages"
-          :key="sample.name"
-          type="button"
-          class="px-2.5 py-1 text-xs rounded-lg border border-[#2E2E2E] bg-[#1E1E1E] text-white hover:bg-[#2A2A2A] transition-colors"
-          @click="loadImage(sample.url)"
+        <Button
+          type="submit"
+          variant="secondary"
+          class="w-full sm:w-auto h-11 px-5 rounded-xl font-medium text-xs shrink-0 cursor-pointer"
+          :disabled="!imageUrlInput.trim() || isFetchingUrl"
+          :loading="isFetchingUrl"
         >
-          {{ sample.name }}
-        </button>
+          <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
+          <span>{{ isFetchingUrl ? 'Fetching...' : 'Load URL' }}</span>
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          class="w-full sm:w-auto h-11 px-4 rounded-xl font-medium text-xs shrink-0 cursor-pointer"
+          @click="pasteFromClipboard"
+        >
+          <Clipboard class="w-3.5 h-3.5 mr-1.5" />
+          <span>Paste Image</span>
+        </Button>
+      </form>
+
+      <!-- Standard Upload Dropzone (DESIGN.md Section 10) -->
+      <div
+        id="sticker-dropzone"
+        class="relative border-2 border-dashed rounded-[14px] p-6 sm:p-10 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-all duration-150"
+        :class="{ 'border-white/40 bg-white/5': isDragging }"
+        @dragover.prevent="isDragging = true"
+        @dragleave.prevent="isDragging = false"
+        @drop.prevent="handleDrop"
+        @click="triggerFileInput"
+      >
+        <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+          <Upload class="w-6 h-6" />
+        </div>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)] mt-3">
+          Drop your image here or browse
+        </h3>
+        <p class="text-xs text-[var(--text-secondary)] mt-1">
+          Supports PNG, JPG, WebP up to 10MB. 100% processed client-side.
+        </p>
+
+        <!-- Quick Sample Buttons -->
+        <div class="mt-4 flex items-center justify-center gap-2 flex-wrap" @click.stop>
+          <span class="text-xs text-[var(--text-secondary)]">Or try sample:</span>
+          <button
+            v-for="sample in sampleImages"
+            :key="sample.name"
+            type="button"
+            class="px-2.5 py-1 text-xs rounded-lg border border-[#2E2E2E] bg-[#1E1E1E] text-white hover:bg-[#2A2A2A] hover:border-[#4E4E4E] transition-colors cursor-pointer"
+            @click="loadSample(sample.url)"
+          >
+            {{ sample.name }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -643,6 +814,14 @@ onUnmounted(() => {
                 <span>{{ isRemovingBg ? 'Cutting out...' : 'Cutout Background' }}</span>
               </Button>
               <Button
+                variant="outline"
+                size="sm"
+                @click="pasteFromClipboard"
+              >
+                <Clipboard class="w-3.5 h-3.5 mr-1.5" />
+                <span>Paste</span>
+              </Button>
+              <Button
                 variant="ghost"
                 size="sm"
                 @click="triggerFileInput"
@@ -663,7 +842,7 @@ onUnmounted(() => {
             </div>
             <span
               class="text-xs font-mono transition-colors"
-              :class="strokeWidth === 0 ? 'text-amber-400 font-medium' : 'text-[var(--text-secondary)]'"
+              :class="strokeWidth === 0 ? 'text-white font-medium' : 'text-[var(--text-secondary)]'"
             >
               {{ strokeWidth === 0 ? 'No outline' : `${strokeWidth}px outline` }}
             </span>
@@ -680,11 +859,11 @@ onUnmounted(() => {
             <div class="flex items-center gap-1.5 flex-wrap">
               <button
                 type="button"
-                class="px-2.5 py-1 text-xs rounded-lg border transition-all flex items-center gap-1.5"
-                :class="strokeWidth === 0 ? 'border-amber-500/60 bg-amber-500/15 text-amber-300 font-medium ring-1 ring-amber-500/30' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                class="px-2.5 py-1 text-xs rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer"
+                :class="strokeWidth === 0 ? 'border-white bg-white/15 text-white font-medium shadow-xs ring-1 ring-white/20' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
                 @click="strokeWidth = 0"
               >
-                <Ban class="w-3.5 h-3.5 text-red-400" />
+                <div class="w-3.5 h-3.5 rounded-[3px] border border-white/20 shrink-0 overflow-hidden bg-[linear-gradient(45deg,#555_25%,transparent_25%),linear-gradient(-45deg,#555_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#555_75%),linear-gradient(-45deg,transparent_75%,#555_75%)] bg-[size:4px_4px] bg-[#1a1a1a]" />
                 <span>No Outline</span>
               </button>
               <button
@@ -727,19 +906,17 @@ onUnmounted(() => {
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <label class="text-xs text-[var(--text-secondary)] block">Outline Color</label>
-              <span v-if="strokeWidth === 0" class="text-[11px] text-amber-400/80">Click a color to enable outline</span>
+              <span v-if="strokeWidth === 0" class="text-[11px] text-[var(--text-secondary)]">Click a color to enable outline</span>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
-              <!-- No Outline Swatch -->
+              <!-- Transparent / No Outline Checkerboard Swatch -->
               <button
                 type="button"
-                class="w-6 h-6 rounded-full border border-[#2E2E2E] flex items-center justify-center transition-transform bg-[#1A1A1A]"
-                :class="{ 'ring-2 ring-amber-400 scale-110': strokeWidth === 0 }"
-                title="No Outline (0px)"
+                class="w-6 h-6 rounded-full border border-[#2E2E2E] overflow-hidden transition-transform cursor-pointer bg-[linear-gradient(45deg,#555_25%,transparent_25%),linear-gradient(-45deg,#555_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#555_75%),linear-gradient(-45deg,transparent_75%,#555_75%)] bg-[size:6px_6px] bg-[#1a1a1a]"
+                :class="{ 'ring-2 ring-white scale-110 border-white/60': strokeWidth === 0 }"
+                title="Transparent / No Outline (0px)"
                 @click="strokeWidth = 0"
-              >
-                <Ban class="w-3.5 h-3.5 text-red-400" />
-              </button>
+              />
 
               <button
                 v-for="color in strokeColorPresets"
