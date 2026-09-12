@@ -235,6 +235,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Video to GIF',
         description: 'Convert MP4, WebM, and MOV video clips into crisp animated GIFs with trimming, FPS, and speed controls.',
       },
+      'anime-trace': {
+        title: 'Anime Scene Search',
+        description: 'Trace back any anime screenshot frame to its exact title, episode number, and timestamp with video preview.',
+      },
       'audio-cutter': {
         title: 'Audio Extractor & Trimmer',
         description: 'Extract audio from video, inspect waveforms, and trim audio clips preserving original sample rates.',
@@ -433,6 +437,10 @@ const translations: Record<Locale, Translations> = {
       'video-to-gif': {
         title: 'Video to GIF',
         description: 'Ubah klip video MP4, WebM, dan MOV ke animasi GIF dengan kontrol trim dan FPS.',
+      },
+      'anime-trace': {
+        title: 'Pencari Adegan Anime',
+        description: 'Lacak screenshot frame anime ke judul aslinya, nomor episode, dan menit adegan dengan preview video.',
       },
       'audio-cutter': {
         title: 'Audio Extractor & Trimmer',

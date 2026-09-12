@@ -162,6 +162,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'anime-trace',
+        title: 'Anime Scene Search',
+        description: 'Trace back any anime screenshot frame to its exact title, episode number, and timestamp with video preview.',
+        category: 'image',
+        icon: 'anime-trace',
+        route: '/tools/anime-trace',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'image-converter',
         title: 'Image Format Converter',
         description: 'Batch convert PNG, JPG, WebP, AVIF, BMP, and Favicon ICO formats with instant ZIP download.',

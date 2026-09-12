@@ -237,5 +237,10 @@ export interface ScraperResult {
 * **Allowed Read-Only Commands:** Agents MAY run non-destructive inspection commands when needed: `git status`, `git diff`, `git log -n 5`.
 * **Verification Without Commits:** Always verify code correctness using `vue-tsc --noEmit` or test runners, then report the verified status and changed files list cleanly to the user.
 
-
-
+### D. Build Verification Protocol (No Build on Minor Updates)
+* **Skip `npm run build` on Minor Updates:** Untuk update kecil-kecilan (seperti perbaikan teks/copywriting, styling minor, tweak CSS, perbaikan prop sederhana, atau update panduan), AI Agent **TIDAK PERLU** menjalankan `npm run build`.
+* **When to Run `npm run build`:** Jalankan `npm run build` **HANYA JIKA**:
+  1. Ditemukan atau dilaporkan adanya bug, runtime error, atau build failure dari user/deployment.
+  2. Terjadi perubahan arsitektur besar / multi-file refactoring yang kompleks.
+  3. Diminta secara eksplisit oleh user.
+* **Lightweight Checks:** Jika diperlukan validasi cepat pada update rutin, gunakan pengecekan ringan (seperti `vue-tsc --noEmit`) tanpa memicu build penuh Vite/Nitro agar proses iterasi tetap cepat.

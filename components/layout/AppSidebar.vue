@@ -84,6 +84,7 @@ const isCategoryActive = (category: string) => {
       '/tools/image-converter',
       '/tools/background-remover',
       '/tools/sticker-maker',
+      '/tools/anime-trace',
       '/tools/qr-generator',
       '/tools/pairdrop',
       '/tools/brat-generator',
@@ -159,6 +160,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/tools/image-converter', label: 'Image Converter', iconComponent: RefreshCw },
       { path: '/tools/background-remover', label: 'Background Remover', iconComponent: Wand2 },
       { path: '/tools/sticker-maker', label: 'Sticker Studio', iconComponent: Sticker },
+      { path: '/tools/anime-trace', label: 'Anime Scene Search', brandName: 'anime-trace' },
       { path: '/tools/qr-generator', label: 'QR Generator', iconComponent: QrCode },
       { path: '/tools/pairdrop', label: 'PairDrop (P2P)', brandName: 'pairdrop' },
       { path: '/tools/brat-generator', label: 'Brat Generator', iconComponent: Type },
@@ -756,6 +758,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 Sticker Studio
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/anime-trace"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/anime-trace')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Anime Scene Search
               </NuxtLink>
               <NuxtLink
                 to="/tools/qr-generator"

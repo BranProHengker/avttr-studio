@@ -259,6 +259,26 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="m3 14 6 6h10a2 2 0 0 0 2-2v-3.5" />
     </svg>
 
+    <!-- Anime Scene Search Vector -->
+    <svg
+      v-else-if="normalized === 'anime-trace' || normalized === 'anime-search' || normalized === 'trace-moe'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M7 3v18" />
+      <path d="M3 7.5h4" />
+      <path d="M3 12h4" />
+      <path d="M3 16.5h4" />
+      <circle cx="14" cy="11" r="3" />
+      <path d="m19 16-2.5-2.5" />
+    </svg>
+
     <!-- Image Converter Vector -->
     <svg
       v-else-if="normalized === 'image-converter' || normalized === 'converter'"
