@@ -152,6 +152,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'sticker-maker',
+        title: 'Sticker Studio',
+        description: 'Create authentic WhatsApp and Telegram stickers with custom white outlines, captions, and 512x512 WebP export.',
+        category: 'image',
+        icon: 'sticker-maker',
+        route: '/tools/sticker-maker',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'image-converter',
         title: 'Image Format Converter',
         description: 'Batch convert PNG, JPG, WebP, AVIF, BMP, and Favicon ICO formats with instant ZIP download.',

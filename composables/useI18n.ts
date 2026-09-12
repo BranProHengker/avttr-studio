@@ -251,6 +251,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Background Remover',
         description: '100% Client-side AI neural segmentation to remove backgrounds instantly without server uploads.',
       },
+      'sticker-maker': {
+        title: 'Sticker Studio',
+        description: 'Create WhatsApp & Telegram stickers with custom white outlines, meme text, and 512x512 WebP export.',
+      },
       'pdf-tools': {
         title: 'PDF Studio',
         description: 'Merge multiple PDFs, split & extract pages, and convert photos to PDF completely in your browser.',
@@ -445,6 +449,10 @@ const translations: Record<Locale, Translations> = {
       'background-remover': {
         title: 'Background Remover',
         description: 'Hapus background foto otomatis 100% di browser dengan AI lokal tanpa upload.',
+      },
+      'sticker-maker': {
+        title: 'Sticker Studio',
+        description: 'Bikin stiker WhatsApp & Telegram dengan border putih tebal, teks meme, dan ekspor WebP 512x512 siap pakai.',
       },
       'pdf-tools': {
         title: 'PDF Studio',

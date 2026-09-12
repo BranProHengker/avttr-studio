@@ -243,6 +243,22 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="m11 17 4 4"/>
     </svg>
 
+    <!-- Sticker Studio Vector -->
+    <svg
+      v-else-if="normalized === 'sticker-maker' || normalized === 'sticker'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <path d="M15.5 2.5 20.5 7.5" />
+      <path d="M20.5 7.5A2 2 0 0 1 19 9h-3.5a1.5 1.5 0 0 0-1.5 1.5V14a2 2 0 0 1-1.5 1.5H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10.5" />
+      <path d="m3 14 6 6h10a2 2 0 0 0 2-2v-3.5" />
+    </svg>
+
     <!-- Image Converter Vector -->
     <svg
       v-else-if="normalized === 'image-converter' || normalized === 'converter'"
