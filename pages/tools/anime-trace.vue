@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   ScanSearch,
-  Upload,
   Link as LinkIcon,
   Clipboard,
   ExternalLink,
@@ -10,19 +9,12 @@ import {
   Clock,
   Sparkles,
   RefreshCw,
-  Play,
-  Pause,
   Volume2,
   VolumeX,
   Layers,
   Image as ImageIcon,
-  CheckCircle2,
   AlertCircle,
-  HelpCircle,
-  X,
-  Tv,
-  Calendar,
-  Building
+  X
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
@@ -30,7 +22,7 @@ import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 import Card from '~/components/ui/Card.vue'
 import Input from '~/components/ui/Input.vue'
-import type { TraceMoeResponse, TraceMoeResult, AniListInfo } from '~/types/anime'
+import type { TraceMoeResponse, TraceMoeResult, AniListInfo, TraceMoeMeResponse } from '~/types/anime'
 
 const toast = useToast()
 const { t, locale } = useI18n()
@@ -59,43 +51,160 @@ const searchResults = ref<TraceMoeResult[]>([])
 const selectedMatchIndex = ref<number>(0)
 const previewMode = ref<'video' | 'image'>('video')
 
-// Quota HUD State
+// Quota State
 const dailyQuota = ref<number | null>(null)
 const dailyQuotaUsed = ref<number | null>(null)
 const rateLimitRemaining = ref<number | null>(null)
+const isLoadingQuota = ref(false)
 
 // Video Player State
 const isVideoMuted = ref(true)
 const videoPlayerRef = ref<HTMLVideoElement | null>(null)
+
+// Fetch user's IP quota from trace.moe /me endpoint
+const fetchQuota = async () => {
+  isLoadingQuota.value = true
+  try {
+    let meData: TraceMoeMeResponse
+    try {
+      const res = await fetch('https://api.trace.moe/me')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      meData = await res.json()
+    } catch {
+      meData = await $fetch<TraceMoeMeResponse>('/api/tools/anime-trace')
+    }
+    if (meData && typeof meData.quota === 'number') {
+      dailyQuota.value = meData.quota
+      dailyQuotaUsed.value = meData.quotaUsed
+    }
+  } catch (err) {
+    // Silently handle if offline or rate limited
+  } finally {
+    isLoadingQuota.value = false
+  }
+}
 
 // Sample Screenshots for 1-click test
 const samplePresets = [
   {
     title: 'Gochuumon wa Usagi Desuka?',
     label: 'Chino & Rabbit (Official Demo)',
-    url: 'https://images.plurk.com/32B15UXxymfSMwKGTObY5e.jpg',
-    thumb: 'https://images.plurk.com/32B15UXxymfSMwKGTObY5e.jpg'
+    url: 'https://images.plurk.com/32B15UXxymfSMwKGTObY5e.jpg'
   },
   {
     title: 'Suzume no Tojimari',
     label: 'Suzume & Chair',
-    url: 'https://raw.githubusercontent.com/soruly/trace.moe-api/master/demo.jpg',
-    thumb: 'https://raw.githubusercontent.com/soruly/trace.moe-api/master/demo.jpg'
+    url: 'https://raw.githubusercontent.com/soruly/trace.moe-api/master/demo.jpg'
   }
 ]
 
-// Computed Active Match
+// Active Match
 const currentMatch = computed<TraceMoeResult | null>(() => {
   if (!searchResults.value.length) return null
   return searchResults.value[selectedMatchIndex.value] || searchResults.value[0]
 })
 
-// Helper: Extract AniList metadata safely
+// AniList Metadata
 const currentAniList = computed<AniListInfo | null>(() => {
   if (!currentMatch.value || typeof currentMatch.value.anilist === 'number') {
     return null
   }
   return currentMatch.value.anilist as AniListInfo
+})
+
+// AniList Aliases (combines english title, synonyms, chinese synonyms)
+const animeAliases = computed<string[]>(() => {
+  if (!currentAniList.value) return []
+  const list: string[] = []
+  const ani = currentAniList.value
+
+  if (ani.title?.english && ani.title.english !== ani.title.romaji && ani.title.english !== ani.title.native) {
+    list.push(ani.title.english)
+  }
+  if (ani.synonyms && Array.isArray(ani.synonyms)) {
+    list.push(...ani.synonyms)
+  }
+  if (ani.synonyms_chinese && Array.isArray(ani.synonyms_chinese)) {
+    list.push(...ani.synonyms_chinese)
+  }
+  if (ani.title?.chinese && !list.includes(ani.title.chinese)) {
+    list.push(ani.title.chinese)
+  }
+  return Array.from(new Set(list.filter(Boolean)))
+})
+
+// Airing Period text
+const formatAiringPeriod = computed<string>(() => {
+  if (!currentAniList.value) return ''
+  const start = currentAniList.value.startDate
+  const end = currentAniList.value.endDate
+
+  const formatDate = (d?: { year?: number; month?: number; day?: number } | null) => {
+    if (!d || !d.year) return ''
+    const parts = [d.year]
+    if (d.month) parts.push(d.month)
+    if (d.day) parts.push(d.day)
+    return parts.join('-')
+  }
+
+  const startStr = formatDate(start)
+  const endStr = formatDate(end)
+
+  if (startStr && endStr) {
+    return `Airing from ${startStr} to ${endStr}.`
+  } else if (startStr) {
+    return `Aired on ${startStr}.`
+  }
+  return ''
+})
+
+// Format Overview text
+const animeFormatOverview = computed<string>(() => {
+  if (!currentAniList.value) return ''
+  const ani = currentAniList.value
+  const parts: string[] = []
+  if (ani.episodes) {
+    parts.push(`${ani.episodes} episode`)
+  }
+  if (ani.duration) {
+    parts.push(`${ani.duration}-minute`)
+  }
+  if (ani.format) {
+    parts.push(`${ani.format}`)
+  }
+  parts.push('anime.')
+  return parts.join(' ')
+})
+
+// Studios list
+const animeStudios = computed(() => {
+  if (!currentAniList.value?.studios?.edges) return []
+  return currentAniList.value.studios.edges
+    .map((e) => e.node)
+    .filter((n): n is { id: number; name: string; siteUrl?: string } => !!n?.name)
+})
+
+// External links
+const animeExternalLinks = computed(() => {
+  if (!currentAniList.value?.externalLinks) return []
+  return currentAniList.value.externalLinks.filter((l) => l.url && l.site)
+})
+
+// Genres string
+const animeGenresText = computed(() => {
+  if (!currentAniList.value?.genres?.length) return ''
+  return currentAniList.value.genres.join(', ')
+})
+
+// Cover poster image
+const animeCoverImage = computed(() => {
+  if (!currentAniList.value?.coverImage) return ''
+  return (
+    currentAniList.value.coverImage.extraLarge ||
+    currentAniList.value.coverImage.large ||
+    currentAniList.value.coverImage.medium ||
+    ''
+  )
 })
 
 // Downscale image on client canvas for fast, resource-efficient upload (~60-90KB)
@@ -138,7 +247,7 @@ const downscaleImageForSearch = async (fileOrBlob: Blob): Promise<Blob> => {
   })
 }
 
-// Perform Search Core
+// Perform Search
 const runSearch = async (blob: Blob | null, externalUrl?: string) => {
   isAnalyzing.value = true
   errorMsg.value = null
@@ -157,24 +266,19 @@ const runSearch = async (blob: Blob | null, externalUrl?: string) => {
 
     if (externalUrl) {
       queryParams.set('url', externalUrl)
-      // Direct browser fetch first
       try {
         const res = await fetch(`https://api.trace.moe/search?${queryParams.toString()}`)
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
         headers = res.headers
         data = await res.json()
       } catch (err) {
-        // Fallback to Nitro server proxy
         data = await $fetch<TraceMoeResponse>('/api/tools/anime-trace', {
           method: 'POST',
           body: { url: externalUrl, cutBorders: cutBorders.value }
         })
       }
     } else if (blob) {
-      // Downscale image to lightweight JPEG before sending
       const optimizedBlob = await downscaleImageForSearch(blob)
-
-      // Direct client fetch to preserve Avttr server RAM & bandwidth
       try {
         const res = await fetch(`https://api.trace.moe/search?${queryParams.toString()}`, {
           method: 'POST',
@@ -185,7 +289,6 @@ const runSearch = async (blob: Blob | null, externalUrl?: string) => {
         headers = res.headers
         data = await res.json()
       } catch (err) {
-        // Fallback to server route using base64
         const reader = new FileReader()
         const base64Promise = new Promise<string>((resolve) => {
           reader.onloadend = () => resolve(reader.result as string)
@@ -207,7 +310,6 @@ const runSearch = async (blob: Blob | null, externalUrl?: string) => {
 
     searchResults.value = data.result || []
 
-    // Update Quota HUD
     if (data.quota !== undefined) dailyQuota.value = data.quota
     if (data.quotaUsed !== undefined) dailyQuotaUsed.value = data.quotaUsed
     if (headers) {
@@ -217,17 +319,17 @@ const runSearch = async (blob: Blob | null, externalUrl?: string) => {
 
     if (searchResults.value.length > 0) {
       toast.success(
-        locale.value === 'id' ? 'Adegan Ditemukan!' : 'Scene Identified!',
+        locale.value === 'id' ? 'Adegan Ditemukan' : 'Scene Identified',
         locale.value === 'id'
-          ? `Ditemukan ${searchResults.value.length} kecocokan frame dari database trace.moe.`
-          : `Found ${searchResults.value.length} frame matches from trace.moe database.`
+          ? `Ditemukan ${searchResults.value.length} kecocokan frame.`
+          : `Found ${searchResults.value.length} frame matches.`
       )
     } else {
       toast.warning(
         locale.value === 'id' ? 'Tidak Ada Kecocokan' : 'No Matches Found',
         locale.value === 'id'
-          ? 'Coba gunakan screenshot dengan resolusi lebih jelas tanpa filter berat.'
-          : 'Try another clear frame screenshot without heavy filters.'
+          ? 'Coba gunakan screenshot frame yang lebih jelas.'
+          : 'Try another clear frame screenshot.'
       )
     }
   } catch (err: any) {
@@ -283,7 +385,7 @@ const handlePasteFromClipboard = async () => {
         return
       }
     }
-    toast.warning('No Image in Clipboard', 'Please copy an image or take a screenshot first (Win+Shift+S or Cmd+Shift+4).')
+    toast.warning('No Image in Clipboard', 'Please copy an image or take a screenshot first.')
   } catch (err) {
     toast.error('Clipboard Access Denied', 'Press Ctrl+V anywhere on this page to paste your screenshot directly.')
   }
@@ -323,41 +425,19 @@ const handleGlobalPaste = (event: ClipboardEvent) => {
 
 onMounted(() => {
   window.addEventListener('paste', handleGlobalPaste)
+  fetchQuota()
 })
 
 onUnmounted(() => {
   window.removeEventListener('paste', handleGlobalPaste)
 })
 
-// Utility Formatters
+// Format seconds into MM:SS
 const formatTime = (seconds: number): string => {
   if (isNaN(seconds) || seconds < 0) return '00:00'
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-}
-
-const getSimilarityInfo = (sim: number) => {
-  const pct = (sim * 100).toFixed(1)
-  if (sim >= 0.87) {
-    return {
-      pct: `${pct}%`,
-      label: locale.value === 'id' ? 'Tingkat Akurasi Tinggi' : 'High Accuracy Match',
-      class: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-    }
-  } else if (sim >= 0.70) {
-    return {
-      pct: `${pct}%`,
-      label: locale.value === 'id' ? 'Kemungkinan Cocok' : 'Probable Match',
-      class: 'border-amber-500/40 bg-amber-500/10 text-amber-400'
-    }
-  } else {
-    return {
-      pct: `${pct}%`,
-      label: locale.value === 'id' ? 'Akurasi Rendah' : 'Low Confidence',
-      class: 'border-zinc-600/40 bg-zinc-600/10 text-zinc-400'
-    }
-  }
 }
 
 const resetAll = () => {
@@ -371,10 +451,9 @@ const resetAll = () => {
 
 <template>
   <div class="space-y-6 pb-12 w-full">
-    <!-- Breadcrumb & Header Flex Row -->
+    <!-- Breadcrumbs & Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="space-y-1">
-        <!-- Breadcrumbs -->
         <nav class="flex items-center gap-1.5 text-xs font-mono text-[var(--text-tertiary)]">
           <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
           <span>/</span>
@@ -390,18 +469,32 @@ const resetAll = () => {
         </p>
       </div>
 
-      <!-- Engine & Quota Badges -->
-      <div class="flex items-center gap-2 flex-wrap">
+      <!-- Engine Badge -->
+      <div class="flex items-center gap-2 flex-wrap text-xs text-[var(--text-secondary)] font-mono">
+        <Badge variant="badge">trace.moe</Badge>
+      </div>
+    </div>
+
+    <!-- Search Quota Widget (Matching trace.moe real UI) -->
+    <div
+      v-if="dailyQuota !== null && dailyQuotaUsed !== null"
+      class="p-3.5 rounded-[14px] bg-[#141416] border border-[#2E2E2E] space-y-2 max-w-xl"
+    >
+      <div class="flex items-center justify-between text-xs text-[var(--text-primary)] font-normal select-none">
+        <span>Search quota: {{ dailyQuotaUsed }} / {{ dailyQuota }} used</span>
+        <span>{{ Math.max(0, dailyQuota - dailyQuotaUsed) }} remaining</span>
+      </div>
+
+      <!-- Progress Track & Fill -->
+      <div class="w-full h-2 bg-[#2E2E32] rounded-full overflow-hidden">
         <div
-          v-if="dailyQuota !== null"
-          class="flex items-center gap-1.5 px-3 py-1 bg-[#1E1E22] border border-[#2E2E2E] rounded-full text-xs text-[var(--text-secondary)]"
-          title="Daily IP Search Quota"
-        >
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>Quota: <strong class="text-white">{{ dailyQuota - (dailyQuotaUsed || 0) }}</strong> / {{ dailyQuota }}</span>
-        </div>
-        <Badge variant="badge">trace.moe Engine</Badge>
-        <Badge variant="outline">Client Optimized</Badge>
+          class="h-full bg-[#7086f4] rounded-full transition-all duration-300"
+          :style="{ width: `${Math.min(100, Math.max(1, (dailyQuotaUsed / dailyQuota) * 100))}%` }"
+        ></div>
+      </div>
+
+      <div class="text-right text-[11px] text-[var(--text-tertiary)] select-none">
+        Quota will reset in 24 hours
       </div>
     </div>
 
@@ -414,7 +507,7 @@ const resetAll = () => {
       @change="handleFileSelect"
     />
 
-    <!-- Input Deck (Omnibox + Standalone Dropzone + Sample Presets) -->
+    <!-- Input Section (Omnibox + Standalone Dropzone + Sample Presets) -->
     <div class="space-y-4">
       <!-- URL Omnibox + Actions -->
       <Card class="p-3 sm:p-4">
@@ -465,7 +558,7 @@ const resetAll = () => {
           </div>
         </div>
 
-        <!-- Border Cut & Speed Settings -->
+        <!-- Options -->
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-[#2E2E2E] text-xs text-[var(--text-secondary)] flex-wrap gap-2">
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input
@@ -473,17 +566,17 @@ const resetAll = () => {
               type="checkbox"
               class="rounded border-[#2E2E2E] bg-[#141416] text-white focus:ring-0 w-3.5 h-3.5 accent-[#2E2E2E]"
             />
-            <span>{{ locale === 'id' ? 'Auto Cut Black Borders (Rekomendasi untuk screenshot 16:9)' : 'Auto Cut Black Borders (Recommended for wide screenshots)' }}</span>
+            <span>{{ locale === 'id' ? 'Auto Cut Black Borders (Rekomendasi untuk screenshot 16:9)' : 'Auto Cut Black Borders' }}</span>
           </label>
 
-          <div class="flex items-center gap-2 text-[11px] text-[var(--text-tertiary)] font-mono">
+          <div class="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)] font-mono">
             <Sparkles class="w-3.5 h-3.5 text-emerald-400" />
-            <span>Downscaled to 720p client-side (~60KB)</span>
+            <span>Downscaled client-side (~60KB)</span>
           </div>
         </div>
       </Card>
 
-      <!-- Standardized Section 10 Standalone Dropzone (shown if no preview yet) -->
+      <!-- Standardized Section 10 Standalone Dropzone (shown when no results yet) -->
       <div
         v-if="!previewImageUrl && !isAnalyzing"
         class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
@@ -500,10 +593,10 @@ const resetAll = () => {
           {{ locale === 'id' ? 'Tarik & lepas screenshot anime di sini atau browse file' : 'Drop your anime screenshot here or browse' }}
         </div>
         <div class="text-xs text-[var(--text-secondary)] mt-1">
-          {{ locale === 'id' ? 'Mendukung PNG, JPG, WebP. Diproses 100% cepat di client.' : 'Supports PNG, JPG, WebP. 100% fast client-side processing.' }}
+          {{ locale === 'id' ? 'Mendukung PNG, JPG, WebP. 100% diproses cepat di browser.' : 'Supports PNG, JPG, WebP. 100% processed in browser.' }}
         </div>
 
-        <!-- Sample Presets Toolbar -->
+        <!-- Sample Presets -->
         <div class="mt-6 flex items-center justify-center gap-2 flex-wrap" @click.stop>
           <span class="text-[11px] text-[var(--text-tertiary)] font-mono uppercase tracking-wider">Test Sample:</span>
           <button
@@ -519,7 +612,7 @@ const resetAll = () => {
       </div>
     </div>
 
-    <!-- Analyzing Skeleton Indicator -->
+    <!-- Analyzing Indicator -->
     <Card v-if="isAnalyzing" class="p-8 sm:p-12 text-center space-y-4">
       <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white animate-pulse">
         <RefreshCw class="w-6 h-6 animate-spin text-white" />
@@ -529,7 +622,7 @@ const resetAll = () => {
           {{ locale === 'id' ? 'Memindai Database Anime...' : 'Scanning Anime Database...' }}
         </div>
         <p class="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
-          {{ locale === 'id' ? 'Mencocokkan fingerprint warna frame dengan jutaan episode anime di trace.moe.' : 'Matching frame color layout against millions of anime video scenes on trace.moe.' }}
+          {{ locale === 'id' ? 'Mencocokkan fingerprint frame dengan arsip video trace.moe.' : 'Matching frame layout against trace.moe anime database.' }}
         </p>
       </div>
     </Card>
@@ -543,117 +636,88 @@ const resetAll = () => {
             {{ locale === 'id' ? 'Pencarian Gagal' : 'Search Error' }}
           </div>
           <div class="text-[var(--text-secondary)]">{{ errorMsg }}</div>
-          <p class="text-[11px] text-[var(--text-tertiary)] mt-2">
-            Tip: Pastikan screenshot berasal dari tayangan anime resmi (bukan fanart, manga komik, atau video live action).
-          </p>
         </div>
       </div>
     </Card>
 
     <!-- Results Section -->
     <div v-else-if="searchResults.length > 0 && currentMatch" class="space-y-6">
-      <!-- Best / Active Match Hero Deck -->
-      <Card class="p-4 sm:p-6 space-y-6">
-        <!-- Top Info Header Flex -->
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#2E2E2E]">
-          <div class="space-y-1.5 flex-1 min-w-0">
-            <!-- Anime Primary Title -->
-            <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight break-words">
-                {{ currentAniList?.title?.romaji || currentAniList?.title?.english || currentMatch.filename }}
-              </h2>
-              <!-- Similarity Badge -->
-              <span
-                class="px-2.5 py-0.5 rounded-full text-xs font-semibold border flex items-center gap-1"
-                :class="getSimilarityInfo(currentMatch.similarity).class"
-              >
-                <CheckCircle2 class="w-3 h-3" />
-                {{ getSimilarityInfo(currentMatch.similarity).pct }} ({{ getSimilarityInfo(currentMatch.similarity).label }})
-              </span>
-            </div>
-
-            <!-- Alternative Titles -->
-            <div class="flex items-center gap-2 text-xs text-[var(--text-secondary)] flex-wrap">
-              <span v-if="currentAniList?.title?.english && currentAniList.title.english !== currentAniList.title.romaji" class="text-white/80">
-                {{ currentAniList.title.english }}
-              </span>
-              <span v-if="currentAniList?.title?.native" class="text-[var(--text-tertiary)] font-mono">
-                • {{ currentAniList.title.native }}
-              </span>
-            </div>
+      <!-- 1. Video Player & Side-by-Side Comparison -->
+      <Card class="p-4 sm:p-5 space-y-4">
+        <!-- Technical Meta Bar (Clean, no slop badges) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#2E2E2E]">
+          <div class="flex items-center gap-3 text-xs font-mono text-[var(--text-secondary)] flex-wrap">
+            <span class="text-white font-medium">
+              Episode: <strong class="text-white">{{ currentMatch.episode !== null && currentMatch.episode !== undefined ? currentMatch.episode : '1 / OVA' }}</strong>
+            </span>
+            <span class="text-zinc-600">•</span>
+            <span>
+              Time: <strong class="text-white">{{ formatTime(currentMatch.at) }}</strong>
+              <span class="text-zinc-500 ml-1 font-normal">({{ currentMatch.from.toFixed(1) }}s – {{ currentMatch.to.toFixed(1) }}s)</span>
+            </span>
+            <span class="text-zinc-600">•</span>
+            <span>
+              Similarity: <strong class="text-white">{{ (currentMatch.similarity * 100).toFixed(2) }}%</strong>
+            </span>
           </div>
 
-          <!-- Quick Episode & Timestamp Pill -->
-          <div class="flex items-center gap-3 shrink-0">
-            <div class="px-3 py-1.5 rounded-lg bg-[#141416] border border-[#2E2E2E] text-center">
-              <div class="text-[10px] text-[var(--text-tertiary)] uppercase font-mono">Episode</div>
-              <div class="text-sm font-bold text-white font-mono">
-                {{ currentMatch.episode !== null && currentMatch.episode !== undefined ? currentMatch.episode : '1 / OVA' }}
-              </div>
-            </div>
-
-            <div class="px-3 py-1.5 rounded-lg bg-[#141416] border border-[#2E2E2E] text-center">
-              <div class="text-[10px] text-[var(--text-tertiary)] uppercase font-mono">Timestamp</div>
-              <div class="text-sm font-bold text-emerald-400 font-mono flex items-center gap-1">
-                <Clock class="w-3 h-3" />
-                <span>{{ formatTime(currentMatch.at) }}</span>
-              </div>
-            </div>
+          <!-- Video vs Exact Frame Mode Switcher -->
+          <div class="flex items-center gap-1 bg-[#141416] p-0.5 rounded-md border border-[#2E2E2E] self-start sm:self-auto">
+            <button
+              class="px-2.5 py-1 rounded text-xs transition-colors"
+              :class="previewMode === 'video' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
+              @click="previewMode = 'video'"
+            >
+              Video Clip
+            </button>
+            <button
+              class="px-2.5 py-1 rounded text-xs transition-colors"
+              :class="previewMode === 'image' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
+              @click="previewMode = 'image'"
+            >
+              Exact Frame
+            </button>
           </div>
         </div>
 
         <!-- Dual Comparison Layout: Uploaded Frame vs. Matched Scene -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <!-- Left: User's Original Screenshot -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
-              <span class="flex items-center gap-1.5 text-white font-medium">
-                <ImageIcon class="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
-                <span>Your Screenshot</span>
-              </span>
-              <span class="text-[11px] text-[var(--text-tertiary)]">Input Query</span>
+          <div class="space-y-1.5">
+            <div class="text-[11px] font-mono text-[var(--text-tertiary)] flex items-center gap-1.5">
+              <ImageIcon class="w-3.5 h-3.5" />
+              <span>Your Screenshot</span>
             </div>
-
-            <div class="aspect-video rounded-lg overflow-hidden bg-[#141416] border border-[#2E2E2E] flex items-center justify-center relative">
+            <div class="aspect-video rounded-lg overflow-hidden bg-[#141416] border border-[#2E2E2E] flex items-center justify-center">
               <img
                 v-if="previewImageUrl"
                 :src="previewImageUrl"
-                alt="Your input screenshot"
+                alt="Your screenshot"
                 class="w-full h-full object-contain"
               />
               <div v-else class="text-xs text-[var(--text-tertiary)]">No preview</div>
             </div>
           </div>
 
-          <!-- Right: Matched Frame / Video Clip Preview -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs font-mono">
-              <span class="flex items-center gap-1.5 text-white font-medium">
-                <Film class="w-3.5 h-3.5 text-emerald-400" />
-                <span>trace.moe Matched Scene</span>
+          <!-- Right: Matched Frame / Video Clip -->
+          <div class="space-y-1.5">
+            <div class="text-[11px] font-mono text-[var(--text-tertiary)] flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <Film class="w-3.5 h-3.5 text-zinc-400" />
+                <span>Matched Scene (trace.moe)</span>
               </span>
-
-              <!-- Mode Switcher: Video vs Exact Frame -->
-              <div class="flex items-center gap-1 bg-[#141416] p-0.5 rounded-md border border-[#2E2E2E]">
-                <button
-                  class="px-2 py-0.5 rounded text-[11px] transition-colors"
-                  :class="previewMode === 'video' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
-                  @click="previewMode = 'video'"
-                >
-                  Video Clip
-                </button>
-                <button
-                  class="px-2 py-0.5 rounded text-[11px] transition-colors"
-                  :class="previewMode === 'image' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
-                  @click="previewMode = 'image'"
-                >
-                  Exact Frame
-                </button>
-              </div>
+              <button
+                v-if="previewMode === 'video' && currentMatch.video"
+                class="text-[11px] text-[var(--text-secondary)] hover:text-white flex items-center gap-1"
+                @click="isVideoMuted = !isVideoMuted"
+              >
+                <VolumeX v-if="isVideoMuted" class="w-3 h-3" />
+                <Volume2 v-else class="w-3 h-3 text-white" />
+                <span>{{ isVideoMuted ? 'Muted' : 'Audio On' }}</span>
+              </button>
             </div>
 
-            <div class="aspect-video rounded-lg overflow-hidden bg-[#141416] border border-[#2E2E2E] flex items-center justify-center relative group">
-              <!-- Video Preview Mode -->
+            <div class="aspect-video rounded-lg overflow-hidden bg-[#141416] border border-[#2E2E2E] flex items-center justify-center relative">
               <video
                 v-if="previewMode === 'video' && currentMatch.video"
                 ref="videoPlayerRef"
@@ -666,168 +730,171 @@ const resetAll = () => {
                 controls
                 class="w-full h-full object-contain"
               />
-
-              <!-- Image Frame Mode -->
               <img
                 v-else-if="currentMatch.image"
                 :src="currentMatch.image"
                 alt="Matched Anime Frame"
                 class="w-full h-full object-contain"
               />
-
-              <!-- Audio Mute Quick Toggle overlay (for video mode) -->
-              <button
-                v-if="previewMode === 'video' && currentMatch.video"
-                class="absolute bottom-10 right-3 p-1.5 rounded-md bg-black/70 border border-white/20 text-white hover:bg-black transition-colors"
-                title="Toggle Mute"
-                @click="isVideoMuted = !isVideoMuted"
-              >
-                <VolumeX v-if="isVideoMuted" class="w-3.5 h-3.5" />
-                <Volume2 v-else class="w-3.5 h-3.5 text-emerald-400" />
-              </button>
             </div>
           </div>
         </div>
 
-        <!-- AniList Anime Info & External Stream Links -->
-        <div v-if="currentAniList" class="p-4 rounded-lg bg-[#141416] border border-[#2E2E2E] space-y-3">
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div class="space-y-0.5">
-              <span class="text-[var(--text-tertiary)] flex items-center gap-1">
-                <Tv class="w-3 h-3" />
-                Format / Status
-              </span>
-              <div class="text-white font-medium">
-                {{ currentAniList.format || 'TV' }} • {{ currentAniList.status || 'Finished' }}
-              </div>
-            </div>
-
-            <div class="space-y-0.5">
-              <span class="text-[var(--text-tertiary)] flex items-center gap-1">
-                <Calendar class="w-3 h-3" />
-                Season / Year
-              </span>
-              <div class="text-white font-medium">
-                {{ currentAniList.season || '' }} {{ currentAniList.seasonYear || '' }}
-              </div>
-            </div>
-
-            <div class="space-y-0.5">
-              <span class="text-[var(--text-tertiary)] flex items-center gap-1">
-                <Building class="w-3 h-3" />
-                Studio
-              </span>
-              <div class="text-white font-medium truncate">
-                {{ currentAniList.studios?.edges?.[0]?.node?.name || 'Studio Gallop' }}
-              </div>
-            </div>
-
-            <div class="space-y-0.5">
-              <span class="text-[var(--text-tertiary)] flex items-center gap-1">
-                <Clock class="w-3 h-3" />
-                Total Episodes
-              </span>
-              <div class="text-white font-medium">
-                {{ currentAniList.episodes ? `${currentAniList.episodes} eps` : 'N/A' }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Genres list -->
-          <div v-if="currentAniList.genres?.length" class="flex items-center gap-1.5 flex-wrap pt-2 border-t border-[#212121]">
-            <span class="text-[11px] text-[var(--text-tertiary)] font-mono">Genres:</span>
-            <span
-              v-for="genre in currentAniList.genres"
-              :key="genre"
-              class="px-2 py-0.5 rounded-full text-[11px] bg-[#212121] border border-[#2E2E2E] text-[var(--text-secondary)]"
-            >
-              {{ genre }}
-            </span>
-          </div>
-
-          <!-- External Links -->
-          <div class="flex items-center gap-2 flex-wrap pt-2">
-            <a
-              v-if="currentAniList.siteUrl"
-              :href="currentAniList.siteUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 text-xs text-[#1447E6] hover:underline"
-            >
-              <span>View on AniList</span>
-              <ExternalLink class="w-3 h-3" />
-            </a>
-
-            <a
-              v-if="currentAniList.idMal"
-              :href="`https://myanimelist.net/anime/${currentAniList.idMal}`"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 text-xs text-[#2E51A2] hover:underline ml-3"
-            >
-              <span>MyAnimeList</span>
-              <ExternalLink class="w-3 h-3" />
-            </a>
-
-            <span class="text-[var(--text-tertiary)] mx-1">•</span>
-            <span class="text-[11px] text-[var(--text-tertiary)] font-mono truncate">
-              File: {{ currentMatch.filename }}
-            </span>
-          </div>
+        <!-- File Source -->
+        <div class="text-[11px] text-[var(--text-tertiary)] font-mono truncate pt-2 border-t border-[#2E2E2E]">
+          File: {{ currentMatch.filename }}
         </div>
       </Card>
 
-      <!-- Candidate Matches Grid (Other potential scenes) -->
-      <div v-if="searchResults.length > 1" class="space-y-3">
+      <!-- 2. Authentic Anime Details Card (Matches trace.moe exact UI structure from screenshot) -->
+      <Card v-if="currentAniList" class="p-5 sm:p-7 space-y-3 bg-[#141416] border-[#2E2E2E]">
+        <!-- Title: Native Japanese Header -->
+        <div>
+          <h2 class="text-xl sm:text-2xl font-normal text-white tracking-tight break-words">
+            {{ currentAniList.title?.native || currentAniList.title?.romaji }}
+          </h2>
+          <!-- Subtitle: Romaji in soft blue -->
+          <a
+            :href="currentAniList.siteUrl || '#'"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-sm text-[#3b82f6] hover:underline break-words mt-1 block font-normal"
+          >
+            {{ currentAniList.title?.romaji || currentAniList.title?.english }}
+          </a>
+        </div>
+
+        <!-- Dotted Divider -->
+        <div class="border-b border-dotted border-zinc-700/80 my-3"></div>
+
+        <!-- Episode & Airing Overview -->
+        <div class="text-xs text-[var(--text-secondary)] space-y-1 leading-relaxed font-normal">
+          <div v-if="animeFormatOverview">{{ animeFormatOverview }}</div>
+          <div v-if="formatAiringPeriod">{{ formatAiringPeriod }}</div>
+        </div>
+
+        <!-- Dotted Divider -->
+        <div class="border-b border-dotted border-zinc-700/80 my-3"></div>
+
+        <!-- Two-column Layout: Data Table (Left) & Poster Art (Right) -->
+        <div class="flex flex-col md:flex-row gap-6 items-start">
+          <!-- Left: Definition Table with Dotted Dividers -->
+          <div class="flex-1 min-w-0 w-full space-y-3 text-xs">
+            <!-- Row: Alias -->
+            <div v-if="animeAliases.length" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-800/80 pb-3 gap-1">
+              <div class="w-28 shrink-0 text-[var(--text-tertiary)] font-normal">Alias</div>
+              <div class="flex-1 space-y-1 text-[var(--text-secondary)] leading-relaxed break-words">
+                <div v-for="alias in animeAliases" :key="alias">{{ alias }}</div>
+              </div>
+            </div>
+
+            <!-- Row: Genre -->
+            <div v-if="animeGenresText" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-800/80 pb-3 gap-1">
+              <div class="w-28 shrink-0 text-[var(--text-tertiary)] font-normal">Genre</div>
+              <div class="flex-1 text-[var(--text-secondary)]">{{ animeGenresText }}</div>
+            </div>
+
+            <!-- Row: Studio -->
+            <div v-if="animeStudios.length" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-800/80 pb-3 gap-1">
+              <div class="w-28 shrink-0 text-[var(--text-tertiary)] font-normal">Studio</div>
+              <div class="flex-1 space-y-1">
+                <div v-for="std in animeStudios" :key="std.id || std.name">
+                  <a
+                    v-if="std.siteUrl"
+                    :href="std.siteUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-[#3b82f6] hover:underline"
+                  >
+                    {{ std.name }}
+                  </a>
+                  <span v-else class="text-[var(--text-secondary)]">{{ std.name }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row: External Links -->
+            <div v-if="animeExternalLinks.length" class="flex flex-col sm:flex-row sm:gap-6 pb-2 gap-1">
+              <div class="w-28 shrink-0 text-[var(--text-tertiary)] font-normal">External Links</div>
+              <div class="flex-1 space-y-1">
+                <div v-for="link in animeExternalLinks" :key="link.id || link.url">
+                  <a
+                    :href="link.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-[#3b82f6] hover:underline"
+                  >
+                    {{ link.site }}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Anime Poster Cover Image -->
+          <div v-if="animeCoverImage" class="w-full sm:w-56 md:w-64 shrink-0 mx-auto md:mx-0">
+            <img
+              :src="animeCoverImage"
+              :alt="currentAniList.title?.romaji || 'Anime Poster'"
+              class="w-full h-auto object-cover border border-[#2E2E2E]"
+            />
+          </div>
+        </div>
+
+        <!-- Dotted Footer Divider -->
+        <div class="border-b border-dotted border-zinc-700/80 my-3"></div>
+
+        <!-- Footnote / Attribution -->
+        <div class="text-right text-[11px] text-[var(--text-tertiary)] font-mono">
+          Information provided by
+          <a
+            :href="currentAniList.siteUrl || 'https://anilist.co'"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-[#3b82f6] hover:underline"
+          >
+            anilist.co
+          </a>
+        </div>
+      </Card>
+
+      <!-- 3. Candidate Matches List -->
+      <div v-if="searchResults.length > 1" class="space-y-3 pt-2">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-white flex items-center gap-2">
-            <Layers class="w-4 h-4 text-[var(--text-secondary)]" />
-            <span>{{ locale === 'id' ? 'Kandidat Adegan Lainnya' : 'Other Candidate Matches' }} ({{ searchResults.length }})</span>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] font-mono flex items-center gap-2">
+            <Layers class="w-3.5 h-3.5" />
+            <span>Other Matches ({{ searchResults.length }})</span>
           </h3>
-          <span class="text-xs text-[var(--text-tertiary)]">
-            {{ locale === 'id' ? 'Klik kartu untuk beralih preview' : 'Click a card to switch preview' }}
+          <span class="text-[11px] text-[var(--text-tertiary)] font-mono">
+            Click to switch preview
           </span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
           <div
             v-for="(item, idx) in searchResults"
             :key="item.image + idx"
-            class="p-3 rounded-xl border bg-[#141416] hover:bg-[#1A1A1E] transition-all cursor-pointer flex gap-3 select-none"
-            :class="selectedMatchIndex === idx ? 'border-white shadow-xs' : 'border-[#2E2E2E] hover:border-[#3E3E3E]'"
+            class="p-2.5 rounded-lg border bg-[#141416] hover:bg-[#1A1A1E] transition-colors cursor-pointer flex gap-3 select-none"
+            :class="selectedMatchIndex === idx ? 'border-white' : 'border-[#2E2E2E] hover:border-[#3E3E3E]'"
             @click="selectedMatchIndex = idx"
           >
             <!-- Thumbnail -->
-            <div class="w-24 h-16 rounded-md overflow-hidden bg-[#212121] shrink-0 relative">
+            <div class="w-24 h-16 rounded overflow-hidden bg-[#212121] shrink-0 relative">
               <img :src="item.image" alt="Scene thumbnail" class="w-full h-full object-cover" />
               <div class="absolute bottom-0.5 right-0.5 px-1 py-0.2 bg-black/80 rounded text-[9px] text-white font-mono">
                 {{ formatTime(item.at) }}
               </div>
             </div>
 
-            <!-- Meta details -->
+            <!-- Metadata -->
             <div class="flex-1 min-w-0 space-y-1">
-              <div class="text-xs font-semibold text-white truncate" :title="typeof item.anilist !== 'number' ? item.anilist.title?.romaji || '' : item.filename">
+              <div class="text-xs font-medium text-white truncate" :title="typeof item.anilist !== 'number' ? item.anilist.title?.romaji || '' : item.filename">
                 {{ typeof item.anilist !== 'number' ? (item.anilist.title?.romaji || item.anilist.title?.english || item.filename) : item.filename }}
               </div>
 
-              <div class="flex items-center justify-between text-[11px] text-[var(--text-secondary)]">
-                <span>Ep. {{ item.episode !== null ? item.episode : '1' }}</span>
-                <span
-                  class="font-mono font-medium"
-                  :class="item.similarity >= 0.87 ? 'text-emerald-400' : item.similarity >= 0.70 ? 'text-amber-400' : 'text-zinc-400'"
-                >
-                  {{ (item.similarity * 100).toFixed(1) }}%
-                </span>
-              </div>
-
-              <!-- Similarity Mini Progress Bar -->
-              <div class="w-full h-1 bg-[#212121] rounded-full overflow-hidden">
-                <div
-                  class="h-full transition-all"
-                  :class="item.similarity >= 0.87 ? 'bg-emerald-500' : item.similarity >= 0.70 ? 'bg-amber-500' : 'bg-zinc-500'"
-                  :style="{ width: `${item.similarity * 100}%` }"
-                ></div>
+              <div class="flex items-center justify-between text-[11px] text-[var(--text-tertiary)] font-mono">
+                <span>Ep. {{ item.episode !== null && item.episode !== undefined ? item.episode : '1' }}</span>
+                <span>{{ (item.similarity * 100).toFixed(1) }}%</span>
               </div>
             </div>
           </div>

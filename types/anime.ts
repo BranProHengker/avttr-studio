@@ -38,6 +38,7 @@ export interface AniListInfo {
   isAdult?: boolean
   genres?: string[]
   synonyms?: string[]
+  synonyms_chinese?: string[]
   coverImage?: AniListCoverImage
   bannerImage?: string
   siteUrl?: string
@@ -74,4 +75,12 @@ export interface TraceMoeResponse {
 export interface AnimeSearchOptions {
   cutBorders?: boolean
   anilistInfo?: boolean
+}
+
+export interface TraceMoeMeResponse {
+  id: string
+  priority: number
+  concurrency: number
+  quota: number
+  quotaUsed: number
 }
