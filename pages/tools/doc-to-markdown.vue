@@ -10,7 +10,6 @@ import {
   Eye,
   Code2,
   RefreshCw,
-  Sparkles,
   AlertCircle,
   Image as ImageIcon,
   X
@@ -403,18 +402,16 @@ const renderedHtml = computed(() => {
       </div>
 
       <!-- Daily Quota & Usage Notice -->
-      <div class="p-4 rounded-[14px] bg-[#141416] border border-[#2E2E2E] flex items-start gap-3.5 text-xs">
-        <div class="w-8 h-8 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-zinc-400 shrink-0 mt-0.5">
-          <Sparkles class="w-4 h-4" />
-        </div>
-        <div class="space-y-1 text-[var(--text-secondary)] leading-relaxed">
+      <div class="p-3.5 sm:p-4 rounded-[14px] bg-[#141416] border border-[#2E2E2E] flex items-start gap-3 text-xs">
+        <AlertCircle class="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+        <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
           <div class="text-xs font-semibold text-[var(--text-primary)]">
-            {{ locale === 'id' ? 'Informasi Penggunaan & Kuota Harian' : 'Usage & Daily Quota Notice' }}
+            {{ locale === 'id' ? 'Catatan Kuota Harian' : 'Daily Quota Notice' }}
           </div>
           <p class="text-[11px] text-[var(--text-tertiary)]">
             {{ locale === 'id'
-              ? 'Fitur ini didukung oleh Google Gemini API untuk membaca dan mengubah dokumen (PDF & Gambar) menjadi Markdown secara otomatis. Jika limit token harian habis, layanan ini dapat digunakan kembali besok setelah kuota harian di-reset.'
-              : 'This feature is powered by Google Gemini API to parse and convert documents (PDF & Images) into Markdown. If the daily token quota is exhausted, you can use it again tomorrow after the daily quota resets.' }}
+              ? 'Fitur ini didukung oleh Google Gemini API untuk mengubah dokumen menjadi Markdown. Bila kuota token harian habis, Anda dapat menggunakannya kembali esok hari saat kuota di-reset.'
+              : 'This feature is powered by Google Gemini API to convert documents into Markdown. If the daily token quota is exhausted, you can use it again tomorrow after the daily reset.' }}
           </p>
         </div>
       </div>
