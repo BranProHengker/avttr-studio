@@ -95,9 +95,20 @@ Guidelines:
   }
 
   if (!responseData) {
-    const errorMsg = lastError?.data?.error?.message || lastError?.message || 'Failed to process document with Gemini AI'
+    const isQuotaExhausted =
+      lastError?.statusCode === 429 ||
+      lastError?.response?.status === 429 ||
+      lastError?.data?.error?.code === 429 ||
+      lastError?.message?.includes('RESOURCE_EXHAUSTED') ||
+      lastError?.data?.error?.message?.includes('RESOURCE_EXHAUSTED') ||
+      lastError?.data?.error?.message?.includes('quota')
+
+    const errorMsg = isQuotaExhausted
+      ? 'Batas kuota harian Gemini API telah habis. Silakan gunakan kembali besok setelah kuota di-reset.'
+      : lastError?.data?.error?.message || lastError?.message || 'Failed to process document with AI'
+
     throw createError({
-      statusCode: lastError?.statusCode || 500,
+      statusCode: lastError?.statusCode || (isQuotaExhausted ? 429 : 500),
       statusMessage: errorMsg
     })
   }

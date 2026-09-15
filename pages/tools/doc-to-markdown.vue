@@ -12,10 +12,8 @@ import {
   RefreshCw,
   Sparkles,
   AlertCircle,
-  FileCode,
   Image as ImageIcon,
-  X,
-  FileDown
+  X
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
@@ -31,7 +29,7 @@ useHead({
   meta: [
     {
       name: 'description',
-      content: 'Convert PDF documents and images into structured GitHub-Flavored Markdown with tables, formulas, and headings powered by Gemini 2.5 Flash.'
+      content: 'Convert PDF documents and images into structured GitHub-Flavored Markdown with tables, formulas, and headings.'
     }
   ]
 })
@@ -48,10 +46,6 @@ const errorMsg = ref<string | null>(null)
 const convertedMarkdown = ref<string>('')
 const activeTab = ref<'preview' | 'raw'>('preview')
 const hasCopied = ref(false)
-
-// Sample Document for 1-Click Test
-const sampleReportBase64 =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAH0CAYAAABgE6B+AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gA'
 
 // Compute word & character counts
 const stats = computed(() => {
@@ -147,7 +141,10 @@ const handlePasteFromClipboard = async () => {
       if (imageType) {
         const blob = await item.getType(imageType)
         const file = new File([blob], 'pasted-screenshot.png', { type: imageType })
-        toast.success('Pasted from Clipboard', 'Processing image with Gemini 2.5 Flash...')
+        toast.success(
+          locale.value === 'id' ? 'Ditempel dari Clipboard' : 'Pasted from Clipboard',
+          locale.value === 'id' ? 'Memproses gambar dengan AI...' : 'Processing image with AI...'
+        )
         processDocument(file)
         return
       }
@@ -166,7 +163,10 @@ const handleGlobalPaste = (event: ClipboardEvent) => {
     if (items[i].type.startsWith('image/')) {
       const file = items[i].getAsFile()
       if (file) {
-        toast.success('Pasted from Clipboard', 'Processing image with Gemini 2.5 Flash...')
+        toast.success(
+          locale.value === 'id' ? 'Ditempel dari Clipboard' : 'Pasted from Clipboard',
+          locale.value === 'id' ? 'Memproses gambar dengan AI...' : 'Processing image with AI...'
+        )
         processDocument(file)
         event.preventDefault()
         return
@@ -344,8 +344,8 @@ const renderedHtml = computed(() => {
 
       <!-- Engine Badges -->
       <div class="flex items-center gap-2 flex-wrap">
-        <Badge variant="badge">Gemini 2.5 Flash</Badge>
-        <Badge variant="outline">Multimodal Vision</Badge>
+        <Badge variant="badge">AI Vision</Badge>
+        <Badge variant="outline">Client Privacy</Badge>
       </div>
     </div>
 
@@ -402,37 +402,21 @@ const renderedHtml = computed(() => {
         </div>
       </div>
 
-      <!-- Feature Capabilities Banner -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[var(--text-secondary)]">
-        <Card class="p-3.5 space-y-1">
-          <div class="font-medium text-white flex items-center gap-1.5">
-            <Sparkles class="w-3.5 h-3.5 text-emerald-400" />
-            <span>Strict Markdown Tables</span>
+      <!-- Daily Quota & Usage Notice -->
+      <div class="p-4 rounded-[14px] bg-[#141416] border border-[#2E2E2E] flex items-start gap-3.5 text-xs">
+        <div class="w-8 h-8 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-zinc-400 shrink-0 mt-0.5">
+          <Sparkles class="w-4 h-4" />
+        </div>
+        <div class="space-y-1 text-[var(--text-secondary)] leading-relaxed">
+          <div class="text-xs font-semibold text-[var(--text-primary)]">
+            {{ locale === 'id' ? 'Informasi Penggunaan & Kuota Harian' : 'Usage & Daily Quota Notice' }}
           </div>
           <p class="text-[11px] text-[var(--text-tertiary)]">
-            Automatically transcribes complex document tables into standard GitHub pipes (<code class="text-white font-mono">| col1 | col2 |</code>).
+            {{ locale === 'id'
+              ? 'Fitur ini didukung oleh Google Gemini API untuk membaca dan mengubah dokumen (PDF & Gambar) menjadi Markdown secara otomatis. Jika limit token harian habis, layanan ini dapat digunakan kembali besok setelah kuota harian di-reset.'
+              : 'This feature is powered by Google Gemini API to parse and convert documents (PDF & Images) into Markdown. If the daily token quota is exhausted, you can use it again tomorrow after the daily quota resets.' }}
           </p>
-        </Card>
-
-        <Card class="p-3.5 space-y-1">
-          <div class="font-medium text-white flex items-center gap-1.5">
-            <FileCode class="w-3.5 h-3.5 text-blue-400" />
-            <span>LaTeX Math & Formulas</span>
-          </div>
-          <p class="text-[11px] text-[var(--text-tertiary)]">
-            Recognizes scientific equations, fractions, and symbols into inline <code class="text-white font-mono">$...$</code> and block formulas.
-          </p>
-        </Card>
-
-        <Card class="p-3.5 space-y-1">
-          <div class="font-medium text-white flex items-center gap-1.5">
-            <Eye class="w-3.5 h-3.5 text-amber-400" />
-            <span>Native PDF & OCR</span>
-          </div>
-          <p class="text-[11px] text-[var(--text-tertiary)]">
-            Understands scanned documents, book pages, invoices, and handwritten notes powered by Gemini 2.5 Flash.
-          </p>
-        </Card>
+        </div>
       </div>
     </div>
 
@@ -443,7 +427,7 @@ const renderedHtml = computed(() => {
       </div>
       <div class="space-y-1.5">
         <div class="text-base font-semibold text-white">
-          {{ locale === 'id' ? 'Menganalisis Dokumen dengan Gemini 2.5 Flash...' : 'Analyzing Document with Gemini 2.5 Flash...' }}
+          {{ locale === 'id' ? 'Menganalisis Dokumen dengan AI...' : 'Analyzing Document with AI...' }}
         </div>
         <p class="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
           {{ locale === 'id' ? 'Mengekstrak hierarki heading, tabel Markdown, rumus matematika, dan teks terstruktur.' : 'Extracting headings, Markdown tables, LaTeX equations, and document structure.' }}
