@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { detectPlatform } from '~/server/utils/sanitizer'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
@@ -22,6 +22,10 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+// Template Refs for Focus
+const singleInputRef = ref<HTMLInputElement | null>(null)
+const batchTextareaRef = ref<HTMLTextAreaElement | null>(null)
 
 // Mode Switcher: Single vs Batch Queue
 const mode = ref<'single' | 'batch'>('single')
@@ -55,34 +59,71 @@ const handleSingleInput = (e: Event) => {
   emit('update:modelValue', val)
 }
 
-const pasteFromClipboard = async () => {
-  try {
-    const text = await navigator.clipboard.readText()
-    if (!text) return
+const applyPastedText = (text: string) => {
+  if (!text) return
 
-    const urls = extractUrls(text)
-    if (urls.length > 1) {
-      batchText.value = text.trim()
-      mode.value = 'batch'
-      emit('update:modelValue', '')
-    } else if (urls.length === 1) {
-      if (mode.value === 'batch') {
-        batchText.value = batchText.value ? `${batchText.value}\n${urls[0]}` : urls[0]
-      } else {
-        emit('update:modelValue', urls[0])
-        emit('submit')
-      }
-    } else if (text.trim()) {
+  const urls = extractUrls(text)
+  if (urls.length > 1) {
+    batchText.value = text.trim()
+    mode.value = 'batch'
+    emit('update:modelValue', '')
+  } else if (urls.length === 1) {
+    if (mode.value === 'batch') {
+      batchText.value = batchText.value ? `${batchText.value}\n${urls[0]}` : urls[0]
+    } else {
+      emit('update:modelValue', urls[0])
+      emit('submit')
+    }
+  } else if (text.trim()) {
+    if (mode.value === 'batch') {
+      batchText.value = batchText.value ? `${batchText.value}\n${text.trim()}` : text.trim()
+    } else {
       emit('update:modelValue', text.trim())
       emit('submit')
     }
-  } catch {
-    // Clipboard permission denied
   }
 }
 
+const pasteFromClipboard = async () => {
+  if (mode.value === 'single') {
+    singleInputRef.value?.focus()
+  } else {
+    batchTextareaRef.value?.focus()
+  }
+
+  try {
+    const text = await navigator.clipboard.readText()
+    applyPastedText(text)
+  } catch {
+    // Kept focused so user can press Ctrl+V directly if browser blocks readText
+  }
+}
+
+// Global Keyboard Paste Listener (Ctrl+V anywhere on page)
+const handleGlobalPaste = (event: ClipboardEvent) => {
+  const target = event.target as HTMLElement
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') && target !== singleInputRef.value && target !== batchTextareaRef.value) {
+    return
+  }
+
+  const text = event.clipboardData?.getData('text')
+  if (text) {
+    applyPastedText(text)
+    event.preventDefault()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('paste', handleGlobalPaste)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('paste', handleGlobalPaste)
+})
+
 const clearInput = () => {
   emit('update:modelValue', '')
+  singleInputRef.value?.focus()
 }
 
 const submitBatch = () => {
@@ -136,6 +177,7 @@ const submitBatch = () => {
         </div>
 
         <input
+          ref="singleInputRef"
           :value="modelValue"
           type="url"
           :placeholder="t.pastePlaceholder"
@@ -190,6 +232,7 @@ const submitBatch = () => {
     <div v-else class="space-y-3">
       <div class="relative">
         <textarea
+          ref="batchTextareaRef"
           v-model="batchText"
           rows="4"
           placeholder="Paste multiple social media links here, separated by new lines...&#10;https://www.tiktok.com/@user/video/...&#10;https://www.instagram.com/reel/...&#10;https://youtu.be/..."
