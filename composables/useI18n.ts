@@ -239,6 +239,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Anime Scene Search',
         description: 'Trace back any anime screenshot frame to its exact title, episode number, and timestamp with video preview.',
       },
+      'doc-to-markdown': {
+        title: 'Doc to Markdown',
+        description: 'Convert PDF documents and images into structured GitHub Markdown with preserved tables, formulas, and headings.',
+      },
       'audio-cutter': {
         title: 'Audio Extractor & Trimmer',
         description: 'Extract audio from video, inspect waveforms, and trim audio clips preserving original sample rates.',
@@ -441,6 +445,10 @@ const translations: Record<Locale, Translations> = {
       'anime-trace': {
         title: 'Pencari Adegan Anime',
         description: 'Lacak screenshot frame anime ke judul aslinya, nomor episode, dan menit adegan dengan preview video.',
+      },
+      'doc-to-markdown': {
+        title: 'Dokumen ke Markdown',
+        description: 'Konversi file PDF dan gambar ke Markdown terstruktur dengan tabel, rumus, dan heading yang rapi.',
       },
       'audio-cutter': {
         title: 'Audio Extractor & Trimmer',

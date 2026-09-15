@@ -89,6 +89,7 @@ const isCategoryActive = (category: string) => {
       '/tools/pairdrop',
       '/tools/brat-generator',
       '/tools/pdf-tools',
+      '/tools/doc-to-markdown',
       '/tools/svg-optimizer',
       '/tools/code-to-image',
       '/tools/video-to-gif',
@@ -165,6 +166,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/tools/pairdrop', label: 'PairDrop (P2P)', brandName: 'pairdrop' },
       { path: '/tools/brat-generator', label: 'Brat Generator', iconComponent: Type },
       { path: '/tools/pdf-tools', label: 'PDF Studio', iconComponent: FileText },
+      { path: '/tools/doc-to-markdown', label: 'Doc to Markdown', brandName: 'doc-to-markdown' },
       { path: '/tools/svg-optimizer', label: 'SVG Optimizer', iconComponent: FileCode },
       { path: '/tools/code-to-image', label: 'Code to Image', iconComponent: Code2 },
       { path: '/tools/video-to-gif', label: 'Video to GIF', brandName: 'video-to-gif' },
@@ -813,6 +815,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 PDF Studio
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/doc-to-markdown"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/doc-to-markdown')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Doc to Markdown
               </NuxtLink>
               <NuxtLink
                 to="/tools/svg-optimizer"

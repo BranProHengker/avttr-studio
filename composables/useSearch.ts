@@ -172,6 +172,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'doc-to-markdown',
+        title: 'Doc to Markdown',
+        description: 'Convert PDF documents and images into structured GitHub Markdown with tables and formulas.',
+        category: 'image',
+        icon: 'doc-to-markdown',
+        route: '/tools/doc-to-markdown',
+        badge: 'AI',
+        popular: true,
+      },
+      {
         id: 'image-converter',
         title: 'Image Format Converter',
         description: 'Batch convert PNG, JPG, WebP, AVIF, BMP, and Favicon ICO formats with instant ZIP download.',

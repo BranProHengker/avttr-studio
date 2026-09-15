@@ -279,6 +279,24 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="m19 16-2.5-2.5" />
     </svg>
 
+    <!-- Doc to Markdown Vector -->
+    <svg
+      v-else-if="normalized === 'doc-to-markdown' || normalized === 'pdf-to-markdown' || normalized === 'markdown'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+      <polyline points="14 2 14 8 20 8" />
+      <path d="M8 13h2l1 2 1-2h2" />
+      <path d="M16 13v4" />
+      <path d="m14 15 2 2 2-2" />
+    </svg>
+
     <!-- Image Converter Vector -->
     <svg
       v-else-if="normalized === 'image-converter' || normalized === 'converter'"
