@@ -5,6 +5,7 @@ export interface SecurityFinding {
   severity: 'critical' | 'warning'
   title: string
   description: string
+  filename: string
   line: number
   codeSnippet: string
 }
@@ -27,6 +28,7 @@ interface AuditRule {
   title: string
   description: string
   pattern: RegExp
+  fileExtensions?: string[]
 }
 
 const AUDIT_RULES: AuditRule[] = [
@@ -46,6 +48,7 @@ const AUDIT_RULES: AuditRule[] = [
     title: 'Markdown Image Data Exfiltration',
     description: 'Uses markdown image syntax to silently exfiltrate environment tokens.',
     pattern: /!\[.*?\]\((https?:)?\/\/[^\s)]*?(\$\{|\$env|\btoken=|\bsecret=|\bkey=|\bcookie=)[^\s)]*?\)/i,
+    fileExtensions: ['.md', '.markdown'],
   },
   {
     id: 'INJ_003',
@@ -128,31 +131,41 @@ const AUDIT_RULES: AuditRule[] = [
 ]
 
 export function useSkillAuditor() {
-  const auditContent = (content: string, _filename = 'SKILL.md'): SkillAuditReport => {
-    const lines = content.split(/\r?\n/)
+  const auditFiles = (files: Array<{ path: string; content: string }>): SkillAuditReport => {
     const findings: SecurityFinding[] = []
 
-    lines.forEach((lineText, index) => {
-      const lineNumber = index + 1
-      const trimmed = lineText.trim()
+    for (const file of files) {
+      const lines = file.content.split(/\r?\n/)
+      const filename = file.path
 
-      if (!trimmed || trimmed.startsWith('#')) return
+      lines.forEach((lineText, index) => {
+        const lineNumber = index + 1
+        const trimmed = lineText.trim()
 
-      for (const rule of AUDIT_RULES) {
-        if (rule.pattern.test(lineText)) {
-          findings.push({
-            id: `${rule.id}-${lineNumber}`,
-            ruleId: rule.id,
-            category: rule.category,
-            severity: rule.severity,
-            title: rule.title,
-            description: rule.description,
-            line: lineNumber,
-            codeSnippet: trimmed.slice(0, 140),
-          })
+        if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) return
+
+        for (const rule of AUDIT_RULES) {
+          if (rule.fileExtensions) {
+            const hasExt = rule.fileExtensions.some(ext => filename.endsWith(ext))
+            if (!hasExt) continue
+          }
+
+          if (rule.pattern.test(lineText)) {
+            findings.push({
+              id: `${rule.id}-${filename}-${lineNumber}`,
+              ruleId: rule.id,
+              category: rule.category,
+              severity: rule.severity,
+              title: rule.title,
+              description: rule.description,
+              filename,
+              line: lineNumber,
+              codeSnippet: trimmed.slice(0, 140),
+            })
+          }
         }
-      }
-    })
+      })
+    }
 
     const criticalCount = findings.filter(f => f.severity === 'critical').length
     const warningCount = findings.filter(f => f.severity === 'warning').length
@@ -186,7 +199,12 @@ export function useSkillAuditor() {
     }
   }
 
+  const auditContent = (content: string, filename = 'SKILL.md'): SkillAuditReport => {
+    return auditFiles([{ path: filename, content }])
+  }
+
   return {
     auditContent,
+    auditFiles,
   }
 }

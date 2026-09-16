@@ -12,6 +12,7 @@ import {
   Loader2,
   Archive,
   FileCode,
+  Folder,
 } from 'lucide-vue-next'
 import JSZip from 'jszip'
 import Button from '~/components/ui/Button.vue'
@@ -19,37 +20,58 @@ import Badge from '~/components/ui/Badge.vue'
 import { useToast } from '~/composables/useToast'
 import { useSkillAuditor, type SkillAuditReport, type SecurityFinding } from '~/composables/useSkillAuditor'
 
+interface SkillFile {
+  path: string
+  content: string
+}
+
 const { showToast } = useToast()
-const { auditContent } = useSkillAuditor()
+const { auditFiles } = useSkillAuditor()
 
 const inputQuery = ref('')
 const isLoading = ref(false)
 const isDragging = ref(false)
-const fileInputRef = ref<HTMLInputElement | null>(null)
+const folderInputRef = ref<HTMLInputElement | null>(null)
 
 // Current skill inspection state
 const skillName = ref('')
 const repoOwner = ref('')
 const repoName = ref('')
-const rawContent = ref('')
 const installCommand = ref('')
 const availableSkills = ref<string[]>([])
+const files = ref<SkillFile[]>([])
+const activeFilePath = ref('')
 const activeFinding = ref<SecurityFinding | null>(null)
 
 // Audit report
 const report = ref<SkillAuditReport | null>(null)
 
-const codeLines = computed(() => {
-  if (!rawContent.value) return []
-  return rawContent.value.split(/\r?\n/)
+const activeFile = computed(() => {
+  if (files.value.length === 0) return null
+  return files.value.find(f => f.path === activeFilePath.value) || files.value[0]
 })
 
-const findingsByLine = computed(() => {
+const codeLines = computed(() => {
+  if (!activeFile.value) return []
+  return activeFile.value.content.split(/\r?\n/)
+})
+
+const totalLines = computed(() => {
+  return files.value.reduce((acc, f) => acc + f.content.split(/\r?\n/).length, 0)
+})
+
+const findingsForActiveFile = computed(() => {
   const map: Record<number, SecurityFinding[]> = {}
-  if (!report.value) return map
+  if (!report.value || !activeFile.value) return map
   for (const f of report.value.findings) {
-    if (!map[f.line]) map[f.line] = []
-    map[f.line].push(f)
+    if (
+      f.filename === activeFile.value.path ||
+      f.filename.endsWith(activeFile.value.path) ||
+      activeFile.value.path.endsWith(f.filename)
+    ) {
+      if (!map[f.line]) map[f.line] = []
+      map[f.line].push(f)
+    }
   }
   return map
 })
@@ -83,6 +105,7 @@ const handleInspect = async () => {
       availableSkills: string[]
       primaryContent: string
       installCommand: string
+      files?: Array<{ name: string; path: string; content: string }>
     }>('/api/tools/skillspector', {
       method: 'POST',
       body: {
@@ -96,9 +119,15 @@ const handleInspect = async () => {
       repoName.value = data.repo
       skillName.value = data.selectedSkill || data.repo
       availableSkills.value = data.availableSkills || []
-      rawContent.value = data.primaryContent
       installCommand.value = data.installCommand
-      report.value = auditContent(data.primaryContent, `${skillName.value}.md`)
+
+      const skillFiles: SkillFile[] = data.files && data.files.length > 0
+        ? data.files.map(f => ({ path: f.path, content: f.content }))
+        : [{ path: data.selectedSkill ? `${data.selectedSkill}/SKILL.md` : 'SKILL.md', content: data.primaryContent }]
+
+      files.value = skillFiles
+      activeFilePath.value = skillFiles[0].path
+      report.value = auditFiles(skillFiles)
     }
   } catch (err: any) {
     showToast({
@@ -138,9 +167,13 @@ const selectSkillFromRepo = async (skill: string) => {
     })
 
     if (data && data.success) {
-      rawContent.value = data.primaryContent
+      const skillFiles: SkillFile[] = [
+        { path: `${skill}/SKILL.md`, content: data.primaryContent },
+      ]
+      files.value = skillFiles
+      activeFilePath.value = skillFiles[0].path
       installCommand.value = data.installCommand
-      report.value = auditContent(data.primaryContent, `${skill}.md`)
+      report.value = auditFiles(skillFiles)
       activeFinding.value = null
     }
   } catch (err: any) {
@@ -154,50 +187,132 @@ const selectSkillFromRepo = async (skill: string) => {
   }
 }
 
-const triggerFileInput = () => {
-  fileInputRef.value?.click()
+const triggerFolderInput = () => {
+  folderInputRef.value?.click()
 }
 
-const handleFileSelect = (e: Event) => {
+const handleFolderSelect = async (e: Event) => {
   const input = e.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
-    processLocalFile(input.files[0])
-  }
-}
-
-const handleFileDrop = (e: DragEvent) => {
-  isDragging.value = false
-  if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-    processLocalFile(e.dataTransfer.files[0])
-  }
-}
-
-const processLocalFile = (file: File) => {
-  const reader = new FileReader()
-  const fileName = file.name
-  skillName.value = fileName.replace(/\.[^/.]+$/, '')
-  repoOwner.value = 'local'
-  repoName.value = fileName
-  availableSkills.value = []
-  installCommand.value = `// Local file: ${fileName}`
-
-  reader.onload = (event) => {
-    const text = event.target?.result as string
-    if (text) {
-      rawContent.value = text
-      report.value = auditContent(text, fileName)
+    const list: SkillFile[] = []
+    for (let i = 0; i < input.files.length; i++) {
+      const file = input.files[i]
+      if (file.size < 5 * 1024 * 1024) {
+        const text = await file.text()
+        const path = file.webkitRelativePath || file.name
+        list.push({ path, content: text })
+      }
+    }
+    if (list.length > 0) {
+      processFolderFiles(list)
     }
   }
-  reader.readAsText(file)
+}
+
+const handleDrop = async (e: DragEvent) => {
+  isDragging.value = false
+  if (!e.dataTransfer) return
+
+  const items = e.dataTransfer.items
+  if (items && items.length > 0) {
+    const list = await extractFilesFromDataTransfer(items)
+    if (list.length > 0) {
+      processFolderFiles(list)
+      return
+    }
+  }
+
+  // Fallback to standard file drop
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    const list: SkillFile[] = []
+    for (let i = 0; i < e.dataTransfer.files.length; i++) {
+      const file = e.dataTransfer.files[i]
+      if (file.size < 5 * 1024 * 1024) {
+        const text = await file.text()
+        list.push({ path: file.name, content: text })
+      }
+    }
+    if (list.length > 0) {
+      processFolderFiles(list)
+    }
+  }
+}
+
+const extractFilesFromDataTransfer = async (items: DataTransferItemList): Promise<SkillFile[]> => {
+  const result: SkillFile[] = []
+
+  const traverse = async (entry: any, currentPath = ''): Promise<void> => {
+    if (!entry) return
+    if (entry.isFile) {
+      const file: File = await new Promise((resolve, reject) => entry.file(resolve, reject))
+      if (file.size < 5 * 1024 * 1024) {
+        const text = await file.text()
+        const path = currentPath ? `${currentPath}/${file.name}` : file.name
+        result.push({ path, content: text })
+      }
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader()
+      const readEntries = async (): Promise<any[]> => {
+        const list: any[] = []
+        let batch: any[]
+        do {
+          batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject))
+          list.push(...batch)
+        } while (batch.length > 0)
+        return list
+      }
+      const children = await readEntries()
+      const dirPath = currentPath ? `${currentPath}/${entry.name}` : entry.name
+      for (const child of children) {
+        await traverse(child, dirPath)
+      }
+    }
+  }
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (item.webkitGetAsEntry) {
+      const entry = item.webkitGetAsEntry()
+      if (entry) await traverse(entry, '')
+    }
+  }
+
+  return result
+}
+
+const processFolderFiles = (list: SkillFile[]) => {
+  const firstPath = list[0].path
+  const segments = firstPath.split('/')
+  const detectedName = segments.length > 1 ? segments[0] : firstPath.replace(/\.[^/.]+$/, '')
+
+  skillName.value = detectedName
+  repoOwner.value = 'local'
+  repoName.value = detectedName
+  availableSkills.value = []
+  installCommand.value = `// Local skill folder: ${detectedName}`
+  files.value = list
+
+  // Prioritize opening SKILL.md or the first code file
+  const mainSkillFile = list.find(f => f.path.endsWith('SKILL.md') || f.path.endsWith('skill.md'))
+  activeFilePath.value = mainSkillFile ? mainSkillFile.path : list[0].path
+
+  report.value = auditFiles(list)
 }
 
 const downloadZip = async () => {
-  if (!rawContent.value) return
+  if (files.value.length === 0) return
   try {
     const zip = new JSZip()
     const folderName = skillName.value || 'skill'
     const folder = zip.folder(folderName)
-    folder?.file('SKILL.md', rawContent.value)
+
+    for (const f of files.value) {
+      // Clean relative path without repeating root folder name
+      const relativePath = f.path.startsWith(`${folderName}/`)
+        ? f.path.slice(folderName.length + 1)
+        : f.path
+      folder?.file(relativePath, f.content)
+    }
 
     const blob = await zip.generateAsync({ type: 'blob' })
     const url = URL.createObjectURL(blob)
@@ -215,21 +330,6 @@ const downloadZip = async () => {
   }
 }
 
-const downloadMarkdown = () => {
-  if (!rawContent.value) return
-  const blob = new Blob([rawContent.value], { type: 'text/markdown;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = skillName.value ? `${skillName.value}.md` : 'SKILL.md'
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-
-  showToast({ title: 'File SKILL.md berhasil diunduh', type: 'success' })
-}
-
 const copyInstallCommand = async () => {
   if (!installCommand.value) return
   try {
@@ -241,9 +341,9 @@ const copyInstallCommand = async () => {
 }
 
 const copyCode = async () => {
-  if (!rawContent.value) return
+  if (!activeFile.value) return
   try {
-    await navigator.clipboard.writeText(rawContent.value)
+    await navigator.clipboard.writeText(activeFile.value.content)
     showToast({ title: 'Kode berhasil disalin', type: 'success' })
   } catch {
     showToast({ title: 'Gagal menyalin kode', type: 'error' })
@@ -252,6 +352,7 @@ const copyCode = async () => {
 
 const scrollToFinding = (finding: SecurityFinding) => {
   activeFinding.value = finding
+  activeFilePath.value = finding.filename
   nextTick(() => {
     const el = document.getElementById(`code-line-${finding.line}`)
     if (el) {
@@ -262,7 +363,8 @@ const scrollToFinding = (finding: SecurityFinding) => {
 
 const resetScanner = () => {
   report.value = null
-  rawContent.value = ''
+  files.value = []
+  activeFilePath.value = ''
   skillName.value = ''
   availableSkills.value = []
   activeFinding.value = null
@@ -287,7 +389,7 @@ const resetScanner = () => {
         SkillSpector
       </h1>
       <p class="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-        Static pattern & AST security inspector for AI Agent skills. Statically analyze prompt injections, secret leaks, reverse shells, and unsafe execution.
+        Static pattern & AST security inspector for AI Agent skills. Statically analyze prompt injections, secret leaks, reverse shells, and unsafe execution across skill directories.
       </p>
     </div>
 
@@ -326,37 +428,39 @@ const resetScanner = () => {
       </div>
     </div>
 
-    <!-- File Dropzone (Section 10 Standard) -->
+    <!-- Recursive Folder Dropzone -->
     <div
       v-if="!report"
       class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-all group"
       :class="isDragging ? 'border-white/50 bg-[#1a1a1c]' : ''"
       @dragover.prevent="isDragging = true"
       @dragleave.prevent="isDragging = false"
-      @drop.prevent="handleFileDrop"
-      @click="triggerFileInput"
+      @drop.prevent="handleDrop"
+      @click="triggerFolderInput"
     >
       <input
-        ref="fileInputRef"
+        ref="folderInputRef"
         type="file"
-        accept=".md,.txt,.zip,.py,.ts,.sh"
+        webkitdirectory
+        directory
+        multiple
         class="hidden"
-        @change="handleFileSelect"
+        @change="handleFolderSelect"
       />
       <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
-        <FolderCheck class="w-6 h-6 text-white" />
+        <Folder class="w-6 h-6 text-white" />
       </div>
       <div class="mt-4 text-sm font-semibold text-[var(--text-primary)]">
-        Drop your skill folder or SKILL.md here or browse
+        Drop your skill folder here or browse
       </div>
       <div class="text-xs text-[var(--text-secondary)] mt-1">
-        Supports SKILL.md, .zip, .py, .ts, and .sh files. 100% processed client-side.
+        Supports full skill directories containing SKILL.md, .py, .sh, .ts, .mcp, and .json files. 100% processed client-side.
       </div>
     </div>
 
     <!-- Inspection Results Workspace -->
     <div v-if="report" class="space-y-4">
-      <!-- Multi-Skill Explorer Pills -->
+      <!-- Multi-Skill Explorer Pills (if repo has multiple skills) -->
       <div
         v-if="availableSkills.length > 1"
         class="flex items-center gap-2 overflow-x-auto pb-1 text-xs"
@@ -378,13 +482,13 @@ const resetScanner = () => {
         </button>
       </div>
 
-      <!-- Compact Action & Status Ribbon -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)]">
-        <!-- Status & Target -->
+      <!-- Flat Clean Toolbar Row (No Boxed Rectangle Shape) -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1">
+        <!-- Status & Metadata -->
         <div class="flex items-center gap-3">
-          <div class="font-mono text-sm font-bold text-white">
+          <span class="font-mono text-sm font-bold text-white">
             {{ skillName }}
-          </div>
+          </span>
 
           <Badge
             :variant="report.status === 'danger' ? 'primary' : report.status === 'warning' ? 'secondary' : 'badge'"
@@ -393,12 +497,12 @@ const resetScanner = () => {
             ({{ report.score }}/100)
           </Badge>
 
-          <span class="text-xs text-[var(--text-secondary)] font-mono hidden md:inline">
-            {{ codeLines.length }} lines
+          <span class="text-xs text-[var(--text-secondary)] font-mono">
+            {{ files.length }} files · {{ totalLines }} lines
           </span>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Action Buttons Directly on Row -->
         <div class="flex flex-wrap items-center gap-2">
           <Button
             variant="primary"
@@ -408,16 +512,6 @@ const resetScanner = () => {
           >
             <Archive class="w-3.5 h-3.5 mr-1.5" />
             Download ZIP
-          </Button>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            class="h-8 px-2.5 text-xs cursor-pointer"
-            @click="downloadMarkdown"
-          >
-            <Download class="w-3.5 h-3.5 mr-1.5" />
-            SKILL.md
           </Button>
 
           <Button
@@ -470,7 +564,7 @@ const resetScanner = () => {
             <ShieldCheck class="w-7 h-7 text-white mx-auto" />
             <div class="text-sm font-semibold text-white">No Security Threats Detected</div>
             <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-              No prompt overrides, dangerous shell executions, credential harvesting, or exfiltration patterns detected.
+              No prompt overrides, dangerous shell executions, credential harvesting, or exfiltration patterns detected across all files.
             </p>
           </div>
 
@@ -499,6 +593,10 @@ const resetScanner = () => {
               </span>
             </div>
 
+            <div class="text-[11px] font-mono text-[var(--text-secondary)] truncate">
+              {{ f.filename }}
+            </div>
+
             <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
               {{ f.description }}
             </p>
@@ -511,14 +609,32 @@ const resetScanner = () => {
 
         <!-- Code Viewer Column (7 cols) -->
         <div class="lg:col-span-7 bg-[#141416] border border-[var(--border-card)] rounded-[14px] overflow-hidden">
-          <div class="px-4 py-2.5 border-b border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
-            <div class="flex items-center gap-2">
-              <FileCode class="w-3.5 h-3.5" />
-              <span>{{ skillName ? `${skillName}.md` : 'SKILL.md' }}</span>
+          <!-- File Selector / Tabs Header -->
+          <div class="px-4 py-2 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs font-mono">
+            <div class="flex items-center gap-1.5 overflow-x-auto py-0.5">
+              <button
+                v-for="f in files"
+                :key="f.path"
+                type="button"
+                class="px-2 py-1 rounded text-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+                :class="
+                  activeFile?.path === f.path
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/5'
+                "
+                @click="activeFilePath = f.path"
+              >
+                <FileCode class="w-3.5 h-3.5" />
+                <span>{{ f.path.split('/').pop() }}</span>
+              </button>
             </div>
-            <span>{{ codeLines.length }} lines</span>
+
+            <span class="text-[11px] text-[var(--text-secondary)] shrink-0">
+              {{ codeLines.length }} lines
+            </span>
           </div>
 
+          <!-- Code Content Viewer -->
           <div class="max-h-[620px] overflow-y-auto overflow-x-auto p-4 font-mono text-xs select-text">
             <div
               v-for="(line, idx) in codeLines"
@@ -526,11 +642,11 @@ const resetScanner = () => {
               :key="idx"
               class="flex items-start gap-3 py-0.5 px-2 rounded transition-colors"
               :class="[
-                findingsByLine[idx + 1]
-                  ? findingsByLine[idx + 1][0].severity === 'critical'
+                findingsForActiveFile[idx + 1]
+                  ? findingsForActiveFile[idx + 1][0].severity === 'critical'
                     ? 'bg-rose-950/40 text-rose-200 border border-rose-800/40'
                     : 'bg-amber-950/40 text-amber-200 border border-amber-800/40'
-                  : activeFinding?.line === idx + 1
+                  : activeFinding?.line === idx + 1 && activeFinding?.filename === activeFile?.path
                   ? 'bg-white/10'
                   : 'hover:bg-white/5 text-neutral-300'
               ]"
@@ -544,11 +660,11 @@ const resetScanner = () => {
               </div>
 
               <span
-                v-if="findingsByLine[idx + 1]"
+                v-if="findingsForActiveFile[idx + 1]"
                 class="shrink-0 text-[9px] uppercase font-bold px-1 rounded"
-                :class="findingsByLine[idx + 1][0].severity === 'critical' ? 'text-rose-400' : 'text-amber-400'"
+                :class="findingsForActiveFile[idx + 1][0].severity === 'critical' ? 'text-rose-400' : 'text-amber-400'"
               >
-                {{ findingsByLine[idx + 1][0].severity }}
+                {{ findingsForActiveFile[idx + 1][0].severity }}
               </span>
             </div>
           </div>
