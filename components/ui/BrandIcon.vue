@@ -297,6 +297,24 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="m14 15 2 2 2-2" />
     </svg>
 
+    <!-- LRC Studio / Lyrics Vector -->
+    <svg
+      v-else-if="normalized === 'lrc-studio' || normalized === 'lrc' || normalized === 'lyrics'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+      <path d="M6 8h7" />
+      <path d="M6 12h5" />
+    </svg>
+
     <!-- Image Converter Vector -->
     <svg
       v-else-if="normalized === 'image-converter' || normalized === 'converter'"

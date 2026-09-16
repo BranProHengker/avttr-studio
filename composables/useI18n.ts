@@ -192,6 +192,10 @@ const translations: Record<Locale, Translations> = {
         name: 'COLOUR & DESIGN',
         description: 'Harmonious palettes, contrast verification, and token exports',
       },
+      music: {
+        name: 'AUDIO & MUSIC',
+        description: 'Synchronized lyrics, audio trimming, and music downloaders',
+      },
     },
 
     tools: {
@@ -307,6 +311,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Open Graph Previewer',
         description: 'Test, simulate, and generate social cards for Twitter, Discord, WhatsApp, Facebook, LinkedIn, and Google.',
       },
+      'lrc-studio': {
+        title: 'LRC Lyrics Studio',
+        description: 'Synchronized .lrc lyrics generator with LRCLIB database and Japanese Romaji transcriber.',
+      },
     },
   },
   id: {
@@ -398,6 +406,10 @@ const translations: Record<Locale, Translations> = {
       color: {
         name: 'WARNA & DESAIN',
         description: 'Palet warna harmonis, verifikasi kontras WCAG, dan mockup studio',
+      },
+      music: {
+        name: 'AUDIO & MUSIK',
+        description: 'Lirik tersinkronisasi, pemotong audio, dan pengunduh musik',
       },
     },
 
@@ -513,6 +525,10 @@ const translations: Record<Locale, Translations> = {
       'og-previewer': {
         title: 'Open Graph Previewer',
         description: 'Preview tampilan kartu link untuk Twitter, Discord, WhatsApp, Facebook, dan Google.',
+      },
+      'lrc-studio': {
+        title: 'LRC Lyrics Studio',
+        description: 'Generator lirik .lrc tersinkronisasi dengan database LRCLIB dan pengubah Romaji Jepang.',
       },
     },
   },

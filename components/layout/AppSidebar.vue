@@ -18,6 +18,7 @@ import {
   Pipette,
   Globe,
   Sticker,
+  Music,
 } from 'lucide-vue-next'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
@@ -76,7 +77,7 @@ const isCategoryActive = (category: string) => {
     return route.path.startsWith('/d/') && !['/d/spotify', '/d/soundcloud'].includes(route.path)
   }
   if (category === 'feeds-audio') {
-    return ['/d/spotify', '/d/soundcloud'].includes(route.path) || route.path === '/tools/audio-cutter'
+    return ['/d/spotify', '/d/soundcloud'].includes(route.path) || ['/tools/audio-cutter', '/tools/lrc-studio'].includes(route.path)
   }
   if (category === 'assets') {
     return [
@@ -152,6 +153,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/d/spotify', label: 'Spotify', brandName: 'spotify' },
       { path: '/d/soundcloud', label: 'SoundCloud', brandName: 'soundcloud' },
       { path: '/tools/audio-cutter', label: 'Audio Extractor', iconComponent: Scissors },
+      { path: '/tools/lrc-studio', label: 'LRC Studio', iconComponent: Music },
     ],
   },
   'assets': {
@@ -680,6 +682,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 Audio Extractor & Trimmer
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/lrc-studio"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/lrc-studio')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                LRC Lyrics Studio
               </NuxtLink>
             </div>
           </div>

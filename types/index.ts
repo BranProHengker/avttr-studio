@@ -54,7 +54,7 @@ export interface ToolItem {
   id: string
   title: string
   description: string
-  category: 'downloader' | 'image' | 'color' | 'dev'
+  category: 'downloader' | 'image' | 'color' | 'dev' | 'music'
   icon: string
   route: string
   badge?: 'Fast' | 'HD' | 'New' | 'Beta' | 'AI' | 'Popular' | string
