@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import {
   Music,
   Search,
-  Upload,
   Play,
   Pause,
-  RotateCcw,
   Volume2,
   VolumeX,
   Copy,
@@ -19,9 +17,7 @@ import {
   AlertCircle,
   FileAudio,
   X,
-  Clock,
   Disc,
-  User,
   Sliders,
   CheckCircle2
 } from 'lucide-vue-next'
@@ -29,7 +25,6 @@ import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
-import Card from '~/components/ui/Card.vue'
 
 interface LrcTrackItem {
   id: number
@@ -63,23 +58,22 @@ useHead({
   ]
 })
 
-// Input State
+// Search & Input State
 const searchQuery = ref('')
 const isSearching = ref(false)
 const searchResults = ref<LrcTrackItem[]>([])
 const hasSearched = ref(false)
+const isDragging = ref(false)
 
-// Audio File State
+// Audio Playback State
 const audioFile = ref<File | null>(null)
 const audioUrl = ref<string | null>(null)
 const audioElement = ref<HTMLAudioElement | null>(null)
 const isPlaying = ref(false)
 const currentTime = ref(0)
 const audioDuration = ref(0)
-const volume = ref(0.8)
 const isMuted = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const isDragging = ref(false)
 
 // Active Lyrics State
 const selectedTrack = ref<LrcTrackItem | null>(null)
@@ -88,14 +82,19 @@ const romajiLrc = ref('')
 const dualLrc = ref('')
 const isRomajiConverted = ref(false)
 const isConvertingRomaji = ref(false)
-const syncOffset = ref(0) // seconds to shift timestamps
+const syncOffset = ref(0) // seconds offset
 const exportMode = ref<'dual' | 'romaji' | 'original'>('dual')
 const activeView = ref<'karaoke' | 'raw'>('karaoke')
 const rawEditedLrc = ref('')
 const hasCopied = ref(false)
 const karaokeContainerRef = ref<HTMLElement | null>(null)
 
-// Format seconds into mm:ss.xx
+// Check Japanese text helper (Kanji, Hiragana, Katakana)
+const containsJapanese = (text: string): boolean => {
+  return /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)
+}
+
+// Format seconds helper
 const formatSeconds = (sec: number): string => {
   if (isNaN(sec) || sec < 0) return '00:00'
   const m = Math.floor(sec / 60)
@@ -103,14 +102,9 @@ const formatSeconds = (sec: number): string => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-// Check if string contains Japanese Kanji/Kana
-const containsJapanese = (text: string): boolean => {
-  return /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/.test(text)
-}
-
-// Parsed active lines for Karaoke playback
+// Parse active lines for karaoke
 const parsedLines = computed<ParsedLyricLine[]>(() => {
-  const source = originalLrc.value
+  const source = activeView.value === 'raw' && rawEditedLrc.value ? rawEditedLrc.value : originalLrc.value
   if (!source) return []
 
   const lines = source.split('\n').map((l) => l.trim()).filter(Boolean)
@@ -169,7 +163,7 @@ const activeLineIndex = computed(() => {
   return activeIdx
 })
 
-// Computed Final Export Text based on exportMode
+// Computed final export text
 const finalLrcOutput = computed(() => {
   if (activeView.value === 'raw' && rawEditedLrc.value) {
     return rawEditedLrc.value
@@ -184,7 +178,6 @@ const finalLrcOutput = computed(() => {
   return originalLrc.value
 })
 
-// Detect if current lyrics contain Japanese
 const isJapaneseSong = computed(() => {
   return containsJapanese(originalLrc.value)
 })
@@ -213,11 +206,27 @@ const searchLyrics = async () => {
     })
 
     if (res && Array.isArray(res.data)) {
-      searchResults.value = res.data
-      if (res.data.length === 0) {
+      // Prioritize Japanese tracks if search query contains Japanese characters
+      const queryHasJapanese = containsJapanese(query)
+      const sorted = [...res.data].sort((a, b) => {
+        if (queryHasJapanese) {
+          const aJp = containsJapanese((a.trackName || '') + (a.artistName || '') + (a.syncedLyrics || '')) ? 1 : 0
+          const bJp = containsJapanese((b.trackName || '') + (b.artistName || '') + (b.syncedLyrics || '')) ? 1 : 0
+          if (bJp !== aJp) return bJp - aJp
+        }
+        const aSync = a.syncedLyrics ? 1 : 0
+        const bSync = b.syncedLyrics ? 1 : 0
+        return bSync - aSync
+      })
+
+      searchResults.value = sorted
+
+      if (sorted.length === 0) {
         toast.info(
           locale.value === 'id' ? 'Tidak Ditemukan' : 'No Lyrics Found',
-          locale.value === 'id' ? 'Coba cari dengan nama artis atau judul yang lebih spesifik.' : 'Try searching with more specific title or artist keywords.'
+          locale.value === 'id'
+            ? 'Coba cari dengan nama artis atau judul yang lebih spesifik.'
+            : 'Try searching with more specific title or artist keywords.'
         )
       }
     }
@@ -237,6 +246,7 @@ const selectTrack = (track: LrcTrackItem) => {
   isRomajiConverted.value = false
   syncOffset.value = 0
   rawEditedLrc.value = originalLrc.value
+  searchResults.value = []
 
   if (!track.syncedLyrics && track.plainLyrics) {
     toast.warning(
@@ -268,6 +278,11 @@ const convertToRomaji = async () => {
     })
 
     if (res && res.success) {
+      if (!res.isJapanese) {
+        toast.info('Non-Japanese Lyrics', 'No Japanese Kanji/Kana found in this song lyrics.')
+        return
+      }
+
       romajiLrc.value = res.romajiLrc
       dualLrc.value = res.dualLrc
       isRomajiConverted.value = true
@@ -286,46 +301,167 @@ const convertToRomaji = async () => {
   }
 }
 
-// Audio File Selection Handler
-const handleAudioFile = (file: File) => {
+// Extract Vorbis / ID3 tags directly from audio file
+const extractAudioMetadata = async (file: File): Promise<{ title?: string; artist?: string }> => {
+  try {
+    const slice = file.slice(0, 131072) // 128KB header
+    const buffer = await slice.arrayBuffer()
+    const view = new DataView(buffer)
+    const bytes = new Uint8Array(buffer)
+
+    // FLAC check: starts with 'fLaC' (0x66, 0x4C, 0x61, 0x43)
+    if (bytes[0] === 0x66 && bytes[1] === 0x4C && bytes[2] === 0x61 && bytes[3] === 0x43) {
+      let offset = 4
+      while (offset < buffer.byteLength - 4) {
+        const header = view.getUint8(offset)
+        const isLast = (header & 0x80) !== 0
+        const blockType = header & 0x7F
+        const length = (view.getUint8(offset + 1) << 16) | (view.getUint8(offset + 2) << 8) | view.getUint8(offset + 3)
+        offset += 4
+
+        if (blockType === 4 && offset + length <= buffer.byteLength) { // VORBIS_COMMENT
+          const decoder = new TextDecoder('utf-8')
+          const vendorLength = view.getUint32(offset, true)
+          let commentOffset = offset + 4 + vendorLength
+          if (commentOffset + 4 <= buffer.byteLength) {
+            const userCommentCount = view.getUint32(commentOffset, true)
+            commentOffset += 4
+
+            const tags: Record<string, string> = {}
+            for (let i = 0; i < userCommentCount && commentOffset < offset + length; i++) {
+              if (commentOffset + 4 > buffer.byteLength) break
+              const commentLen = view.getUint32(commentOffset, true)
+              commentOffset += 4
+              if (commentOffset + commentLen > buffer.byteLength) break
+              const commentBytes = bytes.subarray(commentOffset, commentOffset + commentLen)
+              const commentStr = decoder.decode(commentBytes)
+              commentOffset += commentLen
+
+              const eqIdx = commentStr.indexOf('=')
+              if (eqIdx !== -1) {
+                const key = commentStr.slice(0, eqIdx).toUpperCase()
+                const val = commentStr.slice(eqIdx + 1).trim()
+                tags[key] = val
+              }
+            }
+
+            return {
+              title: tags.TITLE,
+              artist: tags.ARTIST || tags.ALBUMARTIST
+            }
+          }
+        }
+        offset += length
+        if (isLast) break
+      }
+    }
+
+    // ID3v2 check: starts with 'ID3' (0x49, 0x44, 0x33)
+    if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
+      let offset = 10
+      const decoder = new TextDecoder('utf-8')
+      const tags: Record<string, string> = {}
+
+      while (offset < buffer.byteLength - 10) {
+        const frameId = String.fromCharCode(bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3])
+        if (!/^[A-Z0-9]{4}$/.test(frameId)) break
+        const frameSize = view.getUint32(offset + 4)
+        offset += 10
+        if (offset + frameSize > buffer.byteLength || frameSize <= 1) break
+
+        const frameData = bytes.subarray(offset + 1, offset + frameSize)
+        offset += frameSize
+        const text = decoder.decode(frameData).replace(/\0/g, '').trim()
+
+        if (frameId === 'TIT2') tags.TITLE = text
+        if (frameId === 'TPE1') tags.ARTIST = text
+      }
+
+      if (tags.TITLE || tags.ARTIST) {
+        return {
+          title: tags.TITLE,
+          artist: tags.ARTIST
+        }
+      }
+    }
+  } catch {
+    // fallback to filename
+  }
+  return {}
+}
+
+// Audio or LRC File Selection Handler
+const handleFile = async (file: File) => {
+  // If user drops a .lrc file, read text directly
+  if (file.name.toLowerCase().endsWith('.lrc') || file.type === 'text/plain') {
+    try {
+      const text = await file.text()
+      const title = file.name.replace(/\.[^/.]+$/, '')
+      selectedTrack.value = {
+        id: Date.now(),
+        trackName: title,
+        artistName: 'Local File',
+        duration: 0,
+        instrumental: false,
+        syncedLyrics: text
+      }
+      originalLrc.value = text
+      romajiLrc.value = ''
+      dualLrc.value = text
+      isRomajiConverted.value = false
+      syncOffset.value = 0
+      rawEditedLrc.value = text
+      searchResults.value = []
+      toast.success('LRC File Loaded', file.name)
+      return
+    } catch {
+      toast.error('Read Failed', 'Unable to parse .lrc file')
+      return
+    }
+  }
+
+  // Audio file (.flac, .mp3, .wav, etc.)
   audioFile.value = file
   if (audioUrl.value) {
     URL.revokeObjectURL(audioUrl.value)
   }
   audioUrl.value = URL.createObjectURL(file)
 
-  // Clean filename to search query
-  const cleanName = file.name
-    .replace(/\.[^/.]+$/, '')
-    .replace(/[_-]/g, ' ')
-    .replace(/\b(feat|ft|official|audio|video|lyrics|remix|hd|flac|mp3)\b/gi, '')
-    .trim()
+  // Try extracting metadata tags first
+  const meta = await extractAudioMetadata(file)
+  let cleanName = ''
+
+  if (meta.title && meta.artist) {
+    cleanName = `${meta.artist} - ${meta.title}`
+  } else if (meta.title) {
+    cleanName = meta.title
+  } else {
+    // Fallback: smart filename cleanup
+    cleanName = file.name
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[_-]/g, ' ')
+      .replace(/\b(feat|ft|official|audio|video|lyrics|remix|hd|flac|mp3|wav|m4a)\b/gi, '')
+      .trim()
+  }
 
   searchQuery.value = cleanName
   searchLyrics()
 
-  toast.success(
-    locale.value === 'id' ? 'File Audio Dimuat' : 'Audio File Loaded',
-    file.name
-  )
+  const detectedLabel = meta.title ? `${meta.title}${meta.artist ? ' by ' + meta.artist : ''}` : file.name
+  toast.success(locale.value === 'id' ? 'File Audio Dimuat' : 'Audio File Loaded', detectedLabel)
 }
 
 const onFileInputChange = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files[0]) {
-    handleAudioFile(target.files[0])
+    handleFile(target.files[0])
   }
 }
 
-const handleDrop = (event: DragEvent) => {
+const onDropFile = (e: DragEvent) => {
   isDragging.value = false
-  if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
-    const file = event.dataTransfer.files[0]
-    if (file.type.startsWith('audio/') || /\.(flac|mp3|m4a|wav|ogg|opus)$/i.test(file.name)) {
-      handleAudioFile(file)
-    } else {
-      toast.warning('Unsupported Audio', 'Please upload a valid audio file (FLAC, MP3, M4A, WAV).')
-    }
+  if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+    handleFile(e.dataTransfer.files[0])
   }
 }
 
@@ -422,7 +558,7 @@ const downloadLrc = () => {
   toast.success('Downloaded .lrc', `Saved as ${a.download}`)
 }
 
-// Reset tool
+// Reset workspace
 const resetWorkspace = () => {
   if (audioElement.value) {
     audioElement.value.pause()
@@ -453,7 +589,7 @@ onUnmounted(() => {
 
 <template>
   <div class="space-y-6 pb-12 w-full">
-    <!-- Breadcrumbs & Header Flex Row -->
+    <!-- Breadcrumbs & Header Flex Row (DESIGN.md Standard) -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="space-y-1">
         <nav class="flex items-center gap-1.5 text-xs font-mono text-[var(--text-tertiary)]">
@@ -471,7 +607,7 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <!-- Engine Badges -->
+      <!-- Engine Badges (Monochrome Standard) -->
       <div class="flex items-center gap-2 flex-wrap">
         <Badge variant="badge">LRCLIB Sync</Badge>
         <Badge variant="outline">Client Privacy</Badge>
@@ -482,7 +618,7 @@ onUnmounted(() => {
     <input
       ref="fileInputRef"
       type="file"
-      accept="audio/flac,audio/mp3,audio/mpeg,audio/m4a,audio/wav,audio/ogg,.flac,.mp3,.m4a,.wav,.ogg"
+      accept="audio/*,.flac,.mp3,.m4a,.wav,.ogg,.lrc,text/plain"
       class="hidden"
       @change="onFileInputChange"
     />
@@ -499,446 +635,458 @@ onUnmounted(() => {
       @ended="isPlaying = false"
     />
 
-    <!-- Initial Search & Dropzone Deck (Shown when no track selected) -->
-    <div v-if="!selectedTrack" class="space-y-4">
-      <!-- Search Omnibox -->
-      <div class="p-3 bg-[#141416] border border-[#2E2E2E] rounded-[14px]">
-        <form class="flex items-center gap-2" @submit.prevent="searchLyrics">
-          <div class="relative flex-1">
-            <Search class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search song title & artist (e.g. Yorushika - Yuunagi, The 1975 - About You)..."
-              class="w-full h-11 pl-10 pr-4 bg-[#1B1B1E] border border-[#2E2E2E] rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500 transition-colors"
-            />
+    <!-- Unified Search & Audio Upload Bar (HeroPasteBar Standard) -->
+    <div class="space-y-3">
+      <div class="flex flex-col sm:flex-row items-center gap-2">
+        <!-- Main Search Input -->
+        <div class="relative flex-1 w-full">
+          <Search class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search song title & artist (e.g. Yorushika - Replicant, YOASOBI, The 1975)..."
+            class="w-full h-12 pl-10 pr-24 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-white/10 shadow-xs"
+            @keydown.enter.prevent="searchLyrics"
+          />
+          <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+            <Button
+              variant="secondary"
+              size="sm"
+              class="h-8 px-3 text-xs"
+              :disabled="isSearching || !searchQuery.trim()"
+              @click="searchLyrics"
+            >
+              <RefreshCw v-if="isSearching" class="w-3.5 h-3.5 animate-spin mr-1 text-white" />
+              <Search v-else class="w-3.5 h-3.5 mr-1 text-white" />
+              <span>Search</span>
+            </Button>
           </div>
-          <Button
-            type="submit"
-            variant="primary"
-            class="h-11 px-5 text-xs font-medium shrink-0 flex items-center gap-1.5"
-            :disabled="isSearching || !searchQuery.trim()"
-          >
-            <RefreshCw v-if="isSearching" class="w-3.5 h-3.5 animate-spin" />
-            <Search v-else class="w-3.5 h-3.5" />
-            <span>Search Lyrics</span>
-          </Button>
-        </form>
+        </div>
+
+        <!-- Single Upload / Replace Audio Button (HeroPasteBar size) -->
+        <Button
+          type="button"
+          variant="secondary"
+          size="default"
+          class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
+          @click="fileInputRef?.click()"
+        >
+          <FileAudio class="w-4 h-4 mr-1.5 text-white" />
+          <span>{{ audioFile ? 'Replace Audio' : 'Upload Audio' }}</span>
+        </Button>
       </div>
 
-      <!-- Standardized Section 10 Standalone Dropzone -->
-      <div
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
-        :class="isDragging ? 'border-white bg-[#1A1A1E]' : ''"
-        @click="fileInputRef?.click()"
-        @dragover.prevent="isDragging = true"
-        @dragleave.prevent="isDragging = false"
-        @drop.prevent="handleDrop"
-      >
-        <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-          <FileAudio class="w-6 h-6" />
-        </div>
-        <div class="text-sm font-semibold text-[var(--text-primary)] mt-3">
-          {{ locale === 'id' ? 'Tarik & lepas file audio .flac atau .mp3 di sini atau browse' : 'Drop your audio .flac or .mp3 file here or browse' }}
-        </div>
-        <div class="text-xs text-[var(--text-secondary)] mt-1">
-          {{ locale === 'id' ? 'Mendukung FLAC, MP3, M4A, WAV. Otomatis membaca judul dan sinkronisasi playback.' : 'Supports FLAC, MP3, M4A, WAV. Auto-detects track name and loads player preview.' }}
-        </div>
-        <div class="mt-4 flex items-center justify-center gap-2">
-          <Button variant="ghost" class="h-8 px-3.5 text-xs border border-[#2E2E2E] text-[var(--text-secondary)] hover:text-white pointer-events-none">
-            <Upload class="w-3.5 h-3.5 mr-1" />
-            <span>Browse Audio File</span>
-          </Button>
-        </div>
-      </div>
-
-      <!-- Search Results List -->
-      <div v-if="searchResults.length > 0" class="space-y-2">
-        <div class="flex items-center justify-between text-xs font-mono text-[var(--text-tertiary)] px-1">
-          <span>Search Results ({{ searchResults.length }})</span>
-          <span>Click to load lyrics</span>
+      <!-- Search Results Dropdown List -->
+      <div v-if="searchResults.length > 0" class="p-3 bg-[#171717] border border-[#2E2E2E] rounded-xl space-y-2">
+        <div class="flex items-center justify-between text-xs font-mono text-[var(--text-secondary)] px-1">
+          <span>Available Versions in LRCLIB ({{ searchResults.length }})</span>
+          <span class="text-[11px] text-[var(--text-tertiary)]">Select the matching language version</span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <Card
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div
             v-for="track in searchResults"
             :key="track.id"
-            class="p-3.5 hover:border-zinc-500 cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between gap-3 group"
+            class="p-3 rounded-lg bg-[#212121] hover:bg-[#292929] border border-[#2E2E2E] hover:border-[#404040] cursor-pointer transition-all flex items-center justify-between gap-3"
             @click="selectTrack(track)"
           >
-            <div class="space-y-1 min-w-0 flex-1">
-              <div class="font-medium text-xs text-white truncate group-hover:text-emerald-400 transition-colors">
+            <div class="min-w-0 flex-1 space-y-0.5">
+              <div class="font-semibold text-xs text-white truncate">
                 {{ track.trackName }}
               </div>
-              <div class="text-[11px] text-[var(--text-secondary)] truncate flex items-center gap-2">
+              <div class="text-[11px] text-[var(--text-secondary)] truncate flex items-center gap-1.5">
                 <span>{{ track.artistName }}</span>
                 <span v-if="track.albumName" class="text-zinc-600">•</span>
-                <span v-if="track.albumName" class="truncate text-zinc-400">{{ track.albumName }}</span>
+                <span v-if="track.albumName" class="truncate text-[var(--text-tertiary)]">{{ track.albumName }}</span>
               </div>
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
-              <span v-if="track.duration" class="text-[10px] font-mono text-[var(--text-tertiary)]">
-                {{ formatSeconds(track.duration) }}
-              </span>
-              <Badge :variant="track.syncedLyrics ? 'badge' : 'outline'">
-                {{ track.syncedLyrics ? 'Synced' : 'Plain' }}
+              <!-- Language badge -->
+              <Badge v-if="containsJapanese((track.trackName || '') + (track.syncedLyrics || '') + (track.plainLyrics || ''))" variant="badge">
+                Japanese
+              </Badge>
+              <Badge v-else variant="outline">
+                Latin / EN
+              </Badge>
+
+              <!-- Sync badge -->
+              <Badge v-if="track.syncedLyrics" variant="secondary">
+                Synced
+              </Badge>
+              <Badge v-else variant="ghost">
+                Plain
               </Badge>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- Daily Quota & Usage Notice -->
-      <div class="p-3.5 sm:p-4 rounded-[14px] bg-[#141416] border border-[#2E2E2E] flex items-start gap-3 text-xs">
-        <AlertCircle class="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
-        <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
-          <div class="text-xs font-semibold text-[var(--text-primary)]">
-            {{ locale === 'id' ? 'Catatan Database & Layanan' : 'Database & Lyrics Notice' }}
-          </div>
-          <p class="text-[11px] text-[var(--text-tertiary)]">
-            {{ locale === 'id'
-              ? 'Lirik sinkronisasi (.lrc) diambil langsung dari database LRCLIB yang bebas digunakan tanpa batas. Konversi Romaji bahasa Jepang ditenagai oleh Google Gemini API.'
-              : 'Synchronized lyrics (.lrc) are powered by the open LRCLIB database. Japanese Romaji transliteration is assisted by Google Gemini API.' }}
+    <!-- State 1: Dropzone (DESIGN.md Section 10 Specification) -->
+    <div
+      v-if="!selectedTrack"
+      class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
+      :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+      @dragover.prevent="isDragging = true"
+      @dragleave.prevent="isDragging = false"
+      @drop.prevent="onDropFile"
+      @click="fileInputRef?.click()"
+    >
+      <div class="max-w-md mx-auto space-y-3">
+        <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
+          <Music class="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+            Drop your audio (.flac, .mp3, .wav) or .lrc file here or browse
+          </h3>
+          <p class="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+            Supports FLAC, MP3, WAV, OGG, and LRC files. 100% processed client-side.
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Active Lyrics & Karaoke Workspace -->
+    <!-- State 2: Active Theater Workspace -->
     <div v-else class="space-y-4">
-      <!-- Toolbar Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#141416] border border-[#2E2E2E] rounded-[14px]">
-        <!-- Track Info -->
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-9 h-9 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0">
-            <Music class="w-4 h-4 text-emerald-400" />
-          </div>
-          <div class="space-y-0.5 min-w-0">
-            <div class="text-xs font-semibold text-white truncate max-w-xs sm:max-w-md">
-              {{ selectedTrack?.trackName || 'Unknown Title' }}
+      <!-- High-Contrast Audio Player Deck -->
+      <div class="p-4 sm:p-5 rounded-[14px] bg-[#171717] border border-[#2E2E2E] space-y-4 shadow-xs">
+        <!-- Top Track Header & Offset Shift -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <!-- Left: Track Meta -->
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0">
+              <Disc class="w-5 h-5 text-white animate-spin" style="animation-duration: 6s;" v-if="isPlaying" />
+              <Music class="w-5 h-5 text-white" v-else />
             </div>
-            <div class="text-[11px] text-[var(--text-secondary)] truncate">
-              {{ selectedTrack?.artistName || 'Unknown Artist' }}
-              <span v-if="selectedTrack?.albumName" class="text-zinc-600"> • {{ selectedTrack?.albumName }}</span>
+            <div class="space-y-0.5 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-base font-bold text-white truncate max-w-md">
+                  {{ selectedTrack.trackName }}
+                </span>
+                <Badge v-if="isJapaneseSong" variant="badge">Japanese</Badge>
+                <Badge v-else variant="outline">Latin / EN</Badge>
+              </div>
+              <div class="text-xs text-[var(--text-secondary)] truncate flex items-center gap-2">
+                <span>{{ selectedTrack.artistName }}</span>
+                <span v-if="selectedTrack.albumName" class="text-zinc-600">•</span>
+                <span v-if="selectedTrack.albumName" class="truncate text-[var(--text-tertiary)]">{{ selectedTrack.albumName }}</span>
+                <span v-if="audioFile" class="text-white font-mono text-[11px] font-medium ml-1">
+                  [Local: {{ audioFile.name }}]
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Sync Offset Controller -->
+          <div class="flex items-center gap-1 bg-[#212121] border border-[#2E2E2E] p-1 rounded-lg">
+            <span class="text-[11px] text-[var(--text-secondary)] font-mono flex items-center gap-1 px-1.5">
+              <Sliders class="w-3 h-3 text-white" />
+              <span>Offset:</span>
+            </span>
+            <button
+              type="button"
+              class="px-2 py-1 bg-[#171717] hover:bg-[#292929] border border-[#2E2E2E] rounded text-xs font-mono text-white transition-colors cursor-pointer"
+              @click="adjustOffset(-0.5)"
+            >
+              -0.5s
+            </button>
+            <button
+              type="button"
+              class="px-2 py-1 bg-[#171717] hover:bg-[#292929] border border-[#2E2E2E] rounded text-xs font-mono text-white transition-colors cursor-pointer"
+              @click="adjustOffset(-0.1)"
+            >
+              -0.1s
+            </button>
+            <span
+              class="px-2 py-1 font-mono text-xs font-bold rounded"
+              :class="syncOffset !== 0 ? 'text-white bg-[#2E2E2E]' : 'text-[var(--text-secondary)]'"
+            >
+              {{ syncOffset > 0 ? `+${syncOffset}s` : `${syncOffset}s` }}
+            </span>
+            <button
+              type="button"
+              class="px-2 py-1 bg-[#171717] hover:bg-[#292929] border border-[#2E2E2E] rounded text-xs font-mono text-white transition-colors cursor-pointer"
+              @click="adjustOffset(0.1)"
+            >
+              +0.1s
+            </button>
+            <button
+              type="button"
+              class="px-2 py-1 bg-[#171717] hover:bg-[#292929] border border-[#2E2E2E] rounded text-xs font-mono text-white transition-colors cursor-pointer"
+              @click="adjustOffset(0.5)"
+            >
+              +0.5s
+            </button>
+            <button
+              type="button"
+              class="px-2 py-1 text-[11px] font-mono text-[var(--text-tertiary)] hover:text-white transition-colors cursor-pointer"
+              title="Reset offset to 0"
+              @click="resetOffset"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Audio Scrubber & Controls (When Audio is loaded) -->
+        <div v-if="audioUrl" class="space-y-2 pt-1">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-mono text-white min-w-[40px]">
+              {{ formatSeconds(currentTime) }}
+            </span>
+            <div class="relative flex-1 flex items-center">
+              <input
+                type="range"
+                min="0"
+                :max="audioDuration || 100"
+                step="0.1"
+                :value="currentTime"
+                class="w-full h-2 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white"
+                @input="onSeek"
+              />
+            </div>
+            <span class="text-xs font-mono text-[var(--text-secondary)] min-w-[40px] text-right">
+              {{ formatSeconds(audioDuration) }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="w-9 h-9 rounded-full bg-white text-black hover:bg-zinc-200 transition-all flex items-center justify-center cursor-pointer shadow-xs"
+                @click="togglePlay"
+              >
+                <Pause v-if="isPlaying" class="w-4 h-4 fill-black" />
+                <Play v-else class="w-4 h-4 fill-black ml-0.5" />
+              </button>
+              <button
+                type="button"
+                class="p-2 text-[var(--text-secondary)] hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/10"
+                title="Mute/Unmute"
+                @click="toggleMute"
+              >
+                <VolumeX v-if="isMuted" class="w-4 h-4 text-white" />
+                <Volume2 v-else class="w-4 h-4 text-white" />
+              </button>
+            </div>
+
+            <div class="text-[11px] text-[var(--text-tertiary)]">
+              Click any lyric line below to seek playback
             </div>
           </div>
         </div>
 
-        <!-- Toolbar Right Actions -->
-        <div class="flex items-center gap-2 flex-wrap">
-          <!-- View Mode (Karaoke vs Raw) -->
-          <div class="flex items-center bg-[#1E1E22] p-0.5 rounded-md border border-[#2E2E2E]">
-            <button
-              class="px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1.5"
-              :class="activeView === 'karaoke' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
-              @click="activeView = 'karaoke'"
-            >
-              <Eye class="w-3.5 h-3.5" />
-              <span>Karaoke</span>
-            </button>
-            <button
-              class="px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1.5"
-              :class="activeView === 'raw' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
-              @click="activeView = 'raw'"
-            >
-              <Code2 class="w-3.5 h-3.5" />
-              <span>Raw LRC</span>
-            </button>
-          </div>
-
-          <!-- Reset / New Search -->
+        <!-- Audio Not Loaded Notice -->
+        <div v-else class="p-3 rounded-lg bg-[#212121] border border-[#2E2E2E] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <span class="text-[var(--text-secondary)]">
+            Playback disabled. Upload your audio file (.flac, .mp3, .wav) to test live playback synchronization.
+          </span>
           <Button
-            variant="ghost"
-            class="h-8 px-2.5 text-xs text-[var(--text-tertiary)] hover:text-white border border-[#2E2E2E]"
-            title="Search another track"
-            @click="resetWorkspace"
+            variant="secondary"
+            size="sm"
+            class="h-8 px-3 text-xs shrink-0 self-start sm:self-auto"
+            @click="fileInputRef?.click()"
           >
-            <X class="w-3.5 h-3.5 mr-1" />
-            <span>Close</span>
+            <FileAudio class="w-3.5 h-3.5 mr-1.5 text-white" />
+            <span>Upload Audio</span>
           </Button>
         </div>
       </div>
 
-      <!-- Main Split Layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        <!-- Left Column: Audio Player & Romaji Engine (5 cols) -->
-        <div class="lg:col-span-5 space-y-3">
-          <!-- Audio Player Card -->
-          <Card class="p-4 space-y-3.5">
-            <div class="flex items-center justify-between text-xs font-mono text-[var(--text-tertiary)]">
-              <span class="flex items-center gap-1.5 text-white">
-                <Disc class="w-3.5 h-3.5 text-emerald-400" />
-                <span>Audio Playback</span>
-              </span>
-              <span v-if="audioFile" class="text-[10px] text-zinc-400 font-mono">
-                Local: {{ audioFile.name }}
-              </span>
-              <span v-else class="text-[10px] text-zinc-500">
-                No local audio
-              </span>
-            </div>
+      <!-- Language Mismatch Notice -->
+      <div
+        v-if="!isJapaneseSong"
+        class="p-3.5 rounded-[14px] bg-[#212121] border border-[#2E2E2E] flex items-center justify-between gap-3 text-xs"
+      >
+        <div class="flex items-center gap-2.5">
+          <AlertCircle class="w-4 h-4 text-white shrink-0" />
+          <div class="text-[var(--text-secondary)]">
+            <strong class="text-white">English / Latin Lyrics:</strong>
+            Romaji generation is only available for songs with Japanese Kanji or Kana characters.
+          </div>
+        </div>
+      </div>
 
-            <!-- Custom Audio Controls (when audio file uploaded) -->
-            <div v-if="audioUrl" class="space-y-2.5 pt-1">
-              <!-- Scrubber Slider -->
-              <div class="space-y-1">
-                <input
-                  type="range"
-                  min="0"
-                  :max="audioDuration || 100"
-                  step="0.1"
-                  :value="currentTime"
-                  class="w-full h-1.5 bg-[#262626] rounded-lg appearance-none cursor-pointer accent-emerald-400"
-                  @input="onSeek"
-                />
-                <div class="flex items-center justify-between text-[10px] font-mono text-[var(--text-tertiary)]">
-                  <span>{{ formatSeconds(currentTime) }}</span>
-                  <span>{{ formatSeconds(audioDuration) }}</span>
-                </div>
-              </div>
+      <!-- Studio Action Ribbon (Standardized Heights & Variants) -->
+      <div class="p-3 bg-[#171717] border border-[#2E2E2E] rounded-[14px] flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Left: Romaji Generator & View Switcher -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <Button
+            v-if="isJapaneseSong && !isRomajiConverted"
+            variant="secondary"
+            size="default"
+            class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
+            :disabled="isConvertingRomaji"
+            @click="convertToRomaji"
+          >
+            <RefreshCw v-if="isConvertingRomaji" class="w-3.5 h-3.5 animate-spin mr-1.5 text-white" />
+            <Sparkles v-else class="w-3.5 h-3.5 mr-1.5 text-white" />
+            <span>{{ isConvertingRomaji ? 'Romanizing...' : 'Generate Romaji' }}</span>
+          </Button>
 
-              <!-- Buttons Row -->
-              <div class="flex items-center justify-between gap-2">
-                <Button
-                  variant="primary"
-                  class="h-9 px-4 text-xs font-medium flex items-center gap-1.5"
-                  @click="togglePlay"
-                >
-                  <Pause v-if="isPlaying" class="w-3.5 h-3.5" />
-                  <Play v-else class="w-3.5 h-3.5" />
-                  <span>{{ isPlaying ? 'Pause' : 'Play' }}</span>
-                </Button>
+          <Badge
+            v-else-if="isRomajiConverted"
+            variant="badge"
+            class="h-9 px-3 text-xs flex items-center gap-1.5"
+          >
+            <CheckCircle2 class="w-4 h-4 text-white" />
+            <span>Romaji Active</span>
+          </Badge>
 
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button"
-                    class="p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer rounded-lg hover:bg-white/10"
-                    title="Mute/Unmute"
-                    @click="toggleMute"
-                  >
-                    <VolumeX v-if="isMuted" class="w-4 h-4" />
-                    <Volume2 v-else class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Upload Audio Option if not yet loaded -->
-            <div v-else class="p-4 rounded-xl bg-[#141416] border border-dashed border-[#2E2E2E] text-center space-y-2">
-              <p class="text-xs text-[var(--text-secondary)]">
-                Upload your <code class="text-white font-mono">.flac</code> or <code class="text-white font-mono">.mp3</code> file to test live karaoke playback.
-              </p>
-              <Button
-                variant="secondary"
-                class="h-8 px-3 text-xs"
-                @click="fileInputRef?.click()"
-              >
-                <Upload class="w-3.5 h-3.5 mr-1" />
-                <span>Load Audio File</span>
-              </Button>
-            </div>
-
-            <!-- Timestamp Offset Adjuster -->
-            <div class="pt-2 border-t border-[#262626] space-y-2">
-              <div class="flex items-center justify-between text-xs">
-                <span class="text-[var(--text-secondary)] font-medium flex items-center gap-1">
-                  <Sliders class="w-3 h-3" />
-                  <span>Sync Offset Shift</span>
-                </span>
-                <span class="font-mono text-[11px]" :class="syncOffset !== 0 ? 'text-emerald-400 font-bold' : 'text-zinc-500'">
-                  {{ syncOffset > 0 ? `+${syncOffset}s` : `${syncOffset}s` }}
-                </span>
-              </div>
-
-              <div class="grid grid-cols-5 gap-1.5">
-                <button
-                  type="button"
-                  class="py-1 px-1.5 bg-[#1B1B1E] border border-[#2E2E2E] rounded text-[10px] font-mono text-[var(--text-secondary)] hover:text-white transition-colors"
-                  @click="adjustOffset(-0.5)"
-                >
-                  -0.5s
-                </button>
-                <button
-                  type="button"
-                  class="py-1 px-1.5 bg-[#1B1B1E] border border-[#2E2E2E] rounded text-[10px] font-mono text-[var(--text-secondary)] hover:text-white transition-colors"
-                  @click="adjustOffset(-0.1)"
-                >
-                  -0.1s
-                </button>
-                <button
-                  type="button"
-                  class="py-1 px-1.5 bg-[#1B1B1E] border border-[#2E2E2E] rounded text-[10px] font-mono text-zinc-500 hover:text-white transition-colors"
-                  @click="resetOffset"
-                >
-                  Reset
-                </button>
-                <button
-                  type="button"
-                  class="py-1 px-1.5 bg-[#1B1B1E] border border-[#2E2E2E] rounded text-[10px] font-mono text-[var(--text-secondary)] hover:text-white transition-colors"
-                  @click="adjustOffset(0.1)"
-                >
-                  +0.1s
-                </button>
-                <button
-                  type="button"
-                  class="py-1 px-1.5 bg-[#1B1B1E] border border-[#2E2E2E] rounded text-[10px] font-mono text-[var(--text-secondary)] hover:text-white transition-colors"
-                  @click="adjustOffset(0.5)"
-                >
-                  +0.5s
-                </button>
-              </div>
-            </div>
-          </Card>
-
-          <!-- Japanese Romaji Transcriber Card -->
-          <Card class="p-4 space-y-3">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-medium text-white flex items-center gap-1.5">
-                <Sparkles class="w-3.5 h-3.5 text-amber-400" />
-                <span>Japanese Romaji Transcriber</span>
-              </span>
-              <Badge v-if="isJapaneseSong" variant="badge">Kanji Detected</Badge>
-              <Badge v-else variant="outline">Non-Japanese</Badge>
-            </div>
-
-            <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-              {{ locale === 'id'
-                ? 'Ubah lirik Kanji/Kana menjadi pelafalan huruf alfabet Romaji yang sinkron milidetik dengan lagu.'
-                : 'Transliterate Kanji/Kana lyrics into accurate phonetic Hepburn Romaji synchronized to millisecond timestamps.' }}
-            </p>
-
-            <Button
-              v-if="!isRomajiConverted"
-              variant="primary"
-              class="w-full h-9 text-xs font-medium flex items-center justify-center gap-1.5"
-              :disabled="isConvertingRomaji || !originalLrc"
-              @click="convertToRomaji"
+          <!-- View Mode: Karaoke Stage vs Raw LRC Editor -->
+          <div class="flex items-center bg-[#212121] p-0.5 rounded-lg border border-[#2E2E2E]">
+            <button
+              class="px-3 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
+              :class="activeView === 'karaoke' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              @click="activeView = 'karaoke'"
             >
-              <RefreshCw v-if="isConvertingRomaji" class="w-3.5 h-3.5 animate-spin" />
-              <Sparkles v-else class="w-3.5 h-3.5" />
-              <span>{{ isConvertingRomaji ? 'Romanizing Lyrics...' : 'Generate Romaji (Dual-Line)' }}</span>
-            </Button>
-
-            <div v-else class="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 class="w-4 h-4 shrink-0" />
-              <span>Romaji synchronized and ready for dual-line export!</span>
-            </div>
-          </Card>
+              <Eye class="w-3.5 h-3.5 text-white" />
+              <span>Karaoke Stage</span>
+            </button>
+            <button
+              class="px-3 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
+              :class="activeView === 'raw' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              @click="activeView = 'raw'"
+            >
+              <Code2 class="w-3.5 h-3.5 text-white" />
+              <span>Raw Editor</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Right Column: Lyrics Preview & Export Studio (7 cols) -->
-        <Card class="p-4 lg:col-span-7 space-y-3.5 min-h-[580px] flex flex-col">
-          <!-- Export Format Selector Bar -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-[#262626]">
-            <!-- Format Switches -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[11px] font-mono text-[var(--text-tertiary)] mr-1">Export:</span>
-              <button
-                type="button"
-                class="px-2.5 py-1 text-xs rounded-md transition-colors"
-                :class="exportMode === 'dual' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-zinc-400 hover:text-white'"
-                @click="exportMode = 'dual'"
-              >
-                Dual-Line
-              </button>
-              <button
-                type="button"
-                class="px-2.5 py-1 text-xs rounded-md transition-colors"
-                :class="exportMode === 'romaji' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-zinc-400 hover:text-white'"
-                :disabled="!romajiLrc"
-                @click="exportMode = 'romaji'"
-              >
-                Romaji Only
-              </button>
-              <button
-                type="button"
-                class="px-2.5 py-1 text-xs rounded-md transition-colors"
-                :class="exportMode === 'original' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-zinc-400 hover:text-white'"
-                @click="exportMode = 'original'"
-              >
-                Original
-              </button>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                class="h-8 px-3 text-xs font-medium border-[#2E2E2E] flex items-center gap-1.5"
-                @click="copyLrc"
-              >
-                <Check v-if="hasCopied" class="w-3.5 h-3.5 text-emerald-400" />
-                <Copy v-else class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                <span>{{ hasCopied ? 'Copied' : 'Copy' }}</span>
-              </Button>
-
-              <Button
-                variant="primary"
-                class="h-8 px-3 text-xs font-medium flex items-center gap-1.5"
-                @click="downloadLrc"
-              >
-                <Download class="w-3.5 h-3.5" />
-                <span>Download .lrc</span>
-              </Button>
-            </div>
+        <!-- Right: Export Modes & Download -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- Format Switcher -->
+          <div class="flex items-center bg-[#212121] p-0.5 rounded-lg border border-[#2E2E2E]">
+            <button
+              type="button"
+              class="px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer"
+              :class="exportMode === 'dual' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              @click="exportMode = 'dual'"
+            >
+              Dual-Line
+            </button>
+            <button
+              type="button"
+              class="px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer"
+              :class="exportMode === 'romaji' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :disabled="!romajiLrc"
+              @click="exportMode = 'romaji'"
+            >
+              Romaji
+            </button>
+            <button
+              type="button"
+              class="px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer"
+              :class="exportMode === 'original' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              @click="exportMode = 'original'"
+            >
+              Original
+            </button>
           </div>
 
-          <!-- Mode 1: Interactive Karaoke Live Scrolling View -->
-          <div
-            v-if="activeView === 'karaoke'"
-            ref="karaokeContainerRef"
-            class="flex-1 overflow-y-auto max-h-[500px] space-y-2.5 pr-2 select-none scroll-smooth"
+          <!-- Copy Button -->
+          <Button
+            variant="secondary"
+            size="default"
+            class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
+            @click="copyLrc"
           >
-            <div
-              v-for="(line, idx) in parsedLines"
-              :key="line.id"
-              :data-line-id="idx"
-              class="p-2.5 rounded-xl cursor-pointer transition-all border"
-              :class="
-                activeLineIndex === idx
-                  ? 'bg-emerald-500/10 border-emerald-500/30 scale-[1.01]'
-                  : 'bg-[#141416]/50 border-transparent hover:bg-[#1C1C1F] hover:border-[#2E2E2E]'
-              "
-              @click="seekToLine(line.seconds)"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <div class="space-y-1">
-                  <!-- Kanji / Original Line -->
-                  <div
-                    class="text-sm font-medium transition-colors"
-                    :class="activeLineIndex === idx ? 'text-white font-semibold' : 'text-zinc-400'"
-                  >
-                    {{ line.originalText }}
-                  </div>
+            <Check v-if="hasCopied" class="w-3.5 h-3.5 mr-1.5 text-white" />
+            <Copy v-else class="w-3.5 h-3.5 mr-1.5 text-white" />
+            <span>{{ hasCopied ? 'Copied' : 'Copy' }}</span>
+          </Button>
 
-                  <!-- Romaji Sub-line (if available) -->
-                  <div
-                    v-if="line.romajiText"
-                    class="text-xs transition-colors"
-                    :class="activeLineIndex === idx ? 'text-emerald-400 font-medium' : 'text-zinc-500'"
-                  >
-                    {{ line.romajiText }}
-                  </div>
+          <!-- Download Button -->
+          <Button
+            variant="primary"
+            size="default"
+            class="h-9 px-4 rounded-lg text-xs font-semibold cursor-pointer shadow-xs"
+            @click="downloadLrc"
+          >
+            <Download class="w-3.5 h-3.5 mr-1.5 text-black" />
+            <span>Download .lrc</span>
+          </Button>
+
+          <!-- Close / New Search Button -->
+          <Button
+            variant="secondary"
+            size="default"
+            class="h-9 w-9 p-0 rounded-lg text-[var(--text-secondary)] hover:text-white cursor-pointer"
+            title="Search another track"
+            @click="resetWorkspace"
+          >
+            <X class="w-4 h-4 text-white" />
+          </Button>
+        </div>
+      </div>
+
+      <!-- Immersive Lyrics Canvas (Main Stage - Full-Width Fluid Flow) -->
+      <div class="rounded-[14px] bg-[#141416] border border-[#2E2E2E] p-6 sm:p-10 min-h-[520px] flex flex-col">
+        <!-- Mode 1: Interactive Karaoke Live Scrolling View -->
+        <div
+          v-if="activeView === 'karaoke'"
+          ref="karaokeContainerRef"
+          class="flex-1 overflow-y-auto max-h-[550px] space-y-4 pr-3 select-none scroll-smooth"
+        >
+          <div
+            v-for="(line, idx) in parsedLines"
+            :key="line.id"
+            :data-line-id="idx"
+            class="p-4 rounded-xl cursor-pointer transition-all border group"
+            :class="
+              activeLineIndex === idx
+                ? 'bg-[#212121] border-[#404040] shadow-xs'
+                : 'bg-transparent border-transparent hover:bg-[#1A1A1D] hover:border-[#2E2E2E]'
+            "
+            @click="seekToLine(line.seconds)"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="space-y-1.5 flex-1">
+                <!-- Original Text (Large crisp white) -->
+                <div
+                  class="text-base sm:text-lg transition-colors leading-relaxed"
+                  :class="activeLineIndex === idx ? 'text-white font-bold' : 'text-[var(--text-secondary)] font-medium group-hover:text-white'"
+                >
+                  {{ line.originalText }}
                 </div>
 
-                <!-- Timestamp badge -->
-                <span class="text-[10px] font-mono text-[var(--text-tertiary)] shrink-0 pt-0.5">
-                  {{ line.timeTag }}
-                </span>
+                <!-- Romaji Subline (Monochrome Crisp) -->
+                <div
+                  v-if="line.romajiText"
+                  class="text-xs sm:text-sm font-mono transition-colors"
+                  :class="activeLineIndex === idx ? 'text-white font-semibold' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]'"
+                >
+                  {{ line.romajiText }}
+                </div>
               </div>
+
+              <!-- Timestamp -->
+              <span
+                class="text-xs font-mono px-2 py-0.5 rounded shrink-0 transition-colors"
+                :class="activeLineIndex === idx ? 'bg-[#2E2E2E] text-white font-bold border border-[#404040]' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]'"
+              >
+                {{ line.timeTag }}
+              </span>
             </div>
           </div>
+        </div>
 
-          <!-- Mode 2: Raw LRC Code Editor -->
-          <div v-else class="flex-1 flex flex-col space-y-2">
-            <textarea
-              v-model="rawEditedLrc"
-              class="w-full flex-1 min-h-[480px] p-3 text-xs font-mono bg-[#141416] border border-[#2E2E2E] rounded-lg text-white focus:outline-none focus:border-zinc-500 resize-y leading-relaxed"
-              placeholder="[00:00.00] Lyrics..."
-            ></textarea>
+        <!-- Mode 2: Raw LRC Textarea Editor -->
+        <div v-else class="flex-1 flex flex-col space-y-2">
+          <div class="flex items-center justify-between text-xs text-[var(--text-secondary)] pb-1 font-mono">
+            <span>Raw .lrc Content (Editable)</span>
+            <span>Lines: {{ rawEditedLrc.split('\n').length }}</span>
           </div>
-        </Card>
+          <textarea
+            v-model="rawEditedLrc"
+            class="w-full flex-1 min-h-[480px] p-4 text-xs font-mono bg-[#171717] border border-[#2E2E2E] rounded-xl text-white focus:outline-none focus:border-[#404040] resize-y leading-relaxed"
+            placeholder="[00:00.00] Lyrics..."
+          ></textarea>
+        </div>
       </div>
     </div>
   </div>
