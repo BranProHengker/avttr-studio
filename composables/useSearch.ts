@@ -357,6 +357,24 @@ export const ALL_CATEGORIES: ToolCategory[] = [
       },
     ],
   },
+  {
+    id: 'developer',
+    name: 'DEVELOPER & AI',
+    description: 'Security inspector for AI Agent skills, code safety analysis, and developer utilities',
+    icon: 'FolderCheck',
+    tools: [
+      {
+        id: 'skillspector',
+        title: 'SkillSpector',
+        description: 'Static pattern & AST security inspector for AI Agent skills. Detect prompt injections, secret leaks, and unsafe execution.',
+        category: 'dev',
+        icon: 'skillspector',
+        route: '/tools/skillspector',
+        badge: 'New',
+        popular: true,
+      },
+    ],
+  },
 ]
 
 export function useSearch() {

@@ -415,6 +415,21 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="M12 18h.01"/>
     </svg>
 
+    <!-- SkillSpector / FolderCheck Vector -->
+    <svg
+      v-else-if="normalized === 'skillspector' || normalized === 'folder-check' || normalized === 'foldercheck'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+      <path d="m9 13 2 2 4-4"/>
+    </svg>
+
     <!-- Generic Fallback Tool -->
     <svg
       v-else

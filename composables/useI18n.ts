@@ -196,6 +196,10 @@ const translations: Record<Locale, Translations> = {
         name: 'AUDIO & MUSIC',
         description: 'Synchronized lyrics, audio trimming, and music downloaders',
       },
+      developer: {
+        name: 'DEVELOPER & AI',
+        description: 'Security inspector for AI Agent skills, code safety analysis, and developer utilities',
+      },
     },
 
     tools: {
@@ -315,6 +319,10 @@ const translations: Record<Locale, Translations> = {
         title: 'LRC Lyrics Studio',
         description: 'Synchronized .lrc lyrics generator with LRCLIB database and Japanese Romaji transcriber.',
       },
+      skillspector: {
+        title: 'SkillSpector',
+        description: 'Static pattern & AST security inspector for AI Agent skills. Detect prompt injections, secret leaks, and unsafe execution.',
+      },
     },
   },
   id: {
@@ -410,6 +418,10 @@ const translations: Record<Locale, Translations> = {
       music: {
         name: 'AUDIO & MUSIK',
         description: 'Lirik tersinkronisasi, pemotong audio, dan pengunduh musik',
+      },
+      developer: {
+        name: 'DEVELOPER & AI',
+        description: 'Inspektur keamanan AI Agent skill, analisis keamanan kode, dan utilitas pengembang',
       },
     },
 
@@ -529,6 +541,10 @@ const translations: Record<Locale, Translations> = {
       'lrc-studio': {
         title: 'LRC Lyrics Studio',
         description: 'Generator lirik .lrc tersinkronisasi dengan database LRCLIB dan pengubah Romaji Jepang.',
+      },
+      skillspector: {
+        title: 'SkillSpector',
+        description: 'Inspektur keamanan statis AST untuk skill AI Agent. Mendeteksi prompt injection, kebocoran rahasia, dan eksekusi berbahaya.',
       },
     },
   },

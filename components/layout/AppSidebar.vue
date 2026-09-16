@@ -19,6 +19,7 @@ import {
   Globe,
   Sticker,
   Music,
+  FolderCheck,
 } from 'lucide-vue-next'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
@@ -95,6 +96,7 @@ const isCategoryActive = (category: string) => {
       '/tools/code-to-image',
       '/tools/video-to-gif',
       '/tools/hash-encoder',
+      '/tools/skillspector',
     ].includes(route.path)
   }
   if (category === 'design') {
@@ -173,6 +175,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/tools/code-to-image', label: 'Code to Image', iconComponent: Code2 },
       { path: '/tools/video-to-gif', label: 'Video to GIF', brandName: 'video-to-gif' },
       { path: '/tools/hash-encoder', label: 'Hash Encoder', iconComponent: Hash },
+      { path: '/tools/skillspector', label: 'SkillSpector', iconComponent: FolderCheck },
     ],
   },
   'design': {
@@ -894,6 +897,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 Base64 & Hash Encoder
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/skillspector"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/skillspector')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                SkillSpector
               </NuxtLink>
             </div>
           </div>
