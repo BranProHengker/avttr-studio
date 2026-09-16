@@ -163,19 +163,61 @@ const activeLineIndex = computed(() => {
   return activeIdx
 })
 
-// Computed final export text
-const finalLrcOutput = computed(() => {
-  if (activeView.value === 'raw' && rawEditedLrc.value) {
-    return rawEditedLrc.value
+// Prepend or format [ti:...], [ar:...], [by:Avttr] watermark header
+const formatLrcWithWatermark = (rawLrc: string): string => {
+  if (!rawLrc || !rawLrc.trim()) return ''
+
+  const title = selectedTrack.value?.trackName || ''
+  const artist = selectedTrack.value?.artistName || ''
+
+  const lines = rawLrc.split('\n')
+  const contentLines: string[] = []
+  let foundTi = ''
+  let foundAr = ''
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (/^\[ti:\s*(.*?)\s*\]$/i.test(trimmed)) {
+      foundTi = trimmed.match(/^\[ti:\s*(.*?)\s*\]$/i)?.[1]?.trim() || ''
+    } else if (/^\[ar:\s*(.*?)\s*\]$/i.test(trimmed)) {
+      foundAr = trimmed.match(/^\[ar:\s*(.*?)\s*\]$/i)?.[1]?.trim() || ''
+    } else if (/^\[by:.*\]$/i.test(trimmed)) {
+      // replace existing watermark with Avttr
+    } else {
+      contentLines.push(line)
+    }
   }
 
-  if (exportMode.value === 'romaji' && romajiLrc.value) {
-    return romajiLrc.value
+  const finalTi = foundTi || title
+  const finalAr = foundAr || artist
+
+  const headerTags: string[] = []
+  if (finalTi) headerTags.push(`[ti:${finalTi}]`)
+  if (finalAr) headerTags.push(`[ar:${finalAr}]`)
+  headerTags.push(`[by:Avttr]`)
+
+  // Trim leading whitespace lines from content
+  while (contentLines.length > 0 && !contentLines[0].trim()) {
+    contentLines.shift()
   }
-  if (exportMode.value === 'dual' && dualLrc.value) {
-    return dualLrc.value
+
+  return `${headerTags.join('\n')}\n\n${contentLines.join('\n')}`
+}
+
+// Computed final export text with guaranteed [by:Avttr] watermark
+const finalLrcOutput = computed(() => {
+  let content = ''
+  if (activeView.value === 'raw' && rawEditedLrc.value) {
+    content = rawEditedLrc.value
+  } else if (exportMode.value === 'romaji' && romajiLrc.value) {
+    content = romajiLrc.value
+  } else if (exportMode.value === 'dual' && dualLrc.value) {
+    content = dualLrc.value
+  } else {
+    content = originalLrc.value
   }
-  return originalLrc.value
+
+  return formatLrcWithWatermark(content)
 })
 
 const isJapaneseSong = computed(() => {
@@ -240,12 +282,14 @@ const searchLyrics = async () => {
 // Select a track from search results
 const selectTrack = (track: LrcTrackItem) => {
   selectedTrack.value = track
-  originalLrc.value = track.syncedLyrics || track.plainLyrics || ''
+  const raw = track.syncedLyrics || track.plainLyrics || ''
+  const formatted = formatLrcWithWatermark(raw)
+  originalLrc.value = formatted
   romajiLrc.value = ''
-  dualLrc.value = originalLrc.value
+  dualLrc.value = formatted
   isRomajiConverted.value = false
   syncOffset.value = 0
-  rawEditedLrc.value = originalLrc.value
+  rawEditedLrc.value = formatted
   searchResults.value = []
 
   if (!track.syncedLyrics && track.plainLyrics) {
@@ -283,11 +327,11 @@ const convertToRomaji = async () => {
         return
       }
 
-      romajiLrc.value = res.romajiLrc
-      dualLrc.value = res.dualLrc
+      romajiLrc.value = formatLrcWithWatermark(res.romajiLrc)
+      dualLrc.value = formatLrcWithWatermark(res.dualLrc)
       isRomajiConverted.value = true
       exportMode.value = 'dual'
-      rawEditedLrc.value = res.dualLrc
+      rawEditedLrc.value = dualLrc.value
 
       toast.success(
         locale.value === 'id' ? 'Romaji Berhasil Digenerate' : 'Romaji Generated',
@@ -405,12 +449,13 @@ const handleFile = async (file: File) => {
         instrumental: false,
         syncedLyrics: text
       }
-      originalLrc.value = text
+      const formatted = formatLrcWithWatermark(text)
+      originalLrc.value = formatted
       romajiLrc.value = ''
-      dualLrc.value = text
+      dualLrc.value = formatted
       isRomajiConverted.value = false
       syncOffset.value = 0
-      rawEditedLrc.value = text
+      rawEditedLrc.value = formatted
       searchResults.value = []
       toast.success('LRC File Loaded', file.name)
       return
