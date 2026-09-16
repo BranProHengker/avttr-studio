@@ -546,45 +546,46 @@ const resetScanner = () => {
         </div>
       </div>
 
-      <!-- Split Layout: Findings List vs Code Viewer -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- Findings Column (5 cols) -->
-        <div class="lg:col-span-5 space-y-2.5">
-          <div class="flex items-center justify-between px-1">
+      <!-- Security Findings Panel (Proportional Top Section) -->
+      <div v-if="report.findings.length > 0" class="space-y-2">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
             <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
               Security Findings ({{ report.findings.length }})
             </span>
+            <span
+              class="text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold"
+              :class="report.criticalCount > 0 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+            >
+              {{ report.criticalCount > 0 ? `${report.criticalCount} Critical` : '' }}
+              {{ report.criticalCount > 0 && report.warningCount > 0 ? ' · ' : '' }}
+              {{ report.warningCount > 0 ? `${report.warningCount} Warnings` : '' }}
+            </span>
           </div>
 
-          <!-- Clean status if 0 findings -->
-          <div
-            v-if="report.findings.length === 0"
-            class="p-6 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] text-center space-y-2"
-          >
-            <ShieldCheck class="w-7 h-7 text-white mx-auto" />
-            <div class="text-sm font-semibold text-white">No Security Threats Detected</div>
-            <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-              No prompt overrides, dangerous shell executions, credential harvesting, or exfiltration patterns detected across all files.
-            </p>
-          </div>
+          <span class="text-xs text-[var(--text-secondary)] font-mono">
+            Click finding to jump to code line
+          </span>
+        </div>
 
-          <!-- Findings Cards -->
+        <!-- Findings List in Clean Compact Rows -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div
             v-for="f in report.findings"
             :key="f.id"
             class="p-3.5 rounded-[12px] bg-[var(--bg-card)] border transition-all cursor-pointer group space-y-2 text-left"
             :class="
               activeFinding?.id === f.id
-                ? 'border-white/50 bg-[var(--bg-card-hover)]'
+                ? 'border-white/50 bg-[var(--bg-card-hover)] ring-1 ring-white/20'
                 : 'border-[var(--border-card)] hover:border-[#3E3E3E]'
             "
             @click="scrollToFinding(f)"
           >
             <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 min-w-0">
                 <ShieldAlert v-if="f.severity === 'critical'" class="w-4 h-4 text-rose-400 shrink-0" />
                 <AlertTriangle v-else class="w-4 h-4 text-amber-400 shrink-0" />
-                <span class="text-xs font-semibold text-white">
+                <span class="text-xs font-semibold text-white truncate">
                   {{ f.title }}
                 </span>
               </div>
@@ -597,76 +598,84 @@ const resetScanner = () => {
               {{ f.filename }}
             </div>
 
-            <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-              {{ f.description }}
-            </p>
-
             <div class="p-2 rounded bg-[#141416] border border-[#262626] font-mono text-[11px] text-neutral-300 truncate">
               {{ f.codeSnippet }}
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Code Viewer Column (7 cols) -->
-        <div class="lg:col-span-7 bg-[#141416] border border-[var(--border-card)] rounded-[14px] overflow-hidden">
-          <!-- File Selector / Tabs Header -->
-          <div class="px-4 py-2 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs font-mono">
-            <div class="flex items-center gap-1.5 overflow-x-auto py-0.5">
-              <button
-                v-for="f in files"
-                :key="f.path"
-                type="button"
-                class="px-2 py-1 rounded text-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
-                :class="
-                  activeFile?.path === f.path
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/5'
-                "
-                @click="activeFilePath = f.path"
-              >
-                <FileCode class="w-3.5 h-3.5" />
-                <span>{{ f.path.split('/').pop() }}</span>
-              </button>
-            </div>
+      <!-- Zero Findings Clean Banner (Takes only 1 line, leaves full width for code) -->
+      <div
+        v-else
+        class="flex items-center gap-3 px-4 py-3 rounded-[12px] bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-neutral-300"
+      >
+        <ShieldCheck class="w-4 h-4 text-white shrink-0" />
+        <span class="font-medium text-white">No Security Threats Detected:</span>
+        <span class="text-[var(--text-secondary)]">
+          All {{ files.length }} files verified clean. No prompt overrides, destructive shell executions, credential harvesting, or exfiltration patterns detected.
+        </span>
+      </div>
 
-            <span class="text-[11px] text-[var(--text-secondary)] shrink-0">
-              {{ codeLines.length }} lines
-            </span>
+      <!-- Full-Width Code Viewer Stage -->
+      <div class="w-full bg-[#141416] border border-[var(--border-card)] rounded-[14px] overflow-hidden">
+        <!-- File Selector / Tabs Header -->
+        <div class="px-4 py-2 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs font-mono">
+          <div class="flex items-center gap-1.5 overflow-x-auto py-0.5 max-w-[80%]">
+            <button
+              v-for="f in files"
+              :key="f.path"
+              type="button"
+              class="px-2.5 py-1 rounded text-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer border"
+              :class="
+                activeFile?.path === f.path
+                  ? 'bg-[#2E2E2E] text-white font-medium border-white/20 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/5 border-transparent'
+              "
+              @click="activeFilePath = f.path"
+            >
+              <FileCode class="w-3.5 h-3.5" />
+              <span>{{ f.path.split('/').pop() }}</span>
+            </button>
           </div>
 
-          <!-- Code Content Viewer -->
-          <div class="max-h-[620px] overflow-y-auto overflow-x-auto p-4 font-mono text-xs select-text">
-            <div
-              v-for="(line, idx) in codeLines"
-              :id="`code-line-${idx + 1}`"
-              :key="idx"
-              class="flex items-start gap-3 py-0.5 px-2 rounded transition-colors"
-              :class="[
-                findingsForActiveFile[idx + 1]
-                  ? findingsForActiveFile[idx + 1][0].severity === 'critical'
-                    ? 'bg-rose-950/40 text-rose-200 border border-rose-800/40'
-                    : 'bg-amber-950/40 text-amber-200 border border-amber-800/40'
-                  : activeFinding?.line === idx + 1 && activeFinding?.filename === activeFile?.path
-                  ? 'bg-white/10'
-                  : 'hover:bg-white/5 text-neutral-300'
-              ]"
-            >
-              <span class="w-8 shrink-0 text-right text-[11px] select-none text-neutral-600">
-                {{ idx + 1 }}
-              </span>
+          <span class="text-[11px] text-[var(--text-secondary)] shrink-0">
+            {{ codeLines.length }} lines
+          </span>
+        </div>
 
-              <div class="flex-1 whitespace-pre-wrap break-all leading-relaxed">
-                {{ line || ' ' }}
-              </div>
+        <!-- Full-Width Code Lines Viewer -->
+        <div class="max-h-[640px] overflow-y-auto overflow-x-auto p-4 font-mono text-xs select-text">
+          <div
+            v-for="(line, idx) in codeLines"
+            :id="`code-line-${idx + 1}`"
+            :key="idx"
+            class="flex items-start gap-4 py-0.5 px-2 rounded transition-colors"
+            :class="[
+              findingsForActiveFile[idx + 1]
+                ? findingsForActiveFile[idx + 1][0].severity === 'critical'
+                  ? 'bg-rose-950/40 text-rose-200 border border-rose-800/40'
+                  : 'bg-amber-950/40 text-amber-200 border border-amber-800/40'
+                : activeFinding?.line === idx + 1 && activeFinding?.filename === activeFile?.path
+                ? 'bg-white/10'
+                : 'hover:bg-white/5 text-neutral-300'
+            ]"
+          >
+            <span class="w-10 shrink-0 text-right text-[11px] select-none text-neutral-600">
+              {{ idx + 1 }}
+            </span>
 
-              <span
-                v-if="findingsForActiveFile[idx + 1]"
-                class="shrink-0 text-[9px] uppercase font-bold px-1 rounded"
-                :class="findingsForActiveFile[idx + 1][0].severity === 'critical' ? 'text-rose-400' : 'text-amber-400'"
-              >
-                {{ findingsForActiveFile[idx + 1][0].severity }}
-              </span>
+            <div class="flex-1 whitespace-pre-wrap break-all leading-relaxed">
+              {{ line || ' ' }}
             </div>
+
+            <span
+              v-if="findingsForActiveFile[idx + 1]"
+              class="shrink-0 text-[9px] uppercase font-bold px-1 rounded"
+              :class="findingsForActiveFile[idx + 1][0].severity === 'critical' ? 'text-rose-400' : 'text-amber-400'"
+            >
+              {{ findingsForActiveFile[idx + 1][0].severity }}
+            </span>
           </div>
         </div>
       </div>
