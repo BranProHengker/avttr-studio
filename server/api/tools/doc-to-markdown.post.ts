@@ -76,9 +76,8 @@ Guidelines:
       responseData = await callGemini(primaryKey)
     } catch (err: any) {
       lastError = err
-      const status = err.statusCode || err.response?.status
-      // Failover to backup key on 429 (rate limit) or 403 (quota/forbidden)
-      if ((status === 429 || status === 403) && backupKey) {
+      // Automatic seamless failover to backup key on any error
+      if (backupKey) {
         try {
           responseData = await callGemini(backupKey)
         } catch (backupErr: any) {
