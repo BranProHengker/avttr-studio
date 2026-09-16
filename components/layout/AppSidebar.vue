@@ -57,6 +57,7 @@ const openMenus = ref<Record<string, boolean>>({
   'video-reels': true,
   'feeds-audio': true,
   'assets': true,
+  'developer': true,
   'design': true,
 })
 
@@ -92,11 +93,15 @@ const isCategoryActive = (category: string) => {
       '/tools/brat-generator',
       '/tools/pdf-tools',
       '/tools/doc-to-markdown',
+      '/tools/video-to-gif',
+    ].includes(route.path)
+  }
+  if (category === 'developer') {
+    return [
+      '/tools/skillspector',
       '/tools/svg-optimizer',
       '/tools/code-to-image',
-      '/tools/video-to-gif',
       '/tools/hash-encoder',
-      '/tools/skillspector',
     ].includes(route.path)
   }
   if (category === 'design') {
@@ -171,11 +176,16 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/tools/brat-generator', label: 'Brat Generator', iconComponent: Type },
       { path: '/tools/pdf-tools', label: 'PDF Studio', iconComponent: FileText },
       { path: '/tools/doc-to-markdown', label: 'Doc to Markdown', brandName: 'doc-to-markdown' },
+      { path: '/tools/video-to-gif', label: 'Video to GIF', brandName: 'video-to-gif' },
+    ],
+  },
+  'developer': {
+    title: 'Developer & AI',
+    items: [
+      { path: '/tools/skillspector', label: 'SkillSpector', iconComponent: FolderCheck },
       { path: '/tools/svg-optimizer', label: 'SVG Optimizer', iconComponent: FileCode },
       { path: '/tools/code-to-image', label: 'Code to Image', iconComponent: Code2 },
-      { path: '/tools/video-to-gif', label: 'Video to GIF', brandName: 'video-to-gif' },
       { path: '/tools/hash-encoder', label: 'Hash Encoder', iconComponent: Hash },
-      { path: '/tools/skillspector', label: 'SkillSpector', iconComponent: FolderCheck },
     ],
   },
   'design': {
@@ -346,7 +356,24 @@ const activeRadialData = computed(() => {
             </button>
           </div>
 
-          <!-- 5. Design Studio (Hover & Click open Radial Submenu) -->
+          <!-- 5. Developer & AI (Hover & Click open Radial Submenu) -->
+          <div class="relative group">
+            <button
+              type="button"
+              class="sidebar-category-btn w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 cursor-pointer"
+              :class="[
+                isCategoryActive('developer') || activeRadialCategory === 'developer'
+                  ? 'bg-[#2E2E2E] text-white border border-white/40 ring-2 ring-white/25 shadow-[0_0_14px_rgba(255,255,255,0.15)]'
+                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent',
+              ]"
+              @mouseenter="openRadialMenu('developer', $event)"
+              @click="openRadialMenu('developer', $event)"
+            >
+              <FolderCheck class="w-4.5 h-4.5" />
+            </button>
+          </div>
+
+          <!-- 6. Design Studio (Hover & Click open Radial Submenu) -->
           <div class="relative group">
             <button
               type="button"
@@ -887,17 +914,33 @@ const activeRadialData = computed(() => {
               >
                 Video to GIF
               </NuxtLink>
-              <NuxtLink
-                to="/tools/hash-encoder"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/hash-encoder')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
-                "
+            </div>
+          </div>
+
+          <!-- Developer & AI Menu -->
+          <div class="space-y-0.5">
+            <button
+              type="button"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              @click="toggleMenu('developer')"
+            >
+              <div class="flex items-center gap-2.5">
+                <FolderCheck class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" />
+                <span>Developer & AI</span>
+              </div>
+              <svg
+                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
+                :class="openMenus['developer'] ? 'rotate-90' : ''"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                Base64 & Hash Encoder
-              </NuxtLink>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <!-- Collapsible Submenu Tree -->
+            <div v-show="openMenus['developer']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/tools/skillspector"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
@@ -908,6 +951,39 @@ const activeRadialData = computed(() => {
                 "
               >
                 SkillSpector
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/svg-optimizer"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/svg-optimizer')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                SVG Optimizer
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/code-to-image"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/code-to-image')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Code to Image Studio
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/hash-encoder"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/hash-encoder')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Base64 & Hash Encoder
               </NuxtLink>
             </div>
           </div>

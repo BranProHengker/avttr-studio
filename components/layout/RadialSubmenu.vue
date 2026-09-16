@@ -33,9 +33,9 @@ const isRouteActive = (targetRoute: string) => {
 
 // Reach boundaries for the hover bridge
 const maxReach = computed(() => {
-  if (props.items.length <= 4) return { dx: 95, dy: 55 }
-  if (props.items.length <= 7) return { dx: 135, dy: 115 }
-  return { dx: 155, dy: 130 }
+  if (props.items.length <= 4) return { dx: 95, dy: 75 }
+  if (props.items.length <= 7) return { dx: 122, dy: 115 }
+  return { dx: 136, dy: 130 }
 })
 
 // Calculate harmonious circular arc coordinates strictly to the right of the sidebar
@@ -43,10 +43,10 @@ const positionedItems = computed(() => {
   const n = props.items.length
   if (n === 0) return []
 
-  // 1. Audio & Music (N <= 4): clean forward arc
+  // 1. Small lists (N <= 4): clean forward arc right next to rail
   if (n <= 4) {
-    const radius = 82
-    const span = 60
+    const radius = 85
+    const span = n === 1 ? 0 : (n - 1) * 32
     return props.items.map((item, i) => {
       const angle = n === 1 ? 0 : -span / 2 + (span / (n - 1)) * i
       const rad = (angle * Math.PI) / 180
@@ -58,25 +58,11 @@ const positionedItems = computed(() => {
     })
   }
 
-  // 2. Design Studio (N <= 6): clean uniform crescent arc
-  if (n <= 6) {
-    const radius = 102
-    const span = 94
-    return props.items.map((item, i) => {
-      const angle = -span / 2 + (span / (n - 1)) * i
-      const rad = (angle * Math.PI) / 180
-      return {
-        ...item,
-        dx: Math.round(radius * Math.cos(rad)),
-        dy: Math.round(radius * Math.sin(rad)),
-      }
-    })
-  }
-
-  // 3. Video & Socials (N = 7): single graceful semicircle arc
+  // 2. Medium lists (N <= 7): graceful compact semicircle
   if (n <= 7) {
-    const radius = 120
-    const span = 118
+    const radius = 112
+    const step = n <= 5 ? 27 : 24.5
+    const span = (n - 1) * step
     return props.items.map((item, i) => {
       const angle = -span / 2 + (span / (n - 1)) * i
       const rad = (angle * Math.PI) / 180
@@ -88,13 +74,17 @@ const positionedItems = computed(() => {
     })
   }
 
-  // 4. Client Utilities (N > 7): two concentric parallel orbital arcs
-  const r1 = 80
-  const r2 = 132
-  const span1 = 72
-  const span2 = 114
-  const innerCount = 4
+  // 3. Balanced dual-ring orbit (N > 7): balanced distribution with ample clearance
+  const r1 = 76
+  const r2 = 126
+  // Keep inner ring compact (approx 35-40% of items), outer ring has remainder
+  const innerCount = Math.max(3, Math.min(4, Math.floor(n * 0.38)))
   const outerCount = n - innerCount
+
+  const step1 = 36
+  const step2 = 24
+  const span1 = (innerCount - 1) * step1
+  const span2 = (outerCount - 1) * step2
 
   return props.items.map((item, i) => {
     let radius: number
@@ -244,7 +234,7 @@ onUnmounted(() => {
       >
         <NuxtLink
           :to="item.path"
-          class="w-10.5 h-10.5 rounded-full bg-[#1C1C1E] border border-[#2E2E2E] hover:border-white/60 hover:bg-[#2A2A2D] shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-colors duration-150 cursor-pointer relative hover:shadow-[0_0_18px_rgba(255,255,255,0.18)]"
+          class="w-9.5 h-9.5 rounded-full bg-[#1C1C1E] border border-[#2E2E2E] hover:border-white/60 hover:bg-[#2A2A2D] shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-colors duration-150 cursor-pointer relative hover:shadow-[0_0_18px_rgba(255,255,255,0.18)]"
           :class="isRouteActive(item.path) ? 'border-white bg-white/15 ring-2 ring-white/25 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : ''"
           @click="emit('close')"
         >
