@@ -116,7 +116,7 @@ const AUDIT_RULES: AuditRule[] = [
     severity: 'warning',
     title: 'Unsafe Dynamic Code Execution',
     description: 'Executes arbitrary dynamic strings via eval or shell subprocess.',
-    pattern: /\b(eval\s*\(|exec\s*\(|subprocess\.Popen\([^)]*shell\s*=\s*True)\b/i,
+    pattern: /(^|[^\w.])(eval|exec)\s*\(|subprocess\.Popen\([^)]*shell\s*=\s*True/i,
   },
 
   // 4. Persistence & System Tampering
