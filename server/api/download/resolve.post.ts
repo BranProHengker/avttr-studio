@@ -1,6 +1,7 @@
 import type { ScraperResult, PlatformType } from '~/types'
 import { cleanUrl, unshortenUrl, detectPlatform } from '~/server/utils/sanitizer'
 import { getCachedResult, setCachedResult } from '~/server/utils/cache'
+import { validateSafeUrl, checkRateLimit } from '~/server/utils/security'
 import { tiktokScraper } from '~/server/utils/scrapers/tiktok'
 import { instagramScraper } from '~/server/utils/scrapers/instagram'
 import { youtubeScraper } from '~/server/utils/scrapers/youtube'
@@ -27,6 +28,16 @@ const scrapers = [
 ]
 
 export default defineEventHandler(async (event) => {
+  // 1. IP Rate Limiting (40 requests / minute)
+  const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
+  const rate = checkRateLimit(`resolve:${clientIp}`, 40, 60)
+  if (!rate.allowed) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: 'Too many link resolve requests. Please wait a moment.',
+    })
+  }
+
   const body = await readBody<{ url?: string }>(event)
   const rawUrl = body?.url?.trim()
 
@@ -37,7 +48,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 1. Sanitize and unshorten URL
+  // 2. SSRF Protection & safe URL check
+  const safeCheck = validateSafeUrl(rawUrl)
+  if (!safeCheck.valid) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: safeCheck.error || 'Invalid or forbidden URL',
+    })
+  }
+
+  // 3. Sanitize and unshorten URL
   const targetUrl = await unshortenUrl(rawUrl)
   const platform = detectPlatform(targetUrl)
 

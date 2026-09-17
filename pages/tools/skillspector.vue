@@ -25,7 +25,7 @@ interface SkillFile {
   content: string
 }
 
-const { showToast } = useToast()
+const { show: showToast } = useToast()
 const { auditFiles } = useSkillAuditor()
 
 const inputQuery = ref('')

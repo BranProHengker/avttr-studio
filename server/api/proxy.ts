@@ -1,34 +1,50 @@
 import { spawn } from 'node:child_process'
+import { validateSafeUrl, isTrustedTeraBoxHost, checkRateLimit } from '~/server/utils/security'
 
 export default defineEventHandler(async (event) => {
+  // 1. IP Rate Limiting (60 requests / minute)
+  const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
+  const rate = checkRateLimit(`proxy:${clientIp}`, 60, 60)
+  if (!rate.allowed) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: 'Too many download requests. Please wait a moment before downloading again.',
+    })
+  }
+
   const query = getQuery(event)
   const targetUrl = typeof query.url === 'string' ? query.url : ''
   const filename = typeof query.filename === 'string' ? query.filename : 'media_download.mp4'
   const isDownload = query.download === '1'
 
-  if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) {
+  // 2. SSRF Protection & URL validation
+  const safeCheck = validateSafeUrl(targetUrl)
+  if (!safeCheck.valid || !safeCheck.url) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Valid target URL is required',
+      statusMessage: safeCheck.error || 'Invalid or forbidden target URL',
     })
   }
+
+  const parsedTarget = safeCheck.url
+  const hostname = parsedTarget.hostname.toLowerCase()
 
   try {
     const clientRange = getHeader(event, 'range')
 
-    // Determine platform-specific referer for CDN bypass
+    // Determine platform-specific referer for CDN bypass based on hostname
     let referer = 'https://www.google.com/'
-    if (/tiktokcdn|tiktok\.com/i.test(targetUrl)) {
+    if (hostname.includes('tiktok')) {
       referer = 'https://www.tiktok.com/'
-    } else if (/twimg|twitter\.com|(?:^|\/\/|\.)x\.com(?:[\/?]|$)/i.test(targetUrl)) {
+    } else if (hostname.includes('twimg') || hostname.includes('twitter.com') || hostname === 'x.com' || hostname.endsWith('.x.com')) {
       referer = 'https://twitter.com/'
-    } else if (/googlevideo|youtube\.com|youtu\.be/i.test(targetUrl)) {
+    } else if (hostname.includes('googlevideo') || hostname.includes('youtube.com') || hostname === 'youtu.be') {
       referer = 'https://www.youtube.com/'
-    } else if (/fbcdn|facebook\.com/i.test(targetUrl)) {
+    } else if (hostname.includes('fbcdn') || hostname.includes('facebook.com')) {
       referer = 'https://www.facebook.com/'
-    } else if (/cdninstagram|instagram\.com/i.test(targetUrl)) {
+    } else if (hostname.includes('cdninstagram') || hostname.includes('instagram.com')) {
       referer = 'https://www.instagram.com/'
-    } else if (/terabox|1024tera|baidupcs|terasharelink/i.test(targetUrl)) {
+    } else if (isTrustedTeraBoxHost(hostname)) {
       referer = 'https://www.1024tera.com/'
     }
 
@@ -48,9 +64,9 @@ export default defineEventHandler(async (event) => {
       setResponseStatus(event, 200)
       setResponseHeaders(event, mp3Headers)
 
-      const ffmpegArgs = ['-hide_banner', '-loglevel', 'error']
+      const ffmpegArgs = ['-nostdin', '-hide_banner', '-loglevel', 'error']
 
-      if (/googlevideo\.com/i.test(targetUrl)) {
+      if (hostname.includes('googlevideo.com')) {
         ffmpegArgs.push('-user_agent', 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip')
       } else if (referer) {
         ffmpegArgs.push('-referer', referer)
@@ -81,7 +97,7 @@ export default defineEventHandler(async (event) => {
       'Accept': '*/*',
     }
 
-    if (/googlevideo\.com/i.test(targetUrl)) {
+    if (hostname.includes('googlevideo.com')) {
       upstreamHeaders['User-Agent'] = 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip'
     } else {
       upstreamHeaders['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -90,7 +106,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    if (/terabox|1024tera|baidupcs|terasharelink/i.test(targetUrl)) {
+    // Only inject TeraBox cookie if hostname strictly matches trusted TeraBox domains
+    if (isTrustedTeraBoxHost(hostname)) {
       const userCookie = process.env.TERABOX_COOKIE || process.env.COOKIE_JSON || process.env.NDUS_COOKIE || ''
       if (userCookie) {
         upstreamHeaders['Cookie'] = userCookie.includes('=') ? userCookie : `ndus=${userCookie}`

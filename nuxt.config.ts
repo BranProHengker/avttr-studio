@@ -60,6 +60,17 @@ export default defineNuxtConfig({
     },
   },
 
+  routeRules: {
+    '/**': {
+      headers: {
+        'X-Frame-Options': 'SAMEORIGIN',
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'camera=(self), microphone=(), geolocation=()',
+      },
+    },
+  },
+
   nitro: {
     storage: {
       cache: {

@@ -1,7 +1,18 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import type { TraceMoeResponse } from '~/types/anime'
+import { validateSafeUrl, checkRateLimit } from '~/server/utils/security'
 
 export default defineEventHandler(async (event) => {
+  // 1. IP Rate Limiting (20 requests / minute)
+  const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
+  const rate = checkRateLimit(`anime-trace:${clientIp}`, 20, 60)
+  if (!rate.allowed) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: 'Rate limit exceeded. Please wait a moment before searching again.',
+    })
+  }
+
   const body = await readBody(event)
   const { url, imageBase64, cutBorders = true } = body || {}
 
@@ -10,6 +21,17 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       statusMessage: 'Either image URL or imageBase64 must be provided'
     })
+  }
+
+  // 2. SSRF Protection on image URL
+  if (url) {
+    const safeCheck = validateSafeUrl(url)
+    if (!safeCheck.valid) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: safeCheck.error || 'Invalid or forbidden image URL'
+      })
+    }
   }
 
   const queryParams = new URLSearchParams()

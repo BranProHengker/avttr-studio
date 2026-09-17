@@ -1,4 +1,16 @@
+import { validateSafeUrl, checkRateLimit } from '~/server/utils/security'
+
 export default defineEventHandler(async (event) => {
+  // 1. IP Rate Limiting (15 requests / minute)
+  const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
+  const rate = checkRateLimit(`remove-bg:${clientIp}`, 15, 60)
+  if (!rate.allowed) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: 'Rate limit exceeded for background removal. Please wait a moment.',
+    })
+  }
+
   const config = useRuntimeConfig(event)
   const apiKey = (config.removeBgApiKey || process.env.REMOVE_BG_API_KEY || '').trim()
 
@@ -33,6 +45,14 @@ export default defineEventHandler(async (event) => {
       // Strip data:image/...;base64, prefix if present
       payload.image_file_b64 = body.image_b64.replace(/^data:image\/[a-z]+;base64,/i, '')
     } else if (body.image_url) {
+      // 2. SSRF Protection on image URL
+      const safeCheck = validateSafeUrl(body.image_url)
+      if (!safeCheck.valid) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: safeCheck.error || 'Invalid or forbidden image URL',
+        })
+      }
       payload.image_url = body.image_url
     }
 
