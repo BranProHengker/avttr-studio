@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import {
   Film,
   Play,
@@ -22,7 +22,9 @@ import {
   Monitor,
   RefreshCw,
   Clock,
-  HardDrive
+  HardDrive,
+  Maximize,
+  Minimize
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
@@ -48,6 +50,10 @@ const videoUrl = ref<string>('')
 const videoElementRef = ref<HTMLVideoElement | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const timelineContainerRef = ref<HTMLDivElement | null>(null)
+const scrubberBarRef = ref<HTMLElement | null>(null)
+const playerContainerRef = ref<HTMLElement | null>(null)
+const isFullscreen = ref(false)
+let isScrubbing = false
 
 // Input URL omnibox state
 const videoUrlInput = ref('')
@@ -170,6 +176,13 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms}`
 }
 
+function formatPlayerTime(seconds: number): string {
+  if (isNaN(seconds) || seconds < 0) return '0:00'
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
 function formatFileSize(bytes: number): string {
   if (!bytes) return '0 B'
   const k = 1024
@@ -177,6 +190,67 @@ function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
 }
+
+const progressPercent = computed(() => {
+  if (totalDuration.value <= 0) return 0
+  return Math.min(100, Math.max(0, (currentTime.value / totalDuration.value) * 100))
+})
+
+function seekFromMouseEvent(e: MouseEvent) {
+  if (!scrubberBarRef.value || totalDuration.value <= 0) return
+  const rect = scrubberBarRef.value.getBoundingClientRect()
+  const offsetX = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
+  const ratio = offsetX / rect.width
+  seekTo(ratio * totalDuration.value)
+}
+
+function startScrubbing(e: MouseEvent) {
+  isScrubbing = true
+  seekFromMouseEvent(e)
+
+  const onMouseMove = (moveEvt: MouseEvent) => {
+    if (isScrubbing) seekFromMouseEvent(moveEvt)
+  }
+  const onMouseUp = () => {
+    isScrubbing = false
+    window.removeEventListener('mousemove', onMouseMove)
+    window.removeEventListener('mouseup', onMouseUp)
+  }
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('mouseup', onMouseUp)
+}
+
+function startTouchScrubbing(e: TouchEvent) {
+  if (!e.touches[0] || !scrubberBarRef.value || totalDuration.value <= 0) return
+  const rect = scrubberBarRef.value.getBoundingClientRect()
+  const touch = e.touches[0]
+  const offsetX = Math.max(0, Math.min(touch.clientX - rect.left, rect.width))
+  const ratio = offsetX / rect.width
+  seekTo(ratio * totalDuration.value)
+}
+
+function toggleFullscreen() {
+  if (!playerContainerRef.value) return
+  if (!document.fullscreenElement) {
+    playerContainerRef.value.requestFullscreen().then(() => {
+      isFullscreen.value = true
+    }).catch(() => {})
+  } else {
+    document.exitFullscreen().then(() => {
+      isFullscreen.value = false
+    }).catch(() => {})
+  }
+}
+
+function onFullscreenChange() {
+  isFullscreen.value = !!document.fullscreenElement
+}
+
+onMounted(() => {
+  if (typeof document !== 'undefined') {
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+  }
+})
 
 // Custom dimension sync with aspect ratio
 watch(customWidth, (newW) => {
@@ -326,19 +400,24 @@ async function pasteFromClipboard() {
   }
 }
 
-// ─── Core Client-Side Video Processing Engine ────────────────────────
+// ─── Core Client-Side Video Processing Engine (WebCodecs) ─────────────
+let activeConversion: any = null
 let abortProcessing = false
 
 function cancelProcessing() {
   abortProcessing = true
+  if (activeConversion) {
+    try {
+      activeConversion.cancel()
+    } catch {}
+  }
   isProcessing.value = false
   processStatus.value = 'Cancelled'
 }
 
 async function processVideo() {
-  if (!videoElementRef.value || !videoNaturalWidth.value) return
+  if (!videoFile.value && !videoUrl.value) return
 
-  const video = videoElementRef.value
   const targetW = targetDimensions.value.width
   const targetH = targetDimensions.value.height
   const start = startTime.value
@@ -352,153 +431,91 @@ async function processVideo() {
 
   isProcessing.value = true
   processProgress.value = 0
-  processStatus.value = locale.value === 'id' ? 'Menginisialisasi encoder...' : 'Initializing encoder...'
+  processStatus.value = locale.value === 'id' ? 'Menyiapkan hardware encoder...' : 'Preparing hardware encoder...'
   abortProcessing = false
 
-  // Pause playback
-  video.pause()
-  isPlaying.value = false
-
-  // Setup offscreen canvas
-  const canvas = document.createElement('canvas')
-  canvas.width = targetW
-  canvas.height = targetH
-  const ctx = canvas.getContext('2d', { alpha: false })
-
-  if (!ctx) {
-    toast.error('Error', 'Canvas 2D context not supported')
-    isProcessing.value = false
-    return
+  if (videoElementRef.value) {
+    videoElementRef.value.pause()
+    isPlaying.value = false
   }
-
-  // Select supported recording MIME type
-  const possibleTypes = [
-    'video/mp4;codecs=avc1,mp4a.40.2',
-    'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm'
-  ]
-
-  let mimeType = ''
-  for (const type of possibleTypes) {
-    if (MediaRecorder.isTypeSupported(type)) {
-      mimeType = type
-      break
-    }
-  }
-
-  if (!mimeType) {
-    toast.error('Error', 'No supported video recording codec found.')
-    isProcessing.value = false
-    return
-  }
-
-  outputMimeType.value = mimeType
 
   try {
-    // Setup Canvas stream (30 fps)
-    const videoStream = canvas.captureStream(30)
-    let combinedStream: MediaStream = videoStream
+    const {
+      BlobSource,
+      ALL_FORMATS,
+      Input,
+      Output,
+      Mp4OutputFormat,
+      BufferTarget,
+      Conversion,
+      Quality
+    } = await import('mediabunny')
 
-    // Audio routing via Web Audio API if audio enabled
-    let audioCtx: AudioContext | null = null
-    if (keepAudio.value && !isMuted.value) {
-      try {
-        audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-        const source = audioCtx.createMediaElementSource(video)
-        const dest = audioCtx.createMediaStreamDestination()
-        source.connect(dest)
-        source.connect(audioCtx.destination) // Keep audible if desired
-
-        const audioTracks = dest.stream.getAudioTracks()
-        if (audioTracks.length > 0) {
-          combinedStream = new MediaStream([
-            ...videoStream.getVideoTracks(),
-            ...audioTracks
-          ])
-        }
-      } catch (audioErr) {
-        console.warn('Audio capture bypassed:', audioErr)
-      }
+    let sourceBlob: Blob
+    if (videoFile.value) {
+      sourceBlob = videoFile.value
+    } else {
+      const res = await fetch(videoUrl.value)
+      sourceBlob = await res.blob()
     }
 
-    const recordedChunks: Blob[] = []
-    const mediaRecorder = new MediaRecorder(combinedStream, {
-      mimeType,
-      videoBitsPerSecond: targetBitrate.value
+    const input = new Input({
+      source: new BlobSource(sourceBlob),
+      formats: ALL_FORMATS
     })
 
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0) {
-        recordedChunks.push(event.data)
-      }
+    const format = new Mp4OutputFormat()
+    const target = new BufferTarget()
+    const output = new Output({ format, target })
+
+    const qual = qualityPreset.value === 'high'
+      ? new Quality('high')
+      : qualityPreset.value === 'compact'
+        ? new Quality('low')
+        : new Quality('medium')
+
+    activeConversion = await Conversion.init({
+      input,
+      output,
+      trim: {
+        start,
+        end
+      },
+      video: {
+        width: targetW,
+        height: targetH,
+        fit: 'contain',
+        quality: qual
+      },
+      audio: keepAudio.value && !isMuted.value ? {} : { discard: true },
+      showWarnings: false
+    })
+
+    if (!activeConversion.isValid) {
+      throw new Error('Format video tidak didukung oleh hardware encoder.')
     }
 
-    const recordPromise = new Promise<Blob>((resolve, reject) => {
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: mimeType })
-        resolve(blob)
-      }
-      mediaRecorder.onerror = (err) => reject(err)
-    })
-
-    // Seek to start position
-    video.currentTime = start
-    await new Promise((res) => {
-      const onSeeked = () => {
-        video.removeEventListener('seeked', onSeeked)
-        res(true)
-      }
-      video.addEventListener('seeked', onSeeked)
-    })
-
-    // Start Recording
-    mediaRecorder.start(100) // Emit chunks every 100ms
-    video.play()
-
-    processStatus.value = locale.value === 'id' ? 'Memproses frame video...' : 'Processing video frames...'
-
-    // Frame rendering loop
-    await new Promise<void>((resolve) => {
-      function renderFrame() {
-        if (abortProcessing) {
-          video.pause()
-          mediaRecorder.stop()
-          resolve()
-          return
-        }
-
-        if (video.currentTime >= end || video.ended) {
-          video.pause()
-          mediaRecorder.stop()
-          resolve()
-          return
-        }
-
-        ctx!.drawImage(video, 0, 0, targetW, targetH)
-
-        const currentProg = ((video.currentTime - start) / duration) * 100
-        processProgress.value = Math.min(99, Math.max(0, Math.round(currentProg)))
-
-        requestAnimationFrame(renderFrame)
-      }
-
-      requestAnimationFrame(renderFrame)
-    })
-
-    if (abortProcessing) {
-      if (audioCtx) audioCtx.close()
-      return
+    activeConversion.onProgress = (progress: number, processedTime: number) => {
+      if (abortProcessing) return
+      const percent = Math.min(99, Math.max(0, Math.round(progress * 100)))
+      processProgress.value = percent
+      processStatus.value = locale.value === 'id'
+        ? `Memproses frame hardware: ${percent}% (${processedTime.toFixed(1)}s)`
+        : `Encoding frames: ${percent}% (${processedTime.toFixed(1)}s)`
     }
 
-    processStatus.value = locale.value === 'id' ? 'Menyusun file video...' : 'Packaging video file...'
+    await activeConversion.execute()
+
+    if (abortProcessing) return
+
     processProgress.value = 100
+    processStatus.value = locale.value === 'id' ? 'Menyelesaikan file MP4...' : 'Finalizing MP4 file...'
 
-    const finalBlob = await recordPromise
-    if (audioCtx) audioCtx.close()
+    const buffer = target.buffer
+    if (!buffer) throw new Error('Output buffer kosong.')
 
-    // Setup output preview
+    const finalBlob = new Blob([buffer], { type: 'video/mp4' })
+
     if (outputBlobUrl.value && outputBlobUrl.value.startsWith('blob:')) {
       URL.revokeObjectURL(outputBlobUrl.value)
     }
@@ -508,21 +525,25 @@ async function processVideo() {
     outputWidth.value = targetW
     outputHeight.value = targetH
     outputDuration.value = duration
+    outputMimeType.value = 'video/mp4'
     isProcessing.value = false
 
     toast.success(
       locale.value === 'id' ? 'Selesai!' : 'Complete!',
       locale.value === 'id'
-        ? `Video berhasil di-resize ke ${targetW}x${targetH} (${formatFileSize(finalBlob.size)}).`
-        : `Video resized to ${targetW}x${targetH} (${formatFileSize(finalBlob.size)}).`
+        ? `Video berhasil diproses ke ${targetW}x${targetH} (${formatFileSize(finalBlob.size)}) secara instan via hardware GPU!`
+        : `Video processed to ${targetW}x${targetH} (${formatFileSize(finalBlob.size)}) instantly via hardware GPU!`
     )
   } catch (err: any) {
-    console.error('Video processing error:', err)
+    if (abortProcessing) return
+    console.error('WebCodecs execution error:', err)
     toast.error(
       'Processing Error',
-      err?.message || 'Failed to process video'
+      err?.message || 'Gagal memproses video via hardware encoder.'
     )
     isProcessing.value = false
+  } finally {
+    activeConversion = null
   }
 }
 
@@ -539,6 +560,9 @@ function downloadOutput() {
 }
 
 onUnmounted(() => {
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }
   if (videoUrl.value && videoUrl.value.startsWith('blob:')) {
     URL.revokeObjectURL(videoUrl.value)
   }
@@ -673,9 +697,15 @@ onUnmounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Left Column: Video Preview Player & Timeline Trimmer (7 Cols) -->
         <div class="lg:col-span-7 space-y-4">
-          <!-- Video Display Card -->
-          <div class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-xs">
-            <div class="relative bg-black aspect-video flex items-center justify-center overflow-hidden">
+          <!-- Video Display Card (Minimalist Player bar as requested by user) -->
+          <div
+            ref="playerContainerRef"
+            class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-xs"
+          >
+            <div
+              class="relative bg-black aspect-video flex items-center justify-center overflow-hidden cursor-pointer"
+              @click="togglePlay"
+            >
               <video
                 ref="videoElementRef"
                 :src="videoUrl"
@@ -687,53 +717,70 @@ onUnmounted(() => {
                 @timeupdate="onTimeUpdate"
                 @ended="isPlaying = false"
               />
-
-              <!-- Center Big Play Overlay -->
-              <button
-                type="button"
-                class="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/60 border border-white/20 text-white flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-xs"
-                :class="isPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'"
-                @click="togglePlay"
-              >
-                <Play v-if="!isPlaying" class="w-6 h-6 fill-current ml-0.5" />
-                <Pause v-else class="w-6 h-6 fill-current" />
-              </button>
-
-              <!-- Duration Badge Top Right -->
-              <div class="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-black/70 border border-white/10 text-[11px] font-mono text-white/90 backdrop-blur-xs">
-                {{ formatTime(currentTime) }} / {{ formatTime(totalDuration) }}
-              </div>
             </div>
 
-            <!-- Player Quick Control Bar -->
-            <div class="px-4 py-3 bg-[#18181A] border-t border-[#2E2E2E] flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono">
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  class="p-1 text-neutral-300 hover:text-white transition-colors cursor-pointer"
-                  @click="togglePlay"
-                >
-                  <Play v-if="!isPlaying" class="w-4 h-4 fill-current" />
-                  <Pause v-else class="w-4 h-4 fill-current" />
-                </button>
+            <!-- Sleek Minimalist Player Bar (Matching user reference mockup) -->
+            <div class="px-3.5 py-2.5 bg-[#121214] border-t border-[#262626] flex items-center gap-2.5 select-none">
+              <!-- Play / Pause -->
+              <button
+                type="button"
+                class="p-1 text-white hover:text-white/80 transition-colors cursor-pointer shrink-0 flex items-center justify-center focus:outline-none"
+                :title="isPlaying ? 'Pause' : 'Play'"
+                @click="togglePlay"
+              >
+                <Play v-if="!isPlaying" class="w-4 h-4 fill-white text-white" />
+                <Pause v-else class="w-4 h-4 fill-white text-white" />
+              </button>
 
-                <button
-                  type="button"
-                  class="p-1 text-neutral-300 hover:text-white transition-colors cursor-pointer"
-                  @click="isMuted = !isMuted"
-                >
-                  <Volume2 v-if="!isMuted" class="w-4 h-4" />
-                  <VolumeX v-else class="w-4 h-4 text-red-400" />
-                </button>
+              <!-- Scrubber Bar -->
+              <div
+                ref="scrubberBarRef"
+                class="relative flex-1 flex items-center h-5 cursor-pointer group/scrub"
+                @mousedown="startScrubbing"
+                @touchstart.passive="startTouchScrubbing"
+              >
+                <!-- Track -->
+                <div class="w-full h-1 bg-[#2E2E2E] group-hover/scrub:h-1.5 rounded-full relative overflow-hidden transition-all">
+                  <!-- Progress Fill -->
+                  <div
+                    class="h-full bg-[#00a8ff] rounded-full"
+                    :style="{ width: `${progressPercent}%` }"
+                  />
+                </div>
 
-                <span class="text-white/80 font-medium">
-                  {{ videoNaturalWidth }}×{{ videoNaturalHeight }}px
-                </span>
+                <!-- Circular Knob -->
+                <div
+                  class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-md pointer-events-none transition-transform group-hover/scrub:scale-125"
+                  :style="{ left: `${progressPercent}%` }"
+                />
               </div>
 
-              <div class="flex items-center gap-2">
-                <span>{{ formatFileSize(originalFileSize) }}</span>
+              <!-- Time Display (0:01 / 0:31) -->
+              <div class="text-[11px] font-mono text-neutral-300 shrink-0 whitespace-nowrap">
+                {{ formatPlayerTime(currentTime) }} / {{ formatPlayerTime(totalDuration) }}
               </div>
+
+              <!-- Mute Button -->
+              <button
+                type="button"
+                class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0 focus:outline-none"
+                :title="isMuted ? 'Unmute' : 'Mute'"
+                @click="isMuted = !isMuted"
+              >
+                <Volume2 v-if="!isMuted" class="w-4 h-4" />
+                <VolumeX v-else class="w-4 h-4 text-red-400" />
+              </button>
+
+              <!-- Fullscreen Button -->
+              <button
+                type="button"
+                class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0 focus:outline-none"
+                :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
+                @click="toggleFullscreen"
+              >
+                <Maximize v-if="!isFullscreen" class="w-4 h-4" />
+                <Minimize v-else class="w-4 h-4" />
+              </button>
             </div>
           </div>
 
@@ -789,7 +836,7 @@ onUnmounted(() => {
                 <div>
                   <div class="flex items-center justify-between text-[11px] font-mono text-neutral-400 mb-1">
                     <span>Start:</span>
-                    <span class="text-white font-medium">{{ formatTime(startTime) }}</span>
+                    <span class="text-white font-medium">{{ formatPlayerTime(startTime) }}</span>
                   </div>
                   <input
                     type="range"
@@ -805,7 +852,7 @@ onUnmounted(() => {
                 <div>
                   <div class="flex items-center justify-between text-[11px] font-mono text-neutral-400 mb-1">
                     <span>End:</span>
-                    <span class="text-white font-medium">{{ formatTime(endTime) }}</span>
+                    <span class="text-white font-medium">{{ formatPlayerTime(endTime) }}</span>
                   </div>
                   <input
                     type="range"
@@ -823,7 +870,7 @@ onUnmounted(() => {
             <!-- Trimmer Footer Action -->
             <div class="pt-2 border-t border-[#212121] flex items-center justify-between">
               <div class="text-xs font-mono text-neutral-400">
-                Trimmed Duration: <span class="text-white font-semibold">{{ formatTime(trimDuration) }}</span>
+                Trimmed Duration: <span class="text-white font-semibold">{{ formatPlayerTime(trimDuration) }}</span>
               </div>
 
               <Button
@@ -1092,7 +1139,7 @@ onUnmounted(() => {
             <div>
               <h3 class="text-sm font-semibold text-white">Video Ready for Download</h3>
               <p class="text-xs text-neutral-400 font-mono">
-                Processed via 100% Client-Side Hardware Canvas
+                Processed via 100% Client-Side WebCodecs Hardware GPU
               </p>
             </div>
           </div>
@@ -1118,8 +1165,8 @@ onUnmounted(() => {
 
           <div class="p-3.5 bg-[#18181A] border border-[#2E2E2E] rounded-xl space-y-1">
             <div class="text-[10px] uppercase tracking-wider text-neutral-400">Duration</div>
-            <div class="text-xs text-neutral-400 line-through">{{ formatTime(totalDuration) }}</div>
-            <div class="text-sm font-bold text-white">{{ formatTime(outputDuration) }}</div>
+            <div class="text-xs text-neutral-400 line-through">{{ formatPlayerTime(totalDuration) }}</div>
+            <div class="text-sm font-bold text-white">{{ formatPlayerTime(outputDuration) }}</div>
           </div>
 
           <div class="p-3.5 bg-[#18181A] border border-[#2E2E2E] rounded-xl space-y-1">
