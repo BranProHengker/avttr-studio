@@ -20,6 +20,7 @@ import {
   Sticker,
   Music,
   FolderCheck,
+  Video,
 } from 'lucide-vue-next'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
@@ -94,6 +95,7 @@ const isCategoryActive = (category: string) => {
       '/tools/pdf-tools',
       '/tools/doc-to-markdown',
       '/tools/video-to-gif',
+      '/tools/video-resizer',
     ].includes(route.path)
   }
   if (category === 'developer') {
@@ -177,6 +179,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/tools/pdf-tools', label: 'PDF Studio', iconComponent: FileText },
       { path: '/tools/doc-to-markdown', label: 'Doc to Markdown', brandName: 'doc-to-markdown' },
       { path: '/tools/video-to-gif', label: 'Video to GIF', brandName: 'video-to-gif' },
+      { path: '/tools/video-resizer', label: 'Video Resizer & Trimmer', iconComponent: Video },
     ],
   },
   'developer': {
@@ -913,6 +916,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 Video to GIF
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/video-resizer"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/video-resizer')
+                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Video Resizer & Trimmer
               </NuxtLink>
             </div>
           </div>

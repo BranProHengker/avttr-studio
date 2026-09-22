@@ -242,6 +242,16 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         popular: true,
       },
       {
+        id: 'video-resizer',
+        title: 'Video Resizer & Trimmer',
+        description: 'Adjust video resolution, trim clip duration, and reduce file size with client-side processing.',
+        category: 'image',
+        icon: 'video-resizer',
+        route: '/tools/video-resizer',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'base64-image',
         title: 'Base64 & Hash Encoder',
         description: 'Convert files to Base64, generate SHA-256 / SHA-512 hashes via Web Crypto API.',
