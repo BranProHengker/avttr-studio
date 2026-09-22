@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import JSZip from 'jszip'
 import {
   Film,
   Play,
@@ -24,11 +25,32 @@ import {
   Clock,
   HardDrive,
   Maximize,
-  Minimize
+  Minimize,
+  Archive,
+  Trash2,
+  Plus,
+  AlertCircle,
+  List
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
+
+interface VideoQueueItem {
+  id: string
+  file: File
+  name: string
+  originalSize: number
+  status: 'waiting' | 'processing' | 'done' | 'error'
+  progress: number
+  outputBlob: Blob | null
+  outputUrl: string
+  outputSize: number
+  savedPercent: number
+  targetWidth: number
+  targetHeight: number
+  errorMsg?: string
+}
 
 const toast = useToast()
 const { t, locale } = useI18n()
@@ -42,6 +64,20 @@ useHead({
     }
   ]
 })
+
+// Mode and Batch Queue State
+const mode = ref<'single' | 'batch'>('single')
+const queue = ref<VideoQueueItem[]>([])
+const isBatchProcessing = ref(false)
+const currentBatchIndex = ref(-1)
+const isZipping = ref(false)
+let abortBatch = false
+let activeBatchConversion: any = null
+
+// Batch settings
+const batchPreset = ref<ResolutionPreset>('original')
+const batchQuality = ref<'high' | 'balanced' | 'compact'>('balanced')
+const batchKeepAudio = ref(true)
 
 // Source state
 const videoFile = ref<File | null>(null)
@@ -159,11 +195,30 @@ const trimDuration = computed(() => {
   return Math.max(0.1, Number((endTime.value - startTime.value).toFixed(2)))
 })
 
-// Size Savings
+// Size Savings (Single Mode)
 const sizeSavingsPercentage = computed(() => {
   if (!originalFileSize.value || !outputSize.value) return 0
   const diff = originalFileSize.value - outputSize.value
   return Math.round((diff / originalFileSize.value) * 100)
+})
+
+// Batch Queue Computed Stats
+const totalQueueOriginalSize = computed(() => {
+  return queue.value.reduce((acc, item) => acc + item.originalSize, 0)
+})
+
+const totalQueueCompressedSize = computed(() => {
+  return queue.value.reduce((acc, item) => acc + (item.outputSize || item.originalSize), 0)
+})
+
+const totalQueueSavingsPercent = computed(() => {
+  if (totalQueueOriginalSize.value === 0) return 0
+  const saved = totalQueueOriginalSize.value - totalQueueCompressedSize.value
+  return Math.max(0, Math.round((saved / totalQueueOriginalSize.value) * 100))
+})
+
+const completedQueueCount = computed(() => {
+  return queue.value.filter((i) => i.status === 'done').length
 })
 
 // Format Helpers
@@ -327,9 +382,9 @@ function resetTrim() {
   seekTo(0)
 }
 
-// File Upload Handler
+// File Upload & Batch Queue Handlers
 function handleFileUpload(file: File) {
-  if (!file.type.startsWith('video/')) {
+  if (!file.type.startsWith('video/') && !file.name.match(/\.(mp4|webm|mov|mkv|avi|m4v)$/i)) {
     toast.error(
       locale.value === 'id' ? 'Format File Salah' : 'Invalid File',
       locale.value === 'id' ? 'Silakan pilih file video (MP4, WebM, MOV).' : 'Please upload a video file (MP4, WebM, MOV).'
@@ -351,12 +406,59 @@ function handleFileUpload(file: File) {
   videoUrl.value = URL.createObjectURL(file)
   isPlaying.value = false
   currentTime.value = 0
+  mode.value = 'single'
+}
+
+function handleFiles(fileList: FileList | File[]) {
+  const incoming = Array.from(fileList).filter((f) =>
+    f.type.startsWith('video/') || f.name.match(/\.(mp4|webm|mov|mkv|avi|m4v)$/i)
+  )
+
+  if (incoming.length === 0) {
+    toast.error(
+      locale.value === 'id' ? 'Format File Salah' : 'Invalid Files',
+      locale.value === 'id' ? 'Silakan pilih file video yang valid (MP4, WebM, MOV, MKV).' : 'Please upload valid video files (MP4, WebM, MOV, MKV).'
+    )
+    return
+  }
+
+  // If single file and no existing queue in single mode, load into Single Studio
+  if (incoming.length === 1 && queue.value.length === 0 && mode.value === 'single') {
+    handleFileUpload(incoming[0])
+    return
+  }
+
+  // Multiple files or adding to batch queue
+  for (const file of incoming) {
+    queue.value.push({
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      file,
+      name: file.name,
+      originalSize: file.size,
+      status: 'waiting',
+      progress: 0,
+      outputBlob: null,
+      outputUrl: '',
+      outputSize: 0,
+      savedPercent: 0,
+      targetWidth: 0,
+      targetHeight: 0
+    })
+  }
+
+  mode.value = 'batch'
+  toast.success(
+    locale.value === 'id' ? 'Ditambahkan ke Antrean' : 'Added to Queue',
+    locale.value === 'id'
+      ? `${incoming.length} video ditambahkan ke antrean batch.`
+      : `${incoming.length} videos added to batch queue.`
+  )
 }
 
 function onFileInputChange(e: Event) {
   const target = e.target as HTMLInputElement
-  if (target.files && target.files[0]) {
-    handleFileUpload(target.files[0])
+  if (target.files && target.files.length > 0) {
+    handleFiles(target.files)
     target.value = ''
   }
 }
@@ -558,6 +660,238 @@ function downloadOutput() {
   document.body.removeChild(a)
 }
 
+// ─── Batch Queue Engine & Methods ─────────────────────────────────────
+function computeBatchDimensions(srcW: number, srcH: number, preset: ResolutionPreset): { width: number; height: number } {
+  const aspect = srcW / srcH
+  const isLandscape = srcW >= srcH
+
+  if (preset === 'original') {
+    return {
+      width: Math.round(srcW / 2) * 2,
+      height: Math.round(srcH / 2) * 2
+    }
+  }
+
+  const maxMap: Record<string, number> = {
+    '1080p': 1920,
+    '720p': 1280,
+    '480p': 854,
+    '360p': 640
+  }
+  const targetMax = maxMap[preset] || 1280
+
+  let w: number
+  let h: number
+  if (isLandscape) {
+    w = Math.min(srcW, targetMax)
+    h = Math.round(w / aspect)
+  } else {
+    h = Math.min(srcH, targetMax)
+    w = Math.round(h * aspect)
+  }
+
+  return {
+    width: Math.max(16, Math.round(w / 2) * 2),
+    height: Math.max(16, Math.round(h / 2) * 2)
+  }
+}
+
+function removeQueueItem(id: string) {
+  const index = queue.value.findIndex((i) => i.id === id)
+  if (index !== -1) {
+    const item = queue.value[index]
+    if (item.outputUrl && item.outputUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(item.outputUrl)
+    }
+    queue.value.splice(index, 1)
+  }
+}
+
+function clearQueue() {
+  queue.value.forEach((item) => {
+    if (item.outputUrl && item.outputUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(item.outputUrl)
+    }
+  })
+  queue.value = []
+  if (!videoUrl.value) {
+    mode.value = 'single'
+  }
+}
+
+function cancelBatch() {
+  abortBatch = true
+  if (activeBatchConversion) {
+    try {
+      activeBatchConversion.cancel()
+    } catch {}
+  }
+  isBatchProcessing.value = false
+  currentBatchIndex.value = -1
+  toast.info('Cancelled', 'Batch compression cancelled')
+}
+
+async function processBatch() {
+  if (queue.value.length === 0) return
+
+  isBatchProcessing.value = true
+  abortBatch = false
+
+  try {
+    const {
+      BlobSource,
+      ALL_FORMATS,
+      Input,
+      Output,
+      Mp4OutputFormat,
+      BufferTarget,
+      Conversion,
+      Quality
+    } = await import('mediabunny')
+
+    for (let i = 0; i < queue.value.length; i++) {
+      const item = queue.value[i]
+      if (item.status === 'done' || abortBatch) continue
+
+      currentBatchIndex.value = i
+      item.status = 'processing'
+      item.progress = 0
+
+      try {
+        const input = new Input({
+          source: new BlobSource(item.file),
+          formats: ALL_FORMATS
+        })
+
+        const videoTrack = await input.getPrimaryVideoTrack()
+        const srcW = videoTrack ? await videoTrack.getDisplayWidth() : 1280
+        const srcH = videoTrack ? await videoTrack.getDisplayHeight() : 720
+        const dims = computeBatchDimensions(srcW, srcH, batchPreset.value)
+        item.targetWidth = dims.width
+        item.targetHeight = dims.height
+
+        const format = new Mp4OutputFormat()
+        const target = new BufferTarget()
+        const output = new Output({ format, target })
+
+        const qual = batchQuality.value === 'high'
+          ? new Quality('high')
+          : batchQuality.value === 'compact'
+            ? new Quality('low')
+            : new Quality('medium')
+
+        const conversion = await Conversion.init({
+          input,
+          output,
+          video: {
+            width: dims.width,
+            height: dims.height,
+            fit: 'contain',
+            quality: qual
+          },
+          audio: batchKeepAudio.value ? {} : { discard: true },
+          showWarnings: false
+        })
+
+        if (!conversion.isValid) {
+          throw new Error('Conversion unsupported')
+        }
+
+        conversion.onProgress = (prog: number) => {
+          if (abortBatch) return
+          item.progress = Math.min(99, Math.round(prog * 100))
+        }
+
+        activeBatchConversion = conversion
+        await conversion.execute()
+
+        if (abortBatch) {
+          item.status = 'waiting'
+          break
+        }
+
+        const buffer = target.buffer
+        if (!buffer) throw new Error('Buffer empty')
+
+        const finalBlob = new Blob([buffer], { type: 'video/mp4' })
+        item.outputBlob = finalBlob
+        item.outputUrl = URL.createObjectURL(finalBlob)
+        item.outputSize = finalBlob.size
+        item.savedPercent = item.originalSize > 0
+          ? Math.max(0, Math.round(((item.originalSize - finalBlob.size) / item.originalSize) * 100))
+          : 0
+        item.status = 'done'
+        item.progress = 100
+      } catch (itemErr: any) {
+        if (abortBatch) break
+        console.error(`Error processing ${item.name}:`, itemErr)
+        item.status = 'error'
+        item.errorMsg = itemErr?.message || 'Compression failed'
+      }
+    }
+
+    if (!abortBatch) {
+      toast.success(
+        locale.value === 'id' ? 'Batch Selesai!' : 'Batch Complete!',
+        locale.value === 'id'
+          ? 'Semua video dalam antrean berhasil diproses.'
+          : 'All videos in queue have been processed.'
+      )
+    }
+  } catch (err: any) {
+    toast.error('Batch Error', err?.message || 'Failed during batch processing')
+  } finally {
+    isBatchProcessing.value = false
+    currentBatchIndex.value = -1
+    activeBatchConversion = null
+  }
+}
+
+function downloadQueueItem(item: VideoQueueItem) {
+  if (!item.outputUrl) return
+  const a = document.createElement('a')
+  a.href = item.outputUrl
+  const nameNoExt = item.name.replace(/\.[^.]+$/, '')
+  a.download = `${nameNoExt}_compressed.mp4`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}
+
+function openItemInStudio(item: VideoQueueItem) {
+  handleFileUpload(item.file)
+  mode.value = 'single'
+}
+
+async function downloadBatchZip() {
+  const doneItems = queue.value.filter((i) => i.status === 'done' && i.outputBlob)
+  if (doneItems.length === 0) return
+
+  isZipping.value = true
+  try {
+    const zip = new JSZip()
+    doneItems.forEach((item) => {
+      const nameNoExt = item.name.replace(/\.[^.]+$/, '')
+      zip.file(`${nameNoExt}_compressed.mp4`, item.outputBlob!)
+    })
+    const blob = await zip.generateAsync({ type: 'blob' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `avttr_batch_compressed_${Date.now()}.zip`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    toast.success(
+      locale.value === 'id' ? 'ZIP Diunduh' : 'ZIP Downloaded',
+      locale.value === 'id' ? `${doneItems.length} video berhasil diarsipkan dalam ZIP` : `${doneItems.length} videos archived in ZIP`
+    )
+  } catch (err: any) {
+    toast.error('ZIP Error', err?.message || 'Failed to generate ZIP')
+  } finally {
+    isZipping.value = false
+  }
+}
+
 onUnmounted(() => {
   if (typeof document !== 'undefined') {
     document.removeEventListener('fullscreenchange', onFullscreenChange)
@@ -568,6 +902,11 @@ onUnmounted(() => {
   if (outputBlobUrl.value && outputBlobUrl.value.startsWith('blob:')) {
     URL.revokeObjectURL(outputBlobUrl.value)
   }
+  queue.value.forEach((item) => {
+    if (item.outputUrl && item.outputUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(item.outputUrl)
+    }
+  })
 })
 </script>
 
@@ -582,10 +921,11 @@ onUnmounted(() => {
       <span class="text-[var(--text-primary)]">Video Resizer & Trimmer</span>
     </div>
 
-    <!-- Hidden File Input -->
+    <!-- Hidden File Input (Supports Multiple Selection) -->
     <input
       ref="fileInputRef"
       type="file"
+      multiple
       accept="video/mp4,video/webm,video/quicktime,video/mov,video/mkv,video/avi"
       class="hidden"
       @change="onFileInputChange"
@@ -602,21 +942,49 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <div v-if="videoUrl" class="flex items-center gap-2.5 shrink-0">
+      <!-- Controls when files are loaded -->
+      <div v-if="videoUrl || queue.length > 0" class="flex flex-wrap items-center gap-2.5 shrink-0">
+        <!-- Mode Switcher Tabs -->
+        <div class="flex items-center p-1 bg-[#141416] border border-[#2E2E2E] rounded-xl text-xs">
+          <button
+            type="button"
+            :disabled="!videoUrl"
+            class="px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5"
+            :class="mode === 'single' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
+            @click="mode = 'single'"
+          >
+            <Film class="w-3.5 h-3.5" />
+            <span>Single Studio</span>
+          </button>
+          <button
+            type="button"
+            :disabled="queue.length === 0"
+            class="px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5"
+            :class="mode === 'batch' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
+            @click="mode = 'batch'"
+          >
+            <List class="w-3.5 h-3.5" />
+            <span>Batch Queue</span>
+            <span v-if="queue.length > 0" class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-white font-mono">
+              {{ queue.length }}
+            </span>
+          </button>
+        </div>
+
         <Button
           variant="secondary"
           size="default"
           class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
           @click="fileInputRef?.click()"
         >
-          <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
-          <span>{{ locale === 'id' ? 'Ganti Video' : 'Change Video' }}</span>
+          <Plus class="w-3.5 h-3.5 mr-1.5 text-white/70" />
+          <span>{{ mode === 'batch' ? (locale === 'id' ? 'Tambah Video' : 'Add Videos') : (locale === 'id' ? 'Ganti Video' : 'Change Video') }}</span>
         </Button>
       </div>
     </div>
 
-    <!-- STATE 1: Upload Stage (When No Video Loaded) -->
-    <div v-if="!videoUrl" class="space-y-4">
+    <!-- STATE 1: Upload Stage (When No Video Loaded & Queue Empty) -->
+    <div v-if="!videoUrl && queue.length === 0" class="space-y-4">
       <!-- URL Input Omnibox -->
       <div class="flex flex-col sm:flex-row items-center gap-2.5">
         <div class="relative w-full flex-1 flex items-center">
@@ -670,7 +1038,7 @@ onUnmounted(() => {
         :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : 'border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]'"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
-        @drop.prevent="(e) => { isDragging = false; if (e.dataTransfer?.files[0]) handleFileUpload(e.dataTransfer.files[0]) }"
+        @drop.prevent="(e) => { isDragging = false; if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files) }"
         @click="fileInputRef?.click()"
       >
         <div class="max-w-md mx-auto space-y-3">
@@ -682,14 +1050,361 @@ onUnmounted(() => {
               {{ t.dropzoneBrowse }}
             </h3>
             <p class="text-xs text-[var(--text-secondary)] mt-1">
-              Supports MP4, WebM, MOV, and MKV. 100% processed client-side.
+              {{ locale === 'id' ? 'Mendukung MP4, WebM, MOV, MKV. Bisa single atau antrean batch sekaligus. 100% diproses di browser.' : 'Supports MP4, WebM, MOV, and MKV. Single or batch sequential compression. 100% processed client-side.' }}
             </p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- STATE 2: Video Studio Workbench -->
+    <!-- STATE 2: Batch Queue Workbench -->
+    <div v-else-if="mode === 'batch' && queue.length > 0" class="space-y-6">
+      <!-- Batch Summary Bar -->
+      <div class="p-4 bg-[#141416] border border-[#2E2E2E] rounded-[14px] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0">
+            <List class="w-5 h-5" />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm font-semibold text-white">
+                {{ locale === 'id' ? 'Antrean Kompresi Batch' : 'Batch Compression Queue' }}
+              </h2>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/10 text-white">
+                {{ queue.length }} {{ queue.length > 1 ? 'Videos' : 'Video' }}
+              </span>
+            </div>
+            <p class="text-xs text-neutral-400 font-mono mt-0.5">
+              {{ completedQueueCount }} / {{ queue.length }} {{ locale === 'id' ? 'selesai diproses' : 'completed' }}
+              <span v-if="totalQueueOriginalSize > 0" class="text-neutral-500">
+                · {{ formatFileSize(totalQueueOriginalSize) }}
+                <template v-if="completedQueueCount > 0">
+                  → {{ formatFileSize(totalQueueCompressedSize) }}
+                  <span v-if="totalQueueSavingsPercent > 0" class="text-emerald-400 font-bold ml-1">
+                    (-{{ totalQueueSavingsPercent }}%)
+                  </span>
+                </template>
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Download All as ZIP -->
+          <Button
+            v-if="completedQueueCount > 0"
+            variant="primary"
+            size="default"
+            class="h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer shrink-0"
+            :loading="isZipping"
+            @click="downloadBatchZip"
+          >
+            <Archive class="w-3.5 h-3.5 mr-1.5" />
+            <span>{{ isZipping ? (locale === 'id' ? 'Membuat ZIP...' : 'Zipping...') : (locale === 'id' ? `Unduh Semua ZIP (${completedQueueCount})` : `Download All ZIP (${completedQueueCount})`) }}</span>
+          </Button>
+
+          <!-- Clear Queue -->
+          <Button
+            variant="secondary"
+            size="default"
+            class="h-9 px-3 rounded-xl text-xs font-medium cursor-pointer shrink-0 text-neutral-400 hover:text-red-400"
+            :disabled="isBatchProcessing"
+            @click="clearQueue"
+          >
+            <Trash2 class="w-3.5 h-3.5 mr-1.5" />
+            <span>{{ locale === 'id' ? 'Kosongkan' : 'Clear' }}</span>
+          </Button>
+        </div>
+      </div>
+
+      <!-- Batch Main Grid: 12 columns -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left: Batch Settings & Execution Panel (5 Cols) -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] p-5 space-y-5">
+            <div class="flex items-center justify-between border-b border-[#212121] pb-3">
+              <div class="flex items-center gap-2">
+                <Sliders class="w-4 h-4 text-white" />
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-300">
+                  {{ locale === 'id' ? 'Pengaturan Global Batch' : 'Batch Global Settings' }}
+                </h3>
+              </div>
+              <span class="text-[11px] font-mono text-neutral-400">
+                WebCodecs GPU
+              </span>
+            </div>
+
+            <!-- Resolution Preset -->
+            <div class="space-y-2">
+              <label class="text-xs font-medium text-neutral-300">
+                {{ locale === 'id' ? 'Target Resolusi' : 'Target Resolution' }}
+              </label>
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                <button
+                  v-for="preset in (['original', '1080p', '720p', '480p', '360p'] as ResolutionPreset[])"
+                  :key="preset"
+                  type="button"
+                  class="py-2 px-1 rounded-lg text-xs font-mono font-medium border text-center transition-all cursor-pointer"
+                  :class="batchPreset === preset
+                    ? 'bg-white text-black border-white shadow-xs font-bold'
+                    : 'bg-[#18181A] border-[#2E2E2E] text-neutral-300 hover:border-neutral-500'"
+                  :disabled="isBatchProcessing"
+                  @click="batchPreset = preset"
+                >
+                  {{ preset === 'original' ? 'Original' : preset }}
+                </button>
+              </div>
+              <p class="text-[11px] text-neutral-400">
+                {{ locale === 'id' ? 'Setiap video mempertahankan rasio asli (landscape/portrait/square).' : 'Automatically adapts to each video native aspect ratio.' }}
+              </p>
+            </div>
+
+            <!-- Quality Profile -->
+            <div class="space-y-2">
+              <label class="text-xs font-medium text-neutral-300">
+                {{ locale === 'id' ? 'Tingkat Kompresi' : 'Compression Profile' }}
+              </label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
+                  :class="batchQuality === 'balanced'
+                    ? 'bg-[#1E1E22] border-white/40 text-white ring-1 ring-white/20'
+                    : 'bg-[#18181A] border-[#2E2E2E] text-neutral-400 hover:border-neutral-500'"
+                  :disabled="isBatchProcessing"
+                  @click="batchQuality = 'balanced'"
+                >
+                  <div class="text-xs font-semibold text-white">Balanced</div>
+                  <div class="text-[10px] text-neutral-400 mt-0.5">{{ locale === 'id' ? 'Optimal ukuran & mutu' : 'Best size & quality' }}</div>
+                </button>
+                <button
+                  type="button"
+                  class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
+                  :class="batchQuality === 'compact'
+                    ? 'bg-[#1E1E22] border-white/40 text-white ring-1 ring-white/20'
+                    : 'bg-[#18181A] border-[#2E2E2E] text-neutral-400 hover:border-neutral-500'"
+                  :disabled="isBatchProcessing"
+                  @click="batchQuality = 'compact'"
+                >
+                  <div class="text-xs font-semibold text-white">Compact</div>
+                  <div class="text-[10px] text-neutral-400 mt-0.5">{{ locale === 'id' ? 'Ukuran terkecil (Panda)' : 'Smallest size (Panda)' }}</div>
+                </button>
+                <button
+                  type="button"
+                  class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
+                  :class="batchQuality === 'high'
+                    ? 'bg-[#1E1E22] border-white/40 text-white ring-1 ring-white/20'
+                    : 'bg-[#18181A] border-[#2E2E2E] text-neutral-400 hover:border-neutral-500'"
+                  :disabled="isBatchProcessing"
+                  @click="batchQuality = 'high'"
+                >
+                  <div class="text-xs font-semibold text-white">High</div>
+                  <div class="text-[10px] text-neutral-400 mt-0.5">{{ locale === 'id' ? 'Kualitas visual tajam' : 'Crisp visual fidelity' }}</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Audio Option -->
+            <div class="flex items-center justify-between p-3 bg-[#18181A] border border-[#2E2E2E] rounded-xl">
+              <div>
+                <div class="text-xs font-medium text-white">
+                  {{ locale === 'id' ? 'Pertahankan Suara / Audio' : 'Keep Audio Track' }}
+                </div>
+                <div class="text-[11px] text-neutral-400">
+                  {{ locale === 'id' ? 'Hilangkan centang untuk video bisu (hemat kuota)' : 'Uncheck to mute videos and save more size' }}
+                </div>
+              </div>
+              <input
+                v-model="batchKeepAudio"
+                type="checkbox"
+                class="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-white focus:ring-0 cursor-pointer"
+                :disabled="isBatchProcessing"
+              />
+            </div>
+
+            <!-- Sequential Execution Notice -->
+            <div class="p-3 bg-[#18181A] border border-[#262626] rounded-xl space-y-1">
+              <div class="flex items-center gap-1.5 text-xs font-medium text-neutral-300">
+                <Sparkles class="w-3.5 h-3.5 text-amber-400" />
+                <span>{{ locale === 'id' ? 'Pemrosesan Bergantian (Sequential)' : 'Sequential Processing' }}</span>
+              </div>
+              <p class="text-[11px] text-neutral-400 leading-relaxed">
+                {{ locale === 'id'
+                  ? 'Video dikompres satu per satu secara otomatis via hardware GPU browser agar hemat RAM & mencegah browser crash.'
+                  : 'Videos are encoded one-by-one via browser hardware GPU to prevent memory overload and browser crash.' }}
+              </p>
+            </div>
+
+            <!-- CTA Execution Button -->
+            <div class="pt-2">
+              <Button
+                v-if="!isBatchProcessing"
+                variant="primary"
+                size="default"
+                class="w-full h-11 rounded-xl text-xs font-semibold cursor-pointer"
+                @click="processBatch"
+              >
+                <Play class="w-4 h-4 mr-2" />
+                <span>{{ locale === 'id' ? 'Mulai Kompresi Bergantian' : 'Start Sequential Compression' }}</span>
+              </Button>
+
+              <div v-else class="space-y-3">
+                <div class="flex items-center justify-between text-xs font-mono">
+                  <span class="text-neutral-300 flex items-center gap-1.5">
+                    <RefreshCw class="w-3.5 h-3.5 animate-spin text-blue-400" />
+                    {{ locale === 'id' ? `Memproses ${currentBatchIndex + 1} dari ${queue.length}...` : `Processing ${currentBatchIndex + 1} of ${queue.length}...` }}
+                  </span>
+                  <button
+                    type="button"
+                    class="text-red-400 hover:underline cursor-pointer"
+                    @click="cancelBatch"
+                  >
+                    {{ locale === 'id' ? 'Batalkan' : 'Cancel' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Video Queue Items List (7 Cols) -->
+        <div class="lg:col-span-7 space-y-3">
+          <div class="flex items-center justify-between text-xs text-neutral-400 px-1">
+            <span class="font-medium text-neutral-300">
+              {{ locale === 'id' ? 'Daftar Video Antrean' : 'Queue Items' }} ({{ queue.length }})
+            </span>
+            <span>
+              {{ completedQueueCount }}/{{ queue.length }} {{ locale === 'id' ? 'Selesai' : 'Completed' }}
+            </span>
+          </div>
+
+          <!-- Queue List Cards -->
+          <div class="space-y-2.5">
+            <div
+              v-for="item in queue"
+              :key="item.id"
+              class="p-3.5 bg-[#141416] border rounded-xl transition-all"
+              :class="item.status === 'processing'
+                ? 'border-blue-500/50 bg-[#161a22]'
+                : item.status === 'done'
+                  ? 'border-emerald-500/30'
+                  : 'border-[#2E2E2E]'"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <!-- File info -->
+                <div class="flex items-start gap-3 min-w-0 flex-1">
+                  <div class="w-8 h-8 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 mt-0.5">
+                    <Film class="w-4 h-4 text-neutral-300" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-semibold text-white truncate" :title="item.name">
+                      {{ item.name }}
+                    </div>
+                    <div class="flex items-center gap-2 mt-1 text-[11px] font-mono text-neutral-400">
+                      <span>{{ formatFileSize(item.originalSize) }}</span>
+                      <template v-if="item.status === 'done'">
+                        <span>→</span>
+                        <span class="text-emerald-400 font-bold">{{ formatFileSize(item.outputSize) }}</span>
+                        <span v-if="item.savedPercent > 0" class="text-emerald-400">(-{{ item.savedPercent }}%)</span>
+                        <span v-if="item.targetWidth" class="text-neutral-500">({{ item.targetWidth }}×{{ item.targetHeight }})</span>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Status & Action Buttons -->
+                <div class="flex items-center gap-2 shrink-0">
+                  <!-- Status Badges -->
+                  <span
+                    v-if="item.status === 'waiting'"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-neutral-800 text-neutral-400"
+                  >
+                    {{ locale === 'id' ? 'Menunggu' : 'Waiting' }}
+                  </span>
+                  <span
+                    v-else-if="item.status === 'processing'"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-blue-400 flex items-center gap-1"
+                  >
+                    <RefreshCw class="w-3.5 h-3.5 animate-spin" />
+                    {{ item.progress }}%
+                  </span>
+                  <span
+                    v-else-if="item.status === 'done'"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 flex items-center gap-1"
+                  >
+                    <Check class="w-3.5 h-3.5" />
+                    {{ locale === 'id' ? 'Selesai' : 'Done' }}
+                  </span>
+                  <span
+                    v-else-if="item.status === 'error'"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-red-500/10 text-red-400 flex items-center gap-1"
+                    :title="item.errorMsg"
+                  >
+                    <AlertCircle class="w-3.5 h-3.5" />
+                    Error
+                  </span>
+
+                  <!-- Download Single Item -->
+                  <button
+                    v-if="item.status === 'done'"
+                    type="button"
+                    class="p-1.5 rounded-lg bg-white/10 hover:bg-white text-white hover:text-black transition-colors cursor-pointer"
+                    :title="locale === 'id' ? 'Unduh video ini' : 'Download this video'"
+                    @click="downloadQueueItem(item)"
+                  >
+                    <Download class="w-3.5 h-3.5" />
+                  </button>
+
+                  <!-- Open in Studio button -->
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                    :title="locale === 'id' ? 'Buka di Studio Player & Trimmer' : 'Open in Single Studio'"
+                    @click="openItemInStudio(item)"
+                  >
+                    <Film class="w-3.5 h-3.5" />
+                  </button>
+
+                  <!-- Remove item -->
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    :disabled="item.status === 'processing'"
+                    :title="locale === 'id' ? 'Hapus dari antrean' : 'Remove from queue'"
+                    @click="removeQueueItem(item.id)"
+                  >
+                    <Trash2 class="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Processing Progress Bar -->
+              <div v-if="item.status === 'processing'" class="mt-2.5 space-y-1">
+                <div class="w-full h-1.5 bg-[#2E2E2E] rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-[#00a8ff] transition-all duration-150"
+                    :style="{ width: `${item.progress}%` }"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add More Videos Dropzone Area -->
+          <div
+            class="border border-dashed border-[#2E2E2E] hover:border-[#3E3E3E] rounded-xl p-4 text-center cursor-pointer transition-colors"
+            @click="fileInputRef?.click()"
+          >
+            <div class="flex items-center justify-center gap-2 text-xs text-neutral-400 hover:text-white">
+              <Plus class="w-4 h-4" />
+              <span>{{ locale === 'id' ? 'Klik atau tarik video lain untuk ditambahkan ke antrean' : 'Click or drop more videos to append to queue' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATE 3: Single Video Studio Workbench -->
     <div v-else class="space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Left Column: Video Preview Player & Timeline Trimmer (7 Cols) -->
