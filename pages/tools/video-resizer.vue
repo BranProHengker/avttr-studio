@@ -49,6 +49,8 @@ interface VideoQueueItem {
   savedPercent: number
   targetWidth: number
   targetHeight: number
+  thumbnailUrl?: string
+  estimatedSecondsRemaining?: number
   errorMsg?: string
 }
 
@@ -71,6 +73,9 @@ const queue = ref<VideoQueueItem[]>([])
 const isBatchProcessing = ref(false)
 const currentBatchIndex = ref(-1)
 const isZipping = ref(false)
+const batchEtaSeconds = ref<number>(0)
+const activePreviewItem = ref<VideoQueueItem | null>(null)
+const previewModalUrl = ref<string>('')
 let abortBatch = false
 let activeBatchConversion: any = null
 
@@ -409,6 +414,74 @@ function handleFileUpload(file: File) {
   mode.value = 'single'
 }
 
+function generateVideoThumbnail(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    if (typeof document === 'undefined') return resolve('')
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.muted = true
+    video.playsInline = true
+    const url = URL.createObjectURL(file)
+    video.src = url
+
+    let resolved = false
+    const cleanup = () => {
+      if (url.startsWith('blob:')) URL.revokeObjectURL(url)
+      video.remove()
+    }
+
+    const capture = () => {
+      if (resolved) return
+      resolved = true
+      try {
+        const canvas = document.createElement('canvas')
+        const w = video.videoWidth || 320
+        const h = video.videoHeight || 180
+        const scale = Math.min(1, 160 / Math.max(w, h))
+        canvas.width = Math.max(16, Math.round(w * scale))
+        canvas.height = Math.max(16, Math.round(h * scale))
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          const thumbUrl = canvas.toDataURL('image/webp', 0.7)
+          cleanup()
+          resolve(thumbUrl)
+          return
+        }
+      } catch (e) {
+        console.error('Thumbnail capture error:', e)
+      }
+      cleanup()
+      resolve('')
+    }
+
+    video.onloadeddata = () => {
+      const targetTime = Math.min(1, (video.duration || 1) * 0.1)
+      video.currentTime = targetTime
+    }
+
+    video.onseeked = () => {
+      capture()
+    }
+
+    video.onerror = () => {
+      if (!resolved) {
+        resolved = true
+        cleanup()
+        resolve('')
+      }
+    }
+
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true
+        cleanup()
+        resolve('')
+      }
+    }, 2500)
+  })
+}
+
 function handleFiles(fileList: FileList | File[]) {
   const incoming = Array.from(fileList).filter((f) =>
     f.type.startsWith('video/') || f.name.match(/\.(mp4|webm|mov|mkv|avi|m4v)$/i)
@@ -430,7 +503,7 @@ function handleFiles(fileList: FileList | File[]) {
 
   // Multiple files or adding to batch queue
   for (const file of incoming) {
-    queue.value.push({
+    const item: VideoQueueItem = {
       id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       file,
       name: file.name,
@@ -442,7 +515,15 @@ function handleFiles(fileList: FileList | File[]) {
       outputSize: 0,
       savedPercent: 0,
       targetWidth: 0,
-      targetHeight: 0
+      targetHeight: 0,
+      thumbnailUrl: '',
+      estimatedSecondsRemaining: 0
+    }
+    queue.value.push(item)
+
+    // Generate lightweight thumbnail snapshot asynchronously in background
+    generateVideoThumbnail(file).then((thumb) => {
+      item.thumbnailUrl = thumb
     })
   }
 
@@ -696,7 +777,39 @@ function computeBatchDimensions(srcW: number, srcH: number, preset: ResolutionPr
   }
 }
 
+function formatDurationEstimate(seconds: number): string {
+  if (!seconds || seconds <= 0) return ''
+  if (seconds < 60) {
+    return locale.value === 'id' ? `~${seconds} dtk` : `~${seconds}s`
+  }
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return locale.value === 'id'
+    ? `~${mins}m ${secs}d`
+    : `~${mins}m ${secs}s`
+}
+
+function openPreviewModal(item: VideoQueueItem) {
+  activePreviewItem.value = item
+  if (item.outputUrl) {
+    previewModalUrl.value = item.outputUrl
+  } else {
+    previewModalUrl.value = URL.createObjectURL(item.file)
+  }
+}
+
+function closePreviewModal() {
+  if (previewModalUrl.value && activePreviewItem.value && !activePreviewItem.value.outputUrl) {
+    URL.revokeObjectURL(previewModalUrl.value)
+  }
+  previewModalUrl.value = ''
+  activePreviewItem.value = null
+}
+
 function removeQueueItem(id: string) {
+  if (activePreviewItem.value?.id === id) {
+    closePreviewModal()
+  }
   const index = queue.value.findIndex((i) => i.id === id)
   if (index !== -1) {
     const item = queue.value[index]
@@ -708,6 +821,8 @@ function removeQueueItem(id: string) {
 }
 
 function clearQueue() {
+  closePreviewModal()
+  batchEtaSeconds.value = 0
   queue.value.forEach((item) => {
     if (item.outputUrl && item.outputUrl.startsWith('blob:')) {
       URL.revokeObjectURL(item.outputUrl)
@@ -728,6 +843,7 @@ function cancelBatch() {
   }
   isBatchProcessing.value = false
   currentBatchIndex.value = -1
+  batchEtaSeconds.value = 0
   toast.info('Cancelled', 'Batch compression cancelled')
 }
 
@@ -736,6 +852,7 @@ async function processBatch() {
 
   isBatchProcessing.value = true
   abortBatch = false
+  batchEtaSeconds.value = 0
 
   try {
     const {
@@ -756,6 +873,7 @@ async function processBatch() {
       currentBatchIndex.value = i
       item.status = 'processing'
       item.progress = 0
+      item.estimatedSecondsRemaining = 0
 
       try {
         const input = new Input({
@@ -797,9 +915,26 @@ async function processBatch() {
           throw new Error('Conversion unsupported')
         }
 
+        const itemStartTime = Date.now()
         conversion.onProgress = (prog: number) => {
           if (abortBatch) return
           item.progress = Math.min(99, Math.round(prog * 100))
+
+          const elapsedSec = (Date.now() - itemStartTime) / 1000
+          if (prog > 0.03 && elapsedSec > 0.4) {
+            const estimatedTotalSec = elapsedSec / prog
+            const currentRemainingSec = Math.max(0, Math.round(estimatedTotalSec - elapsedSec))
+            item.estimatedSecondsRemaining = currentRemainingSec
+
+            // Calculate remaining waiting items estimate based on processed speed
+            const processedBytesThisItem = item.file.size * prog
+            const speedBytesPerSec = processedBytesThisItem / elapsedSec
+            const waitingItems = queue.value.slice(i + 1).filter((it) => it.status === 'waiting')
+            const waitingBytes = waitingItems.reduce((acc, it) => acc + it.file.size, 0)
+            const waitingTimeSec = speedBytesPerSec > 0 ? Math.round(waitingBytes / speedBytesPerSec) : 0
+
+            batchEtaSeconds.value = currentRemainingSec + waitingTimeSec
+          }
         }
 
         activeBatchConversion = conversion
@@ -807,6 +942,7 @@ async function processBatch() {
 
         if (abortBatch) {
           item.status = 'waiting'
+          item.estimatedSecondsRemaining = 0
           break
         }
 
@@ -822,11 +958,13 @@ async function processBatch() {
           : 0
         item.status = 'done'
         item.progress = 100
+        item.estimatedSecondsRemaining = 0
       } catch (itemErr: any) {
         if (abortBatch) break
         console.error(`Error processing ${item.name}:`, itemErr)
         item.status = 'error'
         item.errorMsg = itemErr?.message || 'Compression failed'
+        item.estimatedSecondsRemaining = 0
       }
     }
 
@@ -844,6 +982,7 @@ async function processBatch() {
     isBatchProcessing.value = false
     currentBatchIndex.value = -1
     activeBatchConversion = null
+    batchEtaSeconds.value = 0
   }
 }
 
@@ -1090,6 +1229,15 @@ onUnmounted(() => {
         </div>
 
         <div class="flex items-center gap-2">
+          <!-- Live ETA Badge if processing -->
+          <span
+            v-if="isBatchProcessing && batchEtaSeconds > 0"
+            class="px-2.5 py-1 rounded-xl text-[11px] font-mono bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center gap-1.5 shrink-0"
+          >
+            <Clock class="w-3.5 h-3.5 text-blue-400" />
+            <span>ETA {{ formatDurationEstimate(batchEtaSeconds) }}</span>
+          </span>
+
           <!-- Download All as ZIP -->
           <Button
             v-if="completedQueueCount > 0"
@@ -1103,12 +1251,24 @@ onUnmounted(() => {
             <span>{{ isZipping ? (locale === 'id' ? 'Membuat ZIP...' : 'Zipping...') : (locale === 'id' ? `Unduh Semua ZIP (${completedQueueCount})` : `Download All ZIP (${completedQueueCount})`) }}</span>
           </Button>
 
+          <!-- Cancel processing if active -->
+          <Button
+            v-if="isBatchProcessing"
+            variant="secondary"
+            size="default"
+            class="h-9 px-3 rounded-xl text-xs font-medium cursor-pointer shrink-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
+            @click="cancelBatch"
+          >
+            <X class="w-3.5 h-3.5 mr-1" />
+            <span>{{ locale === 'id' ? 'Batalkan' : 'Cancel' }}</span>
+          </Button>
+
           <!-- Clear Queue -->
           <Button
+            v-else
             variant="secondary"
             size="default"
             class="h-9 px-3 rounded-xl text-xs font-medium cursor-pointer shrink-0 text-neutral-400 hover:text-red-400"
-            :disabled="isBatchProcessing"
             @click="clearQueue"
           >
             <Trash2 class="w-3.5 h-3.5 mr-1.5" />
@@ -1187,7 +1347,7 @@ onUnmounted(() => {
                   @click="batchQuality = 'compact'"
                 >
                   <div class="text-xs font-semibold text-white">Compact</div>
-                  <div class="text-[10px] text-neutral-400 mt-0.5">{{ locale === 'id' ? 'Ukuran terkecil (Panda)' : 'Smallest size (Panda)' }}</div>
+                  <div class="text-[10px] text-neutral-400 mt-0.5">{{ locale === 'id' ? 'Ukuran paling hemat' : 'Smallest file size' }}</div>
                 </button>
                 <button
                   type="button"
@@ -1225,7 +1385,7 @@ onUnmounted(() => {
             <!-- Sequential Execution Notice -->
             <div class="p-3 bg-[#18181A] border border-[#262626] rounded-xl space-y-1">
               <div class="flex items-center gap-1.5 text-xs font-medium text-neutral-300">
-                <Sparkles class="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles class="w-3.5 h-3.5 text-neutral-400" />
                 <span>{{ locale === 'id' ? 'Pemrosesan Bergantian (Sequential)' : 'Sequential Processing' }}</span>
               </div>
               <p class="text-[11px] text-neutral-400 leading-relaxed">
@@ -1248,21 +1408,16 @@ onUnmounted(() => {
                 <span>{{ locale === 'id' ? 'Mulai Kompresi Bergantian' : 'Start Sequential Compression' }}</span>
               </Button>
 
-              <div v-else class="space-y-3">
-                <div class="flex items-center justify-between text-xs font-mono">
-                  <span class="text-neutral-300 flex items-center gap-1.5">
-                    <RefreshCw class="w-3.5 h-3.5 animate-spin text-blue-400" />
-                    {{ locale === 'id' ? `Memproses ${currentBatchIndex + 1} dari ${queue.length}...` : `Processing ${currentBatchIndex + 1} of ${queue.length}...` }}
-                  </span>
-                  <button
-                    type="button"
-                    class="text-red-400 hover:underline cursor-pointer"
-                    @click="cancelBatch"
-                  >
-                    {{ locale === 'id' ? 'Batalkan' : 'Cancel' }}
-                  </button>
-                </div>
-              </div>
+              <Button
+                v-else
+                variant="secondary"
+                size="default"
+                class="w-full h-11 rounded-xl text-xs font-semibold cursor-pointer text-neutral-400 hover:text-red-400 border border-[#2E2E2E]"
+                @click="cancelBatch"
+              >
+                <X class="w-4 h-4 mr-1.5" />
+                <span>{{ locale === 'id' ? 'Batalkan Antrean' : 'Cancel Queue' }}</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -1291,16 +1446,37 @@ onUnmounted(() => {
                   : 'border-[#2E2E2E]'"
             >
               <div class="flex items-start justify-between gap-3">
-                <!-- File info -->
+                <!-- File info & Interactive Thumbnail Snapshot -->
                 <div class="flex items-start gap-3 min-w-0 flex-1">
-                  <div class="w-8 h-8 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 mt-0.5">
-                    <Film class="w-4 h-4 text-neutral-300" />
+                  <!-- Thumbnail snapshot container -->
+                  <div
+                    class="relative w-16 h-12 rounded-lg bg-[#212121] border border-[#2E2E2E] overflow-hidden flex items-center justify-center shrink-0 cursor-pointer group/thumb select-none"
+                    @click="openPreviewModal(item)"
+                    :title="locale === 'id' ? 'Klik untuk preview video' : 'Click to preview video'"
+                  >
+                    <img
+                      v-if="item.thumbnailUrl"
+                      :src="item.thumbnailUrl"
+                      class="w-full h-full object-cover transition-transform group-hover/thumb:scale-105"
+                      alt="Thumbnail"
+                    />
+                    <Film v-else class="w-5 h-5 text-neutral-400" />
+
+                    <!-- Play overlay on hover -->
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity">
+                      <Play class="w-4 h-4 fill-white text-white" />
+                    </div>
                   </div>
+
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs font-semibold text-white truncate" :title="item.name">
+                    <div
+                      class="text-xs font-semibold text-white truncate cursor-pointer hover:underline"
+                      :title="item.name"
+                      @click="openPreviewModal(item)"
+                    >
                       {{ item.name }}
                     </div>
-                    <div class="flex items-center gap-2 mt-1 text-[11px] font-mono text-neutral-400">
+                    <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] font-mono text-neutral-400">
                       <span>{{ formatFileSize(item.originalSize) }}</span>
                       <template v-if="item.status === 'done'">
                         <span>→</span>
@@ -1325,14 +1501,15 @@ onUnmounted(() => {
                     v-else-if="item.status === 'processing'"
                     class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-blue-400 flex items-center gap-1"
                   >
-                    <RefreshCw class="w-3.5 h-3.5 animate-spin" />
-                    {{ item.progress }}%
+                    <RefreshCw class="w-3 h-3 animate-spin" />
+                    <span>{{ item.progress }}%</span>
+                    <span v-if="item.estimatedSecondsRemaining" class="text-neutral-400 ml-0.5 font-normal">({{ formatDurationEstimate(item.estimatedSecondsRemaining) }})</span>
                   </span>
                   <span
                     v-else-if="item.status === 'done'"
                     class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 flex items-center gap-1"
                   >
-                    <Check class="w-3.5 h-3.5" />
+                    <Check class="w-3 h-3" />
                     {{ locale === 'id' ? 'Selesai' : 'Done' }}
                   </span>
                   <span
@@ -1340,7 +1517,7 @@ onUnmounted(() => {
                     class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-red-500/10 text-red-400 flex items-center gap-1"
                     :title="item.errorMsg"
                   >
-                    <AlertCircle class="w-3.5 h-3.5" />
+                    <AlertCircle class="w-3 h-3" />
                     Error
                   </span>
 
@@ -1378,8 +1555,17 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <!-- Processing Progress Bar -->
+              <!-- Processing Progress Bar with Live ETA -->
               <div v-if="item.status === 'processing'" class="mt-2.5 space-y-1">
+                <div class="flex items-center justify-between text-[11px] font-mono text-neutral-400">
+                  <span class="text-blue-400 flex items-center gap-1">
+                    <RefreshCw class="w-3 h-3 animate-spin" />
+                    <span>Hardware GPU encoding</span>
+                  </span>
+                  <span v-if="item.estimatedSecondsRemaining" class="text-neutral-300">
+                    {{ locale === 'id' ? `Perkiraan selesai: ${formatDurationEstimate(item.estimatedSecondsRemaining)}` : `Est. remaining: ${formatDurationEstimate(item.estimatedSecondsRemaining)}` }}
+                  </span>
+                </div>
                 <div class="w-full h-1.5 bg-[#2E2E2E] rounded-full overflow-hidden">
                   <div
                     class="h-full bg-[#00a8ff] transition-all duration-150"
@@ -1398,6 +1584,78 @@ onUnmounted(() => {
             <div class="flex items-center justify-center gap-2 text-xs text-neutral-400 hover:text-white">
               <Plus class="w-4 h-4" />
               <span>{{ locale === 'id' ? 'Klik atau tarik video lain untuk ditambahkan ke antrean' : 'Click or drop more videos to append to queue' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Video Preview Modal (Rendered on-demand, zero background GPU overhead) -->
+      <div
+        v-if="activePreviewItem"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        @click.self="closePreviewModal"
+      >
+        <div class="relative w-full max-w-3xl bg-[#141416] border border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-2xl p-4 sm:p-5 space-y-4">
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-[#212121] pb-3">
+            <div class="min-w-0 pr-4">
+              <h3 class="text-sm font-semibold text-white truncate" :title="activePreviewItem.name">
+                {{ activePreviewItem.name }}
+              </h3>
+              <p class="text-xs text-neutral-400 font-mono mt-0.5">
+                {{ activePreviewItem.outputUrl ? (locale === 'id' ? 'Preview Hasil Kompresi' : 'Preview Compressed Video') : (locale === 'id' ? 'Preview Video Asli' : 'Preview Original Video') }}
+                <span v-if="activePreviewItem.outputSize" class="text-emerald-400 font-bold ml-1">
+                  ({{ formatFileSize(activePreviewItem.outputSize) }})
+                </span>
+                <span v-else class="text-neutral-400 ml-1">
+                  ({{ formatFileSize(activePreviewItem.originalSize) }})
+                </span>
+              </p>
+            </div>
+            <button
+              type="button"
+              class="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              @click="closePreviewModal"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+
+          <!-- Video Player -->
+          <div class="relative bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center max-h-[60vh]">
+            <video
+              :src="previewModalUrl"
+              controls
+              autoplay
+              playsinline
+              class="w-full h-full object-contain mx-auto"
+            />
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-xs font-mono text-neutral-400">
+              {{ activePreviewItem.status === 'done' ? (locale === 'id' ? 'Status: Selesai' : 'Status: Completed') : (locale === 'id' ? 'Status: Dalam Antrean' : 'Status: In Queue') }}
+            </span>
+            <div class="flex items-center gap-2">
+              <Button
+                v-if="activePreviewItem.outputUrl"
+                variant="primary"
+                size="default"
+                class="h-8 px-3 rounded-lg text-xs font-medium cursor-pointer"
+                @click="downloadQueueItem(activePreviewItem)"
+              >
+                <Download class="w-3.5 h-3.5 mr-1.5" />
+                <span>Download</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="default"
+                class="h-8 px-3 rounded-lg text-xs font-medium cursor-pointer"
+                @click="closePreviewModal"
+              >
+                <span>{{ locale === 'id' ? 'Tutup' : 'Close' }}</span>
+              </Button>
             </div>
           </div>
         </div>
