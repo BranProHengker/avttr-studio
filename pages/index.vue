@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, defineAsyncComponent } from 'vue'
+import { useRouter } from 'vue-router'
 import { useDownloader } from '~/composables/useDownloader'
 import { useBatchDownloader } from '~/composables/useBatchDownloader'
 import { useI18n } from '~/composables/useI18n'
@@ -8,17 +9,42 @@ import HeroPasteBar from '~/components/dashboard/HeroPasteBar.vue'
 import CategorySection from '~/components/dashboard/CategorySection.vue'
 import Badge from '~/components/ui/Badge.vue'
 
+const router = useRouter()
 const LazyMediaPreviewModal = defineAsyncComponent(() => import('~/components/downloaders/MediaPreviewModal.vue'))
 const LazyBatchQueueModal = defineAsyncComponent(() => import('~/components/downloaders/BatchQueueModal.vue'))
 
 const { url, loading, result, error, resolveMedia } = useDownloader()
 const { addUrls, startProcessing, isModalOpen: isBatchModalOpen } = useBatchDownloader()
 const { t } = useI18n()
-const { categories } = useSearch()
+const { categories, allTools, searchQuery, openPalette } = useSearch()
 const isModalOpen = ref(false)
 
 const handleResolve = async () => {
-  if (!url.value.trim()) return
+  const val = url.value.trim()
+  if (!val) return
+
+  // Smart Search: If input is a search term rather than a direct URL, route to matching tool
+  if (!val.startsWith('http://') && !val.startsWith('https://')) {
+    const q = val.toLowerCase()
+    const matched = allTools.value.find(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        item.id.toLowerCase().includes(q) ||
+        (item.keywords && item.keywords.some((k) => k.toLowerCase().includes(q)))
+    )
+    if (matched) {
+      router.push(matched.route)
+      url.value = ''
+      return
+    }
+
+    // Fallback: open command palette pre-populated with search query
+    searchQuery.value = val
+    openPalette()
+    url.value = ''
+    return
+  }
+
   const data = await resolveMedia()
   if (data && data.success) {
     isModalOpen.value = true

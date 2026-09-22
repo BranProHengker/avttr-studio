@@ -245,7 +245,7 @@ const translations: Record<Locale, Translations> = {
       },
       'video-resizer': {
         title: 'Video Resizer & Trimmer',
-        description: 'Adjust video resolution, trim duration, and reduce file size with client-side hardware processing.',
+        description: 'Adjust video resolution, trim clip duration, and compress video file size with client-side processing.',
       },
       'anime-trace': {
         title: 'Anime Scene Search',
@@ -472,7 +472,7 @@ const translations: Record<Locale, Translations> = {
       },
       'video-resizer': {
         title: 'Video Resizer & Trimmer',
-        description: 'Ubah resolusi video, potong durasi, dan kompres ukuran file dengan proses lokal tanpa upload.',
+        description: 'Ubah resolusi video, potong durasi klip, dan kompres ukuran file (video compressor) tanpa upload ke server.',
       },
       'anime-trace': {
         title: 'Pencari Adegan Anime',

@@ -244,12 +244,29 @@ export const ALL_CATEGORIES: ToolCategory[] = [
       {
         id: 'video-resizer',
         title: 'Video Resizer & Trimmer',
-        description: 'Adjust video resolution, trim clip duration, and reduce file size with client-side processing.',
+        description: 'Adjust video resolution, trim clip duration, and compress video file size with client-side processing.',
         category: 'image',
         icon: 'video-resizer',
         route: '/tools/video-resizer',
         badge: 'New',
         popular: true,
+        keywords: [
+          'video',
+          'resizer',
+          'compressor',
+          'compress',
+          'compression',
+          'kompres',
+          'kompresi',
+          'trimmer',
+          'trim',
+          'potong',
+          'resolution',
+          'resolusi',
+          'mp4',
+          'webm',
+          'shrink',
+        ],
       },
       {
         id: 'base64-image',
@@ -405,6 +422,7 @@ export function useSearch() {
             ...tool,
             title: toolMeta?.title || tool.title,
             description: toolMeta?.description || tool.description,
+            keywords: tool.keywords || [],
           }
         }),
       }
@@ -418,14 +436,16 @@ export function useSearch() {
   const filteredCategories = computed(() => {
     if (!searchQuery.value.trim()) return localizedCategories.value
 
-    const q = searchQuery.value.toLowerCase()
+    const q = searchQuery.value.toLowerCase().trim()
     return localizedCategories.value.map((cat) => ({
       ...cat,
       tools: cat.tools.filter(
         (t) =>
           t.title.toLowerCase().includes(q) ||
           t.description.toLowerCase().includes(q) ||
-          t.category.toLowerCase().includes(q)
+          t.category.toLowerCase().includes(q) ||
+          t.id.toLowerCase().includes(q) ||
+          (t.keywords && t.keywords.some((k) => k.toLowerCase().includes(q)))
       ),
     })).filter((cat) => cat.tools.length > 0)
   })

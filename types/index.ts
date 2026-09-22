@@ -60,6 +60,7 @@ export interface ToolItem {
   badge?: 'Fast' | 'HD' | 'New' | 'Beta' | 'AI' | 'Popular' | string
   popular?: boolean
   platform?: PlatformType
+  keywords?: string[]
 }
 
 export interface PlatformScraper {

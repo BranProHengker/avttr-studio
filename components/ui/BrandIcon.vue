@@ -125,6 +125,21 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="M15 12h2.5"/>
     </svg>
 
+    <!-- Video Resizer & Trimmer Vector -->
+    <svg
+      v-else-if="normalized === 'video-resizer' || normalized === 'video-compressor'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <rect width="18" height="14" x="3" y="5" rx="2"/>
+      <polygon points="10 9 15 12 10 15 10 9" fill="currentColor"/>
+    </svg>
+
     <!-- TeraBox Cloud Official Logo -->
     <svg
       v-else-if="normalized === 'terabox'"

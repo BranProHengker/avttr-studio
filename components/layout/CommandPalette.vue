@@ -24,12 +24,14 @@ const inputRef = ref<HTMLInputElement | null>(null)
 
 const filteredList = computed(() => {
   if (!searchQuery.value.trim()) return allTools.value
-  const q = searchQuery.value.toLowerCase()
+  const q = searchQuery.value.toLowerCase().trim()
   return allTools.value.filter(
     (t) =>
       t.title.toLowerCase().includes(q) ||
       t.description.toLowerCase().includes(q) ||
-      t.category.toLowerCase().includes(q)
+      t.category.toLowerCase().includes(q) ||
+      t.id.toLowerCase().includes(q) ||
+      (t.keywords && t.keywords.some((k) => k.toLowerCase().includes(q)))
   )
 })
 
