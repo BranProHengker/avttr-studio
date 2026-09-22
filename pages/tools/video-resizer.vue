@@ -29,7 +29,6 @@ import {
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
-import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
 const { t, locale } = useI18n()
@@ -603,10 +602,8 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <div class="flex items-center gap-2.5 shrink-0">
-        <Badge variant="badge">Client Privacy</Badge>
+      <div v-if="videoUrl" class="flex items-center gap-2.5 shrink-0">
         <Button
-          v-if="videoUrl"
           variant="secondary"
           size="default"
           class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
