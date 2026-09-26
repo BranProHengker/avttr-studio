@@ -1281,22 +1281,22 @@ onUnmounted(() => {
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Left: Batch Settings & Execution Panel (5 Cols) -->
         <div class="lg:col-span-5 space-y-4">
-          <div class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] p-5 space-y-5">
-            <div class="flex items-center justify-between border-b border-[#212121] pb-3">
+          <div class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-5 space-y-5">
+            <div class="flex items-center justify-between border-b border-zinc-200 dark:border-[#212121] pb-3">
               <div class="flex items-center gap-2">
-                <Sliders class="w-4 h-4 text-white" />
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-300">
+                <Sliders class="w-4 h-4 text-[var(--text-primary)]" />
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                   {{ locale === 'id' ? 'Pengaturan Global Batch' : 'Batch Global Settings' }}
                 </h3>
               </div>
-              <span class="text-[11px] font-mono text-neutral-400">
+              <span class="text-[11px] font-mono text-[var(--text-tertiary)]">
                 WebCodecs GPU
               </span>
             </div>
 
             <!-- Resolution Preset -->
             <div class="space-y-2">
-              <label class="text-xs font-medium text-neutral-300">
+              <label class="text-xs font-medium text-[var(--text-secondary)]">
                 {{ locale === 'id' ? 'Target Resolusi' : 'Target Resolution' }}
               </label>
               <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
@@ -1306,22 +1306,22 @@ onUnmounted(() => {
                   type="button"
                   class="py-2 px-1 rounded-lg text-xs font-mono font-medium border text-center transition-all cursor-pointer"
                   :class="batchPreset === preset
-                    ? 'bg-white text-black border-white shadow-xs font-bold'
-                    : 'bg-[#18181A] border-[#2E2E2E] text-neutral-300 hover:border-neutral-500'"
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white shadow-xs font-bold'
+                    : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                   :disabled="isBatchProcessing"
                   @click="batchPreset = preset"
                 >
                   {{ preset === 'original' ? 'Original' : preset }}
                 </button>
               </div>
-              <p class="text-[11px] text-neutral-400">
+              <p class="text-[11px] text-[var(--text-tertiary)]">
                 {{ locale === 'id' ? 'Setiap video mempertahankan rasio asli (landscape/portrait/square).' : 'Automatically adapts to each video native aspect ratio.' }}
               </p>
             </div>
 
             <!-- Quality Profile -->
             <div class="space-y-2">
-              <label class="text-xs font-medium text-neutral-300">
+              <label class="text-xs font-medium text-[var(--text-secondary)]">
                 {{ locale === 'id' ? 'Tingkat Kompresi' : 'Compression Profile' }}
               </label>
               <div class="grid grid-cols-3 gap-2">
@@ -1329,66 +1329,66 @@ onUnmounted(() => {
                   type="button"
                   class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
                   :class="batchQuality === 'balanced'
-                    ? 'bg-[#1E1E22] border-white/40 text-white ring-1 ring-white/20'
-                    : 'bg-[#18181A] border-[#2E2E2E] text-neutral-400 hover:border-neutral-500'"
+                    ? 'bg-zinc-100 dark:bg-[#1E1E22] border-zinc-900 dark:border-white/40 text-[var(--text-primary)] ring-1 ring-zinc-900/20 dark:ring-white/20'
+                    : 'bg-zinc-50 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                   :disabled="isBatchProcessing"
                   @click="batchQuality = 'balanced'"
                 >
-                  <div class="text-xs font-semibold text-white">Balanced</div>
-                  <div class="text-[10px] text-neutral-400 mt-0.5">{{ locale === 'id' ? 'Optimal ukuran & mutu' : 'Best size & quality' }}</div>
+                  <div class="text-xs font-semibold text-[var(--text-primary)]">Balanced</div>
+                  <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">{{ locale === 'id' ? 'Optimal ukuran & mutu' : 'Best size & quality' }}</div>
                 </button>
                 <button
                   type="button"
                   class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
                   :class="batchQuality === 'compact'
-                    ? 'bg-[#1E1E22] border-white/40 text-white ring-1 ring-white/20'
-                    : 'bg-[#18181A] border-[#2E2E2E] text-neutral-400 hover:border-neutral-500'"
+                    ? 'bg-zinc-100 dark:bg-[#1E1E22] border-zinc-900 dark:border-white/40 text-[var(--text-primary)] ring-1 ring-zinc-900/20 dark:ring-white/20'
+                    : 'bg-zinc-50 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                   :disabled="isBatchProcessing"
                   @click="batchQuality = 'compact'"
                 >
-                  <div class="text-xs font-semibold text-white">Compact</div>
-                  <div class="text-[10px] text-neutral-400 mt-0.5">{{ locale === 'id' ? 'Ukuran paling hemat' : 'Smallest file size' }}</div>
+                  <div class="text-xs font-semibold text-[var(--text-primary)]">Compact</div>
+                  <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">{{ locale === 'id' ? 'Ukuran paling hemat' : 'Smallest file size' }}</div>
                 </button>
                 <button
                   type="button"
                   class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
                   :class="batchQuality === 'high'
-                    ? 'bg-[#1E1E22] border-white/40 text-white ring-1 ring-white/20'
-                    : 'bg-[#18181A] border-[#2E2E2E] text-neutral-400 hover:border-neutral-500'"
+                    ? 'bg-zinc-100 dark:bg-[#1E1E22] border-zinc-900 dark:border-white/40 text-[var(--text-primary)] ring-1 ring-zinc-900/20 dark:ring-white/20'
+                    : 'bg-zinc-50 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                   :disabled="isBatchProcessing"
                   @click="batchQuality = 'high'"
                 >
-                  <div class="text-xs font-semibold text-white">High</div>
-                  <div class="text-[10px] text-neutral-400 mt-0.5">{{ locale === 'id' ? 'Kualitas visual tajam' : 'Crisp visual fidelity' }}</div>
+                  <div class="text-xs font-semibold text-[var(--text-primary)]">High</div>
+                  <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">{{ locale === 'id' ? 'Kualitas visual tajam' : 'Crisp visual fidelity' }}</div>
                 </button>
               </div>
             </div>
 
             <!-- Audio Option -->
-            <div class="flex items-center justify-between p-3 bg-[#18181A] border border-[#2E2E2E] rounded-xl">
+            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl">
               <div>
-                <div class="text-xs font-medium text-white">
+                <div class="text-xs font-medium text-[var(--text-primary)]">
                   {{ locale === 'id' ? 'Pertahankan Suara / Audio' : 'Keep Audio Track' }}
                 </div>
-                <div class="text-[11px] text-neutral-400">
+                <div class="text-[11px] text-[var(--text-tertiary)]">
                   {{ locale === 'id' ? 'Hilangkan centang untuk video bisu (hemat kuota)' : 'Uncheck to mute videos and save more size' }}
                 </div>
               </div>
               <input
                 v-model="batchKeepAudio"
                 type="checkbox"
-                class="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-white focus:ring-0 cursor-pointer"
+                class="w-4 h-4 rounded border-zinc-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-zinc-900 dark:text-white focus:ring-0 cursor-pointer"
                 :disabled="isBatchProcessing"
               />
             </div>
 
             <!-- Sequential Execution Notice -->
-            <div class="p-3 bg-[#18181A] border border-[#262626] rounded-xl space-y-1">
-              <div class="flex items-center gap-1.5 text-xs font-medium text-neutral-300">
-                <Sparkles class="w-3.5 h-3.5 text-neutral-400" />
+            <div class="p-3 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#262626] rounded-xl space-y-1">
+              <div class="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
+                <Sparkles class="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
                 <span>{{ locale === 'id' ? 'Pemrosesan Bergantian (Sequential)' : 'Sequential Processing' }}</span>
               </div>
-              <p class="text-[11px] text-neutral-400 leading-relaxed">
+              <p class="text-[11px] text-[var(--text-tertiary)] leading-relaxed">
                 {{ locale === 'id'
                   ? 'Video dikompres satu per satu secara otomatis via hardware GPU browser agar hemat RAM & mencegah browser crash.'
                   : 'Videos are encoded one-by-one via browser hardware GPU to prevent memory overload and browser crash.' }}
@@ -1412,7 +1412,7 @@ onUnmounted(() => {
                 v-else
                 variant="secondary"
                 size="default"
-                class="w-full h-11 rounded-xl text-xs font-semibold cursor-pointer text-neutral-400 hover:text-red-400 border border-[#2E2E2E]"
+                class="w-full h-11 rounded-xl text-xs font-semibold cursor-pointer text-neutral-400 hover:text-red-400 border border-zinc-200 dark:border-[#2E2E2E]"
                 @click="cancelBatch"
               >
                 <X class="w-4 h-4 mr-1.5" />
@@ -1438,19 +1438,19 @@ onUnmounted(() => {
             <div
               v-for="item in queue"
               :key="item.id"
-              class="p-3.5 bg-[#141416] border rounded-xl transition-all"
+              class="p-3.5 bg-white dark:bg-[#141416] border rounded-xl transition-all"
               :class="item.status === 'processing'
-                ? 'border-blue-500/50 bg-[#161a22]'
+                ? 'border-blue-500/50 bg-blue-50/50 dark:bg-[#161a22]'
                 : item.status === 'done'
                   ? 'border-emerald-500/30'
-                  : 'border-[#2E2E2E]'"
+                  : 'border-zinc-200 dark:border-[#2E2E2E]'"
             >
               <div class="flex items-start justify-between gap-3">
                 <!-- File info & Interactive Thumbnail Snapshot -->
                 <div class="flex items-start gap-3 min-w-0 flex-1">
                   <!-- Thumbnail snapshot container -->
                   <div
-                    class="relative w-16 h-12 rounded-lg bg-[#212121] border border-[#2E2E2E] overflow-hidden flex items-center justify-center shrink-0 cursor-pointer group/thumb select-none"
+                    class="relative w-16 h-12 rounded-lg bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] overflow-hidden flex items-center justify-center shrink-0 cursor-pointer group/thumb select-none"
                     @click="openPreviewModal(item)"
                     :title="locale === 'id' ? 'Klik untuk preview video' : 'Click to preview video'"
                   >
@@ -1460,7 +1460,7 @@ onUnmounted(() => {
                       class="w-full h-full object-cover transition-transform group-hover/thumb:scale-105"
                       alt="Thumbnail"
                     />
-                    <Film v-else class="w-5 h-5 text-neutral-400" />
+                    <Film v-else class="w-5 h-5 text-[var(--text-tertiary)]" />
 
                     <!-- Play overlay on hover -->
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity">
@@ -1470,18 +1470,18 @@ onUnmounted(() => {
 
                   <div class="min-w-0 flex-1">
                     <div
-                      class="text-xs font-semibold text-white truncate cursor-pointer hover:underline"
+                      class="text-xs font-semibold text-[var(--text-primary)] truncate cursor-pointer hover:underline"
                       :title="item.name"
                       @click="openPreviewModal(item)"
                     >
                       {{ item.name }}
                     </div>
-                    <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] font-mono text-neutral-400">
+                    <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] font-mono text-[var(--text-tertiary)]">
                       <span>{{ formatFileSize(item.originalSize) }}</span>
                       <template v-if="item.status === 'done'">
                         <span>→</span>
-                        <span class="text-emerald-400 font-bold">{{ formatFileSize(item.outputSize) }}</span>
-                        <span v-if="item.savedPercent > 0" class="text-emerald-400">(-{{ item.savedPercent }}%)</span>
+                        <span class="text-emerald-500 font-bold">{{ formatFileSize(item.outputSize) }}</span>
+                        <span v-if="item.savedPercent > 0" class="text-emerald-500">(-{{ item.savedPercent }}%)</span>
                         <span v-if="item.targetWidth" class="text-neutral-500">({{ item.targetWidth }}×{{ item.targetHeight }})</span>
                       </template>
                     </div>
@@ -1493,13 +1493,13 @@ onUnmounted(() => {
                   <!-- Status Badges -->
                   <span
                     v-if="item.status === 'waiting'"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-neutral-800 text-neutral-400"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-zinc-100 dark:bg-neutral-800 text-[var(--text-secondary)]"
                   >
                     {{ locale === 'id' ? 'Menunggu' : 'Waiting' }}
                   </span>
                   <span
                     v-else-if="item.status === 'processing'"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-blue-400 flex items-center gap-1"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-blue-500 flex items-center gap-1"
                   >
                     <RefreshCw class="w-3 h-3 animate-spin" />
                     <span>{{ item.progress }}%</span>
@@ -1507,14 +1507,14 @@ onUnmounted(() => {
                   </span>
                   <span
                     v-else-if="item.status === 'done'"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 flex items-center gap-1"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-500 flex items-center gap-1"
                   >
                     <Check class="w-3 h-3" />
                     {{ locale === 'id' ? 'Selesai' : 'Done' }}
                   </span>
                   <span
                     v-else-if="item.status === 'error'"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-red-500/10 text-red-400 flex items-center gap-1"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-red-500/10 text-red-500 flex items-center gap-1"
                     :title="item.errorMsg"
                   >
                     <AlertCircle class="w-3 h-3" />
@@ -1525,7 +1525,7 @@ onUnmounted(() => {
                   <button
                     v-if="item.status === 'done'"
                     type="button"
-                    class="p-1.5 rounded-lg bg-white/10 hover:bg-white text-white hover:text-black transition-colors cursor-pointer"
+                    class="p-1.5 rounded-lg bg-zinc-100 dark:bg-white/10 hover:bg-zinc-900 dark:hover:bg-white text-zinc-900 dark:text-white hover:text-white dark:hover:text-black transition-colors cursor-pointer"
                     :title="locale === 'id' ? 'Unduh video ini' : 'Download this video'"
                     @click="downloadQueueItem(item)"
                   >
@@ -1535,7 +1535,7 @@ onUnmounted(() => {
                   <!-- Open in Studio button -->
                   <button
                     type="button"
-                    class="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                    class="p-1.5 rounded-lg bg-zinc-100 dark:bg-neutral-800 hover:bg-zinc-200 dark:hover:bg-neutral-700 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                     :title="locale === 'id' ? 'Buka di Studio Player & Trimmer' : 'Open in Single Studio'"
                     @click="openItemInStudio(item)"
                   >
@@ -1545,7 +1545,7 @@ onUnmounted(() => {
                   <!-- Remove item -->
                   <button
                     type="button"
-                    class="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    class="p-1.5 rounded-lg text-neutral-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                     :disabled="item.status === 'processing'"
                     :title="locale === 'id' ? 'Hapus dari antrean' : 'Remove from queue'"
                     @click="removeQueueItem(item.id)"
@@ -1595,26 +1595,26 @@ onUnmounted(() => {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
         @click.self="closePreviewModal"
       >
-        <div class="relative w-full max-w-3xl bg-[#141416] border border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-2xl p-4 sm:p-5 space-y-4">
+        <div class="relative w-full max-w-3xl bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-2xl p-4 sm:p-5 space-y-4">
           <!-- Header -->
-          <div class="flex items-center justify-between border-b border-[#212121] pb-3">
+          <div class="flex items-center justify-between border-b border-zinc-200 dark:border-[#212121] pb-3">
             <div class="min-w-0 pr-4">
-              <h3 class="text-sm font-semibold text-white truncate" :title="activePreviewItem.name">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)] truncate" :title="activePreviewItem.name">
                 {{ activePreviewItem.name }}
               </h3>
-              <p class="text-xs text-neutral-400 font-mono mt-0.5">
+              <p class="text-xs text-[var(--text-tertiary)] font-mono mt-0.5">
                 {{ activePreviewItem.outputUrl ? (locale === 'id' ? 'Preview Hasil Kompresi' : 'Preview Compressed Video') : (locale === 'id' ? 'Preview Video Asli' : 'Preview Original Video') }}
-                <span v-if="activePreviewItem.outputSize" class="text-emerald-400 font-bold ml-1">
+                <span v-if="activePreviewItem.outputSize" class="text-emerald-500 font-bold ml-1">
                   ({{ formatFileSize(activePreviewItem.outputSize) }})
                 </span>
-                <span v-else class="text-neutral-400 ml-1">
+                <span v-else class="text-[var(--text-tertiary)] ml-1">
                   ({{ formatFileSize(activePreviewItem.originalSize) }})
                 </span>
               </p>
             </div>
             <button
               type="button"
-              class="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              class="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
               @click="closePreviewModal"
             >
               <X class="w-4 h-4" />
@@ -1634,7 +1634,7 @@ onUnmounted(() => {
 
           <!-- Actions -->
           <div class="flex items-center justify-between pt-1">
-            <span class="text-xs font-mono text-neutral-400">
+            <span class="text-xs font-mono text-[var(--text-tertiary)]">
               {{ activePreviewItem.status === 'done' ? (locale === 'id' ? 'Status: Selesai' : 'Status: Completed') : (locale === 'id' ? 'Status: Dalam Antrean' : 'Status: In Queue') }}
             </span>
             <div class="flex items-center gap-2">
@@ -1670,7 +1670,7 @@ onUnmounted(() => {
           <!-- Video Display Card (Minimalist Player bar as requested by user) -->
           <div
             ref="playerContainerRef"
-            class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-xs"
+            class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-xs"
           >
             <div
               class="relative bg-black aspect-video flex items-center justify-center overflow-hidden cursor-pointer"
@@ -1690,16 +1690,16 @@ onUnmounted(() => {
             </div>
 
             <!-- Sleek Minimalist Player Bar (Matching user reference mockup) -->
-            <div class="px-3.5 py-2.5 bg-[#121214] border-t border-[#262626] flex items-center gap-2.5 select-none">
+            <div class="px-3.5 py-2.5 bg-zinc-100 dark:bg-[#121214] border-t border-zinc-200 dark:border-[#262626] flex items-center gap-2.5 select-none">
               <!-- Play / Pause -->
               <button
                 type="button"
-                class="p-1 text-white hover:text-white/80 transition-colors cursor-pointer shrink-0 flex items-center justify-center focus:outline-none"
+                class="p-1 text-[var(--text-primary)] hover:opacity-80 transition-colors cursor-pointer shrink-0 flex items-center justify-center focus:outline-none"
                 :title="isPlaying ? 'Pause' : 'Play'"
                 @click="togglePlay"
               >
-                <Play v-if="!isPlaying" class="w-4 h-4 fill-white text-white" />
-                <Pause v-else class="w-4 h-4 fill-white text-white" />
+                <Play v-if="!isPlaying" class="w-4 h-4 fill-current text-current" />
+                <Pause v-else class="w-4 h-4 fill-current text-current" />
               </button>
 
               <!-- Scrubber Bar -->
@@ -1710,7 +1710,7 @@ onUnmounted(() => {
                 @touchstart.passive="startTouchScrubbing"
               >
                 <!-- Track -->
-                <div class="w-full h-1 bg-[#2E2E2E] group-hover/scrub:h-1.5 rounded-full relative overflow-hidden transition-all">
+                <div class="w-full h-1 bg-zinc-200 dark:bg-[#2E2E2E] group-hover/scrub:h-1.5 rounded-full relative overflow-hidden transition-all">
                   <!-- Progress Fill -->
                   <div
                     class="h-full bg-[#00a8ff] rounded-full"
@@ -1720,31 +1720,31 @@ onUnmounted(() => {
 
                 <!-- Circular Knob -->
                 <div
-                  class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-md pointer-events-none transition-transform group-hover/scrub:scale-125"
+                  class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-zinc-900 dark:bg-white rounded-full shadow-md pointer-events-none transition-transform group-hover/scrub:scale-125"
                   :style="{ left: `${progressPercent}%` }"
                 />
               </div>
 
               <!-- Time Display (0:01 / 0:31) -->
-              <div class="text-[11px] font-mono text-neutral-300 shrink-0 whitespace-nowrap">
+              <div class="text-[11px] font-mono text-[var(--text-secondary)] shrink-0 whitespace-nowrap">
                 {{ formatPlayerTime(currentTime) }} / {{ formatPlayerTime(totalDuration) }}
               </div>
 
               <!-- Mute Button -->
               <button
                 type="button"
-                class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0 focus:outline-none"
+                class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer shrink-0 focus:outline-none"
                 :title="isMuted ? 'Unmute' : 'Mute'"
                 @click="isMuted = !isMuted"
               >
                 <Volume2 v-if="!isMuted" class="w-4 h-4" />
-                <VolumeX v-else class="w-4 h-4 text-red-400" />
+                <VolumeX v-else class="w-4 h-4 text-red-500" />
               </button>
 
               <!-- Fullscreen Button -->
               <button
                 type="button"
-                class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0 focus:outline-none"
+                class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer shrink-0 focus:outline-none"
                 :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
                 @click="toggleFullscreen"
               >
@@ -1755,10 +1755,10 @@ onUnmounted(() => {
           </div>
 
           <!-- Video Timeline Trimmer Card -->
-          <div class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
+          <div class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <Scissors class="w-4 h-4 text-white/80" />
+                <Scissors class="w-4 h-4 text-[var(--text-primary)]" />
                 <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] font-mono">
                   Clip Trimmer
                 </h3>
@@ -1766,7 +1766,7 @@ onUnmounted(() => {
               <div class="flex items-center gap-2">
                 <button
                   type="button"
-                  class="text-[11px] font-mono text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  class="text-[11px] font-mono text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                   @click="resetTrim"
                 >
                   Reset Full Duration
@@ -1778,13 +1778,13 @@ onUnmounted(() => {
             <div class="space-y-2">
               <div
                 ref="timelineContainerRef"
-                class="relative h-9 bg-[#212121] rounded-lg border border-[#2E2E2E] overflow-hidden cursor-pointer select-none"
+                class="relative h-9 bg-zinc-100 dark:bg-[#212121] rounded-lg border border-zinc-200 dark:border-[#2E2E2E] overflow-hidden cursor-pointer select-none"
                 @click="onTimelineClick"
               >
                 <!-- Trimmed Active Range Zone -->
                 <div
                   v-if="totalDuration > 0"
-                  class="absolute top-0 bottom-0 bg-white/15 border-x border-white/40"
+                  class="absolute top-0 bottom-0 bg-zinc-900/15 dark:bg-white/15 border-x border-zinc-900/40 dark:border-white/40"
                   :style="{
                     left: `${(startTime / totalDuration) * 100}%`,
                     width: `${Math.max(0, ((endTime - startTime) / totalDuration) * 100)}%`
@@ -1804,9 +1804,9 @@ onUnmounted(() => {
               <!-- Start / End Range Sliders -->
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <div class="flex items-center justify-between text-[11px] font-mono text-neutral-400 mb-1">
+                  <div class="flex items-center justify-between text-[11px] font-mono text-[var(--text-tertiary)] mb-1">
                     <span>Start:</span>
-                    <span class="text-white font-medium">{{ formatPlayerTime(startTime) }}</span>
+                    <span class="text-[var(--text-primary)] font-medium">{{ formatPlayerTime(startTime) }}</span>
                   </div>
                   <input
                     type="range"
@@ -1814,15 +1814,15 @@ onUnmounted(() => {
                     :max="Math.max(0, endTime - 0.1)"
                     step="0.1"
                     v-model.number="startTime"
-                    class="w-full accent-white cursor-pointer"
+                    class="w-full accent-zinc-900 dark:accent-white cursor-pointer"
                     @input="seekTo(startTime)"
                   />
                 </div>
 
                 <div>
-                  <div class="flex items-center justify-between text-[11px] font-mono text-neutral-400 mb-1">
+                  <div class="flex items-center justify-between text-[11px] font-mono text-[var(--text-tertiary)] mb-1">
                     <span>End:</span>
-                    <span class="text-white font-medium">{{ formatPlayerTime(endTime) }}</span>
+                    <span class="text-[var(--text-primary)] font-medium">{{ formatPlayerTime(endTime) }}</span>
                   </div>
                   <input
                     type="range"
@@ -1830,7 +1830,7 @@ onUnmounted(() => {
                     :max="totalDuration || 1"
                     step="0.1"
                     v-model.number="endTime"
-                    class="w-full accent-white cursor-pointer"
+                    class="w-full accent-zinc-900 dark:accent-white cursor-pointer"
                     @input="seekTo(endTime)"
                   />
                 </div>
@@ -1838,9 +1838,9 @@ onUnmounted(() => {
             </div>
 
             <!-- Trimmer Footer Action -->
-            <div class="pt-2 border-t border-[#212121] flex items-center justify-between">
-              <div class="text-xs font-mono text-neutral-400">
-                Trimmed Duration: <span class="text-white font-semibold">{{ formatPlayerTime(trimDuration) }}</span>
+            <div class="pt-2 border-t border-zinc-200 dark:border-[#212121] flex items-center justify-between">
+              <div class="text-xs font-mono text-[var(--text-tertiary)]">
+                Trimmed Duration: <span class="text-[var(--text-primary)] font-semibold">{{ formatPlayerTime(trimDuration) }}</span>
               </div>
 
               <Button
@@ -1859,9 +1859,9 @@ onUnmounted(() => {
         <!-- Right Column: Resolution & Quality Controls (5 Cols) -->
         <div class="lg:col-span-5 space-y-4">
           <!-- Resolution Controls Card -->
-          <div class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
+          <div class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
             <div class="flex items-center gap-2">
-              <Monitor class="w-4 h-4 text-white/80" />
+              <Monitor class="w-4 h-4 text-[var(--text-primary)]" />
               <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] font-mono">
                 Resolution Presets
               </h3>
@@ -1873,8 +1873,8 @@ onUnmounted(() => {
                 type="button"
                 class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
                 :class="selectedPreset === 'original'
-                  ? 'bg-white text-black font-semibold border-white shadow-xs'
-                  : 'bg-[#18181A] border-[#2E2E2E] text-neutral-300 hover:border-neutral-500'"
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
+                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                 @click="selectedPreset = 'original'"
               >
                 <div class="text-xs">Original</div>
@@ -1885,8 +1885,8 @@ onUnmounted(() => {
                 type="button"
                 class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
                 :class="selectedPreset === '1080p'
-                  ? 'bg-white text-black font-semibold border-white shadow-xs'
-                  : 'bg-[#18181A] border-[#2E2E2E] text-neutral-300 hover:border-neutral-500'"
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
+                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                 @click="selectedPreset = '1080p'"
               >
                 <div class="text-xs font-medium">1080p</div>
@@ -1897,8 +1897,8 @@ onUnmounted(() => {
                 type="button"
                 class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
                 :class="selectedPreset === '720p'
-                  ? 'bg-white text-black font-semibold border-white shadow-xs'
-                  : 'bg-[#18181A] border-[#2E2E2E] text-neutral-300 hover:border-neutral-500'"
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
+                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                 @click="selectedPreset = '720p'"
               >
                 <div class="text-xs font-medium">720p</div>
@@ -1909,8 +1909,8 @@ onUnmounted(() => {
                 type="button"
                 class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
                 :class="selectedPreset === '480p'
-                  ? 'bg-white text-black font-semibold border-white shadow-xs'
-                  : 'bg-[#18181A] border-[#2E2E2E] text-neutral-300 hover:border-neutral-500'"
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
+                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                 @click="selectedPreset = '480p'"
               >
                 <div class="text-xs font-medium">480p</div>
@@ -1921,8 +1921,8 @@ onUnmounted(() => {
                 type="button"
                 class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
                 :class="selectedPreset === '360p'
-                  ? 'bg-white text-black font-semibold border-white shadow-xs'
-                  : 'bg-[#18181A] border-[#2E2E2E] text-neutral-300 hover:border-neutral-500'"
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
+                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                 @click="selectedPreset = '360p'"
               >
                 <div class="text-xs font-medium">360p</div>
@@ -1933,8 +1933,8 @@ onUnmounted(() => {
                 type="button"
                 class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
                 :class="selectedPreset === 'custom'
-                  ? 'bg-white text-black font-semibold border-white shadow-xs'
-                  : 'bg-[#18181A] border-[#2E2E2E] text-neutral-300 hover:border-neutral-500'"
+                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
+                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
                 @click="selectedPreset = 'custom'"
               >
                 <div class="text-xs font-medium">Custom</div>
@@ -1943,26 +1943,26 @@ onUnmounted(() => {
             </div>
 
             <!-- Custom W x H Inputs -->
-            <div v-if="selectedPreset === 'custom'" class="p-3 bg-[#18181A] rounded-xl border border-[#2E2E2E] space-y-3">
+            <div v-if="selectedPreset === 'custom'" class="p-3 bg-zinc-50 dark:bg-[#18181A] rounded-xl border border-zinc-200 dark:border-[#2E2E2E] space-y-3">
               <div class="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label class="block text-[11px] font-mono text-neutral-400 mb-1">Width (px)</label>
+                  <label class="block text-[11px] font-mono text-[var(--text-tertiary)] mb-1">Width (px)</label>
                   <input
                     type="number"
                     min="16"
                     step="2"
                     v-model.number="customWidth"
-                    class="w-full h-8 px-2.5 bg-[#141416] border border-[#2E2E2E] rounded-lg text-xs font-mono text-white focus:outline-none focus:border-white/40"
+                    class="w-full h-8 px-2.5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-lg text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/40"
                   />
                 </div>
                 <div>
-                  <label class="block text-[11px] font-mono text-neutral-400 mb-1">Height (px)</label>
+                  <label class="block text-[11px] font-mono text-[var(--text-tertiary)] mb-1">Height (px)</label>
                   <input
                     type="number"
                     min="16"
                     step="2"
                     v-model.number="customHeight"
-                    class="w-full h-8 px-2.5 bg-[#141416] border border-[#2E2E2E] rounded-lg text-xs font-mono text-white focus:outline-none focus:border-white/40"
+                    class="w-full h-8 px-2.5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-lg text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/40"
                   />
                 </div>
               </div>
@@ -1970,29 +1970,29 @@ onUnmounted(() => {
               <div class="flex items-center gap-2 pt-1">
                 <button
                   type="button"
-                  class="flex items-center gap-1.5 text-xs text-neutral-300 hover:text-white cursor-pointer select-none"
+                  class="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer select-none"
                   @click="lockAspectRatio = !lockAspectRatio"
                 >
-                  <Lock v-if="lockAspectRatio" class="w-3.5 h-3.5 text-white" />
-                  <Unlock v-else class="w-3.5 h-3.5 text-neutral-500" />
+                  <Lock v-if="lockAspectRatio" class="w-3.5 h-3.5 text-[var(--text-primary)]" />
+                  <Unlock v-else class="w-3.5 h-3.5 text-neutral-400" />
                   <span>Lock Aspect Ratio</span>
                 </button>
               </div>
             </div>
 
             <!-- Output Resolution Badge Display -->
-            <div class="px-3.5 py-2.5 rounded-lg bg-[#18181A] border border-[#2E2E2E] flex items-center justify-between text-xs font-mono">
-              <span class="text-neutral-400">Target Resolution:</span>
-              <span class="text-white font-semibold">
+            <div class="px-3.5 py-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-between text-xs font-mono">
+              <span class="text-[var(--text-tertiary)]">Target Resolution:</span>
+              <span class="text-[var(--text-primary)] font-semibold">
                 {{ targetDimensions.width }} × {{ targetDimensions.height }} px
               </span>
             </div>
           </div>
 
           <!-- Quality & Audio Settings Card -->
-          <div class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
+          <div class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
             <div class="flex items-center gap-2">
-              <Sliders class="w-4 h-4 text-white/80" />
+              <Sliders class="w-4 h-4 text-[var(--text-primary)]" />
               <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] font-mono">
                 Compression & Audio
               </h3>
@@ -2000,14 +2000,14 @@ onUnmounted(() => {
 
             <!-- Quality Presets -->
             <div class="space-y-1.5">
-              <label class="block text-[11px] font-mono text-neutral-400">Encoding Profile</label>
+              <label class="block text-[11px] font-mono text-[var(--text-tertiary)]">Encoding Profile</label>
               <div class="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   class="py-2 px-2 rounded-lg border text-center text-xs transition-colors cursor-pointer select-none"
                   :class="qualityPreset === 'high'
-                    ? 'bg-[#2E2E2E] text-white font-medium border-white/30'
-                    : 'bg-[#18181A] text-neutral-400 border-[#2E2E2E] hover:text-white'"
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-medium border-zinc-900 dark:border-white/30'
+                    : 'bg-zinc-100 dark:bg-[#18181A] text-[var(--text-secondary)] border-zinc-200 dark:border-[#2E2E2E] hover:text-[var(--text-primary)]'"
                   @click="qualityPreset = 'high'"
                 >
                   High
@@ -2017,8 +2017,8 @@ onUnmounted(() => {
                   type="button"
                   class="py-2 px-2 rounded-lg border text-center text-xs transition-colors cursor-pointer select-none"
                   :class="qualityPreset === 'balanced'
-                    ? 'bg-[#2E2E2E] text-white font-medium border-white/30'
-                    : 'bg-[#18181A] text-neutral-400 border-[#2E2E2E] hover:text-white'"
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-medium border-zinc-900 dark:border-white/30'
+                    : 'bg-zinc-100 dark:bg-[#18181A] text-[var(--text-secondary)] border-zinc-200 dark:border-[#2E2E2E] hover:text-[var(--text-primary)]'"
                   @click="qualityPreset = 'balanced'"
                 >
                   Balanced
@@ -2028,8 +2028,8 @@ onUnmounted(() => {
                   type="button"
                   class="py-2 px-2 rounded-lg border text-center text-xs transition-colors cursor-pointer select-none"
                   :class="qualityPreset === 'compact'
-                    ? 'bg-[#2E2E2E] text-white font-medium border-white/30'
-                    : 'bg-[#18181A] text-neutral-400 border-[#2E2E2E] hover:text-white'"
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-medium border-zinc-900 dark:border-white/30'
+                    : 'bg-zinc-100 dark:bg-[#18181A] text-[var(--text-secondary)] border-zinc-200 dark:border-[#2E2E2E] hover:text-[var(--text-primary)]'"
                   @click="qualityPreset = 'compact'"
                 >
                   Compact
@@ -2038,18 +2038,18 @@ onUnmounted(() => {
             </div>
 
             <!-- Audio Toggle Switch -->
-            <div class="pt-2 border-t border-[#212121] flex items-center justify-between">
+            <div class="pt-2 border-t border-zinc-200 dark:border-[#212121] flex items-center justify-between">
               <div>
-                <div class="text-xs font-medium text-white">Audio Track</div>
-                <div class="text-[11px] text-neutral-400">Keep or mute audio track</div>
+                <div class="text-xs font-medium text-[var(--text-primary)]">Audio Track</div>
+                <div class="text-[11px] text-[var(--text-tertiary)]">Keep or mute audio track</div>
               </div>
 
               <button
                 type="button"
                 class="px-3 py-1.5 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
                 :class="keepAudio
-                  ? 'bg-[#2E2E2E] border-white/30 text-white'
-                  : 'bg-[#18181A] border-[#2E2E2E] text-neutral-400'"
+                  ? 'bg-zinc-900 dark:bg-[#2E2E2E] border-zinc-900 dark:border-white/30 text-white'
+                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)]'"
                 @click="keepAudio = !keepAudio"
               >
                 <Volume2 v-if="keepAudio" class="w-3.5 h-3.5" />
@@ -2074,21 +2074,21 @@ onUnmounted(() => {
             </Button>
 
             <!-- Processing Progress Bar -->
-            <div v-if="isProcessing" class="p-4 bg-[#141416] border border-[#2E2E2E] rounded-xl space-y-2">
+            <div v-if="isProcessing" class="p-4 bg-zinc-50 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-2">
               <div class="flex items-center justify-between text-xs font-mono">
-                <span class="text-neutral-400">{{ processStatus }}</span>
-                <span class="text-white font-bold">{{ processProgress }}%</span>
+                <span class="text-[var(--text-tertiary)]">{{ processStatus }}</span>
+                <span class="text-[var(--text-primary)] font-bold">{{ processProgress }}%</span>
               </div>
-              <div class="w-full h-2 bg-[#212121] rounded-full overflow-hidden">
+              <div class="w-full h-2 bg-zinc-200 dark:bg-[#212121] rounded-full overflow-hidden">
                 <div
-                  class="h-full bg-white transition-all duration-150"
+                  class="h-full bg-zinc-900 dark:bg-white transition-all duration-150"
                   :style="{ width: `${processProgress}%` }"
                 />
               </div>
               <div class="flex justify-end pt-1">
                 <button
                   type="button"
-                  class="text-[11px] font-mono text-red-400 hover:underline cursor-pointer"
+                  class="text-[11px] font-mono text-red-500 hover:underline cursor-pointer"
                   @click="cancelProcessing"
                 >
                   Cancel
@@ -2100,15 +2100,15 @@ onUnmounted(() => {
       </div>
 
       <!-- STATE 3: Processed Output Section -->
-      <div v-if="outputBlobUrl" class="bg-[#141416] border border-[#2E2E2E] rounded-[14px] p-6 space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#212121] pb-4">
+      <div v-if="outputBlobUrl" class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-6 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-200 dark:border-[#212121] pb-4">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
               <Check class="w-4 h-4" />
             </div>
             <div>
-              <h3 class="text-sm font-semibold text-white">Video Ready for Download</h3>
-              <p class="text-xs text-neutral-400 font-mono">
+              <h3 class="text-sm font-semibold text-[var(--text-primary)]">Video Ready for Download</h3>
+              <p class="text-xs text-[var(--text-tertiary)] font-mono">
                 Processed via 100% Client-Side WebCodecs Hardware GPU
               </p>
             </div>
@@ -2127,28 +2127,28 @@ onUnmounted(() => {
 
         <!-- Metrics Comparison Grid -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-          <div class="p-3.5 bg-[#18181A] border border-[#2E2E2E] rounded-xl space-y-1">
-            <div class="text-[10px] uppercase tracking-wider text-neutral-400">Resolution</div>
-            <div class="text-xs text-neutral-400 line-through">{{ videoNaturalWidth }}×{{ videoNaturalHeight }}</div>
-            <div class="text-sm font-bold text-white">{{ outputWidth }}×{{ outputHeight }}</div>
+          <div class="p-3.5 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-1">
+            <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Resolution</div>
+            <div class="text-xs text-[var(--text-tertiary)] line-through">{{ videoNaturalWidth }}×{{ videoNaturalHeight }}</div>
+            <div class="text-sm font-bold text-[var(--text-primary)]">{{ outputWidth }}×{{ outputHeight }}</div>
           </div>
 
-          <div class="p-3.5 bg-[#18181A] border border-[#2E2E2E] rounded-xl space-y-1">
-            <div class="text-[10px] uppercase tracking-wider text-neutral-400">Duration</div>
-            <div class="text-xs text-neutral-400 line-through">{{ formatPlayerTime(totalDuration) }}</div>
-            <div class="text-sm font-bold text-white">{{ formatPlayerTime(outputDuration) }}</div>
+          <div class="p-3.5 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-1">
+            <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Duration</div>
+            <div class="text-xs text-[var(--text-tertiary)] line-through">{{ formatPlayerTime(totalDuration) }}</div>
+            <div class="text-sm font-bold text-[var(--text-primary)]">{{ formatPlayerTime(outputDuration) }}</div>
           </div>
 
-          <div class="p-3.5 bg-[#18181A] border border-[#2E2E2E] rounded-xl space-y-1">
-            <div class="text-[10px] uppercase tracking-wider text-neutral-400">File Size</div>
-            <div class="text-xs text-neutral-400 line-through">{{ formatFileSize(originalFileSize) }}</div>
-            <div class="text-sm font-bold text-emerald-400">{{ formatFileSize(outputSize) }}</div>
+          <div class="p-3.5 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-1">
+            <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">File Size</div>
+            <div class="text-xs text-[var(--text-tertiary)] line-through">{{ formatFileSize(originalFileSize) }}</div>
+            <div class="text-sm font-bold text-emerald-500">{{ formatFileSize(outputSize) }}</div>
           </div>
 
-          <div class="p-3.5 bg-[#18181A] border border-[#2E2E2E] rounded-xl space-y-1">
-            <div class="text-[10px] uppercase tracking-wider text-neutral-400">Savings</div>
-            <div class="text-xs text-neutral-400">Reduced by</div>
-            <div class="text-sm font-bold" :class="sizeSavingsPercentage > 0 ? 'text-emerald-400' : 'text-white'">
+          <div class="p-3.5 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-1">
+            <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Savings</div>
+            <div class="text-xs text-[var(--text-tertiary)]">Reduced by</div>
+            <div class="text-sm font-bold" :class="sizeSavingsPercentage > 0 ? 'text-emerald-500' : 'text-[var(--text-primary)]'">
               {{ sizeSavingsPercentage > 0 ? `-${sizeSavingsPercentage}%` : 'Optimal' }}
             </div>
           </div>

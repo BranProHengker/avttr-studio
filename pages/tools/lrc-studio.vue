@@ -690,7 +690,7 @@ onUnmounted(() => {
             v-model="searchQuery"
             type="text"
             placeholder="Search song title & artist (e.g. Yorushika - Replicant, YOASOBI, The 1975)..."
-            class="w-full h-12 pl-10 pr-24 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-white/10 shadow-xs"
+            class="w-full h-12 pl-10 pr-24 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 shadow-xs"
             @keydown.enter.prevent="searchLyrics"
           />
           <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
@@ -701,8 +701,8 @@ onUnmounted(() => {
               :disabled="isSearching || !searchQuery.trim()"
               @click="searchLyrics"
             >
-              <RefreshCw v-if="isSearching" class="w-3.5 h-3.5 animate-spin mr-1 text-white" />
-              <Search v-else class="w-3.5 h-3.5 mr-1 text-white" />
+              <RefreshCw v-if="isSearching" class="w-3.5 h-3.5 animate-spin mr-1" />
+              <Search v-else class="w-3.5 h-3.5 mr-1" />
               <span>Search</span>
             </Button>
           </div>
@@ -716,13 +716,13 @@ onUnmounted(() => {
           class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
           @click="fileInputRef?.click()"
         >
-          <FileAudio class="w-4 h-4 mr-1.5 text-white" />
+          <FileAudio class="w-4 h-4 mr-1.5" />
           <span>{{ audioFile ? 'Replace Audio' : 'Upload Audio' }}</span>
         </Button>
       </div>
 
       <!-- Search Results Dropdown List -->
-      <div v-if="searchResults.length > 0" class="p-3 bg-[#171717] border border-[#2E2E2E] rounded-xl space-y-2">
+      <div v-if="searchResults.length > 0" class="p-3 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-2">
         <div class="flex items-center justify-between text-xs font-mono text-[var(--text-secondary)] px-1">
           <span>Available Versions in LRCLIB ({{ searchResults.length }})</span>
           <span class="text-[11px] text-[var(--text-tertiary)]">Select the matching language version</span>
@@ -732,11 +732,11 @@ onUnmounted(() => {
           <div
             v-for="track in searchResults"
             :key="track.id"
-            class="p-3 rounded-lg bg-[#212121] hover:bg-[#292929] border border-[#2E2E2E] hover:border-[#404040] cursor-pointer transition-all flex items-center justify-between gap-3"
+            class="p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 dark:bg-[#212121] dark:hover:bg-[#292929] border border-zinc-200 dark:border-[#2E2E2E] hover:border-zinc-300 dark:hover:border-[#404040] cursor-pointer transition-all flex items-center justify-between gap-3"
             @click="selectTrack(track)"
           >
             <div class="min-w-0 flex-1 space-y-0.5">
-              <div class="font-semibold text-xs text-white truncate">
+              <div class="font-semibold text-xs text-[var(--text-primary)] truncate">
                 {{ track.trackName }}
               </div>
               <div class="text-[11px] text-[var(--text-secondary)] truncate flex items-center gap-1.5">
@@ -801,13 +801,13 @@ onUnmounted(() => {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <!-- Left: Track Meta -->
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-11 h-11 rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0">
-              <Disc class="w-5 h-5 text-white animate-spin" style="animation-duration: 6s;" v-if="isPlaying" />
-              <Music class="w-5 h-5 text-white" v-else />
+            <div class="w-11 h-11 rounded-xl bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-[var(--text-primary)] shrink-0">
+              <Disc class="w-5 h-5 text-current animate-spin" style="animation-duration: 6s;" v-if="isPlaying" />
+              <Music class="w-5 h-5 text-current" v-else />
             </div>
             <div class="space-y-0.5 min-w-0">
               <div class="flex items-center gap-2">
-                <span class="text-base font-bold text-white truncate max-w-md">
+                <span class="text-base font-bold text-[var(--text-primary)] truncate max-w-md">
                   {{ selectedTrack.trackName }}
                 </span>
                 <Badge v-if="isJapaneseSong" variant="badge">Japanese</Badge>
@@ -815,9 +815,9 @@ onUnmounted(() => {
               </div>
               <div class="text-xs text-[var(--text-secondary)] truncate flex items-center gap-2">
                 <span>{{ selectedTrack.artistName }}</span>
-                <span v-if="selectedTrack.albumName" class="text-zinc-600">•</span>
+                <span v-if="selectedTrack.albumName" class="text-zinc-400 dark:text-zinc-600">•</span>
                 <span v-if="selectedTrack.albumName" class="truncate text-[var(--text-tertiary)]">{{ selectedTrack.albumName }}</span>
-                <span v-if="audioFile" class="text-white font-mono text-[11px] font-medium ml-1">
+                <span v-if="audioFile" class="text-[var(--text-primary)] font-mono text-[11px] font-medium ml-1">
                   [Local: {{ audioFile.name }}]
                 </span>
               </div>
@@ -825,48 +825,48 @@ onUnmounted(() => {
           </div>
 
           <!-- Right: Sync Offset Controller -->
-          <div class="flex items-center gap-1 bg-[#212121] border border-[#2E2E2E] p-1 rounded-lg">
+          <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] p-1 rounded-lg">
             <span class="text-[11px] text-[var(--text-secondary)] font-mono flex items-center gap-1 px-1.5">
-              <Sliders class="w-3 h-3 text-white" />
+              <Sliders class="w-3 h-3 text-[var(--text-secondary)]" />
               <span>Offset:</span>
             </span>
             <button
               type="button"
-              class="px-2 py-1 bg-[#171717] hover:bg-[#292929] border border-[#2E2E2E] rounded text-xs font-mono text-white transition-colors cursor-pointer"
+              class="px-2 py-1 bg-white dark:bg-[#171717] hover:bg-zinc-100 dark:hover:bg-[#292929] border border-zinc-200 dark:border-[#2E2E2E] rounded text-xs font-mono text-[var(--text-primary)] transition-colors cursor-pointer"
               @click="adjustOffset(-0.5)"
             >
               -0.5s
             </button>
             <button
               type="button"
-              class="px-2 py-1 bg-[#171717] hover:bg-[#292929] border border-[#2E2E2E] rounded text-xs font-mono text-white transition-colors cursor-pointer"
+              class="px-2 py-1 bg-white dark:bg-[#171717] hover:bg-zinc-100 dark:hover:bg-[#292929] border border-zinc-200 dark:border-[#2E2E2E] rounded text-xs font-mono text-[var(--text-primary)] transition-colors cursor-pointer"
               @click="adjustOffset(-0.1)"
             >
               -0.1s
             </button>
             <span
               class="px-2 py-1 font-mono text-xs font-bold rounded"
-              :class="syncOffset !== 0 ? 'text-white bg-[#2E2E2E]' : 'text-[var(--text-secondary)]'"
+              :class="syncOffset !== 0 ? 'text-[var(--primary-foreground)] bg-[var(--primary)]' : 'text-[var(--text-secondary)]'"
             >
               {{ syncOffset > 0 ? `+${syncOffset}s` : `${syncOffset}s` }}
             </span>
             <button
               type="button"
-              class="px-2 py-1 bg-[#171717] hover:bg-[#292929] border border-[#2E2E2E] rounded text-xs font-mono text-white transition-colors cursor-pointer"
+              class="px-2 py-1 bg-white dark:bg-[#171717] hover:bg-zinc-100 dark:hover:bg-[#292929] border border-zinc-200 dark:border-[#2E2E2E] rounded text-xs font-mono text-[var(--text-primary)] transition-colors cursor-pointer"
               @click="adjustOffset(0.1)"
             >
               +0.1s
             </button>
             <button
               type="button"
-              class="px-2 py-1 bg-[#171717] hover:bg-[#292929] border border-[#2E2E2E] rounded text-xs font-mono text-white transition-colors cursor-pointer"
+              class="px-2 py-1 bg-white dark:bg-[#171717] hover:bg-zinc-100 dark:hover:bg-[#292929] border border-zinc-200 dark:border-[#2E2E2E] rounded text-xs font-mono text-[var(--text-primary)] transition-colors cursor-pointer"
               @click="adjustOffset(0.5)"
             >
               +0.5s
             </button>
             <button
               type="button"
-              class="px-2 py-1 text-[11px] font-mono text-[var(--text-tertiary)] hover:text-white transition-colors cursor-pointer"
+              class="px-2 py-1 text-[11px] font-mono text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               title="Reset offset to 0"
               @click="resetOffset"
             >
@@ -925,7 +925,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Audio Not Loaded Notice -->
-        <div v-else class="p-3 rounded-lg bg-[#212121] border border-[#2E2E2E] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+        <div v-else class="p-3 rounded-lg bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <span class="text-[var(--text-secondary)]">
             Playback disabled. Upload your audio file (.flac, .mp3, .wav) to test live playback synchronization.
           </span>
@@ -935,7 +935,7 @@ onUnmounted(() => {
             class="h-8 px-3 text-xs shrink-0 self-start sm:self-auto"
             @click="fileInputRef?.click()"
           >
-            <FileAudio class="w-3.5 h-3.5 mr-1.5 text-white" />
+            <FileAudio class="w-3.5 h-3.5 mr-1.5" />
             <span>Upload Audio</span>
           </Button>
         </div>
@@ -944,19 +944,19 @@ onUnmounted(() => {
       <!-- Language Mismatch Notice -->
       <div
         v-if="!isJapaneseSong"
-        class="p-3.5 rounded-[14px] bg-[#212121] border border-[#2E2E2E] flex items-center justify-between gap-3 text-xs"
+        class="p-3.5 rounded-[14px] bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3 text-xs"
       >
         <div class="flex items-center gap-2.5">
-          <AlertCircle class="w-4 h-4 text-white shrink-0" />
+          <AlertCircle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
           <div class="text-[var(--text-secondary)]">
-            <strong class="text-white">English / Latin Lyrics:</strong>
+            <strong class="text-[var(--text-primary)]">English / Latin Lyrics:</strong>
             Romaji generation is only available for songs with Japanese Kanji or Kana characters.
           </div>
         </div>
       </div>
 
       <!-- Studio Action Ribbon (Standardized Heights & Variants) -->
-      <div class="p-3 bg-[#171717] border border-[#2E2E2E] rounded-[14px] flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div class="p-3 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] flex flex-col md:flex-row md:items-center justify-between gap-3">
         <!-- Left: Romaji Generator & View Switcher -->
         <div class="flex items-center gap-2 flex-wrap">
           <Button
@@ -967,8 +967,8 @@ onUnmounted(() => {
             :disabled="isConvertingRomaji"
             @click="convertToRomaji"
           >
-            <RefreshCw v-if="isConvertingRomaji" class="w-3.5 h-3.5 animate-spin mr-1.5 text-white" />
-            <Sparkles v-else class="w-3.5 h-3.5 mr-1.5 text-white" />
+            <RefreshCw v-if="isConvertingRomaji" class="w-3.5 h-3.5 animate-spin mr-1.5" />
+            <Sparkles v-else class="w-3.5 h-3.5 mr-1.5" />
             <span>{{ isConvertingRomaji ? 'Romanizing...' : 'Generate Romaji' }}</span>
           </Button>
 
@@ -977,26 +977,26 @@ onUnmounted(() => {
             variant="badge"
             class="h-9 px-3 text-xs flex items-center gap-1.5"
           >
-            <CheckCircle2 class="w-4 h-4 text-white" />
+            <CheckCircle2 class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Romaji Active</span>
           </Badge>
 
           <!-- View Mode: Karaoke Stage vs Raw LRC Editor -->
-          <div class="flex items-center bg-[#212121] p-0.5 rounded-lg border border-[#2E2E2E]">
+          <div class="flex items-center bg-zinc-200/60 dark:bg-[#212121] p-0.5 rounded-lg border border-zinc-200 dark:border-[#2E2E2E]">
             <button
               class="px-3 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
-              :class="activeView === 'karaoke' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :class="activeView === 'karaoke' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-600 dark:text-[var(--text-secondary)] hover:text-zinc-900 dark:hover:text-white'"
               @click="activeView = 'karaoke'"
             >
-              <Eye class="w-3.5 h-3.5 text-white" />
+              <Eye class="w-3.5 h-3.5 text-current" />
               <span>Karaoke Stage</span>
             </button>
             <button
               class="px-3 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
-              :class="activeView === 'raw' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :class="activeView === 'raw' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-600 dark:text-[var(--text-secondary)] hover:text-zinc-900 dark:hover:text-white'"
               @click="activeView = 'raw'"
             >
-              <Code2 class="w-3.5 h-3.5 text-white" />
+              <Code2 class="w-3.5 h-3.5 text-current" />
               <span>Raw Editor</span>
             </button>
           </div>
@@ -1005,11 +1005,11 @@ onUnmounted(() => {
         <!-- Right: Export Modes & Download -->
         <div class="flex items-center gap-2 flex-wrap">
           <!-- Format Switcher -->
-          <div class="flex items-center bg-[#212121] p-0.5 rounded-lg border border-[#2E2E2E]">
+          <div class="flex items-center bg-zinc-200/60 dark:bg-[#212121] p-0.5 rounded-lg border border-zinc-200 dark:border-[#2E2E2E]">
             <button
               type="button"
               class="px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer"
-              :class="exportMode === 'dual' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :class="exportMode === 'dual' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-600 dark:text-[var(--text-secondary)] hover:text-zinc-900 dark:hover:text-white'"
               @click="exportMode = 'dual'"
             >
               Dual-Line
@@ -1017,7 +1017,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer"
-              :class="exportMode === 'romaji' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :class="exportMode === 'romaji' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-600 dark:text-[var(--text-secondary)] hover:text-zinc-900 dark:hover:text-white'"
               :disabled="!romajiLrc"
               @click="exportMode = 'romaji'"
             >
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="px-2.5 py-1.5 text-xs rounded-md transition-colors cursor-pointer"
-              :class="exportMode === 'original' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :class="exportMode === 'original' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-600 dark:text-[var(--text-secondary)] hover:text-zinc-900 dark:hover:text-white'"
               @click="exportMode = 'original'"
             >
               Original
@@ -1040,8 +1040,8 @@ onUnmounted(() => {
             class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
             @click="copyLrc"
           >
-            <Check v-if="hasCopied" class="w-3.5 h-3.5 mr-1.5 text-white" />
-            <Copy v-else class="w-3.5 h-3.5 mr-1.5 text-white" />
+            <Check v-if="hasCopied" class="w-3.5 h-3.5 mr-1.5" />
+            <Copy v-else class="w-3.5 h-3.5 mr-1.5" />
             <span>{{ hasCopied ? 'Copied' : 'Copy' }}</span>
           </Button>
 
@@ -1052,7 +1052,7 @@ onUnmounted(() => {
             class="h-9 px-4 rounded-lg text-xs font-semibold cursor-pointer shadow-xs"
             @click="downloadLrc"
           >
-            <Download class="w-3.5 h-3.5 mr-1.5 text-black" />
+            <Download class="w-3.5 h-3.5 mr-1.5" />
             <span>Download .lrc</span>
           </Button>
 
@@ -1060,11 +1060,11 @@ onUnmounted(() => {
           <Button
             variant="secondary"
             size="default"
-            class="h-9 w-9 p-0 rounded-lg text-[var(--text-secondary)] hover:text-white cursor-pointer"
+            class="h-9 w-9 p-0 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
             title="Search another track"
             @click="resetWorkspace"
           >
-            <X class="w-4 h-4 text-white" />
+            <X class="w-4 h-4" />
           </Button>
         </div>
       </div>
@@ -1084,17 +1084,17 @@ onUnmounted(() => {
             class="p-4 rounded-xl cursor-pointer transition-all border group"
             :class="
               activeLineIndex === idx
-                ? 'bg-[#212121] border-[#404040] shadow-xs'
-                : 'bg-transparent border-transparent hover:bg-[#1A1A1D] hover:border-[#2E2E2E]'
+                ? 'bg-zinc-100 dark:bg-[#212121] border-zinc-300 dark:border-[#404040] shadow-xs'
+                : 'bg-transparent border-transparent hover:bg-zinc-100/70 dark:hover:bg-[#1A1A1D] hover:border-zinc-200 dark:hover:border-[#2E2E2E]'
             "
             @click="seekToLine(line.seconds)"
           >
             <div class="flex items-start justify-between gap-4">
               <div class="space-y-1.5 flex-1">
-                <!-- Original Text (Large crisp white) -->
+                <!-- Original Text (Large crisp) -->
                 <div
                   class="text-base sm:text-lg transition-colors leading-relaxed"
-                  :class="activeLineIndex === idx ? 'text-white font-bold' : 'text-[var(--text-secondary)] font-medium group-hover:text-white'"
+                  :class="activeLineIndex === idx ? 'text-[var(--text-primary)] font-bold' : 'text-[var(--text-secondary)] font-medium group-hover:text-[var(--text-primary)]'"
                 >
                   {{ line.originalText }}
                 </div>
@@ -1103,7 +1103,7 @@ onUnmounted(() => {
                 <div
                   v-if="line.romajiText"
                   class="text-xs sm:text-sm font-mono transition-colors"
-                  :class="activeLineIndex === idx ? 'text-white font-semibold' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]'"
+                  :class="activeLineIndex === idx ? 'text-[var(--text-primary)] font-semibold' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]'"
                 >
                   {{ line.romajiText }}
                 </div>
@@ -1112,7 +1112,7 @@ onUnmounted(() => {
               <!-- Timestamp -->
               <span
                 class="text-xs font-mono px-2 py-0.5 rounded shrink-0 transition-colors"
-                :class="activeLineIndex === idx ? 'bg-[#2E2E2E] text-white font-bold border border-[#404040]' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]'"
+                :class="activeLineIndex === idx ? 'bg-zinc-200 dark:bg-[#2E2E2E] text-[var(--text-primary)] font-bold border border-zinc-300 dark:border-[#404040]' : 'text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)]'"
               >
                 {{ line.timeTag }}
               </span>
@@ -1128,7 +1128,7 @@ onUnmounted(() => {
           </div>
           <textarea
             v-model="rawEditedLrc"
-            class="w-full flex-1 min-h-[480px] p-4 text-xs font-mono bg-[#171717] border border-[#2E2E2E] rounded-xl text-white focus:outline-none focus:border-[#404040] resize-y leading-relaxed"
+            class="w-full flex-1 min-h-[480px] p-4 text-xs font-mono bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-zinc-400 dark:focus:border-[#404040] resize-y leading-relaxed"
             placeholder="[00:00.00] Lyrics..."
           ></textarea>
         </div>

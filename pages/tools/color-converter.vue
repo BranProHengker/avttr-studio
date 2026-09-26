@@ -669,7 +669,7 @@ onMounted(() => {
           Tailwind Shades & Tints (50 - 950)
         </h3>
 
-        <div class="grid grid-cols-2 sm:grid-cols-11 gap-1.5 rounded-xl overflow-hidden p-1 bg-[#171717] border border-[var(--border-subtle)]">
+        <div class="grid grid-cols-2 sm:grid-cols-11 gap-1.5 rounded-xl overflow-hidden p-1 bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)]">
           <button
             v-for="shade in colorShades"
             :key="shade.level"

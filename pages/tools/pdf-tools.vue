@@ -576,7 +576,7 @@ const handleExecuteImgToPdf = async () => {
               <input
                 v-model="mergeOutputName"
                 type="text"
-                class="w-full sm:w-64 px-3 py-1.5 bg-[#171717] border border-[var(--border-subtle)] rounded-md text-xs text-white placeholder-[var(--text-tertiary)] focus:outline-none focus:border-white/40 font-mono"
+                class="w-full sm:w-64 px-3 py-1.5 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-md text-xs text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/40 font-mono"
                 placeholder="merged_document.pdf"
               />
             </div>
@@ -666,11 +666,11 @@ const handleExecuteImgToPdf = async () => {
             <input
               v-model="pageRangeInput"
               type="text"
-              class="w-full px-3.5 py-2.5 bg-[#171717] border border-[var(--border-subtle)] rounded-lg text-sm text-white placeholder-[var(--text-tertiary)] focus:outline-none focus:border-white/40 font-mono"
+              class="w-full px-3.5 py-2.5 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/40 font-mono"
               placeholder="e.g. 1-3, 5, 8-10"
             />
             <p class="text-[11px] text-[var(--text-tertiary)]">
-              Example format: <code class="text-white">1-5</code> (pages 1 to 5), <code class="text-white">1, 3, 7</code> (specific pages), or <code class="text-white">1-3, 6-8</code>.
+              Example format: <code class="text-[var(--text-primary)] font-semibold">1-5</code> (pages 1 to 5), <code class="text-[var(--text-primary)] font-semibold">1, 3, 7</code> (specific pages), or <code class="text-[var(--text-primary)] font-semibold">1-3, 6-8</code>.
             </p>
           </div>
 
@@ -681,7 +681,7 @@ const handleExecuteImgToPdf = async () => {
               <input
                 v-model="splitOutputName"
                 type="text"
-                class="w-full sm:w-64 px-3 py-1.5 bg-[#171717] border border-[var(--border-subtle)] rounded-md text-xs text-white font-mono focus:outline-none focus:border-white/40"
+                class="w-full sm:w-64 px-3 py-1.5 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-md text-xs text-[var(--text-primary)] font-mono focus:outline-none focus:border-zinc-400 dark:focus:border-white/40"
               />
             </div>
 
@@ -848,7 +848,7 @@ const handleExecuteImgToPdf = async () => {
               <input
                 v-model="imgPdfOutputName"
                 type="text"
-                class="w-full sm:w-64 px-3 py-1.5 bg-[#171717] border border-[var(--border-subtle)] rounded-md text-xs text-white font-mono focus:outline-none focus:border-white/40"
+                class="w-full sm:w-64 px-3 py-1.5 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-md text-xs text-[var(--text-primary)] font-mono focus:outline-none focus:border-zinc-400 dark:focus:border-white/40"
               />
             </div>
 

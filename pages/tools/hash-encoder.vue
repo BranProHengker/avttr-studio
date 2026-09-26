@@ -250,11 +250,11 @@ const handleFileUpload = (e: Event) => {
     </div>
 
     <!-- Mode Switcher Tabs -->
-    <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
+    <div class="flex items-center bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
       <button
         type="button"
         class="px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-        :class="activeTab === 'hash' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+        :class="activeTab === 'hash' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
         @click="activeTab = 'hash'"
       >
         Cryptographic Hashes
@@ -263,7 +263,7 @@ const handleFileUpload = (e: Event) => {
       <button
         type="button"
         class="px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-        :class="activeTab === 'base64' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+        :class="activeTab === 'base64' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
         @click="activeTab = 'base64'"
       >
         Base64 Encode & Decode
@@ -272,7 +272,7 @@ const handleFileUpload = (e: Event) => {
       <button
         type="button"
         class="px-4 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-        :class="activeTab === 'url' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+        :class="activeTab === 'url' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
         @click="activeTab = 'url'"
       >
         URL Component
@@ -315,7 +315,7 @@ const handleFileUpload = (e: Event) => {
             Copy
           </Button>
         </div>
-        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-white break-all select-all">
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-[var(--text-primary)] break-all select-all">
           {{ sha256Hash || '...' }}
         </div>
       </Card>
@@ -366,7 +366,7 @@ const handleFileUpload = (e: Event) => {
             Copy
           </Button>
         </div>
-        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-white break-all select-all min-h-[100px]">
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-[var(--text-primary)] break-all select-all min-h-[100px]">
           {{ base64Encoded || '...' }}
         </div>
       </Card>
@@ -397,7 +397,7 @@ const handleFileUpload = (e: Event) => {
             Copy
           </Button>
         </div>
-        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-white break-all select-all min-h-[100px]">
+        <div class="p-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg font-mono text-xs text-[var(--text-primary)] break-all select-all min-h-[100px]">
           {{ urlEncoded || '...' }}
         </div>
       </Card>

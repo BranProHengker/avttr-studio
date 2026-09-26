@@ -502,7 +502,7 @@ onMounted(async () => {
           <textarea
             v-model="textInput"
             rows="4"
-            class="w-full px-3.5 py-2.5 bg-[#171717] border border-[var(--border-subtle)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:border-white/40 transition-colors resize-none font-mono"
+            class="w-full px-3.5 py-2.5 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-lg text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/40 transition-colors resize-none font-mono"
             placeholder="Type your brat text..."
           />
 
@@ -514,7 +514,7 @@ onMounted(async () => {
                 v-for="preset in MEME_PRESETS"
                 :key="preset"
                 type="button"
-                class="px-2 py-1 text-[11px] font-mono bg-[var(--bg-card)] hover:bg-[#2E2E2E] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)] rounded-md transition-colors cursor-pointer"
+                class="px-2 py-1 text-[11px] font-mono bg-zinc-100 dark:bg-[var(--bg-card)] hover:bg-zinc-200 dark:hover:bg-[#2E2E2E] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-md transition-colors cursor-pointer"
                 @click="textInput = preset"
               >
                 {{ preset.replace(/\n/g, ' ') }}
@@ -537,7 +537,7 @@ onMounted(async () => {
               :key="theme.id"
               type="button"
               class="flex items-center gap-2 p-2 rounded-lg border text-xs transition-all cursor-pointer"
-              :class="selectedThemeId === theme.id ? 'border-white bg-[#2E2E2E]' : 'border-[var(--border-subtle)] bg-[var(--bg-card)] hover:border-[#2E2E2E]'"
+              :class="selectedThemeId === theme.id ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-[#2E2E2E]' : 'border-zinc-200 dark:border-[var(--border-subtle)] bg-white dark:bg-[var(--bg-card)] hover:border-zinc-400 dark:hover:border-[#2E2E2E]'"
               @click="selectTheme(theme)"
             >
               <span class="w-4 h-4 rounded-full border border-black/20 shrink-0" :style="{ backgroundColor: theme.bg }"></span>
@@ -558,7 +558,7 @@ onMounted(async () => {
                 <input
                   v-model="customBgColor"
                   type="text"
-                  class="flex-1 px-2 py-1 text-xs font-mono bg-[#171717] border border-[var(--border-subtle)] rounded text-[var(--text-primary)]"
+                  class="flex-1 px-2 py-1 text-xs font-mono bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded text-[var(--text-primary)]"
                 />
               </div>
             </div>
@@ -574,7 +574,7 @@ onMounted(async () => {
                 <input
                   v-model="customTextColor"
                   type="text"
-                  class="flex-1 px-2 py-1 text-xs font-mono bg-[#171717] border border-[var(--border-subtle)] rounded text-[var(--text-primary)]"
+                  class="flex-1 px-2 py-1 text-xs font-mono bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded text-[var(--text-primary)]"
                 />
               </div>
             </div>
@@ -640,11 +640,11 @@ onMounted(async () => {
             <!-- Font Weight Selector -->
             <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-xs">
               <span class="text-[var(--text-secondary)]">Font Weight</span>
-              <div class="flex items-center gap-1 bg-[#171717] p-1 rounded-lg border border-[var(--border-subtle)]">
+              <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#171717] p-1 rounded-lg border border-zinc-200 dark:border-[var(--border-subtle)]">
                 <button
                   type="button"
                   class="px-2.5 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="fontWeight === '400' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="fontWeight === '400' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="fontWeight = '400'"
                 >
                   Regular
@@ -652,7 +652,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="px-2.5 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="fontWeight === '500' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="fontWeight === '500' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="fontWeight = '500'"
                 >
                   Medium
@@ -660,7 +660,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="px-2.5 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="fontWeight === '700' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="fontWeight === '700' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="fontWeight = '700'"
                 >
                   Bold
@@ -671,11 +671,11 @@ onMounted(async () => {
             <!-- Text Alignment -->
             <div class="flex items-center justify-between text-xs">
               <span class="text-[var(--text-secondary)]">Text Alignment</span>
-              <div class="flex items-center gap-1 bg-[#171717] p-1 rounded-lg border border-[var(--border-subtle)]">
+              <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#171717] p-1 rounded-lg border border-zinc-200 dark:border-[var(--border-subtle)]">
                 <button
                   type="button"
                   class="p-1.5 rounded cursor-pointer transition-colors"
-                  :class="textAlign === 'left' ? 'bg-white text-black shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="textAlign === 'left' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   title="Left Align"
                   @click="textAlign = 'left'"
                 >
@@ -684,7 +684,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="p-1.5 rounded cursor-pointer transition-colors"
-                  :class="textAlign === 'center' ? 'bg-white text-black shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="textAlign === 'center' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   title="Center Align"
                   @click="textAlign = 'center'"
                 >
@@ -693,7 +693,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="p-1.5 rounded cursor-pointer transition-colors"
-                  :class="textAlign === 'justify' ? 'bg-white text-black shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="textAlign === 'justify' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   title="Justify Align"
                   @click="textAlign = 'justify'"
                 >
@@ -705,11 +705,11 @@ onMounted(async () => {
             <!-- Letter Case -->
             <div class="flex items-center justify-between text-xs">
               <span class="text-[var(--text-secondary)]">Letter Case</span>
-              <div class="flex items-center gap-1 bg-[#171717] p-1 rounded-lg border border-[var(--border-subtle)]">
+              <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#171717] p-1 rounded-lg border border-zinc-200 dark:border-[var(--border-subtle)]">
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="textCase === 'original' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="textCase === 'original' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="textCase = 'original'"
                 >
                   As Typed
@@ -717,7 +717,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="textCase === 'lower' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="textCase === 'lower' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="textCase = 'lower'"
                 >
                   lower
@@ -725,7 +725,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="textCase === 'upper' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="textCase === 'upper' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="textCase = 'upper'"
                 >
                   UPPER
@@ -736,11 +736,11 @@ onMounted(async () => {
             <!-- Aspect Ratio -->
             <div class="flex items-center justify-between text-xs">
               <span class="text-[var(--text-secondary)]">Aspect Ratio</span>
-              <div class="flex items-center gap-1 bg-[#171717] p-1 rounded-lg border border-[var(--border-subtle)]">
+              <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#171717] p-1 rounded-lg border border-zinc-200 dark:border-[var(--border-subtle)]">
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="aspectRatio === '1:1' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="aspectRatio === '1:1' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="aspectRatio = '1:1'"
                 >
                   1:1 Square
@@ -748,7 +748,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="aspectRatio === '9:16' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="aspectRatio === '9:16' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="aspectRatio = '9:16'"
                 >
                   9:16 Story
@@ -756,7 +756,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded text-[11px] font-mono cursor-pointer transition-colors"
-                  :class="aspectRatio === '16:9' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                  :class="aspectRatio === '16:9' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                   @click="aspectRatio = '16:9'"
                 >
                   16:9 Banner

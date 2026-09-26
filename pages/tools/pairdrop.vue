@@ -502,19 +502,19 @@ onUnmounted(() => {
     </div>
 
     <!-- Top Action Bar (Room status, Camera scan, Join code, QR pair, Share link) -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#171717] border border-[var(--border-subtle)] rounded-xl">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-xl">
       <!-- Room Info -->
       <div class="flex items-center gap-2.5 text-xs">
-        <div class="p-1.5 rounded-lg bg-white/5 border border-white/10 text-[var(--text-secondary)]">
-          <Radio class="w-4 h-4 text-white/80" />
+        <div class="p-1.5 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-[var(--text-secondary)]">
+          <Radio class="w-4 h-4 text-[var(--text-primary)]" />
         </div>
         <div>
           <div class="text-[11px] text-[var(--text-tertiary)]">Active Network / Room</div>
-          <div class="font-semibold text-white flex items-center gap-1.5 font-mono">
+          <div class="font-semibold text-[var(--text-primary)] flex items-center gap-1.5 font-mono">
             <span>{{ currentRoom === 'auto' ? 'Local Wi-Fi (Auto)' : `Room #${currentRoom}` }}</span>
             <button
               type="button"
-              class="text-[11px] text-[var(--text-tertiary)] hover:text-white underline cursor-pointer ml-1"
+              class="text-[11px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] underline cursor-pointer ml-1"
               @click="openRoomSwitcher"
             >
               Change
@@ -531,7 +531,7 @@ onUnmounted(() => {
           class="text-xs font-semibold"
           @click="startCameraScanner"
         >
-          <Camera class="w-3.5 h-3.5 mr-1.5 text-black" />
+          <Camera class="w-3.5 h-3.5 mr-1.5" />
           <span>Scan Camera</span>
         </Button>
 
@@ -541,7 +541,7 @@ onUnmounted(() => {
           class="text-xs"
           @click="openJoinCodeModal"
         >
-          <Hash class="w-3.5 h-3.5 mr-1.5 text-white" />
+          <Hash class="w-3.5 h-3.5 mr-1.5 text-current" />
           <span>Join Code</span>
         </Button>
 
@@ -551,7 +551,7 @@ onUnmounted(() => {
           class="text-xs"
           @click="showQrModal = true"
         >
-          <QrCode class="w-3.5 h-3.5 mr-1.5 text-white" />
+          <QrCode class="w-3.5 h-3.5 mr-1.5 text-current" />
           <span>Show QR</span>
         </Button>
 

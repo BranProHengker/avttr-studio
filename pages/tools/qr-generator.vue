@@ -544,11 +544,11 @@ onMounted(async () => {
     <!-- Mode Switcher & Content Type Tabs Row -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <!-- Engine Mode Switcher -->
-      <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
+      <div class="flex items-center bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
         <button
           type="button"
           class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-          :class="generatorMode === 'artistic' ? 'bg-white text-black font-bold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+          :class="generatorMode === 'artistic' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-bold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           @click="generatorMode = 'artistic'"
         >
           <Sparkles class="w-3.5 h-3.5" />
@@ -558,7 +558,7 @@ onMounted(async () => {
         <button
           type="button"
           class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-          :class="generatorMode === 'classic' ? 'bg-white text-black font-bold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+          :class="generatorMode === 'classic' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-bold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           @click="generatorMode = 'classic'"
         >
           <Sliders class="w-3.5 h-3.5" />
@@ -567,11 +567,11 @@ onMounted(async () => {
       </div>
 
       <!-- Type Selection Tabs (URL, Email, Phone, SMS) -->
-      <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
+      <div class="flex items-center bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-full p-1 w-fit text-xs">
         <button
           type="button"
           class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-          :class="activeType === 'url' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+          :class="activeType === 'url' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           @click="activeType = 'url'"
         >
           <Link class="w-3.5 h-3.5" />
@@ -581,7 +581,7 @@ onMounted(async () => {
         <button
           type="button"
           class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-          :class="activeType === 'email' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+          :class="activeType === 'email' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           @click="activeType = 'email'"
         >
           <Mail class="w-3.5 h-3.5" />
@@ -591,7 +591,7 @@ onMounted(async () => {
         <button
           type="button"
           class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-          :class="activeType === 'phone' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+          :class="activeType === 'phone' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           @click="activeType = 'phone'"
         >
           <Phone class="w-3.5 h-3.5" />
@@ -601,7 +601,7 @@ onMounted(async () => {
         <button
           type="button"
           class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer font-medium"
-          :class="activeType === 'sms' ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-white'"
+          :class="activeType === 'sms' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] shadow-xs font-semibold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           @click="activeType = 'sms'"
         >
           <MessageSquare class="w-3.5 h-3.5" />

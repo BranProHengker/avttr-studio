@@ -383,14 +383,14 @@ const resetAll = () => {
             v-model="imageUrlInput"
             type="url"
             :placeholder="locale === 'id' ? 'Tempel link foto (URL) atau tekan Ctrl+V di mana saja...' : 'Paste image link (URL) or press Ctrl+V anywhere...'"
-            class="w-full h-11 pl-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            class="w-full h-11 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-zinc-400/20 dark:focus:ring-white/10"
             :class="imageUrlInput ? 'pr-20' : 'pr-10'"
           />
           <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <button
               v-if="imageUrlInput"
               type="button"
-              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
               title="Clear input"
               aria-label="Clear input"
               @click="imageUrlInput = ''"
@@ -399,7 +399,7 @@ const resetAll = () => {
             </button>
             <button
               type="button"
-              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
               @click="pasteFromClipboard"
               :title="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
               :aria-label="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
@@ -501,11 +501,11 @@ const resetAll = () => {
           </h3>
 
           <!-- BG Type Tabs -->
-          <div class="grid grid-cols-3 gap-1.5 p-1 bg-[#171717] border border-[var(--border-subtle)] rounded-lg text-xs">
+          <div class="grid grid-cols-3 gap-1.5 p-1 bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-lg text-xs">
             <button
               type="button"
               class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center"
-              :class="bgType === 'transparent' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :class="bgType === 'transparent' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
               @click="bgType = 'transparent'"
             >
               Transparent
@@ -513,7 +513,7 @@ const resetAll = () => {
             <button
               type="button"
               class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center"
-              :class="bgType === 'color' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :class="bgType === 'color' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
               @click="bgType = 'color'"
             >
               Solid Color
@@ -521,7 +521,7 @@ const resetAll = () => {
             <button
               type="button"
               class="py-1.5 rounded-md font-medium transition-all cursor-pointer text-center"
-              :class="bgType === 'gradient' ? 'bg-[#2E2E2E] text-white font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+              :class="bgType === 'gradient' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
               @click="bgType = 'gradient'"
             >
               Gradient

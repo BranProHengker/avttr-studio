@@ -649,11 +649,11 @@ const handleContainerTouchMove = (e: TouchEvent) => {
 
           <!-- View Mode Tabs & Saved Badge -->
           <div class="flex items-center gap-2">
-            <div class="flex items-center bg-[#171717] border border-[var(--border-subtle)] rounded-full p-0.5 text-xs">
+            <div class="flex items-center bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-full p-0.5 text-xs">
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-full transition-colors cursor-pointer"
-                :class="compareViewMode === 'slider' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                :class="compareViewMode === 'slider' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                 @click="compareViewMode = 'slider'"
               >
                 Split Slider
@@ -661,7 +661,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-full transition-colors cursor-pointer"
-                :class="compareViewMode === 'side-by-side' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                :class="compareViewMode === 'side-by-side' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                 @click="compareViewMode = 'side-by-side'"
               >
                 Side-by-Side
@@ -669,7 +669,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-full transition-colors cursor-pointer"
-                :class="compareViewMode === 'original' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                :class="compareViewMode === 'original' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                 @click="compareViewMode = 'original'"
               >
                 Original
@@ -677,7 +677,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-full transition-colors cursor-pointer"
-                :class="compareViewMode === 'compressed' ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+                :class="compareViewMode === 'compressed' ? 'bg-white dark:bg-[#2E2E2E] text-[var(--text-primary)] font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
                 @click="compareViewMode = 'compressed'"
               >
                 Compressed

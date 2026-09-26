@@ -1412,12 +1412,12 @@ onUnmounted(() => {
                   <button type="button" class="text-red-400 hover:underline cursor-pointer" @click="clearKeyframes">Clear</button>
                 </div>
                 <div class="max-h-24 overflow-y-auto space-y-1">
-                  <div v-for="kf in selectedClip.keyframes" :key="kf.id" class="flex items-center justify-between gap-1 p-1 rounded bg-[#141416] border border-white/5 text-[11px] font-mono">
-                    <span class="text-white">◆ {{ formatTimecode(selectedClip.timelineStart + kf.timeOffset) }}</span>
+                  <div v-for="kf in selectedClip.keyframes" :key="kf.id" class="flex items-center justify-between gap-1 p-1 rounded bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-white/5 text-[11px] font-mono">
+                    <span class="text-[var(--text-primary)]">◆ {{ formatTimecode(selectedClip.timelineStart + kf.timeOffset) }}</span>
                     <div class="flex items-center gap-1.5">
-                      <input v-model.number="kf.volume" type="range" min="0" max="1.5" step="0.05" class="w-12 h-1 bg-[#2E2E2E] rounded cursor-pointer accent-white" @input="drawAllClipWaveforms" @change="recordHistory" />
-                      <span class="text-[10px] text-white/90 w-7 text-right">{{ Math.round(kf.volume * 100) }}%</span>
-                      <button type="button" class="text-neutral-500 hover:text-red-400 cursor-pointer" @click="removeKeyframe(kf.id)"><X class="w-3 h-3" /></button>
+                      <input v-model.number="kf.volume" type="range" min="0" max="1.5" step="0.05" class="w-12 h-1 bg-zinc-200 dark:bg-[#2E2E2E] rounded cursor-pointer accent-zinc-900 dark:accent-white" @input="drawAllClipWaveforms" @change="recordHistory" />
+                      <span class="text-[10px] text-[var(--text-secondary)] w-7 text-right">{{ Math.round(kf.volume * 100) }}%</span>
+                      <button type="button" class="text-neutral-400 hover:text-red-500 cursor-pointer" @click="removeKeyframe(kf.id)"><X class="w-3 h-3" /></button>
                     </div>
                   </div>
                 </div>
@@ -1427,15 +1427,15 @@ onUnmounted(() => {
             <!-- Speed Multiplier -->
             <div class="space-y-1">
               <label class="text-[10px] font-mono text-[var(--text-secondary)] uppercase">Speed</label>
-              <div class="grid grid-cols-5 gap-1 bg-[#0e0e10] p-1 rounded-lg border border-[#262626]">
-                <button v-for="s in [0.5, 1.0, 1.25, 1.5, 2.0]" :key="s" type="button" class="py-1 rounded font-mono text-center text-xs cursor-pointer" :class="playbackSpeed === s ? 'bg-white text-black font-bold' : 'text-[var(--text-tertiary)] hover:text-white'" @click="playbackSpeed = s">{{ s }}x</button>
+              <div class="grid grid-cols-5 gap-1 bg-zinc-100 dark:bg-[#0e0e10] p-1 rounded-lg border border-zinc-200 dark:border-[#262626]">
+                <button v-for="s in [0.5, 1.0, 1.25, 1.5, 2.0]" :key="s" type="button" class="py-1 rounded font-mono text-center text-xs cursor-pointer" :class="playbackSpeed === s ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-bold' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'" @click="playbackSpeed = s">{{ s }}x</button>
               </div>
             </div>
           </div>
 
           <!-- Inspector Export Bar -->
-          <div class="p-3 bg-[#0e0e10] border-t border-[#262626] space-y-2">
-            <input v-model="exportFileName" type="text" placeholder="Filename" class="w-full px-2.5 py-1.5 rounded-md bg-[#18181b] border border-white/10 text-xs font-mono text-white focus:outline-hidden focus:border-white/30" />
+          <div class="p-3 bg-zinc-50 dark:bg-[#0e0e10] border-t border-zinc-200 dark:border-[#262626] space-y-2">
+            <input v-model="exportFileName" type="text" placeholder="Filename" class="w-full px-2.5 py-1.5 rounded-md bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-white/10 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-hidden focus:border-zinc-400 dark:focus:border-white/30" />
             <Button variant="primary" size="sm" class="w-full font-semibold" :disabled="isExporting || clips.length === 0" @click="handleExportAudio">
               <Download class="w-3.5 h-3.5 mr-1.5" />
               <span>{{ isExporting ? 'Rendering...' : `Download ${exportFormat.toUpperCase()}` }}</span>
@@ -1447,12 +1447,12 @@ onUnmounted(() => {
       <!-- Bottom Multi-Track Drag & Drop Studio -->
       <div class="rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] overflow-hidden">
         <!-- Action Toolbar -->
-        <div class="px-4 py-2 bg-[#0e0e10] border-b border-[#262626] flex flex-wrap items-center justify-between gap-3 select-none">
+        <div class="px-4 py-2 bg-zinc-50 dark:bg-[#0e0e10] border-b border-zinc-200 dark:border-[#262626] flex flex-wrap items-center justify-between gap-3 select-none">
           <div class="flex items-center gap-1">
-            <button type="button" class="p-1.5 rounded-lg cursor-pointer" :class="canUndo ? 'text-white hover:bg-[#222226]' : 'text-white/20 cursor-not-allowed'" :disabled="!canUndo" title="Undo (Ctrl+Z)" @click="undo">
+            <button type="button" class="p-1.5 rounded-lg cursor-pointer" :class="canUndo ? 'text-[var(--text-primary)] hover:bg-zinc-200 dark:hover:bg-[#222226]' : 'text-neutral-300 dark:text-white/20 cursor-not-allowed'" :disabled="!canUndo" title="Undo (Ctrl+Z)" @click="undo">
               <Undo2 class="w-4 h-4" />
             </button>
-            <button type="button" class="p-1.5 rounded-lg cursor-pointer" :class="canRedo ? 'text-white hover:bg-[#222226]' : 'text-white/20 cursor-not-allowed'" :disabled="!canRedo" title="Redo (Ctrl+Y)" @click="redo">
+            <button type="button" class="p-1.5 rounded-lg cursor-pointer" :class="canRedo ? 'text-[var(--text-primary)] hover:bg-zinc-200 dark:hover:bg-[#222226]' : 'text-neutral-300 dark:text-white/20 cursor-not-allowed'" :disabled="!canRedo" title="Redo (Ctrl+Y)" @click="redo">
               <Redo2 class="w-4 h-4" />
             </button>
 

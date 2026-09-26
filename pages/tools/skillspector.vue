@@ -598,7 +598,7 @@ const resetScanner = () => {
               {{ f.filename }}
             </div>
 
-            <div class="p-2 rounded bg-[#141416] border border-[#262626] font-mono text-[11px] text-neutral-300 truncate">
+            <div class="p-2 rounded bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] font-mono text-[11px] text-[var(--text-primary)] truncate">
               {{ f.codeSnippet }}
             </div>
           </div>
@@ -608,10 +608,10 @@ const resetScanner = () => {
       <!-- Zero Findings Clean Banner (Takes only 1 line, leaves full width for code) -->
       <div
         v-else
-        class="flex items-center gap-3 px-4 py-3 rounded-[12px] bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-neutral-300"
+        class="flex items-center gap-3 px-4 py-3 rounded-[12px] bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-secondary)]"
       >
-        <ShieldCheck class="w-4 h-4 text-white shrink-0" />
-        <span class="font-medium text-white">No Security Threats Detected:</span>
+        <ShieldCheck class="w-4 h-4 text-emerald-500 shrink-0" />
+        <span class="font-medium text-[var(--text-primary)]">No Security Threats Detected:</span>
         <span class="text-[var(--text-secondary)]">
           All {{ files.length }} files verified clean. No prompt overrides, destructive shell executions, credential harvesting, or exfiltration patterns detected.
         </span>
