@@ -92,7 +92,7 @@ const handleResetPreferences = () => {
         </button>
 
         <div class="hidden sm:block mt-auto pt-4 border-t border-zinc-200 dark:border-[#26262A] px-2 text-[11px] text-zinc-400 dark:text-neutral-500 font-mono">
-          <span>Avttr Studio v1.2.0</span>
+          <span>Avttr Studio</span>
         </div>
       </nav>
 
@@ -320,9 +320,8 @@ const handleResetPreferences = () => {
           <div class="flex items-center gap-3.5 p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E]">
             <img src="/mio.png" alt="Avttr Studio" class="w-12 h-12 rounded-xl object-cover border border-zinc-200 dark:border-[#28282D]" />
             <div>
-              <div class="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-2">
+              <div class="font-bold text-sm text-zinc-900 dark:text-white">
                 <span>Avttr Studio</span>
-                <Badge variant="primary" class="text-[10px]">v1.2.0</Badge>
               </div>
               <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
                 Minimalist Media Utility & Developer Tools Studio.
@@ -416,7 +415,6 @@ const handleResetPreferences = () => {
               Client Diagnostic Hints
             </div>
             <div class="text-[11px] font-mono text-zinc-500 dark:text-neutral-400 space-y-0.5">
-              <div>Version: Avttr Studio v1.2.0</div>
               <div>Stack: Nuxt 3.16 + Tailwind v4 + Nitro Engine</div>
               <div>Tip: Copy error messages or failed URLs when opening an issue.</div>
             </div>

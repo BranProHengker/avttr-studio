@@ -40,17 +40,6 @@ const { openSettings } = useSettings()
         <Github class="w-3.5 h-3.5" />
         <span>GitHub</span>
       </a>
-
-      <span class="opacity-40">•</span>
-
-      <button
-        type="button"
-        class="font-mono text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-colors"
-        @click="openSettings('about')"
-        title="About Avttr Studio"
-      >
-        v1.2.0
-      </button>
     </div>
   </footer>
 </template>
