@@ -2,17 +2,21 @@
 import { ref, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import AppSidebar from '~/components/layout/AppSidebar.vue'
 import AppNavbar from '~/components/layout/AppNavbar.vue'
+import AppFooter from '~/components/layout/AppFooter.vue'
 import ToastContainer from '~/components/layout/ToastContainer.vue'
 import { useSearch } from '~/composables/useSearch'
 import { useSidebar } from '~/composables/useSidebar'
+import { useSettings } from '~/composables/useSettings'
 
 const LazyCommandPalette = defineAsyncComponent(() => import('~/components/layout/CommandPalette.vue'))
 const LazyHistoryDrawer = defineAsyncComponent(() => import('~/components/dashboard/HistoryDrawer.vue'))
+const LazySettingsModal = defineAsyncComponent(() => import('~/components/layout/SettingsModal.vue'))
 
 const isSidebarOpen = ref(false)
 const isHistoryOpen = ref(false)
 const { isPaletteOpen, openPalette, closePalette } = useSearch()
 const { isCollapsed } = useSidebar()
+const { isSettingsOpen, toggleSettings } = useSettings()
 
 const handleGlobalKeydown = (e: KeyboardEvent) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -22,6 +26,9 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
     } else {
       openPalette()
     }
+  } else if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+    e.preventDefault()
+    toggleSettings()
   }
 }
 
@@ -62,11 +69,15 @@ onUnmounted(() => {
       <main class="flex-1 p-4 sm:p-6 lg:p-8 w-full">
         <NuxtPage />
       </main>
+
+      <!-- Global Micro-Footer -->
+      <AppFooter />
     </div>
 
     <!-- Lazy Loaded Modals & Notifications -->
     <LazyCommandPalette v-if="isPaletteOpen" :is-open="isPaletteOpen" @close="closePalette" />
     <LazyHistoryDrawer v-if="isHistoryOpen" :is-open="isHistoryOpen" @close="isHistoryOpen = false" />
+    <LazySettingsModal v-if="isSettingsOpen" />
     <ToastContainer />
   </div>
 </template>

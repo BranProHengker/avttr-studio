@@ -96,6 +96,18 @@ export interface Translations {
   langEn: string
   langId: string
 
+  // Settings & Footer
+  settings: string
+  settingsDesc: string
+  tabGeneral: string
+  tabDownloader: string
+  tabStorage: string
+  tabAbout: string
+  tabSupport: string
+  reportBug: string
+  feedback: string
+  footerPrivacy: string
+
   // Category & Tool Item Maps
   categories: Record<string, CategoryTranslation>
   tools: Record<string, ToolTranslation>
@@ -178,6 +190,17 @@ const translations: Record<Locale, Translations> = {
     language: 'Language',
     langEn: 'English',
     langId: 'Bahasa Indonesia',
+
+    settings: 'Settings',
+    settingsDesc: 'Configure preferences, downloader defaults, and workspace behavior.',
+    tabGeneral: 'General',
+    tabDownloader: 'Downloader',
+    tabStorage: 'Storage & Cache',
+    tabAbout: 'About & Stack',
+    tabSupport: 'Report Bug & Support',
+    reportBug: 'Report a Bug',
+    feedback: 'Feedback',
+    footerPrivacy: 'Zero tracking, 100% client-side privacy.',
 
     categories: {
       downloaders: {
@@ -405,6 +428,17 @@ const translations: Record<Locale, Translations> = {
     language: 'Bahasa',
     langEn: 'English',
     langId: 'Bahasa Indonesia',
+
+    settings: 'Pengaturan',
+    settingsDesc: 'Kelola preferensi, unduhan media, dan sistem workspace.',
+    tabGeneral: 'Umum',
+    tabDownloader: 'Downloader',
+    tabStorage: 'Penyimpanan & Cache',
+    tabAbout: 'Tentang & Stack',
+    tabSupport: 'Lapor Bug & Bantuan',
+    reportBug: 'Laporkan Bug',
+    feedback: 'Masukan',
+    footerPrivacy: 'Tanpa pelacakan, 100% privasi di perangkat klien.',
 
     categories: {
       downloaders: {

@@ -21,10 +21,12 @@ import {
   Music,
   FolderCheck,
   Video,
+  Settings,
 } from 'lucide-vue-next'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
 import { useSidebar } from '~/composables/useSidebar'
+import { useSettings } from '~/composables/useSettings'
 import RadialSubmenu, { type RadialItem } from '~/components/layout/RadialSubmenu.vue'
 
 interface Props {
@@ -42,6 +44,7 @@ const route = useRoute()
 const { history } = useHistory()
 const { t } = useI18n()
 const { isCollapsed, toggleCollapse } = useSidebar()
+const { openSettings } = useSettings()
 
 const shortcutKey = ref('Ctrl+K')
 
@@ -417,11 +420,30 @@ const activeRadialData = computed(() => {
             </button>
 
             <!-- Tooltip -->
-            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-[#212121] border border-zinc-800 dark:border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-1.5">
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-zinc-800 dark:bg-[#212121] border border-zinc-700 dark:border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-1.5">
               <span>{{ t.downloadHistory }}</span>
-              <span v-if="history.length > 0" class="px-1.5 py-0.2 font-mono text-[10px] bg-zinc-800 dark:bg-[#2E2E2E] rounded text-zinc-300 dark:text-neutral-300">
+              <span v-if="history.length > 0" class="px-1.5 py-0.2 font-mono text-[10px] bg-zinc-700 dark:bg-[#2E2E2E] rounded text-zinc-300 dark:text-neutral-300">
                 {{ history.length }}
               </span>
+            </div>
+          </div>
+
+          <!-- Settings Trigger (Collapsed Rail) -->
+          <div class="relative group">
+            <button
+              type="button"
+              id="collapsed-settings-btn"
+              class="w-10 h-10 rounded-xl flex items-center justify-center relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
+              @click="openSettings('general')"
+              @mouseenter="closeRadialMenu"
+            >
+              <Settings class="w-4.5 h-4.5" />
+            </button>
+
+            <!-- Tooltip -->
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-zinc-800 dark:bg-[#212121] border border-zinc-700 dark:border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-1.5">
+              <span>{{ t.settings }}</span>
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-700 dark:bg-[#2E2E2E] text-zinc-300 rounded font-semibold">{{ shortcutKey === '⌘K' ? '⌘,' : 'Ctrl+,' }}</kbd>
             </div>
           </div>
 
@@ -1112,6 +1134,22 @@ const activeRadialData = computed(() => {
               >
                 {{ history.length }}
               </span>
+            </button>
+
+            <!-- Settings Button -->
+            <button
+              type="button"
+              id="sidebar-settings-btn"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              @click="openSettings('general')"
+            >
+              <div class="flex items-center gap-2.5">
+                <Settings class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" />
+                <span>{{ t.settings }}</span>
+              </div>
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-600 dark:text-neutral-400 border border-zinc-200 dark:border-transparent rounded font-semibold">
+                {{ shortcutKey === '⌘K' ? '⌘,' : 'Ctrl+,' }}
+              </kbd>
             </button>
           </div>
         </div>
