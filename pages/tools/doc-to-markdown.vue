@@ -361,15 +361,15 @@ const renderedHtml = computed(() => {
     <div v-if="!selectedFile && !isConverting" class="space-y-4">
       <!-- Standardized Section 10 Standalone Dropzone -->
       <div
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
-        :class="isDragging ? 'border-white bg-[#1A1A1E]' : ''"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
+        :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[#1A1A1E]' : ''"
         @click="fileInputRef?.click()"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleDrop"
       >
-        <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-          <FileText class="w-6 h-6" />
+        <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+          <FileText class="w-6 h-6 text-zinc-900 dark:text-white" />
         </div>
         <div class="text-sm font-semibold text-[var(--text-primary)] mt-3">
           {{ locale === 'id' ? 'Tarik & lepas dokumen PDF atau gambar di sini atau browse file' : 'Drop your PDF document or image here or browse' }}
@@ -382,17 +382,17 @@ const renderedHtml = computed(() => {
         <div class="mt-6 flex items-center justify-center gap-2.5 flex-wrap" @click.stop>
           <Button
             variant="secondary"
-            class="h-9 px-3.5 text-xs font-medium border-[#2E2E2E] flex items-center gap-1.5"
+            class="h-9 px-3.5 text-xs font-medium border border-zinc-200 dark:border-[#2E2E2E] flex items-center gap-1.5"
             @click="handlePasteFromClipboard"
           >
             <Clipboard class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
             <span>Paste Screenshot</span>
-            <kbd class="hidden sm:inline-block px-1 py-0.2 bg-[#212121] border border-[#2E2E2E] rounded text-[10px] text-[var(--text-tertiary)] font-mono">Ctrl+V</kbd>
+            <kbd class="hidden sm:inline-block px-1 py-0.2 bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] rounded text-[10px] text-[var(--text-tertiary)] font-mono">Ctrl+V</kbd>
           </Button>
 
           <Button
-            variant="ghost"
-            class="h-9 px-3.5 text-xs font-medium border border-[#2E2E2E] text-[var(--text-secondary)] hover:text-white"
+            variant="outline"
+            class="h-9 px-3.5 text-xs font-medium border border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             @click="fileInputRef?.click()"
           >
             <Upload class="w-3.5 h-3.5 mr-1" />
@@ -402,7 +402,7 @@ const renderedHtml = computed(() => {
       </div>
 
       <!-- Daily Quota & Usage Notice -->
-      <div class="p-3.5 sm:p-4 rounded-[14px] bg-[#141416] border border-[#2E2E2E] flex items-start gap-3 text-xs">
+      <div class="p-3.5 sm:p-4 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] flex items-start gap-3 text-xs">
         <AlertCircle class="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
         <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
           <div class="text-xs font-semibold text-[var(--text-primary)]">
@@ -419,11 +419,11 @@ const renderedHtml = computed(() => {
 
     <!-- Converting Skeleton -->
     <Card v-else-if="isConverting" class="p-8 sm:p-14 text-center space-y-4">
-      <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white animate-pulse">
-        <RefreshCw class="w-6 h-6 animate-spin text-white" />
+      <div class="w-12 h-12 mx-auto rounded-xl bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white animate-pulse">
+        <RefreshCw class="w-6 h-6 animate-spin text-zinc-900 dark:text-white" />
       </div>
       <div class="space-y-1.5">
-        <div class="text-base font-semibold text-white">
+        <div class="text-base font-semibold text-[var(--text-primary)]">
           {{ locale === 'id' ? 'Menganalisis Dokumen dengan AI...' : 'Analyzing Document with AI...' }}
         </div>
         <p class="text-xs text-[var(--text-secondary)] max-w-md mx-auto">

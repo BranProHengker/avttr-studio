@@ -1084,12 +1084,12 @@ onUnmounted(() => {
       <!-- Controls when files are loaded -->
       <div v-if="videoUrl || queue.length > 0" class="flex flex-wrap items-center gap-2.5 shrink-0">
         <!-- Mode Switcher Tabs -->
-        <div class="flex items-center p-1 bg-[#141416] border border-[#2E2E2E] rounded-xl text-xs">
+        <div class="flex items-center p-1 bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl text-xs">
           <button
             type="button"
             :disabled="!videoUrl"
             class="px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5"
-            :class="mode === 'single' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
+            :class="mode === 'single' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
             @click="mode = 'single'"
           >
             <Film class="w-3.5 h-3.5" />
@@ -1099,12 +1099,12 @@ onUnmounted(() => {
             type="button"
             :disabled="queue.length === 0"
             class="px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5"
-            :class="mode === 'batch' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
+            :class="mode === 'batch' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
             @click="mode = 'batch'"
           >
             <List class="w-3.5 h-3.5" />
             <span>Batch Queue</span>
-            <span v-if="queue.length > 0" class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-white font-mono">
+            <span v-if="queue.length > 0" class="px-1.5 py-0.2 rounded-full text-[10px] bg-zinc-200 dark:bg-white/10 text-zinc-800 dark:text-white font-mono">
               {{ queue.length }}
             </span>
           </button>
@@ -1132,7 +1132,7 @@ onUnmounted(() => {
             v-model="videoUrlInput"
             type="url"
             :placeholder="locale === 'id' ? 'Tempel link video langsung (CORS enabled)...' : 'Paste direct video URL (CORS enabled)...'"
-            class="w-full h-11 pl-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            class="w-full h-11 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-zinc-400/20 dark:focus:ring-white/10"
             :class="videoUrlInput ? 'pr-20' : 'pr-10'"
             @keydown.enter="fetchVideoFromUrl"
           />
@@ -1140,7 +1140,7 @@ onUnmounted(() => {
             <button
               v-if="videoUrlInput"
               type="button"
-              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
               title="Clear input"
               aria-label="Clear input"
               @click="videoUrlInput = ''"
@@ -1149,7 +1149,7 @@ onUnmounted(() => {
             </button>
             <button
               type="button"
-              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
               @click="pasteFromClipboard"
               :title="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
               :aria-label="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
@@ -1173,16 +1173,16 @@ onUnmounted(() => {
 
       <!-- Standardized Dashed Dropzone (DESIGN.md Section 10) -->
       <div
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none"
-        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : 'border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]'"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
+        :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[var(--bg-card-hover)]' : ''"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="(e) => { isDragging = false; if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files) }"
         @click="fileInputRef?.click()"
       >
         <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <Film class="w-6 h-6 text-white" />
+          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+            <Film class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -1199,17 +1199,17 @@ onUnmounted(() => {
     <!-- STATE 2: Batch Queue Workbench -->
     <div v-else-if="mode === 'batch' && queue.length > 0" class="space-y-6">
       <!-- Batch Summary Bar -->
-      <div class="p-4 bg-[#141416] border border-[#2E2E2E] rounded-[14px] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0">
+          <div class="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shrink-0">
             <List class="w-5 h-5" />
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <h2 class="text-sm font-semibold text-white">
+              <h2 class="text-sm font-semibold text-[var(--text-primary)]">
                 {{ locale === 'id' ? 'Antrean Kompresi Batch' : 'Batch Compression Queue' }}
               </h2>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/10 text-white">
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white border border-zinc-200 dark:border-transparent">
                 {{ queue.length }} {{ queue.length > 1 ? 'Videos' : 'Video' }}
               </span>
             </div>

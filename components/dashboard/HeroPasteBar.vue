@@ -138,11 +138,11 @@ const submitBatch = () => {
   <div class="w-full space-y-3">
     <!-- Header Mode Switcher Tabs -->
     <div class="flex items-center px-0.5">
-      <div class="flex items-center bg-[#171717] border border-[#262626] rounded-lg p-0.5">
+      <div class="flex items-center bg-zinc-200/60 dark:bg-[#171717] border border-zinc-200 dark:border-[#262626] rounded-lg p-0.5">
         <button
           type="button"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
-          :class="mode === 'single' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white'"
+          :class="mode === 'single' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
           @click="mode = 'single'"
         >
           <Zap class="w-3.5 h-3.5" />
@@ -152,12 +152,12 @@ const submitBatch = () => {
         <button
           type="button"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
-          :class="mode === 'batch' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white'"
+          :class="mode === 'batch' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
           @click="mode = 'batch'"
         >
           <Layers class="w-3.5 h-3.5" />
           <span>Batch Queue</span>
-          <span v-if="detectedBatchUrls.length > 0" class="px-1.5 py-0.2 rounded-full text-[10px] bg-white text-black font-bold">
+          <span v-if="detectedBatchUrls.length > 0" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--primary)] text-[var(--primary-foreground)] font-bold">
             {{ detectedBatchUrls.length }}
           </span>
         </button>
@@ -181,7 +181,7 @@ const submitBatch = () => {
           :value="modelValue"
           type="url"
           :placeholder="t.pastePlaceholder"
-          class="w-full h-12 pl-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-white/10 disabled:opacity-50 shadow-xs"
+          class="w-full h-12 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs"
           :class="modelValue ? 'pr-20' : 'pr-12'"
           :disabled="loading"
           @input="handleSingleInput"
@@ -196,7 +196,7 @@ const submitBatch = () => {
             type="button"
             title="Clear input"
             aria-label="Clear input"
-            class="p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
             @click="clearInput"
           >
             <X class="w-4 h-4" />
@@ -207,7 +207,7 @@ const submitBatch = () => {
             type="button"
             title="Paste from Clipboard"
             aria-label="Paste from clipboard"
-            class="p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
             @click="pasteFromClipboard"
           >
             <Clipboard class="w-4 h-4" />
@@ -217,7 +217,7 @@ const submitBatch = () => {
 
       <!-- Submit Trigger -->
       <Button
-        variant="secondary"
+        variant="primary"
         size="default"
         class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
         :loading="loading"
@@ -236,14 +236,14 @@ const submitBatch = () => {
           v-model="batchText"
           rows="4"
           placeholder="Paste multiple social media links here, separated by new lines...&#10;https://www.tiktok.com/@user/video/...&#10;https://www.instagram.com/reel/...&#10;https://youtu.be/..."
-          class="w-full p-4 pr-16 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10 shadow-xs"
+          class="w-full p-4 pr-16 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 shadow-xs"
         />
 
         <div class="absolute right-2.5 bottom-3 flex items-center gap-1">
           <button
             v-if="batchText"
             type="button"
-            class="p-1.5 text-neutral-400 hover:text-white cursor-pointer flex items-center justify-center transition-colors rounded-lg hover:bg-white/10 active:scale-95"
+            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer flex items-center justify-center transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
             title="Clear input"
             aria-label="Clear input"
             @click="batchText = ''"
@@ -253,7 +253,7 @@ const submitBatch = () => {
 
           <button
             type="button"
-            class="p-1.5 text-neutral-400 hover:text-white cursor-pointer flex items-center justify-center transition-colors rounded-lg hover:bg-white/10 active:scale-95"
+            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer flex items-center justify-center transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
             title="Paste Clipboard"
             aria-label="Paste from clipboard"
             @click="pasteFromClipboard"
@@ -265,16 +265,16 @@ const submitBatch = () => {
 
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="text-xs font-mono text-[var(--text-secondary)]">
-          <span v-if="detectedBatchUrls.length > 0" class="text-white font-semibold">
+          <span v-if="detectedBatchUrls.length > 0" class="text-[var(--text-primary)] font-semibold">
             {{ detectedBatchUrls.length }} link(s) detected and ready to queue
           </span>
-          <span v-else class="text-neutral-500">
+          <span v-else class="text-[var(--text-tertiary)]">
             Enter 1 or more URLs on separate lines
           </span>
         </div>
 
         <Button
-          variant="secondary"
+          variant="primary"
           size="default"
           class="font-medium px-5 h-10 rounded-xl cursor-pointer"
           :disabled="detectedBatchUrls.length === 0"

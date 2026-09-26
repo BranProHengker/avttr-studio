@@ -431,8 +431,8 @@ const resetScanner = () => {
     <!-- Recursive Folder Dropzone -->
     <div
       v-if="!report"
-      class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-all group"
-      :class="isDragging ? 'border-white/50 bg-[#1a1a1c]' : ''"
+      class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-all group"
+      :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white/50 dark:bg-[#1a1a1c]' : ''"
       @dragover.prevent="isDragging = true"
       @dragleave.prevent="isDragging = false"
       @drop.prevent="handleDrop"
@@ -447,8 +447,8 @@ const resetScanner = () => {
         class="hidden"
         @change="handleFolderSelect"
       />
-      <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
-        <Folder class="w-6 h-6 text-white" />
+      <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs group-hover:scale-105 transition-transform">
+        <Folder class="w-6 h-6 text-zinc-900 dark:text-white" />
       </div>
       <div class="mt-4 text-sm font-semibold text-[var(--text-primary)]">
         Drop your skill folder here or browse
@@ -618,7 +618,7 @@ const resetScanner = () => {
       </div>
 
       <!-- Full-Width Code Viewer Stage -->
-      <div class="w-full bg-[#141416] border border-[var(--border-card)] rounded-[14px] overflow-hidden">
+      <div class="w-full bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] overflow-hidden">
         <!-- File Selector / Tabs Header -->
         <div class="px-4 py-2 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs font-mono">
           <div class="flex items-center gap-1.5 overflow-x-auto py-0.5 max-w-[80%]">

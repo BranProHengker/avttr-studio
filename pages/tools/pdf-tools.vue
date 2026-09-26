@@ -440,11 +440,11 @@ const handleExecuteImgToPdf = async () => {
     </div>
 
     <!-- Mode Selector Tabs -->
-    <div class="flex items-center gap-2 p-1 bg-[#171717] border border-[var(--border-subtle)] rounded-lg w-full sm:w-fit">
+    <div class="flex items-center gap-2 p-1 bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-lg w-full sm:w-fit">
       <button
         type="button"
         class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-md transition-all cursor-pointer"
-        :class="activeTab === 'merge' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'"
+        :class="activeTab === 'merge' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-zinc-200/60 dark:hover:bg-[var(--bg-card-hover)]'"
         @click="activeTab = 'merge'"
       >
         <Layers class="w-4 h-4" />
@@ -454,7 +454,7 @@ const handleExecuteImgToPdf = async () => {
       <button
         type="button"
         class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-md transition-all cursor-pointer"
-        :class="activeTab === 'split' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'"
+        :class="activeTab === 'split' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-zinc-200/60 dark:hover:bg-[var(--bg-card-hover)]'"
         @click="activeTab = 'split'"
       >
         <Scissors class="w-4 h-4" />
@@ -464,7 +464,7 @@ const handleExecuteImgToPdf = async () => {
       <button
         type="button"
         class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-md transition-all cursor-pointer"
-        :class="activeTab === 'img2pdf' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'"
+        :class="activeTab === 'img2pdf' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-zinc-200/60 dark:hover:bg-[var(--bg-card-hover)]'"
         @click="activeTab = 'img2pdf'"
       >
         <ImageIcon class="w-4 h-4" />
@@ -475,10 +475,10 @@ const handleExecuteImgToPdf = async () => {
     <!-- TAB 1: MERGE PDF -->
     <div v-if="activeTab === 'merge'" class="space-y-6">
       <!-- Standardized Upload Dropzone -->
-      <label class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]">
+      <label class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]">
         <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <Upload class="w-6 h-6 text-white" />
+          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+            <Upload class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -602,11 +602,11 @@ const handleExecuteImgToPdf = async () => {
       <!-- Standardized Upload Dropzone -->
       <label
         v-if="!splitFile"
-        class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
+        class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
       >
         <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <Scissors class="w-6 h-6 text-white" />
+          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+            <Scissors class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -703,10 +703,10 @@ const handleExecuteImgToPdf = async () => {
     <!-- TAB 3: IMAGES TO PDF -->
     <div v-if="activeTab === 'img2pdf'" class="space-y-6">
       <!-- Standardized Upload Dropzone -->
-      <label class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]">
+      <label class="block relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]">
         <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <ImageIcon class="w-6 h-6 text-white" />
+          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+            <ImageIcon class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -735,7 +735,7 @@ const handleExecuteImgToPdf = async () => {
             <label class="text-xs font-semibold text-[var(--text-secondary)]">Page Size</label>
             <select
               v-model="pageSizeOption"
-              class="w-full px-3 py-1.5 bg-[#171717] border border-[var(--border-subtle)] rounded-md text-xs text-white focus:outline-none"
+              class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-md text-xs text-[var(--text-primary)] focus:outline-none"
             >
               <option value="a4">A4 (Standard Document)</option>
               <option value="letter">US Letter</option>
@@ -748,7 +748,7 @@ const handleExecuteImgToPdf = async () => {
             <label class="text-xs font-semibold text-[var(--text-secondary)]">Orientation</label>
             <select
               v-model="pageOrientation"
-              class="w-full px-3 py-1.5 bg-[#171717] border border-[var(--border-subtle)] rounded-md text-xs text-white focus:outline-none"
+              class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-md text-xs text-[var(--text-primary)] focus:outline-none"
             >
               <option value="portrait">Portrait (Vertical)</option>
               <option value="landscape">Landscape (Horizontal)</option>
@@ -760,7 +760,7 @@ const handleExecuteImgToPdf = async () => {
             <label class="text-xs font-semibold text-[var(--text-secondary)]">Page Margins</label>
             <select
               v-model="pageMargin"
-              class="w-full px-3 py-1.5 bg-[#171717] border border-[var(--border-subtle)] rounded-md text-xs text-white focus:outline-none"
+              class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-md text-xs text-[var(--text-primary)] focus:outline-none"
             >
               <option :value="0">No Margin (0 mm)</option>
               <option :value="20">Compact (10 mm)</option>

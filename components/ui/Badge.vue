@@ -16,27 +16,29 @@ const props = withDefaults(defineProps<Props>(), {
 const variantClasses = computed(() => {
   switch (props.variant) {
     case 'primary':
-      // Solid white pill with black text (like 'New')
-      return 'rounded-full bg-white text-black font-semibold shadow-xs hover:bg-white/90 border-transparent'
+      // Soft dark charcoal pill in light mode, soft off-white pill in dark mode
+      return 'rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs hover:opacity-90 border-transparent'
     case 'secondary':
-      // Neutral dark pill (like 'Beta')
-      return 'rounded-full bg-[#2E2E2E] text-white font-medium border-transparent hover:bg-[#383838]'
+      // Subtle neutral pill matching Apple/Shadcn soft palette
+      return 'rounded-full bg-zinc-200/60 text-[var(--text-primary)] dark:bg-[#2C2C2E] dark:text-[var(--text-primary)] font-medium border border-zinc-200/80 dark:border-transparent hover:bg-zinc-200 dark:hover:bg-[#38383A]'
     case 'badge':
     case 'neutral':
       // Card surface with subtle border (like 'v2.0')
       return 'rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] text-[var(--text-primary)] hover:border-[var(--border-card-hover)]'
     case 'outline':
       // Transparent pill with border (like 'Popular')
-      return 'rounded-full border border-[var(--border-subtle)] bg-transparent text-[var(--text-secondary)] hover:text-white hover:border-[var(--border-card-hover)]'
+      return 'rounded-full border border-[var(--border-subtle)] bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-card-hover)]'
     case 'ghost':
       // Clean text-only (like 'Coming soon')
-      return 'bg-transparent text-xs text-[var(--text-tertiary)] hover:text-white hover:bg-[var(--bg-card-hover)] rounded-full border-transparent'
+      return 'bg-transparent text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-full border-transparent'
     case 'success':
+      return 'rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium border border-emerald-500/20'
     case 'warning':
+      return 'rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium border border-amber-500/20'
     case 'error':
+      return 'rounded-full bg-red-500/10 text-red-700 dark:text-red-400 font-medium border border-red-500/20'
     default:
-      // Default to neutral dark pill
-      return 'rounded-full bg-[#2E2E2E] text-white font-medium border-transparent hover:bg-[#383838]'
+      return 'rounded-full bg-zinc-100 text-zinc-900 dark:bg-[#2E2E2E] dark:text-white font-medium border border-zinc-200 dark:border-transparent hover:bg-zinc-200 dark:hover:bg-[#383838]'
   }
 })
 

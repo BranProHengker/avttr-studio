@@ -400,8 +400,8 @@ const handleContainerTouchMove = (e: TouchEvent) => {
     <!-- Empty Upload State -->
     <div v-if="items.length === 0">
       <div
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
-        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
+        :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[var(--bg-card-hover)]' : ''"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="onDrop"
@@ -417,8 +417,8 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         />
 
         <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <FileImage class="w-6 h-6 text-white" />
+          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+            <FileImage class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
 
           <div>

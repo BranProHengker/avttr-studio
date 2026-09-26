@@ -234,8 +234,8 @@ onUnmounted(() => {
       >
         <NuxtLink
           :to="item.path"
-          class="w-9.5 h-9.5 rounded-full bg-[#1C1C1E] border border-[#2E2E2E] hover:border-white/60 hover:bg-[#2A2A2D] shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-colors duration-150 cursor-pointer relative hover:shadow-[0_0_18px_rgba(255,255,255,0.18)]"
-          :class="isRouteActive(item.path) ? 'border-white bg-white/15 ring-2 ring-white/25 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : ''"
+          class="w-9.5 h-9.5 rounded-full bg-white dark:bg-[#1C1C1E] border border-zinc-200 dark:border-[#2E2E2E] hover:border-zinc-400 dark:hover:border-white/60 hover:bg-zinc-50 dark:hover:bg-[#2A2A2D] shadow-xl flex items-center justify-center text-zinc-900 dark:text-white hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer relative"
+          :class="isRouteActive(item.path) ? 'border-zinc-400 bg-zinc-100 ring-2 ring-zinc-400/25 text-zinc-950 dark:border-white dark:bg-white/15 dark:ring-white/25 dark:text-white shadow-xs' : ''"
           @click="emit('close')"
         >
           <BrandIcon
@@ -252,7 +252,7 @@ onUnmounted(() => {
 
         <!-- Floating Tooltip -->
         <div
-          class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-150 absolute left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-[#18181A] border border-[#2E2E2E] text-xs font-medium text-white whitespace-nowrap shadow-2xl pointer-events-none z-[110]"
+          class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-150 absolute left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-lg bg-zinc-800 text-white dark:bg-[#18181A] border border-zinc-700 dark:border-[#2E2E2E] text-xs font-medium whitespace-nowrap shadow-xl pointer-events-none z-[110]"
           :class="item.dy < 0 ? 'bottom-full mb-2' : 'top-full mt-2'"
         >
           {{ item.label }}

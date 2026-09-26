@@ -478,7 +478,7 @@ const resetAll = () => {
     <!-- Search Quota Widget (Matching trace.moe real UI) -->
     <div
       v-if="dailyQuota !== null && dailyQuotaUsed !== null"
-      class="p-3.5 rounded-[14px] bg-[#141416] border border-[#2E2E2E] space-y-2 max-w-xl"
+      class="p-3.5 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2 max-w-xl"
     >
       <div class="flex items-center justify-between text-xs text-[var(--text-primary)] font-normal select-none">
         <span>Search quota: {{ dailyQuotaUsed }} / {{ dailyQuota }} used</span>
@@ -486,7 +486,7 @@ const resetAll = () => {
       </div>
 
       <!-- Progress Track & Fill -->
-      <div class="w-full h-2 bg-[#2E2E32] rounded-full overflow-hidden">
+      <div class="w-full h-2 bg-zinc-200 dark:bg-[#2E2E32] rounded-full overflow-hidden">
         <div
           class="h-full bg-[#7086f4] rounded-full transition-all duration-300"
           :style="{ width: `${Math.min(100, Math.max(1, (dailyQuotaUsed / dailyQuota) * 100))}%` }"
@@ -517,7 +517,7 @@ const resetAll = () => {
             <Input
               v-model="imageUrlInput"
               placeholder="Paste anime image URL (e.g. https://.../screenshot.jpg)..."
-              class="pl-10 h-10 text-xs sm:text-sm w-full bg-[#141416] border-[#2E2E2E] text-white"
+              class="pl-10 h-10 text-xs sm:text-sm w-full bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-primary)]"
               @keydown.enter="handleUrlSearch"
             />
           </div>
@@ -537,19 +537,19 @@ const resetAll = () => {
             <Button
               id="btn-paste-image"
               variant="secondary"
-              class="h-10 px-3.5 text-xs font-medium flex items-center gap-1.5 border-[#2E2E2E]"
+              class="h-10 px-3.5 text-xs font-medium flex items-center gap-1.5 border border-zinc-200 dark:border-[#2E2E2E]"
               :disabled="isAnalyzing"
               @click="handlePasteFromClipboard"
             >
               <Clipboard class="w-4 h-4 text-[var(--text-secondary)]" />
               <span class="hidden sm:inline">Paste</span>
-              <kbd class="hidden md:inline-block px-1 py-0.2 bg-[#212121] border border-[#2E2E2E] rounded text-[10px] text-[var(--text-tertiary)] font-mono">Ctrl+V</kbd>
+              <kbd class="hidden md:inline-block px-1 py-0.2 bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] rounded text-[10px] text-[var(--text-tertiary)] font-mono">Ctrl+V</kbd>
             </Button>
 
             <Button
               v-if="previewImageUrl || searchResults.length"
               variant="ghost"
-              class="h-10 px-2.5 text-xs text-[var(--text-tertiary)] hover:text-white"
+              class="h-10 px-2.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               title="Reset"
               @click="resetAll"
             >
@@ -559,12 +559,12 @@ const resetAll = () => {
         </div>
 
         <!-- Options -->
-        <div class="flex items-center justify-between mt-3 pt-3 border-t border-[#2E2E2E] text-xs text-[var(--text-secondary)] flex-wrap gap-2">
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border-card)] text-xs text-[var(--text-secondary)] flex-wrap gap-2">
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input
               v-model="cutBorders"
               type="checkbox"
-              class="rounded border-[#2E2E2E] bg-[#141416] text-white focus:ring-0 w-3.5 h-3.5 accent-[#2E2E2E]"
+              class="rounded border-zinc-300 dark:border-[#2E2E2E] bg-white dark:bg-[#141416] text-[var(--text-primary)] focus:ring-0 w-3.5 h-3.5 accent-zinc-900 dark:accent-[#2E2E2E]"
             />
             <span>{{ locale === 'id' ? 'Auto Cut Black Borders (Rekomendasi untuk screenshot 16:9)' : 'Auto Cut Black Borders' }}</span>
           </label>
@@ -579,15 +579,15 @@ const resetAll = () => {
       <!-- Standardized Section 10 Standalone Dropzone (shown when no results yet) -->
       <div
         v-if="!previewImageUrl && !isAnalyzing"
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
-        :class="isDragging ? 'border-white bg-[#1A1A1E]' : ''"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
+        :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[#1A1A1E]' : ''"
         @click="fileInputRef?.click()"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleDrop"
       >
-        <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-          <ScanSearch class="w-6 h-6" />
+        <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+          <ScanSearch class="w-6 h-6 text-zinc-900 dark:text-white" />
         </div>
         <div class="text-sm font-semibold text-[var(--text-primary)] mt-3">
           {{ locale === 'id' ? 'Tarik & lepas screenshot anime di sini atau browse file' : 'Drop your anime screenshot here or browse' }}
@@ -602,7 +602,7 @@ const resetAll = () => {
           <button
             v-for="sample in samplePresets"
             :key="sample.url"
-            class="px-2.5 py-1 text-xs bg-[#212121] hover:bg-[#2A2A2E] border border-[#2E2E2E] rounded-md text-[var(--text-secondary)] hover:text-white transition-colors flex items-center gap-1.5"
+            class="px-2.5 py-1 text-xs bg-zinc-100 hover:bg-zinc-200 dark:bg-[#212121] dark:hover:bg-[#2A2A2E] border border-zinc-200 dark:border-[#2E2E2E] rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1.5"
             @click="handleSampleClick(sample)"
           >
             <Film class="w-3 h-3" />
@@ -614,8 +614,8 @@ const resetAll = () => {
 
     <!-- Analyzing Indicator -->
     <Card v-if="isAnalyzing" class="p-8 sm:p-12 text-center space-y-4">
-      <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white animate-pulse">
-        <RefreshCw class="w-6 h-6 animate-spin text-white" />
+      <div class="w-12 h-12 mx-auto rounded-xl bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white animate-pulse">
+        <RefreshCw class="w-6 h-6 animate-spin text-zinc-900 dark:text-white" />
       </div>
       <div class="space-y-1">
         <div class="text-base font-semibold text-[var(--text-primary)]">

@@ -214,7 +214,7 @@ const activeRadialData = computed(() => {
     <!-- Mobile Backdrop -->
     <div
       v-if="isOpen"
-      class="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 lg:hidden"
+      class="fixed inset-0 bg-black/30 dark:bg-black/60 backdrop-blur-xs z-40 lg:hidden"
       @click="emit('close')"
     />
 
@@ -230,7 +230,7 @@ const activeRadialData = computed(() => {
       <button
         type="button"
         id="sidebar-collapse-toggle"
-        class="hidden lg:flex absolute -right-3 top-14 -translate-y-1/2 w-6 h-6 rounded-full bg-[#212121] border border-[#2E2E2E] shadow-md items-center justify-center text-neutral-400 hover:text-white hover:border-white/40 cursor-pointer z-50 transition-all hover:scale-110 active:scale-95"
+        class="hidden lg:flex absolute -right-3 top-14 -translate-y-1/2 w-6 h-6 rounded-full bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] shadow-md items-center justify-center text-zinc-500 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-white/40 cursor-pointer z-50 transition-all hover:scale-110 active:scale-95"
         :title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
         @click="toggleCollapse"
         @mouseenter="closeRadialMenu"
@@ -245,7 +245,7 @@ const activeRadialData = computed(() => {
         <div class="h-14 w-full flex items-center justify-center border-b border-[var(--border-subtle)] shrink-0">
           <NuxtLink
             to="/"
-            class="w-8 h-8 rounded-lg overflow-hidden bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 shadow-xs hover:border-white/30 transition-colors"
+            class="w-8 h-8 rounded-lg overflow-hidden bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center shrink-0 shadow-xs hover:border-zinc-300 dark:hover:border-white/30 transition-colors"
             title="Avttr Studio"
             @mouseenter="closeRadialMenu"
           >
@@ -262,17 +262,17 @@ const activeRadialData = computed(() => {
           <button
             type="button"
             id="collapsed-search-btn"
-            class="relative group w-10 h-10 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent hover:border-[#2E2E2E] transition-all cursor-pointer shadow-xs"
+            class="relative group w-10 h-10 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent hover:border-[var(--border-subtle)] transition-all cursor-pointer shadow-xs"
             @click="emit('open-palette')"
             @mouseenter="closeRadialMenu"
           >
-            <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <!-- Floating Tooltip -->
-            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-2">
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full ml-3 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-[#212121] border border-zinc-800 dark:border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-2">
               <span>Search tools</span>
-              <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[#2E2E2E] text-neutral-300 rounded font-semibold">{{ shortcutKey }}</kbd>
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 dark:bg-[#2E2E2E] text-zinc-300 dark:text-neutral-300 rounded font-semibold">{{ shortcutKey }}</kbd>
             </div>
           </button>
         </div>
@@ -286,8 +286,8 @@ const activeRadialData = computed(() => {
               class="w-10 h-10 rounded-xl flex items-center justify-center transition-all cursor-pointer"
               :class="
                 isRouteActive('/')
-                  ? 'bg-[#2E2E2E] text-white border border-white/10 shadow-xs'
-                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent'
+                  ? 'bg-zinc-200/80 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border border-zinc-300/80 dark:border-white/10 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent'
               "
               @mouseenter="closeRadialMenu"
             >
@@ -297,7 +297,7 @@ const activeRadialData = computed(() => {
             </NuxtLink>
 
             <!-- Tooltip -->
-            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-zinc-800 dark:bg-[#212121] border border-zinc-700 dark:border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
               {{ t.dashboard }}
             </div>
           </div>
@@ -309,8 +309,8 @@ const activeRadialData = computed(() => {
               class="sidebar-category-btn w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 cursor-pointer"
               :class="[
                 isCategoryActive('video-reels') || activeRadialCategory === 'video-reels'
-                  ? 'bg-[#2E2E2E] text-white border border-white/40 ring-2 ring-white/25 shadow-[0_0_14px_rgba(255,255,255,0.15)]'
-                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent',
+                  ? 'bg-zinc-200/80 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border border-zinc-300/80 dark:border-white/40 shadow-xs ring-2 ring-zinc-300/40 dark:ring-white/25 dark:shadow-[0_0_14px_rgba(255,255,255,0.15)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent',
               ]"
               @mouseenter="openRadialMenu('video-reels', $event)"
               @click="openRadialMenu('video-reels', $event)"
@@ -328,8 +328,8 @@ const activeRadialData = computed(() => {
               class="sidebar-category-btn w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 cursor-pointer"
               :class="[
                 isCategoryActive('feeds-audio') || activeRadialCategory === 'feeds-audio'
-                  ? 'bg-[#2E2E2E] text-white border border-white/40 ring-2 ring-white/25 shadow-[0_0_14px_rgba(255,255,255,0.15)]'
-                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent',
+                  ? 'bg-zinc-200/80 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border border-zinc-300/80 dark:border-white/40 shadow-xs ring-2 ring-zinc-300/40 dark:ring-white/25 dark:shadow-[0_0_14px_rgba(255,255,255,0.15)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent',
               ]"
               @mouseenter="openRadialMenu('feeds-audio', $event)"
               @click="openRadialMenu('feeds-audio', $event)"
@@ -347,8 +347,8 @@ const activeRadialData = computed(() => {
               class="sidebar-category-btn w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 cursor-pointer"
               :class="[
                 isCategoryActive('assets') || activeRadialCategory === 'assets'
-                  ? 'bg-[#2E2E2E] text-white border border-white/40 ring-2 ring-white/25 shadow-[0_0_14px_rgba(255,255,255,0.15)]'
-                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent',
+                  ? 'bg-zinc-200/80 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border border-zinc-300/80 dark:border-white/40 shadow-xs ring-2 ring-zinc-300/40 dark:ring-white/25 dark:shadow-[0_0_14px_rgba(255,255,255,0.15)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent',
               ]"
               @mouseenter="openRadialMenu('assets', $event)"
               @click="openRadialMenu('assets', $event)"
@@ -366,8 +366,8 @@ const activeRadialData = computed(() => {
               class="sidebar-category-btn w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 cursor-pointer"
               :class="[
                 isCategoryActive('developer') || activeRadialCategory === 'developer'
-                  ? 'bg-[#2E2E2E] text-white border border-white/40 ring-2 ring-white/25 shadow-[0_0_14px_rgba(255,255,255,0.15)]'
-                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent',
+                  ? 'bg-zinc-200/80 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border border-zinc-300/80 dark:border-white/40 shadow-xs ring-2 ring-zinc-300/40 dark:ring-white/25 dark:shadow-[0_0_14px_rgba(255,255,255,0.15)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent',
               ]"
               @mouseenter="openRadialMenu('developer', $event)"
               @click="openRadialMenu('developer', $event)"
@@ -383,8 +383,8 @@ const activeRadialData = computed(() => {
               class="sidebar-category-btn w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-150 cursor-pointer"
               :class="[
                 isCategoryActive('design') || activeRadialCategory === 'design'
-                  ? 'bg-[#2E2E2E] text-white border border-white/40 ring-2 ring-white/25 shadow-[0_0_14px_rgba(255,255,255,0.15)]'
-                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] border border-transparent',
+                  ? 'bg-zinc-200/80 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border border-zinc-300/80 dark:border-white/40 shadow-xs ring-2 ring-zinc-300/40 dark:ring-white/25 dark:shadow-[0_0_14px_rgba(255,255,255,0.15)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent',
               ]"
               @mouseenter="openRadialMenu('design', $event)"
               @click="openRadialMenu('design', $event)"
@@ -396,14 +396,14 @@ const activeRadialData = computed(() => {
           </div>
 
           <!-- Divider -->
-          <div class="w-8 border-b border-[#2E2E2E]/60 my-1"></div>
+          <div class="w-8 border-b border-[var(--border-subtle)] my-1"></div>
 
           <!-- 6. History Drawer Trigger -->
           <div class="relative group">
             <button
               type="button"
               id="collapsed-history-btn"
-              class="w-10 h-10 rounded-xl flex items-center justify-center relative text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
+              class="w-10 h-10 rounded-xl flex items-center justify-center relative text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
               @click="emit('open-history')"
               @mouseenter="closeRadialMenu"
             >
@@ -412,14 +412,14 @@ const activeRadialData = computed(() => {
               </svg>
               <span
                 v-if="history.length > 0"
-                class="absolute top-2 right-2 w-2 h-2 rounded-full bg-white shadow-xs"
+                class="absolute top-2 right-2 w-2 h-2 rounded-full bg-zinc-900 dark:bg-white shadow-xs"
               />
             </button>
 
             <!-- Tooltip -->
-            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-1.5">
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-[#212121] border border-zinc-800 dark:border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none flex items-center gap-1.5">
               <span>{{ t.downloadHistory }}</span>
-              <span v-if="history.length > 0" class="px-1.5 py-0.2 font-mono text-[10px] bg-[#2E2E2E] rounded text-neutral-300">
+              <span v-if="history.length > 0" class="px-1.5 py-0.2 font-mono text-[10px] bg-zinc-800 dark:bg-[#2E2E2E] rounded text-zinc-300 dark:text-neutral-300">
                 {{ history.length }}
               </span>
             </div>
@@ -431,7 +431,7 @@ const activeRadialData = computed(() => {
               href="https://github.com/BranProHengker/avttr-studio"
               target="_blank"
               rel="noopener noreferrer"
-              class="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
+              class="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
               @mouseenter="closeRadialMenu"
             >
               <svg class="w-4.5 h-4.5 fill-current" viewBox="0 0 24 24">
@@ -440,7 +440,7 @@ const activeRadialData = computed(() => {
             </a>
 
             <!-- Tooltip -->
-            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-[#212121] border border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
+            <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-150 absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-[#212121] border border-zinc-800 dark:border-[#2E2E2E] text-xs text-white whitespace-nowrap shadow-xl z-50 pointer-events-none">
               GitHub Repository
             </div>
           </div>
@@ -459,14 +459,14 @@ const activeRadialData = computed(() => {
           class="flex items-center gap-2.5 min-w-0 group cursor-pointer"
         >
           <!-- Mio Logo Image -->
-          <div class="w-8 h-8 rounded-lg overflow-hidden bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 shadow-xs group-hover:border-white/30 transition-colors">
+          <div class="w-8 h-8 rounded-lg overflow-hidden bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center shrink-0 shadow-xs hover:border-zinc-300 dark:hover:border-white/30 transition-colors">
             <img
               src="/mio.png"
               alt="Avttr Studio Logo"
               class="w-full h-full object-cover"
             />
           </div>
-          <span class="font-bold text-[15px] text-white tracking-tight leading-tight truncate">
+          <span class="font-bold text-[15px] text-[var(--text-primary)] tracking-tight leading-tight truncate">
             {{ t.appName }}
           </span>
         </NuxtLink>
@@ -476,10 +476,10 @@ const activeRadialData = computed(() => {
           href="https://github.com/BranProHengker/avttr-studio"
           target="_blank"
           rel="noopener noreferrer"
-          class="p-2 text-[var(--text-secondary)] hover:text-white bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-white/20 rounded-lg transition-all shadow-xs group cursor-pointer shrink-0"
+          class="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-zinc-300 dark:hover:border-white/20 rounded-lg transition-all shadow-xs group cursor-pointer shrink-0"
           title="Open GitHub Repository"
         >
-          <svg class="w-4 h-4 fill-current text-[var(--text-secondary)] group-hover:text-white transition-colors" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 fill-current text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" viewBox="0 0 24 24">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
           </svg>
         </a>
@@ -489,15 +489,15 @@ const activeRadialData = computed(() => {
       <div class="px-3 pt-3 pb-1 border-b border-[var(--border-subtle)]/50">
         <button
           type="button"
-          class="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] rounded-lg text-xs text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer shadow-xs group"
+          class="w-full flex items-center gap-2 px-3 py-2 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer shadow-xs group"
           @click="emit('open-palette')"
           title="Search tools (Ctrl + K)"
         >
-          <svg class="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span class="flex-1 text-left truncate text-[12px] text-[var(--text-secondary)] group-hover:text-white">Search tools...</span>
-          <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-[#2E2E2E] text-[var(--text-tertiary)] group-hover:text-white rounded shadow-xs font-semibold">
+          <span class="flex-1 text-left truncate text-[12px] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]">Search tools...</span>
+          <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-100 dark:bg-[#2E2E2E] border border-zinc-200 dark:border-transparent text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] rounded shadow-xs font-semibold">
             {{ shortcutKey }}
           </kbd>
         </button>
@@ -515,11 +515,11 @@ const activeRadialData = computed(() => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('dashboard')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
                 <span>{{ t.dashboard }}</span>
@@ -536,14 +536,14 @@ const activeRadialData = computed(() => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['dashboard']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['dashboard']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 {{ t.allDownloaders }}
@@ -555,11 +555,11 @@ const activeRadialData = computed(() => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('video-reels')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 <span>{{ t.videoSocials }}</span>
@@ -576,14 +576,14 @@ const activeRadialData = computed(() => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['video-reels']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['video-reels']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/d/tiktok"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/tiktok')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 TikTok
@@ -593,8 +593,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/instagram')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Instagram
@@ -604,8 +604,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/youtube')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 YouTube
@@ -615,8 +615,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/twitter')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Twitter / X
@@ -626,8 +626,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/capcut')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 CapCut
@@ -637,8 +637,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/facebook')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Facebook
@@ -648,8 +648,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/terabox')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 TeraBox
@@ -661,11 +661,11 @@ const activeRadialData = computed(() => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('feeds-audio')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
                 <span>{{ t.audioMusic }}</span>
@@ -682,14 +682,14 @@ const activeRadialData = computed(() => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['feeds-audio']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['feeds-audio']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/d/spotify"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/spotify')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Spotify
@@ -699,8 +699,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/d/soundcloud')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 SoundCloud
@@ -710,8 +710,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/audio-cutter')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Audio Extractor & Trimmer
@@ -721,8 +721,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/lrc-studio')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 LRC Lyrics Studio
@@ -741,11 +741,11 @@ const activeRadialData = computed(() => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('assets')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
                 <span>{{ t.assetGenerators }}</span>
@@ -762,14 +762,14 @@ const activeRadialData = computed(() => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['assets']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['assets']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/tools/image-compressor"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/image-compressor')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Image Compressor
@@ -779,8 +779,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/image-converter')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Image Format Converter
@@ -790,8 +790,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/background-remover')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Background Remover
@@ -801,8 +801,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/sticker-maker')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Sticker Studio
@@ -812,8 +812,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/anime-trace')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Anime Scene Search
@@ -823,8 +823,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/qr-generator')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 QR Code Generator
@@ -834,8 +834,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/pairdrop')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 PairDrop (P2P Transfer)
@@ -845,8 +845,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/brat-generator')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Brat Text Generator
@@ -856,8 +856,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/pdf-tools')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 PDF Studio
@@ -867,8 +867,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/doc-to-markdown')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Doc to Markdown
@@ -878,8 +878,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/svg-optimizer')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 SVG Optimizer
@@ -889,8 +889,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/code-to-image')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Code to Image Studio
@@ -900,8 +900,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/audio-cutter')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Audio Extractor & Trimmer
@@ -911,8 +911,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/video-to-gif')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Video to GIF
@@ -922,8 +922,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/video-resizer')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Video Resizer & Trimmer
@@ -935,11 +935,11 @@ const activeRadialData = computed(() => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('developer')"
             >
               <div class="flex items-center gap-2.5">
-                <FolderCheck class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" />
+                <FolderCheck class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" />
                 <span>Developer & AI</span>
               </div>
               <svg
@@ -954,14 +954,14 @@ const activeRadialData = computed(() => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['developer']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['developer']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/tools/skillspector"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/skillspector')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 SkillSpector
@@ -971,8 +971,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/svg-optimizer')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 SVG Optimizer
@@ -982,8 +982,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/code-to-image')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Code to Image Studio
@@ -993,8 +993,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/hash-encoder')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Base64 & Hash Encoder
@@ -1006,11 +1006,11 @@ const activeRadialData = computed(() => {
           <div class="space-y-0.5">
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[#FAFAFA] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="toggleMenu('design')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4 5 5 0 015-5h4a5 5 0 015 5 4 4 0 01-4 4H7zM16 3.13a4 4 0 010 7.75M21 14v1a4 4 0 01-4 4h-1" />
                 </svg>
                 <span>{{ t.designSystem }}</span>
@@ -1027,14 +1027,14 @@ const activeRadialData = computed(() => {
             </button>
 
             <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[#2E2E2E] space-y-0.5 mt-0.5">
+            <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/tools/device-mockup"
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/device-mockup')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Device Mockup Studio
@@ -1044,8 +1044,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/font-library')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Font Library
@@ -1055,8 +1055,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/color-converter')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Color Converter & Picker
@@ -1066,8 +1066,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/color-palette')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Color Palette Generator
@@ -1077,8 +1077,8 @@ const activeRadialData = computed(() => {
                 class="block px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/tools/og-previewer')
-                    ? 'bg-[#2E2E2E] text-white font-medium shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)]'
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
                 Open Graph Previewer
@@ -1097,18 +1097,18 @@ const activeRadialData = computed(() => {
             <!-- Download History Button -->
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer group"
               @click="emit('open-history')"
             >
               <div class="flex items-center gap-2.5">
-                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4.5 h-4.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>{{ t.downloadHistory }}</span>
               </div>
               <span
                 v-if="history.length > 0"
-                class="px-2 py-0.5 text-xs font-mono bg-[#2E2E2E] text-white rounded-md"
+                class="px-2 py-0.5 text-xs font-mono bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border border-zinc-200 dark:border-transparent rounded-md"
               >
                 {{ history.length }}
               </span>

@@ -237,7 +237,7 @@ watch(
                 step="0.1"
                 :value="audioCurrentTime"
                 @input="onAudioSeek"
-                class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-white hover:h-2 transition-all"
+                class="w-full h-1.5 bg-zinc-200 dark:bg-[#2E2E2E] rounded-lg appearance-none cursor-pointer accent-zinc-900 dark:accent-white hover:h-2 transition-all"
               />
             </div>
 
@@ -252,7 +252,7 @@ watch(
           <div class="flex items-center justify-center gap-4">
             <button
               type="button"
-              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#2E2E2E] transition-all cursor-pointer"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
               title="Rewind 10s"
               @click="seekRelative(-10)"
             >
@@ -261,7 +261,7 @@ watch(
 
             <button
               type="button"
-              class="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg cursor-pointer"
+              class="w-12 h-12 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] dark:bg-white dark:text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg cursor-pointer"
               @click="toggleAudioPlay"
             >
               <Pause v-if="isAudioPlaying" class="w-5 h-5 fill-current" />
@@ -270,7 +270,7 @@ watch(
 
             <button
               type="button"
-              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#2E2E2E] transition-all cursor-pointer"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer"
               title="Forward 10s"
               @click="seekRelative(10)"
             >
@@ -279,7 +279,7 @@ watch(
 
             <button
               type="button"
-              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#2E2E2E] transition-all cursor-pointer ml-1"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer ml-1"
               :title="isAudioMuted ? 'Unmute' : 'Mute'"
               @click="toggleAudioMute"
             >
@@ -322,7 +322,7 @@ watch(
         </div>
 
         <div v-if="result.cached" class="shrink-0">
-          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-[#2E2E2E] text-[var(--text-secondary)] border border-[var(--border-subtle)]">Cached</span>
+          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-zinc-100 dark:bg-[#2E2E2E] text-[var(--text-secondary)] border border-[var(--border-subtle)]">Cached</span>
         </div>
       </div>
 
@@ -413,7 +413,7 @@ watch(
             class="flex items-center justify-between p-3 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-lg hover:border-[var(--border-card-hover)] hover:bg-[var(--bg-card-hover)] transition-all col-span-full"
           >
             <div class="flex items-center gap-3 min-w-0 pr-2">
-              <div class="w-9 h-9 rounded-lg bg-[#2E2E2E] border border-[var(--border-subtle)] flex items-center justify-center text-white shrink-0">
+              <div class="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-[#2E2E2E] border border-zinc-200 dark:border-[var(--border-subtle)] flex items-center justify-center text-zinc-900 dark:text-white shrink-0">
                 <FileText v-if="/^(pdf|doc|docx|txt|epub|xls|xlsx|ppt|pptx)$/i.test(item.format || '')" class="w-4.5 h-4.5" />
                 <Archive v-else-if="/^(zip|rar|7z|tar|gz|iso|tgz|bz2)$/i.test(item.format || '')" class="w-4.5 h-4.5" />
                 <FileDown v-else class="w-4.5 h-4.5" />
@@ -423,7 +423,7 @@ watch(
                   {{ item.filename || item.quality || 'Download File' }}
                 </div>
                 <div class="text-[10px] text-[var(--text-tertiary)] font-mono mt-0.5 flex items-center gap-1.5">
-                  <span class="px-1.5 py-0.2 bg-[#212121] border border-[var(--border-subtle)] rounded text-white text-[9px] font-bold uppercase">{{ item.format?.toUpperCase() || 'FILE' }}</span>
+                  <span class="px-1.5 py-0.2 bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[var(--border-subtle)] rounded text-zinc-800 dark:text-white text-[9px] font-bold uppercase">{{ item.format?.toUpperCase() || 'FILE' }}</span>
                   <span>•</span>
                   <span>Size: <span class="text-[var(--text-secondary)] font-medium">{{ formatSize(item.size) }}</span></span>
                 </div>

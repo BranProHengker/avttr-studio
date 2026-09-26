@@ -141,7 +141,7 @@ onUnmounted(() => {
             <button
               v-if="searchQuery"
               type="button"
-              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-md hover:bg-white/10 shrink-0 active:scale-95"
+              class="p-1 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-white/10 shrink-0 active:scale-95"
               title="Clear search"
               aria-label="Clear search"
               @click="searchQuery = ''; inputRef?.focus()"
@@ -166,7 +166,7 @@ onUnmounted(() => {
               class="flex items-center justify-between px-3 py-2.5 rounded-lg text-xs transition-colors cursor-pointer"
               :class="
                 index === selectedIndex
-                  ? 'bg-[#2E2E2E] text-white border border-[#404040]'
+                  ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border border-zinc-200 dark:border-[#404040]'
                   : 'hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-transparent'
               "
               @click="navigateToTool(tool.route)"

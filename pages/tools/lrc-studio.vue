@@ -771,16 +771,16 @@ onUnmounted(() => {
     <!-- State 1: Dropzone (DESIGN.md Section 10 Specification) -->
     <div
       v-if="!selectedTrack"
-      class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
-      :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+      class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
+      :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[var(--bg-card-hover)]' : ''"
       @dragover.prevent="isDragging = true"
       @dragleave.prevent="isDragging = false"
       @drop.prevent="onDropFile"
       @click="fileInputRef?.click()"
     >
       <div class="max-w-md mx-auto space-y-3">
-        <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-          <Music class="w-6 h-6 text-white" />
+        <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+          <Music class="w-6 h-6 text-zinc-900 dark:text-white" />
         </div>
         <div>
           <h3 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -796,7 +796,7 @@ onUnmounted(() => {
     <!-- State 2: Active Theater Workspace -->
     <div v-else class="space-y-4">
       <!-- High-Contrast Audio Player Deck -->
-      <div class="p-4 sm:p-5 rounded-[14px] bg-[#171717] border border-[#2E2E2E] space-y-4 shadow-xs">
+      <div class="p-4 sm:p-5 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4 shadow-xs">
         <!-- Top Track Header & Offset Shift -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <!-- Left: Track Meta -->
@@ -1070,7 +1070,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Immersive Lyrics Canvas (Main Stage - Full-Width Fluid Flow) -->
-      <div class="rounded-[14px] bg-[#141416] border border-[#2E2E2E] p-6 sm:p-10 min-h-[520px] flex flex-col">
+      <div class="rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] p-6 sm:p-10 min-h-[520px] flex flex-col">
         <!-- Mode 1: Interactive Karaoke Live Scrolling View -->
         <div
           v-if="activeView === 'karaoke'"

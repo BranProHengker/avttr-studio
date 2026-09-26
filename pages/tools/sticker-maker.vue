@@ -698,14 +698,14 @@ onUnmounted(() => {
             v-model="imageUrlInput"
             type="url"
             placeholder="Paste image URL (https://...) or press Ctrl+V anywhere..."
-            class="w-full h-11 pl-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            class="w-full h-11 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-zinc-400/20 dark:focus:ring-white/10"
             :class="imageUrlInput ? 'pr-20' : 'pr-12'"
           />
           <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <button
               v-if="imageUrlInput"
               type="button"
-              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10"
               title="Clear input"
               @click="imageUrlInput = ''"
             >
@@ -713,7 +713,7 @@ onUnmounted(() => {
             </button>
             <button
               type="button"
-              class="p-1.5 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10"
+              class="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10"
               title="Paste from clipboard"
               @click="pasteFromClipboard"
             >
@@ -747,15 +747,15 @@ onUnmounted(() => {
       <!-- Standard Upload Dropzone (DESIGN.md Section 10) -->
       <div
         id="sticker-dropzone"
-        class="relative border-2 border-dashed rounded-[14px] p-6 sm:p-10 border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-all duration-150"
-        :class="{ 'border-white/40 bg-white/5': isDragging }"
+        class="relative border-2 border-dashed rounded-[14px] p-6 sm:p-10 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-all duration-150"
+        :class="{ 'border-zinc-900 bg-zinc-100 dark:border-white/40 dark:bg-white/5': isDragging }"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleDrop"
         @click="triggerFileInput"
       >
-        <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-          <Upload class="w-6 h-6" />
+        <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+          <Upload class="w-6 h-6 text-zinc-900 dark:text-white" />
         </div>
         <h3 class="text-sm font-semibold text-[var(--text-primary)] mt-3">
           Drop your image here or browse
@@ -771,7 +771,7 @@ onUnmounted(() => {
             v-for="sample in sampleImages"
             :key="sample.name"
             type="button"
-            class="px-2.5 py-1 text-xs rounded-lg border border-[#2E2E2E] bg-[#1E1E1E] text-white hover:bg-[#2A2A2A] hover:border-[#4E4E4E] transition-colors cursor-pointer"
+            class="px-2.5 py-1 text-xs rounded-lg border border-zinc-200 dark:border-[#2E2E2E] bg-zinc-100 dark:bg-[#1E1E1E] text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-[#2A2A2A] hover:border-zinc-300 dark:hover:border-[#4E4E4E] transition-colors cursor-pointer"
             @click="loadSample(sample.url)"
           >
             {{ sample.name }}

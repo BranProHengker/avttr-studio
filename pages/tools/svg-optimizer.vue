@@ -350,11 +350,11 @@ const clearSvg = () => {
     <div v-if="!optimizedSvg" class="space-y-4">
       <!-- Mode Switcher Tabs (Consistent with HeroPasteBar) -->
       <div class="flex items-center px-0.5">
-        <div class="flex items-center bg-[#171717] border border-[#262626] rounded-lg p-0.5">
+        <div class="flex items-center bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[#262626] rounded-lg p-0.5">
           <button
             type="button"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
-            :class="inputMode === 'upload' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white'"
+            :class="inputMode === 'upload' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white'"
             @click="inputMode = 'upload'"
           >
             <Upload class="w-3.5 h-3.5" />
@@ -364,7 +364,7 @@ const clearSvg = () => {
           <button
             type="button"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
-            :class="inputMode === 'paste' ? 'bg-[#2E2E2E] text-white shadow-xs' : 'text-neutral-400 hover:text-white'"
+            :class="inputMode === 'paste' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white'"
             @click="inputMode = 'paste'"
           >
             <Code class="w-3.5 h-3.5" />
@@ -376,16 +376,16 @@ const clearSvg = () => {
       <!-- Mode 1: Standardized Dropzone Upload Box -->
       <div
         v-if="inputMode === 'upload'"
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
-        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
+        :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[var(--bg-card-hover)]' : ''"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="handleFileDrop"
         @click="fileInputRef?.click()"
       >
         <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <FileCode class="w-6 h-6 text-white" />
+          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+            <FileCode class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -411,23 +411,23 @@ const clearSvg = () => {
         <textarea
           v-model="rawSvgInput"
           rows="10"
-          class="w-full p-4 bg-[#141416] border border-[#2E2E2E] rounded-xl text-xs font-mono text-white placeholder-neutral-500 focus:outline-none focus:border-white/40 resize-none leading-relaxed transition-all focus:ring-2 focus:ring-white/10"
+          class="w-full p-4 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/40 resize-none leading-relaxed transition-all focus:ring-2 focus:ring-zinc-400/20 dark:focus:ring-white/10"
           placeholder="Paste your raw SVG code here (e.g. <svg viewBox=...>)..."
         />
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2">
-            <span class="text-xs font-mono text-neutral-500">Quick Samples:</span>
+            <span class="text-xs font-mono text-[var(--text-tertiary)]">Quick Samples:</span>
             <button
               type="button"
-              class="px-2.5 py-1 rounded-md bg-[#1F1F23] hover:bg-[#2A2A30] border border-white/10 text-xs font-mono text-white/80 hover:text-white cursor-pointer transition-colors"
+              class="px-2.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1F1F23] dark:hover:bg-[#2A2A30] border border-zinc-200 dark:border-white/10 text-xs font-mono text-zinc-800 dark:text-white/80 hover:text-zinc-950 dark:hover:text-white cursor-pointer transition-colors"
               @click="loadSample('logo')"
             >
               Logo
             </button>
             <button
               type="button"
-              class="px-2.5 py-1 rounded-md bg-[#1F1F23] hover:bg-[#2A2A30] border border-white/10 text-xs font-mono text-white/80 hover:text-white cursor-pointer transition-colors"
+              class="px-2.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1F1F23] dark:hover:bg-[#2A2A30] border border-zinc-200 dark:border-white/10 text-xs font-mono text-zinc-800 dark:text-white/80 hover:text-zinc-950 dark:hover:text-white cursor-pointer transition-colors"
               @click="loadSample('icon')"
             >
               Icon
@@ -451,19 +451,19 @@ const clearSvg = () => {
     <!-- State 2: Active Workspace (When SVG Loaded) -->
     <div v-else class="space-y-5">
       <!-- Top Stats & Overview Bar -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#141416] border border-[#262626]">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)]">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0">
+          <div class="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shrink-0">
             <FileCode class="w-4 h-4" />
           </div>
           <div>
-            <div class="text-sm font-semibold text-white truncate max-w-xs sm:max-w-md">
+            <div class="text-sm font-semibold text-[var(--text-primary)] truncate max-w-xs sm:max-w-md">
               {{ loadedFileName || 'Raw SVG Vector' }}
             </div>
-            <div class="flex items-center gap-2 text-xs font-mono text-neutral-400 mt-0.5">
+            <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)] mt-0.5">
               <span>Original: {{ formatBytes(originalBytes) }}</span>
               <span>→</span>
-              <span class="text-white font-semibold">Optimized: {{ formatBytes(optimizedBytes) }}</span>
+              <span class="text-[var(--text-primary)] font-semibold">Optimized: {{ formatBytes(optimizedBytes) }}</span>
             </div>
           </div>
         </div>
@@ -487,11 +487,11 @@ const clearSvg = () => {
       <!-- Main Deck: 2 Columns Side-by-Side -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <!-- Left Column: Live Visual Canvas Area (6 cols) -->
-        <div class="lg:col-span-6 rounded-xl bg-[#141416] border border-[#262626] p-4 sm:p-5 space-y-4">
+        <div class="lg:col-span-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] p-4 sm:p-5 space-y-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <Eye class="w-4 h-4 text-white" />
-              <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">
+              <Eye class="w-4 h-4 text-[var(--text-primary)]" />
+              <span class="text-xs font-mono font-bold text-[var(--text-primary)] uppercase tracking-wider">
                 Live Preview
               </span>
             </div>
@@ -499,11 +499,11 @@ const clearSvg = () => {
             <!-- Background & Zoom Controls -->
             <div class="flex items-center gap-2">
               <!-- Bg Toggles -->
-              <div class="flex items-center p-0.5 bg-[#171717] border border-[#262626] rounded-lg text-xs font-mono">
+              <div class="flex items-center p-0.5 bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[#262626] rounded-lg text-xs font-mono">
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded cursor-pointer transition-colors"
-                  :class="previewBg === 'grid' ? 'bg-[#2E2E2E] text-white font-bold' : 'text-neutral-400 hover:text-white'"
+                  :class="previewBg === 'grid' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-bold shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white'"
                   title="Checkered Grid"
                   @click="previewBg = 'grid'"
                 >
@@ -512,7 +512,7 @@ const clearSvg = () => {
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded cursor-pointer transition-colors"
-                  :class="previewBg === 'dark' ? 'bg-[#2E2E2E] text-white font-bold' : 'text-neutral-400 hover:text-white'"
+                  :class="previewBg === 'dark' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-bold shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white'"
                   title="Dark Background"
                   @click="previewBg = 'dark'"
                 >
@@ -521,7 +521,7 @@ const clearSvg = () => {
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded cursor-pointer transition-colors"
-                  :class="previewBg === 'light' ? 'bg-white text-black font-bold' : 'text-neutral-400 hover:text-white'"
+                  :class="previewBg === 'light' ? 'bg-white dark:bg-white text-zinc-900 dark:text-black font-bold shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white'"
                   title="Light Background"
                   @click="previewBg = 'light'"
                 >
@@ -620,13 +620,13 @@ const clearSvg = () => {
         </div>
 
         <!-- Right Column: Code Export Studio (6 cols) -->
-        <div class="lg:col-span-6 rounded-xl bg-[#141416] border border-[#262626] p-4 sm:p-5 flex flex-col justify-between space-y-4">
+        <div class="lg:col-span-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] p-4 sm:p-5 flex flex-col justify-between space-y-4">
           <div class="space-y-3">
-            <div class="flex items-center justify-between border-b border-[#262626] pb-3">
-              <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">
+            <div class="flex items-center justify-between border-b border-[var(--border-card)] pb-3">
+              <span class="text-xs font-mono font-bold text-[var(--text-primary)] uppercase tracking-wider">
                 Export Formats
               </span>
-              <span class="text-xs font-mono text-neutral-400">
+              <span class="text-xs font-mono text-[var(--text-secondary)]">
                 100% Client Generated
               </span>
             </div>
@@ -644,7 +644,7 @@ const clearSvg = () => {
                 :key="tab.id"
                 type="button"
                 class="px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer whitespace-nowrap"
-                :class="activeExportTab === tab.id ? 'bg-[#2E2E2E] text-white font-medium shadow-xs' : 'text-neutral-400 hover:text-white hover:bg-[#1f1f23]'"
+                :class="activeExportTab === tab.id ? 'bg-zinc-900 text-white dark:bg-[#2E2E2E] dark:text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-zinc-100 dark:hover:bg-[#1f1f23]'"
                 @click="activeExportTab = tab.id"
               >
                 {{ tab.label }}

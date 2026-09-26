@@ -1226,16 +1226,16 @@ onUnmounted(() => {
       </div>
 
       <div
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
-        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
+        :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[var(--bg-card-hover)]' : ''"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="(e) => { isDragging = false; if (e.dataTransfer?.files[0]) processMediaFile(e.dataTransfer.files[0]) }"
         @click="fileInputRef?.click()"
       >
         <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <Music class="w-6 h-6 text-white" />
+          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+            <Music class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -1252,13 +1252,13 @@ onUnmounted(() => {
     <!-- State 2: Studio Timeline Workspace -->
     <div v-else class="space-y-4">
       <!-- Top Header Bar -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#141416] border border-[#262626]">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)]">
         <div class="flex items-center gap-3 min-w-0">
-          <div class="w-8 h-8 rounded-lg bg-[#222226] flex items-center justify-center shrink-0">
-            <Music class="w-4 h-4 text-white" />
+          <div class="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-[#222226] border border-zinc-200 dark:border-transparent flex items-center justify-center shrink-0">
+            <Music class="w-4 h-4 text-zinc-900 dark:text-white" />
           </div>
           <div class="min-w-0">
-            <h1 class="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">{{ fileName }}</h1>
+            <h1 class="text-sm font-bold text-[var(--text-primary)] truncate max-w-xs sm:max-w-md">{{ fileName }}</h1>
             <p class="text-xs text-[var(--text-tertiary)] truncate">
               {{ formatTimecode(totalTimelineDuration) }} • {{ mediaAssets.size }} Media • {{ clips.length }} Clip{{ clips.length > 1 ? 's' : '' }}
             </p>
@@ -1353,10 +1353,10 @@ onUnmounted(() => {
         </div>
 
         <!-- Inspector Panel (4 cols) -->
-        <div class="lg:col-span-4 rounded-xl bg-[#141416] border border-[#262626] overflow-hidden flex flex-col justify-between max-h-[480px]">
+        <div class="lg:col-span-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] overflow-hidden flex flex-col justify-between max-h-[480px]">
           <div class="p-4 space-y-3 overflow-y-auto">
-            <div class="flex items-center justify-between pb-2 border-b border-[#262626]">
-              <span class="text-xs font-semibold text-white uppercase tracking-wider">Properties & Keyframe</span>
+            <div class="flex items-center justify-between pb-2 border-b border-[var(--border-card)]">
+              <span class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider">Properties & Keyframe</span>
               <span class="text-[11px] font-mono text-[var(--text-tertiary)] truncate max-w-[150px]">
                 {{ selectedClip ? selectedClip.name : 'No Clip Selected' }}
               </span>
@@ -1445,7 +1445,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Bottom Multi-Track Drag & Drop Studio -->
-      <div class="rounded-xl bg-[#141416] border border-[#262626] overflow-hidden">
+      <div class="rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] overflow-hidden">
         <!-- Action Toolbar -->
         <div class="px-4 py-2 bg-[#0e0e10] border-b border-[#262626] flex flex-wrap items-center justify-between gap-3 select-none">
           <div class="flex items-center gap-1">

@@ -22,7 +22,7 @@ defineProps<Props>()
 
       <!-- Content -->
       <div class="flex-1 min-w-0">
-        <h3 class="text-sm font-semibold text-[var(--text-primary)] group-hover:text-white transition-colors truncate">
+        <h3 class="text-sm font-semibold text-[var(--text-primary)] group-hover:text-zinc-950 dark:group-hover:text-white transition-colors truncate">
           {{ tool.title }}
         </h3>
 

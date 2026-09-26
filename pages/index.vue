@@ -88,13 +88,13 @@ const handleBatchSubmit = (urls: string[]) => {
         class="p-4 rounded-xl border transition-all flex items-start gap-3.5"
         :class="
           error.toLowerCase().includes('cookie') || error.toLowerCase().includes('terabox')
-            ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
-            : 'bg-rose-500/10 border-rose-500/30 text-rose-200'
+            ? 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'
+            : 'bg-rose-500/10 border-rose-500/30 text-rose-900 dark:text-rose-200'
         "
       >
         <div
           class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-          :class="error.toLowerCase().includes('cookie') ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'"
+          :class="error.toLowerCase().includes('cookie') ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' : 'bg-rose-500/20 text-rose-600 dark:text-rose-400'"
         >
           <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -108,7 +108,7 @@ const handleBatchSubmit = (urls: string[]) => {
           <p class="leading-relaxed opacity-90">
             {{ error }}
           </p>
-          <div v-if="error.toLowerCase().includes('cookie') || error.toLowerCase().includes('terabox')" class="pt-1.5 text-[11px] text-amber-300/90 font-mono">
+          <div v-if="error.toLowerCase().includes('cookie') || error.toLowerCase().includes('terabox')" class="pt-1.5 text-[11px] text-amber-800 dark:text-amber-300/90 font-mono">
             💡 <strong>Petunjuk:</strong> Perbarui variabel <code>TERABOX_COOKIE</code> di file <code>.env</code> server dengan cookie <code>ndus</code> terbaru dari TeraBox.
           </div>
         </div>

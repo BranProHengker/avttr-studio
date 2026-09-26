@@ -100,21 +100,21 @@ const getPlatformColor = (platform: string) => {
   >
     <div class="space-y-4">
       <!-- Top Status & Progress Bar -->
-      <div class="p-3.5 sm:p-4 rounded-xl bg-[#141416] border border-[#262626] space-y-3">
+      <div class="p-3.5 sm:p-4 rounded-xl bg-zinc-50 dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-mono font-bold uppercase tracking-wider text-white">Queue Progress</span>
+              <span class="text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-primary)]">Queue Progress</span>
               <span class="text-xs font-mono text-[var(--text-tertiary)]">
                 {{ overallProgress }}% Complete
               </span>
             </div>
             <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
-              <span class="text-emerald-400 font-semibold">{{ readyCount }} Ready</span>
+              <span class="text-emerald-500 dark:text-emerald-400 font-semibold">{{ readyCount }} Ready</span>
               <span>•</span>
-              <span v-if="resolvingCount > 0" class="text-amber-400 font-semibold">{{ resolvingCount }} Processing</span>
+              <span v-if="resolvingCount > 0" class="text-amber-500 dark:text-amber-400 font-semibold">{{ resolvingCount }} Processing</span>
               <span v-if="resolvingCount > 0">•</span>
-              <span v-if="errorCount > 0" class="text-rose-400 font-semibold">{{ errorCount }} Failed</span>
+              <span v-if="errorCount > 0" class="text-rose-500 dark:text-rose-400 font-semibold">{{ errorCount }} Failed</span>
               <span v-if="errorCount > 0">•</span>
               <span>{{ totalCount }} Total</span>
             </div>
@@ -126,20 +126,20 @@ const getPlatformColor = (platform: string) => {
             <button
               v-if="errorCount > 0"
               type="button"
-              class="px-2.5 py-1.5 rounded-lg bg-[#222226] hover:bg-[#2c2c32] border border-white/10 text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5"
+              class="px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-[#222226] dark:hover:bg-[#2c2c32] border border-zinc-200 dark:border-white/10 text-xs font-medium text-zinc-900 dark:text-white transition-all cursor-pointer flex items-center gap-1.5"
               @click="retryAllFailed"
             >
-              <RotateCcw class="w-3.5 h-3.5 text-amber-400" />
+              <RotateCcw class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
               <span>Retry ({{ errorCount }})</span>
             </button>
 
             <!-- Add More Links Button -->
             <button
               type="button"
-              class="px-2.5 py-1.5 rounded-lg bg-[#222226] hover:bg-[#2c2c32] border border-white/10 text-xs font-medium text-white transition-all cursor-pointer flex items-center gap-1.5"
+              class="px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-[#222226] dark:hover:bg-[#2c2c32] border border-zinc-200 dark:border-white/10 text-xs font-medium text-zinc-900 dark:text-white transition-all cursor-pointer flex items-center gap-1.5"
               @click="showAddInput = !showAddInput"
             >
-              <Plus class="w-3.5 h-3.5 text-white/80" />
+              <Plus class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
               <span>Add Links</span>
             </button>
 
@@ -159,19 +159,19 @@ const getPlatformColor = (platform: string) => {
         </div>
 
         <!-- Linear Progress Bar -->
-        <div class="w-full h-1.5 bg-[#262626] rounded-full overflow-hidden">
+        <div class="w-full h-1.5 bg-zinc-200 dark:bg-[#262626] rounded-full overflow-hidden">
           <div
-            class="h-full bg-white transition-all duration-300"
+            class="h-full bg-zinc-900 dark:bg-white transition-all duration-300"
             :style="{ width: `${overallProgress}%` }"
           />
         </div>
       </div>
 
       <!-- Add More Links Form (Collapsible) -->
-      <div v-if="showAddInput" class="p-3.5 rounded-xl bg-[#141416] border border-[#262626] space-y-2.5">
+      <div v-if="showAddInput" class="p-3.5 rounded-xl bg-zinc-50 dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] space-y-2.5">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-white">Paste additional social media links (separated by newlines)</span>
-          <button type="button" class="text-neutral-500 hover:text-white" @click="showAddInput = false">
+          <span class="text-xs font-medium text-[var(--text-primary)]">Paste additional social media links (separated by newlines)</span>
+          <button type="button" class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" @click="showAddInput = false">
             <X class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -179,7 +179,7 @@ const getPlatformColor = (platform: string) => {
           v-model="newLinksText"
           rows="3"
           placeholder="https://www.tiktok.com/...&#10;https://www.instagram.com/reel/...&#10;https://youtu.be/..."
-          class="w-full p-2.5 rounded-lg bg-[#0e0e10] border border-[#262626] text-xs font-mono text-white placeholder-neutral-500 focus:outline-hidden focus:border-white/40"
+          class="w-full p-2.5 rounded-lg bg-white dark:bg-[#0e0e10] border border-zinc-200 dark:border-[#262626] text-xs font-mono text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-neutral-500 focus:outline-hidden focus:border-zinc-400 dark:focus:border-white/40"
         />
         <div class="flex justify-end gap-2">
           <Button variant="ghost" size="sm" @click="showAddInput = false">Cancel</Button>
@@ -190,12 +190,12 @@ const getPlatformColor = (platform: string) => {
       </div>
 
       <!-- Filter Tabs & Actions -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#262626] pb-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2">
         <div class="flex items-center gap-1">
           <button
             type="button"
             class="px-2.5 py-1 rounded-md text-xs font-mono transition-colors cursor-pointer"
-            :class="activeTab === 'all' ? 'bg-[#2E2E2E] text-white font-bold' : 'text-neutral-400 hover:text-white'"
+            :class="activeTab === 'all' ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-semibold' : 'text-zinc-500 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
             @click="activeTab = 'all'"
           >
             All ({{ totalCount }})
@@ -203,7 +203,7 @@ const getPlatformColor = (platform: string) => {
           <button
             type="button"
             class="px-2.5 py-1 rounded-md text-xs font-mono transition-colors cursor-pointer"
-            :class="activeTab === 'ready' ? 'bg-[#2E2E2E] text-white font-bold' : 'text-neutral-400 hover:text-white'"
+            :class="activeTab === 'ready' ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-semibold' : 'text-zinc-500 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
             @click="activeTab = 'ready'"
           >
             Ready ({{ readyCount }})
@@ -212,7 +212,7 @@ const getPlatformColor = (platform: string) => {
             v-if="resolvingCount > 0"
             type="button"
             class="px-2.5 py-1 rounded-md text-xs font-mono transition-colors cursor-pointer"
-            :class="activeTab === 'resolving' ? 'bg-[#2E2E2E] text-white font-bold' : 'text-neutral-400 hover:text-white'"
+            :class="activeTab === 'resolving' ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-semibold' : 'text-zinc-500 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
             @click="activeTab = 'resolving'"
           >
             Processing ({{ resolvingCount }})
@@ -221,7 +221,7 @@ const getPlatformColor = (platform: string) => {
             v-if="errorCount > 0"
             type="button"
             class="px-2.5 py-1 rounded-md text-xs font-mono transition-colors cursor-pointer"
-            :class="activeTab === 'error' ? 'bg-[#2E2E2E] text-white font-bold' : 'text-neutral-400 hover:text-white'"
+            :class="activeTab === 'error' ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-semibold' : 'text-zinc-500 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
             @click="activeTab = 'error'"
           >
             Failed ({{ errorCount }})
@@ -244,12 +244,12 @@ const getPlatformColor = (platform: string) => {
         <div
           v-for="item in filteredQueue"
           :key="item.id"
-          class="p-3 rounded-xl bg-[#141416] border border-[#262626] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors hover:border-[#383838]"
+          class="p-3 rounded-xl bg-zinc-50 dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors hover:border-zinc-300 dark:hover:border-[#383838]"
         >
           <!-- Left: Thumbnail & Info -->
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <!-- Media Thumbnail or Fallback -->
-            <div class="w-12 h-12 rounded-lg bg-[#1f1f23] border border-white/5 overflow-hidden shrink-0 flex items-center justify-center relative">
+            <div class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-[#1f1f23] border border-zinc-200 dark:border-white/5 overflow-hidden shrink-0 flex items-center justify-center relative">
               <img
                 v-if="item.result?.thumbnail"
                 :src="item.result.thumbnail"
@@ -257,7 +257,7 @@ const getPlatformColor = (platform: string) => {
                 class="w-full h-full object-cover"
                 loading="lazy"
               />
-              <div v-else class="flex items-center justify-center text-white/50">
+              <div v-else class="flex items-center justify-center text-zinc-400 dark:text-white/50">
                 <BrandIcon :name="item.platform" :size="20" />
               </div>
 
@@ -278,14 +278,14 @@ const getPlatformColor = (platform: string) => {
                   :href="item.url"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-[11px] font-mono text-neutral-400 hover:text-white truncate max-w-[200px] sm:max-w-xs block"
+                  class="text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] truncate max-w-[200px] sm:max-w-xs block"
                   title="Open source link"
                 >
                   {{ item.url }}
                 </a>
               </div>
 
-              <h4 class="text-xs font-medium text-white truncate max-w-sm sm:max-w-md">
+              <h4 class="text-xs font-medium text-[var(--text-primary)] truncate max-w-sm sm:max-w-md">
                 {{ item.result?.title || (item.status === 'resolving' ? 'Resolving media...' : item.url) }}
               </h4>
 
@@ -304,7 +304,7 @@ const getPlatformColor = (platform: string) => {
             <div v-if="item.status === 'ready' && item.result?.medias?.length" class="relative">
               <select
                 v-model="item.selectedMediaIndex"
-                class="h-8 pl-2 pr-6 rounded-lg bg-[#222226] border border-white/10 text-xs font-mono text-white focus:outline-hidden cursor-pointer appearance-none"
+                class="h-8 pl-2 pr-6 rounded-lg bg-white dark:bg-[#222226] border border-zinc-200 dark:border-white/10 text-xs font-mono text-zinc-900 dark:text-white focus:outline-hidden cursor-pointer appearance-none"
               >
                 <option
                   v-for="(media, mIdx) in item.result.medias"
@@ -330,7 +330,7 @@ const getPlatformColor = (platform: string) => {
               </Button>
             </div>
 
-            <div v-else-if="item.status === 'resolving'" class="flex items-center gap-1.5 text-xs text-amber-400 font-mono px-2 py-1 bg-amber-400/10 rounded-md">
+            <div v-else-if="item.status === 'resolving'" class="flex items-center gap-1.5 text-xs text-amber-500 dark:text-amber-400 font-mono px-2 py-1 bg-amber-500/10 rounded-md">
               <Loader2 class="w-3.5 h-3.5 animate-spin" />
               <span>Resolving</span>
             </div>
@@ -338,7 +338,7 @@ const getPlatformColor = (platform: string) => {
             <div v-else-if="item.status === 'error'" class="flex items-center gap-1.5">
               <button
                 type="button"
-                class="p-1.5 rounded-lg bg-[#222226] hover:bg-[#2c2c32] text-amber-400 cursor-pointer"
+                class="p-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-[#222226] dark:hover:bg-[#2c2c32] text-amber-500 dark:text-amber-400 cursor-pointer"
                 title="Retry link"
                 @click="retryItem(item.id)"
               >
@@ -353,7 +353,7 @@ const getPlatformColor = (platform: string) => {
             <!-- Remove from queue button -->
             <button
               type="button"
-              class="p-1.5 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-white/5 cursor-pointer"
+              class="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-zinc-100 dark:hover:bg-white/5 cursor-pointer"
               title="Remove item"
               @click="removeItem(item.id)"
             >

@@ -22,7 +22,7 @@ defineProps<Props>()
         </span>
       </div>
 
-      <span v-if="category.description" class="hidden sm:inline text-xs text-[var(--text-tertiary)]">
+      <span v-if="category.description" class="hidden sm:inline text-xs text-[var(--text-secondary)]">
         {{ category.description }}
       </span>
     </div>

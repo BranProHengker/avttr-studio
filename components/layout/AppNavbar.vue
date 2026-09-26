@@ -75,10 +75,10 @@ onMounted(() => {
         href="https://github.com/BranProHengker/avttr-studio"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-white/20 rounded-lg text-xs font-medium text-white transition-all shadow-xs group"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-zinc-300 dark:hover:border-white/20 rounded-lg text-xs font-medium text-[var(--text-primary)] transition-all shadow-xs group"
         title="Star on GitHub"
       >
-        <svg class="w-3.5 h-3.5 fill-current text-[var(--text-secondary)] group-hover:text-white transition-colors" viewBox="0 0 24 24">
+        <svg class="w-3.5 h-3.5 fill-current text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" viewBox="0 0 24 24">
           <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
         </svg>
         <span class="font-semibold text-[11px] hidden sm:inline">GitHub</span>
@@ -87,7 +87,7 @@ onMounted(() => {
       <!-- Language Switcher Pill (ID / EN) -->
       <button
         type="button"
-        class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-white transition-all cursor-pointer"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-zinc-300 dark:hover:border-white/20 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
         @click="toggleLocale"
         :title="`Language: ${locale.toUpperCase()} (Click to switch)`"
       >
@@ -96,7 +96,7 @@ onMounted(() => {
           <line x1="2" y1="12" x2="22" y2="12"/>
           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
         </svg>
-        <span class="font-mono font-semibold uppercase text-[11px] text-white">
+        <span class="font-mono font-semibold uppercase text-[11px] text-[var(--text-primary)]">
           {{ locale }}
         </span>
       </button>
@@ -113,7 +113,7 @@ onMounted(() => {
         </svg>
         <span
           v-if="history.length > 0"
-          class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-white shadow-xs"
+          class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-zinc-900 dark:bg-white shadow-xs"
         />
       </button>
 

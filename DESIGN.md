@@ -22,36 +22,36 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 ## 2. Color Palette & Semantic Tokens
 
 ### Primary & Accent Colors
-* **Primary High-Contrast Accent (`#FFFFFF` in Dark / `#18181B` in Light):** Primary action buttons, focused outlines, and high-priority CTA triggers.
-* **Active Navigation Neutral (`#2E2E2E`):** Active sidebar item surface with pure white text and crisp 1px borders.
+* **Primary High-Contrast Accent (`#F5F5F7` in Dark / `#1D1D1F` in Light):** Primary action buttons, focused outlines, and high-priority CTA triggers.
+* **Active Navigation Neutral (`#2E2E2E`):** Active sidebar item surface with soft off-white text and crisp 1px borders.
 * **Status Metrics (`#10B981` Emerald / `#EF4444` Red):** Positive trend metrics, success indicators, and error badges.
 
-### CSS Variables & Semantic Tokens (Dark & Light Mode Support)
+### CSS Variables & Semantic Tokens (Dark & Light Mode Support - Apple Style)
 
 ```css
 :root {
-  /* LIGHT THEME TOKENS */
-  --bg-app: #FFFFFF;
-  --bg-sidebar: #FBFBFC;
+  /* LIGHT THEME TOKENS (APPLE SYSTEM SOFT PALETTE) */
+  --bg-app: #F5F5F7;
+  --bg-sidebar: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-hover: #F4F4F5;
+  --bg-card-hover: #EBECEF;
   --bg-surface-elevated: #FFFFFF;
   --bg-input: #FFFFFF;
-  --bg-input-search: #F4F4F5;
+  --bg-input-search: #EBECEF;
   
-  --border-subtle: #E4E4E7;
-  --border-card: #E4E4E7;
-  --border-card-hover: #D4D4D8;
-  --border-active: #18181B;
+  --border-subtle: #E5E5EA;
+  --border-card: #E5E5EA;
+  --border-card-hover: #D1D1D6;
+  --border-active: #1D1D1F;
 
-  --text-primary: #18181B;
-  --text-secondary: #71717A;
-  --text-tertiary: #A1A1AA;
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-tertiary: #86868B;
 
-  --primary: #18181B;
+  --primary: #2C2C2E;
   --primary-foreground: #FFFFFF;
-  --primary-hover: #27272A;
-  --primary-active: #171717;
+  --primary-hover: #3A3A3C;
+  --primary-active: #1C1C1E;
 
   --success: #10B981;
   --error: #EF4444;
@@ -59,28 +59,28 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 }
 
 .dark, :root[data-theme="dark"] {
-  /* DARK THEME TOKENS (DEFAULT - #171717 PALETTE) */
-  --bg-app: #171717;
-  --bg-sidebar: #171717;
-  --bg-card: #212121;
-  --bg-card-hover: #292929;
-  --bg-surface-elevated: #292929;
-  --bg-input: #212121;
-  --bg-input-search: #262626;
+  /* DARK THEME TOKENS (APPLE SYSTEM DARK PALETTE) */
+  --bg-app: #161617;
+  --bg-sidebar: #161617;
+  --bg-card: #212124;
+  --bg-card-hover: #2C2C2E;
+  --bg-surface-elevated: #2C2C2E;
+  --bg-input: #212124;
+  --bg-input-search: #2C2C2E;
 
-  --border-subtle: #2E2E2E;
-  --border-card: #2E2E2E;
-  --border-card-hover: #404040;
-  --border-active: #FAFAFA;
+  --border-subtle: #2D2D30;
+  --border-card: #2D2D30;
+  --border-card-hover: #3E3E42;
+  --border-active: #F5F5F7;
 
-  --text-primary: #FAFAFA;
-  --text-secondary: #A3A3A3;
-  --text-tertiary: #737373;
+  --text-primary: #F5F5F7;
+  --text-secondary: #A1A1A6;
+  --text-tertiary: #6E6E73;
 
-  --primary: #FAFAFA;
-  --primary-foreground: #171717;
-  --primary-hover: #E5E5E5;
-  --primary-active: #D4D4D4;
+  --primary: #F5F5F7;
+  --primary-foreground: #1D1D1F;
+  --primary-hover: #E5E5EA;
+  --primary-active: #D1D1D6;
 
   --success: #10B981;
   --error: #EF4444;
@@ -282,8 +282,8 @@ All tools requiring local file uploads (Video to GIF, Audio Cutter, Image Conver
 * **Outer Container:** Standalone dashed box — **NEVER** wrap inside an extra `<Card>`.
   ```html
   <div
-    class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]"
-    :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : ''"
+    class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
+    :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[var(--bg-card-hover)]' : ''"
     @dragover.prevent="isDragging = true"
     @dragleave.prevent="isDragging = false"
     @drop.prevent="onDrop"
@@ -292,8 +292,8 @@ All tools requiring local file uploads (Video to GIF, Audio Cutter, Image Conver
   ```
 * **Center Icon Tile:** Crisp 48px square tile with 24px Lucide icon:
   ```html
-  <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-    <ComponentIcon class="w-6 h-6 text-white" />
+  <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+    <ComponentIcon class="w-6 h-6 text-zinc-900 dark:text-white" />
   </div>
   ```
 * **Typography & Copy Structure:**

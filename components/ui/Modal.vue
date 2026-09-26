@@ -72,13 +72,13 @@ onUnmounted(() => {
       >
         <!-- Backdrop -->
         <div
-          class="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
+          class="fixed inset-0 bg-black/35 dark:bg-black/75 backdrop-blur-sm transition-opacity"
           @click="close"
         />
 
         <!-- Modal Dialog Surface -->
         <div
-          class="relative w-full bg-[var(--bg-surface-elevated)] border border-[var(--border-card)] rounded-[14px] shadow-[0_16px_48px_rgba(0,0,0,0.6)] overflow-hidden z-10 my-8 transition-all transform max-h-[90vh] flex flex-col"
+          class="relative w-full bg-[var(--bg-surface-elevated)] border border-[var(--border-card)] rounded-[14px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.6)] overflow-hidden z-10 my-8 transition-all transform max-h-[90vh] flex flex-col"
           :class="{
             'max-w-sm': maxWidth === 'sm',
             'max-w-md': maxWidth === 'md',

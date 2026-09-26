@@ -462,7 +462,7 @@ onUnmounted(() => {
             v-model="videoUrlInput"
             type="url"
             :placeholder="locale === 'id' ? 'Tempel link video langsung, Twitter/X, atau link medsos...' : 'Paste direct video URL, Twitter/X post, or social link...'"
-            class="w-full h-11 pl-10 bg-[#171717] hover:bg-[#1a1a1c] border border-[#2E2E2E] focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-white/10"
+            class="w-full h-11 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-zinc-400/20 dark:focus:ring-white/10"
             :class="videoUrlInput ? 'pr-20' : 'pr-10'"
             @keydown.enter="fetchVideoFromUrl"
           />
@@ -470,7 +470,7 @@ onUnmounted(() => {
             <button
               v-if="videoUrlInput"
               type="button"
-              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
               title="Clear input"
               aria-label="Clear input"
               @click="videoUrlInput = ''"
@@ -479,7 +479,7 @@ onUnmounted(() => {
             </button>
             <button
               type="button"
-              class="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
               @click="pasteFromClipboard"
               :title="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
               :aria-label="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
@@ -503,16 +503,16 @@ onUnmounted(() => {
 
       <!-- Dropzone -->
       <div
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none"
-        :class="isDragging ? 'border-white bg-[var(--bg-card-hover)]' : 'border-[#2E2E2E] bg-[#141416] hover:border-[#3E3E3E]'"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
+        :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[var(--bg-card-hover)]' : ''"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
         @drop.prevent="(e) => { isDragging = false; if (e.dataTransfer?.files[0]) handleFileUpload(e.dataTransfer.files[0]) }"
         @click="fileInputRef?.click()"
       >
         <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shadow-xs">
-            <Film class="w-6 h-6 text-white" />
+          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+            <Film class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
           <div>
             <h3 class="text-sm font-semibold text-[var(--text-primary)]">
@@ -529,7 +529,7 @@ onUnmounted(() => {
     <!-- State 2: Clean, Unified Video to GIF Studio -->
     <div v-else class="space-y-5">
       <!-- Video Monitor Player Box -->
-      <div class="rounded-xl bg-[#141416] border border-[#262626] p-3 sm:p-4 space-y-3">
+      <div class="rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] p-3 sm:p-4 space-y-3">
         <!-- Video Screen Container -->
         <div class="relative w-full rounded-lg bg-black overflow-hidden border border-white/10 flex items-center justify-center max-h-[420px] aspect-video">
           <video
@@ -600,13 +600,13 @@ onUnmounted(() => {
       </div>
 
       <!-- Clean Trim Controls (With Sliders + Number Inputs) -->
-      <div class="rounded-xl bg-[#141416] border border-[#262626] p-4 sm:p-5 space-y-4">
-        <div class="flex items-center justify-between border-b border-[#262626] pb-3">
+      <div class="rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] p-4 sm:p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[var(--border-card)] pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">
+            <span class="text-xs font-mono font-bold text-[var(--text-primary)] uppercase tracking-wider">
               Trim Range
             </span>
-            <span class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-[#222226] text-white border border-white/10">
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-zinc-100 dark:bg-[#222226] text-zinc-900 dark:text-white border border-zinc-200 dark:border-white/10">
               Duration: {{ clipDuration }}s ({{ estimatedFrames }} frames)
             </span>
           </div>
@@ -712,9 +712,9 @@ onUnmounted(() => {
       </div>
 
       <!-- GIF Format & Resolution Settings (Clean Compact Grid) -->
-      <div class="rounded-xl bg-[#141416] border border-[#262626] p-4 sm:p-5 space-y-4">
-        <div class="flex items-center justify-between border-b border-[#262626] pb-3">
-          <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">
+      <div class="rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] p-4 sm:p-5 space-y-4">
+        <div class="flex items-center justify-between border-b border-[var(--border-card)] pb-3">
+          <span class="text-xs font-mono font-bold text-[var(--text-primary)] uppercase tracking-wider">
             GIF Export Settings
           </span>
           <span class="text-xs font-mono text-[var(--text-tertiary)]">
@@ -732,7 +732,7 @@ onUnmounted(() => {
                 :key="res"
                 type="button"
                 class="py-1.5 px-2 rounded-lg text-xs font-mono border transition-all cursor-pointer text-center"
-                :class="resolutionPreset === res ? 'bg-white text-black font-bold border-white shadow-xs' : 'bg-[#18181b] border-white/10 text-neutral-400 hover:text-white'"
+                :class="resolutionPreset === res ? 'bg-zinc-900 text-white dark:bg-white dark:text-black font-bold border-zinc-900 dark:border-white shadow-xs' : 'bg-zinc-100 dark:bg-[#18181b] border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white'"
                 @click="resolutionPreset = res"
               >
                 {{ res.toUpperCase() }}
