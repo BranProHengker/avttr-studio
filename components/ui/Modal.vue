@@ -78,7 +78,7 @@ onUnmounted(() => {
 
         <!-- Modal Dialog Surface -->
         <div
-          class="relative w-full bg-[var(--bg-surface-elevated)] border border-[var(--border-card)] rounded-[14px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.6)] overflow-hidden z-10 my-8 transition-all transform max-h-[90vh] flex flex-col"
+          class="relative w-full bg-white dark:bg-[#161617] border border-zinc-200 dark:border-[#28282D] rounded-[14px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.7)] overflow-hidden z-10 my-8 transition-all transform max-h-[90vh] flex flex-col"
           :class="{
             'max-w-sm': maxWidth === 'sm',
             'max-w-md': maxWidth === 'md',
@@ -93,17 +93,18 @@ onUnmounted(() => {
           <!-- Header -->
           <div
             v-if="title || $slots.header"
-            class="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]"
+            class="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#161617]"
           >
             <slot name="header">
-              <h3 class="text-base font-semibold text-[var(--text-primary)]">
+              <h3 class="text-base font-semibold text-zinc-900 dark:text-white">
                 {{ title }}
               </h3>
             </slot>
             <button
               type="button"
-              class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-md transition-colors cursor-pointer"
+              class="w-7 h-7 flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-neutral-400 dark:hover:text-white hover:bg-zinc-200/60 dark:hover:bg-[#26262A] rounded-md transition-colors cursor-pointer"
               @click="close"
+              aria-label="Close dialog"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -112,14 +113,14 @@ onUnmounted(() => {
           </div>
 
           <!-- Body -->
-          <div class="p-6 overflow-y-auto flex-1">
+          <div class="p-6 overflow-y-auto flex-1 bg-white dark:bg-[#161617]">
             <slot />
           </div>
 
           <!-- Footer -->
           <div
             v-if="$slots.footer"
-            class="flex items-center justify-end px-6 py-3.5 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] gap-2.5"
+            class="flex items-center justify-end px-6 py-3.5 bg-zinc-50 dark:bg-[#131315] border-t border-zinc-200 dark:border-[#26262A] gap-2.5"
           >
             <slot name="footer" />
           </div>

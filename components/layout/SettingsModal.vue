@@ -72,18 +72,18 @@ const handleResetPreferences = () => {
     :title="t.settings"
     @update:model-value="closeSettings"
   >
-    <div class="flex flex-col sm:flex-row min-h-[440px] -mx-6 -my-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--border-subtle)]">
+    <div class="flex flex-col sm:flex-row min-h-[460px] -m-6 divide-y sm:divide-y-0 sm:divide-x divide-zinc-200 dark:divide-[#26262A]">
       <!-- Left Sidebar Tabs -->
-      <nav class="w-full sm:w-56 shrink-0 p-3 bg-zinc-50/50 dark:bg-[#19191B] flex sm:flex-col gap-1 overflow-x-auto sm:overflow-x-visible">
+      <nav class="w-full sm:w-56 shrink-0 p-3 sm:p-3.5 bg-zinc-50/70 dark:bg-[#131315] flex sm:flex-col gap-1 overflow-x-auto sm:overflow-x-visible">
         <button
           v-for="tab in tabs"
           :key="tab.id"
           type="button"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all text-left cursor-pointer shrink-0 sm:shrink"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all text-left cursor-pointer shrink-0 sm:shrink border"
           :class="
             activeSettingsTab === tab.id
-              ? 'bg-zinc-200/80 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-semibold shadow-xs border border-zinc-300/60 dark:border-transparent'
-              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+              ? 'bg-white dark:bg-[#222226] text-zinc-900 dark:text-white font-semibold shadow-xs border-zinc-200/80 dark:border-white/10'
+              : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-[#1B1B1F] border-transparent'
           "
           @click="activeSettingsTab = tab.id"
         >
@@ -91,40 +91,40 @@ const handleResetPreferences = () => {
           <span class="truncate">{{ tab.label }}</span>
         </button>
 
-        <div class="hidden sm:block mt-auto pt-4 border-t border-[var(--border-subtle)]/70 px-2 text-[11px] text-[var(--text-tertiary)] font-mono">
+        <div class="hidden sm:block mt-auto pt-4 border-t border-zinc-200 dark:border-[#26262A] px-2 text-[11px] text-zinc-400 dark:text-neutral-500 font-mono">
           <span>Avttr Studio v1.2.0</span>
         </div>
       </nav>
 
       <!-- Right Tab Content Panel -->
-      <div class="flex-1 p-5 sm:p-6 overflow-y-auto max-h-[65vh] space-y-6">
+      <div class="flex-1 p-5 sm:p-6 overflow-y-auto max-h-[65vh] space-y-6 bg-white dark:bg-[#161617]">
         <!-- 1. GENERAL TAB -->
         <div v-if="activeSettingsTab === 'general'" class="space-y-6">
-          <div class="border-b border-[var(--border-subtle)] pb-3">
-            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+          <div class="border-b border-zinc-200 dark:border-[#26262A] pb-3">
+            <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">
               {{ t.tabGeneral }}
             </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
               Customize language, display theme, and browser input ergonomics.
             </p>
           </div>
 
           <!-- Language Row -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)]">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] hover:border-zinc-300 dark:hover:border-[#333338] transition-colors">
             <div class="space-y-0.5">
-              <div class="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                <Globe class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+              <div class="text-xs font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                <Globe class="w-3.5 h-3.5 text-zinc-500 dark:text-neutral-400" />
                 <span>{{ t.language }}</span>
               </div>
-              <p class="text-xs text-[var(--text-secondary)]">
+              <p class="text-xs text-zinc-500 dark:text-neutral-400">
                 Select your preferred interface language.
               </p>
             </div>
-            <div class="flex items-center gap-1.5 bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[#262626] rounded-lg p-0.5 shrink-0">
+            <div class="flex items-center gap-1 bg-zinc-200/60 dark:bg-[#121214] border border-zinc-200 dark:border-[#28282D] rounded-lg p-0.5 shrink-0">
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-all"
-                :class="locale === 'en' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
+                :class="locale === 'en' ? 'bg-white dark:bg-[#28282D] text-zinc-900 dark:text-white shadow-xs font-semibold border border-black/5 dark:border-white/10' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
                 @click="locale !== 'en' && toggleLocale()"
               >
                 English
@@ -132,7 +132,7 @@ const handleResetPreferences = () => {
               <button
                 type="button"
                 class="px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-all"
-                :class="locale === 'id' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
+                :class="locale === 'id' ? 'bg-white dark:bg-[#28282D] text-zinc-900 dark:text-white shadow-xs font-semibold border border-black/5 dark:border-white/10' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
                 @click="locale !== 'id' && toggleLocale()"
               >
                 Indonesia
@@ -141,22 +141,22 @@ const handleResetPreferences = () => {
           </div>
 
           <!-- Theme Row -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)]">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] hover:border-zinc-300 dark:hover:border-[#333338] transition-colors">
             <div class="space-y-0.5">
-              <div class="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                <Sun v-if="!isDark" class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                <Moon v-else class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+              <div class="text-xs font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                <Sun v-if="!isDark" class="w-3.5 h-3.5 text-zinc-500" />
+                <Moon v-else class="w-3.5 h-3.5 text-neutral-400" />
                 <span>Interface Theme</span>
               </div>
-              <p class="text-xs text-[var(--text-secondary)]">
+              <p class="text-xs text-zinc-500 dark:text-neutral-400">
                 Switch between Apple Soft Light and Obsidian Dark mode.
               </p>
             </div>
-            <div class="flex items-center gap-1.5 bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[#262626] rounded-lg p-0.5 shrink-0">
+            <div class="flex items-center gap-1 bg-zinc-200/60 dark:bg-[#121214] border border-zinc-200 dark:border-[#28282D] rounded-lg p-0.5 shrink-0">
               <button
                 type="button"
                 class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-all"
-                :class="!isDark ? 'bg-white text-zinc-900 shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-white'"
+                :class="!isDark ? 'bg-white text-zinc-900 shadow-xs font-semibold border border-black/5' : 'text-zinc-600 dark:text-neutral-400 hover:text-white'"
                 @click="isDark && toggleDark()"
               >
                 <Sun class="w-3 h-3" />
@@ -165,7 +165,7 @@ const handleResetPreferences = () => {
               <button
                 type="button"
                 class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-all"
-                :class="isDark ? 'bg-[#2E2E2E] text-white shadow-xs font-semibold' : 'text-zinc-600 hover:text-zinc-900'"
+                :class="isDark ? 'bg-[#28282D] text-white shadow-xs font-semibold border border-white/10' : 'text-zinc-600 hover:text-zinc-900'"
                 @click="!isDark && toggleDark()"
               >
                 <Moon class="w-3 h-3" />
@@ -178,7 +178,7 @@ const handleResetPreferences = () => {
           <div class="pt-2 flex justify-end">
             <button
               type="button"
-              class="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] flex items-center gap-1.5 cursor-pointer transition-colors"
+              class="text-xs text-zinc-400 dark:text-neutral-500 hover:text-zinc-700 dark:hover:text-neutral-300 flex items-center gap-1.5 cursor-pointer transition-colors"
               @click="handleResetPreferences"
             >
               <RotateCcw class="w-3 h-3" />
@@ -189,21 +189,21 @@ const handleResetPreferences = () => {
 
         <!-- 2. DOWNLOADER TAB -->
         <div v-else-if="activeSettingsTab === 'downloader'" class="space-y-6">
-          <div class="border-b border-[var(--border-subtle)] pb-3">
-            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+          <div class="border-b border-zinc-200 dark:border-[#26262A] pb-3">
+            <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">
               {{ t.tabDownloader }}
             </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
               Default resolution, media formats, and smart resolver parameters.
             </p>
           </div>
 
           <!-- Quality Selection -->
-          <div class="p-3.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] space-y-2.5">
+          <div class="p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] space-y-3">
             <div class="flex items-center justify-between">
               <div>
-                <div class="text-xs font-semibold text-[var(--text-primary)]">Preferred Video Quality</div>
-                <p class="text-xs text-[var(--text-secondary)]">Resolution prioritized when multiple streams are available.</p>
+                <div class="text-xs font-semibold text-zinc-900 dark:text-white">Preferred Video Quality</div>
+                <p class="text-xs text-zinc-500 dark:text-neutral-400">Resolution prioritized when multiple streams are available.</p>
               </div>
               <Badge variant="outline" class="text-[10px]">Auto-fallback</Badge>
             </div>
@@ -215,8 +215,8 @@ const handleResetPreferences = () => {
                 class="py-2 px-3 rounded-lg text-xs font-medium border text-center transition-all cursor-pointer capitalize"
                 :class="
                   settings.defaultQuality === q
-                    ? 'bg-zinc-200/80 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white border-zinc-300/80 dark:border-white/20 font-semibold shadow-xs'
-                    : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-card)] hover:border-zinc-300 dark:hover:border-[#3E3E3E]'
+                    ? 'bg-white dark:bg-[#28282D] text-zinc-900 dark:text-white border-zinc-300 dark:border-white/20 font-semibold shadow-xs'
+                    : 'bg-zinc-100/60 dark:bg-[#141416] text-zinc-600 dark:text-neutral-400 border-zinc-200 dark:border-[#28282D] hover:border-zinc-300 dark:hover:border-[#3E3E44]'
                 "
                 @click="settings.defaultQuality = q"
               >
@@ -226,67 +226,67 @@ const handleResetPreferences = () => {
           </div>
 
           <!-- Auto Download Thumbnail -->
-          <div class="flex items-center justify-between p-3.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)]">
+          <div class="flex items-center justify-between p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E]">
             <div class="space-y-0.5">
-              <div class="text-xs font-semibold text-[var(--text-primary)]">Thumbnail Companion</div>
-              <p class="text-xs text-[var(--text-secondary)]">Include HD video cover image when downloading media.</p>
+              <div class="text-xs font-semibold text-zinc-900 dark:text-white">Thumbnail Companion</div>
+              <p class="text-xs text-zinc-500 dark:text-neutral-400">Include HD video cover image when downloading media.</p>
             </div>
             <button
               type="button"
               class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-              :class="settings.autoDownloadThumbnail ? 'bg-[var(--primary)]' : 'bg-zinc-300 dark:bg-[#2E2E2E]'"
+              :class="settings.autoDownloadThumbnail ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-300 dark:bg-[#2A2A2E] border border-zinc-200 dark:border-[#38383E]'"
               @click="settings.autoDownloadThumbnail = !settings.autoDownloadThumbnail"
               aria-label="Toggle Thumbnail Companion"
             >
               <span
-                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
-                :class="settings.autoDownloadThumbnail ? 'translate-x-4' : 'translate-x-0'"
+                class="pointer-events-none inline-block h-4 w-4 transform rounded-full shadow-sm ring-0 transition duration-200 ease-in-out"
+                :class="settings.autoDownloadThumbnail ? 'translate-x-4 bg-white dark:bg-zinc-900' : 'translate-x-0 bg-white'"
               />
             </button>
           </div>
 
           <!-- Custom Cobalt Instance URL (Advanced) -->
-          <div class="p-3.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] space-y-2">
+          <div class="p-3.5 sm:p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] space-y-2.5">
             <div class="flex items-center justify-between">
-              <div class="text-xs font-semibold text-[var(--text-primary)]">Custom Engine Instance</div>
+              <div class="text-xs font-semibold text-zinc-900 dark:text-white">Custom Engine Instance</div>
               <Badge variant="ghost" class="text-[10px]">Optional / Power User</Badge>
             </div>
-            <p class="text-xs text-[var(--text-secondary)]">
+            <p class="text-xs text-zinc-500 dark:text-neutral-400">
               Specify your self-hosted Cobalt API instance URL (leave empty for default public fallback).
             </p>
             <input
               v-model="settings.customCobaltApi"
               type="url"
               placeholder="https://cobalt.yourdomain.com"
-              class="w-full h-9 px-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10"
+              class="w-full h-9 px-3 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-[#28282D] rounded-lg text-xs font-mono text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-neutral-600 focus:outline-none focus:border-zinc-400 dark:focus:border-[#4E4E58]"
             />
           </div>
         </div>
 
         <!-- 3. STORAGE & CACHE TAB -->
         <div v-else-if="activeSettingsTab === 'storage'" class="space-y-6">
-          <div class="border-b border-[var(--border-subtle)] pb-3">
-            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+          <div class="border-b border-zinc-200 dark:border-[#26262A] pb-3">
+            <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">
               {{ t.tabStorage }}
             </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
               Inspect client-side storage, history records, and cache control.
             </p>
           </div>
 
           <!-- History Stats -->
-          <div class="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] flex items-center justify-between">
+          <div class="p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] flex items-center justify-between">
             <div class="space-y-1">
-              <div class="text-xs font-semibold text-[var(--text-primary)]">Local Download History</div>
-              <p class="text-xs text-[var(--text-secondary)]">
-                Currently holding <span class="font-bold text-[var(--text-primary)]">{{ history.length }}</span> items in your browser localStorage.
+              <div class="text-xs font-semibold text-zinc-900 dark:text-white">Local Download History</div>
+              <p class="text-xs text-zinc-500 dark:text-neutral-400">
+                Currently holding <span class="font-bold text-zinc-900 dark:text-white">{{ history.length }}</span> items in your browser localStorage.
               </p>
             </div>
             <Button
               variant="outline"
               size="sm"
               :disabled="history.length === 0"
-              class="text-xs text-rose-600 dark:text-rose-400 hover:border-rose-300 dark:hover:border-rose-900"
+              class="text-xs text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/20"
               @click="handleClearHistory"
             >
               <Trash2 class="w-3.5 h-3.5 mr-1" />
@@ -295,7 +295,7 @@ const handleResetPreferences = () => {
           </div>
 
           <!-- Privacy Banner -->
-          <div class="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-start gap-3">
+          <div class="p-4 rounded-xl border border-emerald-500/25 bg-emerald-500/5 dark:bg-emerald-500/10 flex items-start gap-3">
             <ShieldCheck class="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
             <div class="space-y-1">
               <div class="text-xs font-semibold text-emerald-900 dark:text-emerald-300">100% Client-Side Privacy Guarantee</div>
@@ -308,30 +308,30 @@ const handleResetPreferences = () => {
 
         <!-- 4. ABOUT & STACK TAB -->
         <div v-else-if="activeSettingsTab === 'about'" class="space-y-6">
-          <div class="border-b border-[var(--border-subtle)] pb-3">
-            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+          <div class="border-b border-zinc-200 dark:border-[#26262A] pb-3">
+            <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">
               {{ t.tabAbout }}
             </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
               Project architecture, design system standards, and open-source credits.
             </p>
           </div>
 
-          <div class="flex items-center gap-3.5 p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)]">
-            <img src="/mio.png" alt="Avttr Studio" class="w-12 h-12 rounded-xl object-cover border border-[var(--border-subtle)]" />
+          <div class="flex items-center gap-3.5 p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E]">
+            <img src="/mio.png" alt="Avttr Studio" class="w-12 h-12 rounded-xl object-cover border border-zinc-200 dark:border-[#28282D]" />
             <div>
-              <div class="font-bold text-sm text-[var(--text-primary)] flex items-center gap-2">
+              <div class="font-bold text-sm text-zinc-900 dark:text-white flex items-center gap-2">
                 <span>Avttr Studio</span>
                 <Badge variant="primary" class="text-[10px]">v1.2.0</Badge>
               </div>
-              <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+              <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
                 Minimalist Media Utility & Developer Tools Studio.
               </p>
             </div>
           </div>
 
           <div class="space-y-2">
-            <div class="text-xs font-semibold text-[var(--text-primary)]">Engine & Framework Stack</div>
+            <div class="text-xs font-semibold text-zinc-900 dark:text-white">Engine & Framework Stack</div>
             <div class="flex flex-wrap gap-1.5">
               <Badge variant="outline">Nuxt 3 (Fullstack)</Badge>
               <Badge variant="outline">Vue 3 Composition API</Badge>
@@ -343,13 +343,13 @@ const handleResetPreferences = () => {
             </div>
           </div>
 
-          <div class="p-3.5 rounded-xl border border-[var(--border-card)] text-xs text-[var(--text-secondary)] flex items-center justify-between">
+          <div class="p-3.5 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] text-xs text-zinc-500 dark:text-neutral-400 flex items-center justify-between">
             <span>Open Source under MIT License</span>
             <a
               href="https://github.com/BranProHengker/avttr-studio"
               target="_blank"
               rel="noopener noreferrer"
-              class="flex items-center gap-1 font-medium text-[var(--text-primary)] hover:underline"
+              class="flex items-center gap-1 font-medium text-zinc-900 dark:text-white hover:underline"
             >
               <Github class="w-3.5 h-3.5" />
               <span>BranProHengker/avttr-studio</span>
@@ -360,24 +360,24 @@ const handleResetPreferences = () => {
 
         <!-- 5. REPORT BUG & SUPPORT TAB -->
         <div v-else-if="activeSettingsTab === 'support'" class="space-y-6">
-          <div class="border-b border-[var(--border-subtle)] pb-3">
-            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+          <div class="border-b border-zinc-200 dark:border-[#26262A] pb-3">
+            <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">
               {{ t.tabSupport }}
             </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+            <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
               Found a broken downloader, visual glitch, or feature suggestion? Let us know.
             </p>
           </div>
 
           <!-- Primary GitHub Issue Card -->
-          <div class="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] space-y-3">
+          <div class="p-4 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] space-y-3">
             <div class="flex items-start gap-3">
               <div class="w-9 h-9 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
                 <Bug class="w-5 h-5" />
               </div>
               <div class="space-y-1">
-                <h4 class="text-xs font-semibold text-[var(--text-primary)]">Report Bug on GitHub Issues</h4>
-                <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
+                <h4 class="text-xs font-semibold text-zinc-900 dark:text-white">Report Bug on GitHub Issues</h4>
+                <p class="text-xs text-zinc-500 dark:text-neutral-400 leading-relaxed">
                   Open a tracking issue directly on the official repository. Include the media URL or tool name that caused the issue.
                 </p>
               </div>
@@ -388,7 +388,7 @@ const handleResetPreferences = () => {
                 href="https://github.com/BranProHengker/avttr-studio/issues/new"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
                 <Bug class="w-3.5 h-3.5" />
                 <span>Submit GitHub Issue</span>
@@ -399,7 +399,7 @@ const handleResetPreferences = () => {
                 href="https://discord.com/users/862578324244267018"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-xs font-medium text-[var(--text-primary)] transition-all cursor-pointer"
+                class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-zinc-200 dark:border-[#2E2E34] bg-white dark:bg-[#1E1E22] hover:bg-zinc-100 dark:hover:bg-[#25252A] text-xs font-medium text-zinc-900 dark:text-white transition-all cursor-pointer"
                 title="Contact via Discord"
               >
                 <svg class="w-3.5 h-3.5 fill-current text-[#5865F2]" viewBox="0 0 24 24">
@@ -411,11 +411,11 @@ const handleResetPreferences = () => {
           </div>
 
           <!-- Diagnostic Info Box -->
-          <div class="p-3.5 rounded-xl border border-[var(--border-card)] bg-zinc-50/50 dark:bg-[#141416] space-y-1.5">
-            <div class="text-[11px] font-mono font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <div class="p-3.5 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-100/60 dark:bg-[#121214] space-y-1.5">
+            <div class="text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-neutral-500">
               Client Diagnostic Hints
             </div>
-            <div class="text-[11px] font-mono text-[var(--text-secondary)] space-y-0.5">
+            <div class="text-[11px] font-mono text-zinc-500 dark:text-neutral-400 space-y-0.5">
               <div>Version: Avttr Studio v1.2.0</div>
               <div>Stack: Nuxt 3.16 + Tailwind v4 + Nitro Engine</div>
               <div>Tip: Copy error messages or failed URLs when opening an issue.</div>
