@@ -553,10 +553,10 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Main Workspace Grid: Webcam Studio & Cue Cards Builder -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <!-- LEFT / TOP: Webcam & Teleprompter Stage (7 Cols) -->
-      <div class="lg:col-span-7 space-y-4">
+    <!-- Centered Studio Workspace (Directly Aligned with Center Laptop/Monitor Webcam) -->
+    <div class="max-w-4xl mx-auto space-y-8">
+      <!-- 1. CENTERED WEBCAM & TELEPROMPTER STAGE -->
+      <div class="space-y-4">
         <!-- Video Viewport Card -->
         <div class="relative rounded-[14px] overflow-hidden bg-black border border-zinc-200 dark:border-[#28282D] shadow-lg aspect-video flex items-center justify-center select-none group">
           <!-- Live Webcam Feed (CLEAN FEED, NO OVERLAY RECORDED) -->
@@ -638,18 +638,18 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- TELEPROMPTER HUD: FLOATING CUE CARD (Placed Top-Center near webcam lens) -->
+          <!-- TELEPROMPTER HUD: FLOATING CUE CARD (Centered near webcam lens) -->
           <div
             v-if="isCameraActive && currentCard"
-            class="absolute top-12 sm:top-14 inset-x-4 sm:inset-x-8 z-20 pointer-events-auto transition-all duration-200"
+            class="absolute top-6 sm:top-8 inset-x-4 flex justify-center z-20 pointer-events-auto transition-all duration-200"
           >
             <div
-              class="rounded-xl border transition-all duration-200 overflow-hidden shadow-2xl backdrop-blur-md"
+              class="w-full max-w-lg sm:max-w-xl rounded-xl border transition-all duration-200 overflow-hidden shadow-2xl backdrop-blur-md"
               :class="[
                 bgOpacity === 'solid'
                   ? 'bg-zinc-950/95 border-zinc-700 text-white'
                   : bgOpacity === 'glass'
-                    ? 'bg-zinc-900/80 border-white/20 text-white'
+                    ? 'bg-zinc-900/85 border-white/20 text-white'
                     : 'bg-black/40 border-white/10 text-white'
               ]"
             >
@@ -824,6 +824,21 @@ onUnmounted(() => {
               </button>
             </div>
 
+            <!-- HUD Opacity Toggle -->
+            <button
+              type="button"
+              class="px-2 py-1.5 rounded-lg border text-xs font-mono uppercase transition-colors cursor-pointer"
+              :class="
+                bgOpacity === 'glass'
+                  ? 'bg-white dark:bg-[#28282D] text-zinc-900 dark:text-white border-zinc-300 dark:border-white/10 shadow-xs'
+                  : 'bg-zinc-100/60 dark:bg-[#141416] text-zinc-600 dark:text-neutral-400 border-zinc-200 dark:border-[#28282D]'
+              "
+              :title="`Mode Background HUD: ${bgOpacity}`"
+              @click="bgOpacity = bgOpacity === 'glass' ? 'solid' : bgOpacity === 'solid' ? 'minimal' : 'glass'"
+            >
+              {{ bgOpacity }}
+            </button>
+
             <!-- Auto Advance Switch -->
             <button
               type="button"
@@ -894,8 +909,8 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- RIGHT / BOTTOM: Cue Cards & Script Builder Form (5 Cols) -->
-      <div class="lg:col-span-5 space-y-4">
+      <!-- 2. SCRIPT & CUE CARDS BUILDER (Directly Below Centered Camera Stage) -->
+      <div class="space-y-4 pt-2">
         <!-- Script Builder Header & Presets -->
         <div class="p-4 rounded-xl border border-zinc-200 dark:border-[#28282D] bg-zinc-50/70 dark:bg-[#1B1B1E] space-y-3">
           <div class="flex items-center justify-between">
@@ -947,8 +962,8 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Cue Cards List (Accordion / Interactive Cards) -->
-        <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+        <!-- Cue Cards Grid (Responsive 2-column or 1-column deck) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           <div
             v-for="(card, idx) in cards"
             :key="card.id"
