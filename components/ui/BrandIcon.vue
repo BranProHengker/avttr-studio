@@ -445,6 +445,23 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="m9 13 2 2 4-4"/>
     </svg>
 
+    <!-- Teleprompter Video Studio -->
+    <svg
+      v-else-if="normalized === 'teleprompter' || normalized === 'teleprompter-studio'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full text-indigo-500"
+    >
+      <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.934a.5.5 0 0 0-.777-.416L16 11" />
+      <rect x="2" y="6" width="14" height="12" rx="3" />
+      <path d="M6 10h6" />
+      <path d="M6 14h4" />
+    </svg>
+
     <!-- Generic Fallback Tool -->
     <svg
       v-else

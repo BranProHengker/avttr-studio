@@ -350,6 +350,10 @@ const translations: Record<Locale, Translations> = {
         title: 'SkillSpector',
         description: 'Static pattern & AST security inspector for AI Agent skills. Detect prompt injections, secret leaks, and unsafe execution.',
       },
+      teleprompter: {
+        title: 'Teleprompter Video Studio',
+        description: 'Webcam video recorder with floating cue cards, per-card timers, and hotkey switching.',
+      },
     },
   },
   id: {
@@ -587,6 +591,10 @@ const translations: Record<Locale, Translations> = {
       skillspector: {
         title: 'SkillSpector',
         description: 'Inspektur keamanan statis AST untuk skill AI Agent. Mendeteksi prompt injection, kebocoran rahasia, dan eksekusi berbahaya.',
+      },
+      teleprompter: {
+        title: 'Teleprompter Video Studio',
+        description: 'Perekam video webcam dengan cue cards melayang, timer per kartu, dan navigasi hotkey keyboard.',
       },
     },
   },

@@ -99,6 +99,7 @@ const isCategoryActive = (category: string) => {
       '/tools/doc-to-markdown',
       '/tools/video-to-gif',
       '/tools/video-resizer',
+      '/tools/teleprompter',
     ].includes(route.path)
   }
   if (category === 'developer') {
@@ -183,6 +184,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/tools/doc-to-markdown', label: 'Doc to Markdown', brandName: 'doc-to-markdown' },
       { path: '/tools/video-to-gif', label: 'Video to GIF', brandName: 'video-to-gif' },
       { path: '/tools/video-resizer', label: 'Video Resizer & Trimmer', iconComponent: Video },
+      { path: '/tools/teleprompter', label: 'Teleprompter Studio', brandName: 'teleprompter' },
     ],
   },
   'developer': {
@@ -949,6 +951,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 Video Resizer & Trimmer
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/teleprompter"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/teleprompter')
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Teleprompter Studio
               </NuxtLink>
             </div>
           </div>
