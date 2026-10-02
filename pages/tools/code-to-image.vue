@@ -467,7 +467,7 @@ const handleCopyCode = async () => {
     <!-- Main Workspace (Two Column) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <!-- Left Column: Settings & Configuration (4 cols) -->
-      <div class="lg:col-span-4 space-y-4">
+      <div class="lg:col-span-4 space-y-4 order-2 lg:order-1">
         <!-- 1. Code Language & Title -->
         <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3.5">
           <label class="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider block">
@@ -798,7 +798,7 @@ const handleCopyCode = async () => {
       </div>
 
       <!-- Right Column: Interactive Editor Canvas & Export (8 cols) -->
-      <div class="lg:col-span-8 space-y-4">
+      <div class="lg:col-span-8 space-y-4 order-1 lg:order-2">
         <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">

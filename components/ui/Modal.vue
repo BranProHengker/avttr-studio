@@ -68,17 +68,17 @@ onUnmounted(() => {
     >
       <div
         v-if="modelValue"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+        class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain"
       >
         <!-- Backdrop -->
         <div
-          class="fixed inset-0 bg-black/35 dark:bg-black/75 backdrop-blur-sm transition-opacity"
+          class="fixed inset-0 bg-black/40 dark:bg-black/80 backdrop-blur-sm transition-opacity"
           @click="close"
         />
 
         <!-- Modal Dialog Surface -->
         <div
-          class="relative w-full bg-white dark:bg-[#161617] border border-zinc-200 dark:border-[#28282D] rounded-[14px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.7)] overflow-hidden z-10 my-8 transition-all transform max-h-[90vh] flex flex-col"
+          class="relative w-full bg-white dark:bg-[#161617] border border-zinc-200 dark:border-[#28282D] rounded-[14px] shadow-[0_16px_48px_rgba(0,0,0,0.12)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.7)] overflow-hidden z-10 my-auto sm:my-8 transition-all transform max-h-[calc(100dvh-1.5rem)] sm:max-h-[90vh] flex flex-col"
           :class="{
             'max-w-sm': maxWidth === 'sm',
             'max-w-md': maxWidth === 'md',
@@ -93,7 +93,7 @@ onUnmounted(() => {
           <!-- Header -->
           <div
             v-if="title || $slots.header"
-            class="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#161617]"
+            class="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#161617] shrink-0"
           >
             <slot name="header">
               <h3 class="text-base font-semibold text-zinc-900 dark:text-white">
@@ -113,14 +113,14 @@ onUnmounted(() => {
           </div>
 
           <!-- Body -->
-          <div class="p-6 overflow-y-auto flex-1 bg-white dark:bg-[#161617]">
+          <div class="p-4 sm:p-6 overflow-y-auto flex-1 bg-white dark:bg-[#161617] overscroll-contain">
             <slot />
           </div>
 
           <!-- Footer -->
           <div
             v-if="$slots.footer"
-            class="flex items-center justify-end px-6 py-3.5 bg-zinc-50 dark:bg-[#131315] border-t border-zinc-200 dark:border-[#26262A] gap-2.5"
+            class="flex items-center justify-end px-4 py-3 sm:px-6 sm:py-3.5 bg-zinc-50 dark:bg-[#131315] border-t border-zinc-200 dark:border-[#26262A] gap-2.5 shrink-0"
           >
             <slot name="footer" />
           </div>

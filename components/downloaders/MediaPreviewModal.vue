@@ -112,14 +112,27 @@ const formatSize = (bytes?: number) => {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
+const videoHasError = ref(false)
+const onVideoError = () => {
+  videoHasError.value = true
+}
+
 watch(
   () => props.modelValue,
   (val) => {
+    videoHasError.value = false
     if (!val && audioPlayerRef.value) {
       audioPlayerRef.value.pause()
       isAudioPlaying.value = false
       audioCurrentTime.value = 0
     }
+  }
+)
+
+watch(
+  () => selectedMediaIndex.value,
+  () => {
+    videoHasError.value = false
   }
 )
 </script>
@@ -139,16 +152,17 @@ watch(
       </div>
     </template>
 
-    <div v-if="result" class="space-y-5">
+    <div v-if="result" class="space-y-4 sm:space-y-5">
       <!-- Media Player / Preview Banner -->
-      <div class="rounded-xl overflow-hidden bg-black/90 border border-[var(--border-subtle)] flex items-center justify-center relative min-h-[200px] max-h-[380px]">
+      <div class="rounded-xl overflow-hidden bg-black/90 border border-[var(--border-subtle)] flex items-center justify-center relative min-h-[180px] max-h-[380px]">
         <!-- Image Carousel or Single Image -->
-        <div v-if="activeMedia?.type === 'image' || isCarousel" class="relative w-full h-[300px] sm:h-[340px] flex items-center justify-center bg-black/60">
+        <div v-if="activeMedia?.type === 'image' || isCarousel" class="relative w-full h-[220px] sm:h-[340px] flex items-center justify-center bg-black/60">
           <img
             :src="activeMedia?.url || imageMedias[selectedMediaIndex]?.url || result.thumbnail"
             :alt="result.title"
             loading="lazy"
             decoding="async"
+            referrerpolicy="no-referrer"
             class="max-h-full max-w-full object-contain"
           />
 
@@ -166,21 +180,42 @@ watch(
         </div>
 
         <!-- Video Player Preview -->
-        <div v-else-if="activeMedia?.type === 'video'" class="relative w-full h-[280px] sm:h-[340px] flex items-center justify-center bg-black">
+        <div v-else-if="activeMedia?.type === 'video'" class="relative w-full h-[220px] xs:h-[260px] sm:h-[340px] flex items-center justify-center bg-black">
           <video
-            v-if="activeMedia.url"
+            v-if="activeMedia.url && !videoHasError"
             :key="activeMedia.url"
             :src="getProxiedUrl(activeMedia)"
             :poster="result.thumbnail"
             controls
             playsinline
             preload="metadata"
+            referrerpolicy="no-referrer"
             class="w-full h-full max-h-[340px] object-contain"
+            @error="onVideoError"
           />
+          <!-- Video Streaming Fallback if preview fails or format unsupported -->
+          <div v-else class="flex flex-col items-center justify-center p-4 text-center space-y-2.5 w-full h-full bg-zinc-950 text-white">
+            <div class="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10 shadow-lg bg-zinc-900 flex items-center justify-center">
+              <img
+                v-if="result.thumbnail"
+                :src="result.thumbnail"
+                :alt="result.title"
+                referrerpolicy="no-referrer"
+                class="w-full h-full object-cover"
+              />
+              <div v-else class="w-full h-full flex items-center justify-center text-zinc-400">
+                <Play class="w-6 h-6 ml-0.5 fill-current" />
+              </div>
+            </div>
+            <div class="space-y-0.5 max-w-xs">
+              <p class="text-xs font-semibold text-white">Video Siap Diunduh</p>
+              <p class="text-[11px] text-zinc-400">Pilih kualitas video di bawah untuk langsung mengunduh ke HP Anda.</p>
+            </div>
+          </div>
         </div>
 
         <!-- Audio Interactive Player with Timeline & Controls -->
-        <div v-else-if="activeMedia?.type === 'audio'" class="w-full p-6 flex flex-col items-center justify-center gap-5 bg-[var(--bg-card)]">
+        <div v-else-if="activeMedia?.type === 'audio'" class="w-full p-4 sm:p-6 flex flex-col items-center justify-center gap-4 sm:gap-5 bg-[var(--bg-card)]">
           <!-- Hidden Audio Element -->
           <audio
             v-if="activeMedia.url"
@@ -195,11 +230,12 @@ watch(
           />
 
           <!-- Album Artwork with Equalizer Overlay -->
-          <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border border-[var(--border-subtle)] shadow-2xl shrink-0 group">
+          <div class="relative w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border border-[var(--border-subtle)] shadow-2xl shrink-0 group">
             <img
               v-if="result.thumbnail"
               :src="result.thumbnail"
               :alt="result.title"
+              referrerpolicy="no-referrer"
               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
               decoding="async"
@@ -290,40 +326,38 @@ watch(
         </div>
 
         <!-- Fallback Single Thumbnail Preview -->
-        <div v-else-if="result.thumbnail" class="relative w-full h-[260px] sm:h-[320px] flex items-center justify-center bg-black">
+        <div v-else-if="result.thumbnail" class="relative w-full h-[220px] sm:h-[320px] flex items-center justify-center bg-black">
           <img
             :src="result.thumbnail"
             :alt="result.title"
             loading="lazy"
             decoding="async"
+            referrerpolicy="no-referrer"
             class="w-full h-full object-contain"
           />
         </div>
       </div>
 
       <!-- Author Information & Description -->
-      <div class="flex items-start justify-between gap-4 p-4 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl">
-        <div class="flex items-center gap-3">
-          <div v-if="result.author?.avatar" class="w-10 h-10 rounded-full overflow-hidden border border-[var(--border-subtle)] shrink-0">
-            <img :src="result.author.avatar" :alt="result.author.name" loading="lazy" decoding="async" class="w-full h-full object-cover" />
+      <div class="flex items-start justify-between gap-3 p-3 sm:p-4 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl">
+        <div class="flex items-center gap-3 min-w-0">
+          <div v-if="result.author?.avatar" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-[var(--border-subtle)] shrink-0">
+            <img :src="result.author.avatar" :alt="result.author.name" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
           </div>
-          <div v-else class="w-10 h-10 rounded-full bg-[var(--bg-card-hover)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] shrink-0">
+          <div v-else class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[var(--bg-card-hover)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] shrink-0">
             {{ (result.author?.name || result.platform || 'A')[0].toUpperCase() }}
           </div>
 
-          <div>
-            <h4 class="text-xs font-semibold text-[var(--text-primary)]">
+          <div class="min-w-0">
+            <h4 class="text-xs font-semibold text-[var(--text-primary)] truncate">
               {{ result.author?.name || 'Creator' }}
             </h4>
-            <p class="text-[11px] text-[var(--text-tertiary)] font-mono">
+            <p class="text-[11px] text-[var(--text-tertiary)] font-mono truncate">
               @{{ result.author?.username || result.platform }}
             </p>
           </div>
         </div>
 
-        <div v-if="result.cached" class="shrink-0">
-          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-zinc-100 dark:bg-[#2E2E2E] text-[var(--text-secondary)] border border-[var(--border-subtle)]">Cached</span>
-        </div>
       </div>
 
       <!-- Download Action Buttons -->
@@ -461,7 +495,7 @@ watch(
               class="flex flex-col p-2.5 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-lg hover:border-[var(--border-card-hover)] transition-all gap-2"
             >
               <div class="relative w-full aspect-video rounded overflow-hidden bg-black/40 cursor-pointer" @click="selectedMediaIndex = idx">
-                <img :src="img.url" :alt="`Photo ${idx + 1}`" loading="lazy" decoding="async" class="w-full h-full object-cover" />
+                <img :src="img.url" :alt="`Photo ${idx + 1}`" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
                 <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-black/75 text-white">#{{ idx + 1 }}</span>
               </div>
               <div class="text-[10px] text-[var(--text-tertiary)] font-mono text-center">

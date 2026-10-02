@@ -136,8 +136,14 @@ const { url, loading, result, error, resolveMedia } = useDownloader()
 const isModalOpen = ref(false)
 
 const handleResolve = async () => {
-  if (!url.value.trim()) return
-  const data = await resolveMedia()
+  const raw = url.value.trim()
+  if (!raw) return
+  const urlMatch = raw.match(/(https?:\/\/[^\s,]+)/i)
+  const val = urlMatch ? urlMatch[1] : raw
+  if (urlMatch && raw !== val) {
+    url.value = val
+  }
+  const data = await resolveMedia(val)
   if (data && data.success) {
     isModalOpen.value = true
   }

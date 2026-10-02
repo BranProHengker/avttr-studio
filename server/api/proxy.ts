@@ -34,8 +34,10 @@ export default defineEventHandler(async (event) => {
 
     // Determine platform-specific referer for CDN bypass based on hostname
     let referer = 'https://www.google.com/'
-    if (hostname.includes('tiktok')) {
+    if (hostname.includes('tiktok') || hostname.includes('tiktokcdn') || hostname.includes('akamaized.net')) {
       referer = 'https://www.tiktok.com/'
+    } else if (hostname.includes('tikwm')) {
+      referer = 'https://www.tikwm.com/'
     } else if (hostname.includes('twimg') || hostname.includes('twitter.com') || hostname === 'x.com' || hostname.endsWith('.x.com')) {
       referer = 'https://twitter.com/'
     } else if (hostname.includes('googlevideo') || hostname.includes('youtube.com') || hostname === 'youtu.be') {

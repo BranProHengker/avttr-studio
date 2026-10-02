@@ -56,6 +56,11 @@ const handleSingleInput = (e: Event) => {
     emit('update:modelValue', '')
     return
   }
+  // If user pasted text containing a single URL (e.g. mobile TikTok/Instagram share caption)
+  if (found.length === 1 && val.trim() !== found[0]) {
+    emit('update:modelValue', found[0])
+    return
+  }
   emit('update:modelValue', val)
 }
 

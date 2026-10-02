@@ -457,7 +457,7 @@ const OG_REFERENCE_DATA = [
     <!-- Main Content Workspace (2 Columns) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       <!-- Left Column: Input Controls (5 cols) -->
-      <div class="lg:col-span-5 space-y-4">
+      <div class="lg:col-span-5 space-y-4 order-2 lg:order-1">
         <!-- 1. Quick Presets -->
         <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3">
           <div class="flex items-center justify-between">
@@ -660,7 +660,7 @@ const OG_REFERENCE_DATA = [
       </div>
 
       <!-- Right Column: Live Simulators & Specs (7 cols) -->
-      <div class="lg:col-span-7 space-y-4">
+      <div class="lg:col-span-7 space-y-4 order-1 lg:order-2">
         <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
           <!-- Platform Selector Tabs -->
           <div class="flex items-center gap-1 p-1 bg-[#141414] border border-[var(--border-subtle)] rounded-lg overflow-x-auto text-xs scrollbar-none">

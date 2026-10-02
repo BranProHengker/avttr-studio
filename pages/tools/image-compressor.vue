@@ -696,7 +696,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         <div
           v-if="compareViewMode === 'slider'"
           ref="compareContainerRef"
-          class="relative w-full h-[360px] sm:h-[480px] bg-[#111111] rounded-xl overflow-hidden select-none border border-[var(--border-subtle)] flex items-center justify-center cursor-ew-resize"
+          class="relative w-full h-[240px] xs:h-[300px] sm:h-[480px] bg-[#111111] rounded-xl overflow-hidden select-none border border-[var(--border-subtle)] flex items-center justify-center cursor-ew-resize"
           @mousedown="isInteractingSlider = true"
           @mouseup="isInteractingSlider = false"
           @mouseleave="isInteractingSlider = false"
@@ -734,17 +734,17 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           </div>
 
           <!-- Top-Left & Top-Right Floating Monochrome Badges -->
-          <div class="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-[#1E1E1E]/90 backdrop-blur-md text-xs font-medium text-white border border-[var(--border-subtle)] z-20 shadow-lg flex items-center gap-1.5">
+          <div class="absolute top-3 left-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#1E1E1E]/90 backdrop-blur-md text-[11px] sm:text-xs font-medium text-white border border-[var(--border-subtle)] z-20 shadow-lg flex items-center gap-1.5">
             <span>Original ({{ formatBytes(activeCompareItem.originalSize) }})</span>
           </div>
 
-          <div class="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-[#1E1E1E]/90 backdrop-blur-md text-xs font-medium text-white border border-[var(--border-subtle)] z-20 shadow-lg flex items-center gap-1.5">
+          <div class="absolute top-3 right-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#1E1E1E]/90 backdrop-blur-md text-[11px] sm:text-xs font-medium text-white border border-[var(--border-subtle)] z-20 shadow-lg flex items-center gap-1.5">
             <span>Compressed ({{ formatBytes(activeCompareItem.compressedSize) }})</span>
           </div>
 
           <!-- Hint Footer in Viewer -->
           <div class="absolute bottom-3 inset-x-0 flex justify-center z-20 pointer-events-none">
-            <span class="px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-[11px] font-mono text-[var(--text-secondary)] border border-white/10">
+            <span class="px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-[10px] sm:text-[11px] font-mono text-[var(--text-secondary)] border border-white/10">
               Drag anywhere to compare pixels
             </span>
           </div>
@@ -758,7 +758,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               <span class="font-semibold text-white">Original File</span>
               <span>{{ formatBytes(activeCompareItem.originalSize) }}</span>
             </div>
-            <div class="h-[280px] sm:h-[380px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
+            <div class="h-[180px] xs:h-[220px] sm:h-[380px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
               <img :src="activeCompareItem.originalUrl" :alt="activeCompareItem.name" class="max-w-full max-h-full object-contain" />
             </div>
           </div>
@@ -769,7 +769,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               <span class="font-semibold">Compressed File</span>
               <span>{{ formatBytes(activeCompareItem.compressedSize) }} (-{{ activeCompareItem.savedPercent }}%)</span>
             </div>
-            <div class="h-[280px] sm:h-[380px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
+            <div class="h-[180px] xs:h-[220px] sm:h-[380px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
               <img :src="activeCompareItem.compressedUrl" :alt="activeCompareItem.name" class="max-w-full max-h-full object-contain" />
             </div>
           </div>
@@ -785,7 +785,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               {{ formatBytes(compareViewMode === 'original' ? activeCompareItem.originalSize : activeCompareItem.compressedSize) }}
             </span>
           </div>
-          <div class="h-[340px] sm:h-[440px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
+          <div class="h-[220px] xs:h-[280px] sm:h-[440px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
             <img
               :src="compareViewMode === 'original' ? activeCompareItem.originalUrl : activeCompareItem.compressedUrl"
               :alt="activeCompareItem.name"

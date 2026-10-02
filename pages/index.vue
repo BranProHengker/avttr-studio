@@ -20,8 +20,15 @@ const { categories, allTools, searchQuery, openPalette } = useSearch()
 const isModalOpen = ref(false)
 
 const handleResolve = async () => {
-  const val = url.value.trim()
-  if (!val) return
+  const raw = url.value.trim()
+  if (!raw) return
+
+  // Extract URL if text contains a link (e.g. mobile TikTok/Instagram share caption)
+  const urlMatch = raw.match(/(https?:\/\/[^\s,]+)/i)
+  const val = urlMatch ? urlMatch[1] : raw
+  if (urlMatch && raw !== val) {
+    url.value = val
+  }
 
   // Smart Search: If input is a search term rather than a direct URL, route to matching tool
   if (!val.startsWith('http://') && !val.startsWith('https://')) {
@@ -45,7 +52,7 @@ const handleResolve = async () => {
     return
   }
 
-  const data = await resolveMedia()
+  const data = await resolveMedia(val)
   if (data && data.success) {
     isModalOpen.value = true
   }
