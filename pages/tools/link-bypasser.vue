@@ -17,6 +17,7 @@ import {
   X,
   Lock,
   Info,
+  Loader2,
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import type { BypassResult } from '~/server/utils/bypasser'
@@ -124,18 +125,13 @@ const getStatusBadgeVariant = (status: number) => {
 
 <template>
   <div class="space-y-6 pb-12 w-full">
-    <!-- Breadcrumb & Header -->
-    <div class="flex items-center gap-2">
-      <NuxtLink
-        to="/"
-        class="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
-      >
-        <span>← Dashboard</span>
-      </NuxtLink>
-      <span class="text-xs text-[var(--text-tertiary)]">/</span>
-      <span class="text-xs text-[var(--text-secondary)]">DEVELOPER & AI</span>
-      <span class="text-xs text-[var(--text-tertiary)]">/</span>
-      <span class="text-xs font-mono text-[var(--text-primary)]">Link Bypasser</span>
+    <!-- Breadcrumbs -->
+    <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
+      <NuxtLink to="/" class="hover:text-white transition-colors">Dashboard</NuxtLink>
+      <span>/</span>
+      <span>Developer</span>
+      <span>/</span>
+      <span class="text-[var(--text-primary)]">Link Bypasser</span>
     </div>
 
     <!-- Page Title -->
@@ -148,59 +144,57 @@ const getStatusBadgeVariant = (status: number) => {
       </p>
     </div>
 
-    <!-- Main Omnibox Input Section -->
-    <Card :hoverable="false" class="p-4 sm:p-6">
-      <div class="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div class="relative flex-1">
-          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--text-tertiary)]">
-            <Link2 class="w-4 h-4" />
-          </div>
-          <input
-            id="bypass-url-input"
-            v-model="inputUrl"
-            type="url"
-            placeholder="Paste shortlink or redirect URL (e.g. bit.ly, s.id, google.com/url?q=...)"
-            class="w-full pl-10 pr-10 py-2.5 text-sm rounded-lg bg-[var(--bg-input)] border border-[var(--border-subtle)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-active)] transition-all font-mono"
-            :disabled="loading"
-            @keydown.enter="handleBypass"
-          />
-          <button
-            v-if="inputUrl"
-            type="button"
-            class="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-            title="Clear input"
-            @click="clearInput"
-          >
-            <X class="w-4 h-4" />
-          </button>
-        </div>
-
-        <div class="flex items-center gap-2 shrink-0">
-          <Button
-            variant="outline"
-            size="default"
-            type="button"
-            :disabled="loading"
-            class="px-3"
-            @click="pasteFromClipboard"
-          >
-            <Clipboard class="w-4 h-4 mr-1.5" />
-            Paste
-          </Button>
-          <Button
-            id="bypass-submit-btn"
-            variant="primary"
-            size="default"
-            type="button"
-            :loading="loading"
-            @click="handleBypass"
-          >
-            <Sparkles v-if="!loading" class="w-4 h-4 mr-1.5" />
-            {{ loading ? 'Tracing...' : 'Bypass Link' }}
-          </Button>
-        </div>
+    <!-- Search Omnibar (Standardized with SkillSpector & HeroPasteBar) -->
+    <div class="relative flex items-center w-full">
+      <div class="absolute left-4 pointer-events-none text-[var(--text-secondary)]">
+        <Link2 class="w-5 h-5 text-[var(--text-secondary)]" />
       </div>
-    </Card>
+      <input
+        id="bypass-url-input"
+        v-model="inputUrl"
+        type="url"
+        placeholder="Paste shortlink or redirect URL (e.g. bit.ly, s.id, google.com/url?q=...)..."
+        class="w-full h-12 pl-12 pr-36 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all font-mono"
+        :disabled="loading"
+        @keydown.enter="handleBypass"
+      />
+      <div class="absolute right-2 flex items-center gap-1.5">
+        <button
+          v-if="inputUrl"
+          type="button"
+          class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
+          title="Clear input"
+          @click="clearInput"
+        >
+          <X class="w-4 h-4" />
+        </button>
+        <Button
+          v-if="!inputUrl"
+          variant="secondary"
+          size="sm"
+          type="button"
+          :disabled="loading"
+          class="h-8 px-2.5 text-xs cursor-pointer"
+          @click="pasteFromClipboard"
+        >
+          <Clipboard class="w-3.5 h-3.5 mr-1 text-[var(--text-secondary)]" />
+          Paste
+        </Button>
+        <Button
+          id="bypass-submit-btn"
+          variant="primary"
+          size="sm"
+          type="button"
+          class="h-8 px-3 text-xs font-medium cursor-pointer"
+          :disabled="loading || !inputUrl.trim()"
+          @click="handleBypass"
+        >
+          <Loader2 v-if="loading" class="w-3.5 h-3.5 animate-spin mr-1.5" />
+          <Sparkles v-else class="w-3.5 h-3.5 mr-1.5" />
+          <span>{{ loading ? 'Tracing...' : 'Bypass Link' }}</span>
+        </Button>
+      </div>
+    </div>
 
     <!-- Error Box -->
     <div
