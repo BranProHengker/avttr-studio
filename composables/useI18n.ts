@@ -354,6 +354,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Teleprompter Video Studio',
         description: 'Webcam video recorder with floating cue cards, per-card timers, and hotkey switching.',
       },
+      'link-bypasser': {
+        title: 'Link Bypasser & Redirect Tracer',
+        description: 'Trace full redirect chains, bypass ad & social shorteners, and strip tracking tokens safely.',
+      },
     },
   },
   id: {
@@ -595,6 +599,10 @@ const translations: Record<Locale, Translations> = {
       teleprompter: {
         title: 'Teleprompter Video Studio',
         description: 'Perekam video webcam dengan cue cards melayang, timer per kartu, dan navigasi hotkey keyboard.',
+      },
+      'link-bypasser': {
+        title: 'Link Bypasser & Pelacak Redirect',
+        description: 'Lacak rantai redirect URL lengkap, bypass link iklan & gateway medsos, dan bersihkan tracker otomatis.',
       },
     },
   },

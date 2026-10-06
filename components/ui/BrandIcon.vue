@@ -454,12 +454,29 @@ const normalized = computed(() => props.name.toLowerCase())
       stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
-      class="w-full h-full text-indigo-500"
+      class="w-full h-full"
     >
       <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.934a.5.5 0 0 0-.777-.416L16 11" />
       <rect x="2" y="6" width="14" height="12" rx="3" />
       <path d="M6 10h6" />
       <path d="M6 14h4" />
+    </svg>
+
+    <!-- Link Bypasser & Redirect Tracer -->
+    <svg
+      v-else-if="normalized === 'link-bypasser' || normalized === 'link-bypass' || normalized === 'bypasser'"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-full h-full"
+    >
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+      <path d="m18 8 3-3" />
+      <path d="m3 21 3-3" />
     </svg>
 
     <!-- Generic Fallback Tool -->

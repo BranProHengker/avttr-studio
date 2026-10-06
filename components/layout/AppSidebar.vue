@@ -105,6 +105,7 @@ const isCategoryActive = (category: string) => {
   if (category === 'developer') {
     return [
       '/tools/skillspector',
+      '/tools/link-bypasser',
       '/tools/svg-optimizer',
       '/tools/code-to-image',
       '/tools/hash-encoder',
@@ -191,6 +192,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
     title: 'Developer & AI',
     items: [
       { path: '/tools/skillspector', label: 'SkillSpector', iconComponent: FolderCheck },
+      { path: '/tools/link-bypasser', label: 'Link Bypasser', brandName: 'link-bypasser' },
       { path: '/tools/svg-optimizer', label: 'SVG Optimizer', iconComponent: FileCode },
       { path: '/tools/code-to-image', label: 'Code to Image', iconComponent: Code2 },
       { path: '/tools/hash-encoder', label: 'Hash Encoder', iconComponent: Hash },
@@ -1000,6 +1002,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 SkillSpector
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/link-bypasser"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/link-bypasser')
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Link Bypasser
               </NuxtLink>
               <NuxtLink
                 to="/tools/svg-optimizer"
