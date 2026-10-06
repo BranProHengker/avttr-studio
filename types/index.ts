@@ -21,6 +21,7 @@ export interface MediaItem {
   watermark?: boolean
   thumbnail?: string
   filename?: string
+  audioUrl?: string
 }
 
 export interface AuthorInfo {
@@ -57,6 +58,7 @@ export interface ToolItem {
   category: 'downloader' | 'image' | 'color' | 'dev' | 'music'
   icon: string
   route: string
+  format?: string
   badge?: 'Fast' | 'HD' | 'New' | 'Beta' | 'AI' | 'Popular' | string
   popular?: boolean
   platform?: PlatformType

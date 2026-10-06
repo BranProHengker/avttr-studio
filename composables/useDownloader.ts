@@ -135,6 +135,10 @@ export function useDownloader() {
       filename,
     })
 
+    if (typeof item !== 'string' && item?.audioUrl) {
+      params.set('audioUrl', item.audioUrl)
+    }
+
     if (isDownload) {
       params.set('download', '1')
     }

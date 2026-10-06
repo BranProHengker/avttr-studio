@@ -94,7 +94,71 @@ export default defineEventHandler(async (event) => {
       return sendStream(event, ffmpeg.stdout)
     }
 
-    // 2. Direct streaming proxy for Video, Images, and other files
+    // 2. If audioUrl is present, mux video + audio streams on-the-fly via ffmpeg (for YouTube 1080p+ Full HD)
+    const audioUrl = typeof query.audioUrl === 'string' ? query.audioUrl : ''
+    if (audioUrl) {
+      const safeAudioCheck = validateSafeUrl(audioUrl)
+      if (!safeAudioCheck.valid || !safeAudioCheck.url) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: safeAudioCheck.error || 'Invalid audio stream URL',
+        })
+      }
+
+      const cleanAsciiFilename = filename.replace(/[^\w\s.-]/gi, '_')
+      const videoHeaders: Record<string, string> = {
+        'Content-Type': 'video/mp4',
+        'Accept-Ranges': 'none',
+        'Access-Control-Allow-Origin': '*',
+      }
+
+      if (isDownload) {
+        videoHeaders['Content-Disposition'] = `attachment; filename="${cleanAsciiFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+      }
+
+      setResponseStatus(event, 200)
+      setResponseHeaders(event, videoHeaders)
+
+      const ffmpegArgs = [
+        '-nostdin', '-hide_banner', '-loglevel', 'error',
+      ]
+
+      if (hostname.includes('googlevideo.com')) {
+        ffmpegArgs.push('-user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+      } else if (referer) {
+        ffmpegArgs.push('-referer', referer)
+      }
+
+      ffmpegArgs.push('-i', targetUrl)
+
+      if (safeAudioCheck.url.hostname.includes('googlevideo.com')) {
+        ffmpegArgs.push('-user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+      } else if (referer) {
+        ffmpegArgs.push('-referer', referer)
+      }
+
+      ffmpegArgs.push(
+        '-i', audioUrl,
+        '-c:v', 'copy',
+        '-c:a', 'aac',
+        '-b:a', '192k',
+        '-movflags', 'frag_keyframe+empty_moov',
+        '-f', 'mp4',
+        'pipe:1'
+      )
+
+      const ffmpeg = spawn('ffmpeg', ffmpegArgs)
+
+      event.node.req.on('close', () => {
+        try {
+          ffmpeg.kill('SIGKILL')
+        } catch {}
+      })
+
+      return sendStream(event, ffmpeg.stdout)
+    }
+
+    // 3. Direct streaming proxy for Video, Images, and other files
     const upstreamHeaders: Record<string, string> = {
       'Accept': '*/*',
     }

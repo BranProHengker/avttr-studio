@@ -116,7 +116,7 @@ const handleBatchSubmit = (urls: string[]) => {
             {{ error }}
           </p>
           <div v-if="error.toLowerCase().includes('cookie') || error.toLowerCase().includes('terabox')" class="pt-1.5 text-[11px] text-amber-800 dark:text-amber-300/90 font-mono">
-            💡 <strong>Petunjuk:</strong> Perbarui variabel <code>TERABOX_COOKIE</code> di file <code>.env</code> server dengan cookie <code>ndus</code> terbaru dari TeraBox.
+            <strong>Petunjuk:</strong> Perbarui variabel <code>TERABOX_COOKIE</code> di file <code>.env</code> server dengan cookie <code>ndus</code> terbaru dari TeraBox.
           </div>
         </div>
       </div>

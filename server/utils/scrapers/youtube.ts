@@ -4,11 +4,17 @@ import vm from 'node:vm'
 
 const INVIDIOUS_INSTANCES = [
   'https://invidious.flokinet.to',
+  'https://invidious.f5.si',
+  'https://invidious.perennialte.ch',
   'https://inv.nadeko.net',
   'https://invidious.nerdvpn.de',
-  'https://invidious.perennialte.ch',
-  'https://invidious.private.coffee',
 ]
+
+function parseQualityHeight(label?: string): number {
+  if (!label) return 0
+  const match = label.match(/(\d+)p/i)
+  return match ? parseInt(match[1], 10) : 0
+}
 
 function extractYouTubeVideoId(url: string): string | null {
   if (!url) return null
@@ -43,7 +49,7 @@ async function fetchInvidiousVideo(videoId: string): Promise<ScraperResult | nul
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(6000),
       })
 
       if (!res.ok) continue
@@ -52,20 +58,47 @@ async function fetchInvidiousVideo(videoId: string): Promise<ScraperResult | nul
 
       const medias: MediaItem[] = []
       const seen = new Set<string>()
-      let primaryStreamUrl = ''
-      let primarySize: number | undefined
 
-      // 1. Progressive Video Streams
+      // 1. Adaptive Audio Streams (find best audio stream)
+      let bestAudioUrl = ''
+      let bestAudioSize: number | undefined
+      if (Array.isArray(data.adaptiveFormats)) {
+        const audios = data.adaptiveFormats.filter((f: any) => f.type?.includes('audio') && f.url)
+        const bestM4a = audios.find((f: any) => f.container === 'm4a' || f.type?.includes('mp4')) || audios[0]
+        if (bestM4a) {
+          bestAudioUrl = bestM4a.url
+          bestAudioSize = bestM4a.bitrate ? parseInt(bestM4a.bitrate, 10) : undefined
+        }
+      }
+
+      // 2. Adaptive Video Streams (1080p, 1440p, 2160p, 720p, etc.)
+      if (Array.isArray(data.adaptiveFormats)) {
+        const videos = data.adaptiveFormats.filter((f: any) => (f.type?.includes('video') || f.qualityLabel) && f.url)
+        videos.sort((a: any, b: any) => parseQualityHeight(b.qualityLabel || b.resolution) - parseQualityHeight(a.qualityLabel || a.resolution))
+
+        for (const f of videos) {
+          const q = f.qualityLabel || f.resolution
+          if (!q || seen.has(q)) continue
+          seen.add(q)
+
+          medias.push({
+            type: 'video',
+            quality: q,
+            format: f.container || 'mp4',
+            size: f.size ? parseInt(f.size, 10) : undefined,
+            url: f.url,
+            audioUrl: bestAudioUrl || undefined,
+          })
+        }
+      }
+
+      // 3. Progressive Video Streams
       if (Array.isArray(data.formatStreams)) {
         for (const f of data.formatStreams) {
           if (!f || !f.url) continue
           const q = f.qualityLabel || f.quality || '360p'
           if (!seen.has(q)) {
             seen.add(q)
-            if (!primaryStreamUrl) {
-              primaryStreamUrl = f.url
-              primarySize = f.size ? parseInt(f.size, 10) : undefined
-            }
             medias.push({
               type: 'video',
               quality: q,
@@ -77,35 +110,21 @@ async function fetchInvidiousVideo(videoId: string): Promise<ScraperResult | nul
         }
       }
 
-      // 2. Adaptive Audio Streams
-      let hasAudio = false
-      if (Array.isArray(data.adaptiveFormats)) {
-        const audios = data.adaptiveFormats.filter((f: any) => f.type?.includes('audio') && f.url)
-        for (const a of audios) {
-          const isM4a = a.container === 'm4a' || a.type?.includes('mp4')
-          const qualityName = isM4a ? 'Audio MP3 (M4A High)' : 'Audio (Opus)'
-          if (!seen.has(qualityName)) {
-            seen.add(qualityName)
-            hasAudio = true
-            medias.push({
-              type: 'audio',
-              quality: qualityName,
-              format: isM4a ? 'mp3' : 'opus',
-              size: a.bitrate ? parseInt(a.bitrate, 10) : undefined,
-              url: a.url,
-            })
-          }
-        }
-      }
-
-      // If no dedicated audio format was found, create an MP3 audio option from the progressive stream
-      if (!hasAudio && primaryStreamUrl) {
+      // 4. Audio Streams
+      if (bestAudioUrl) {
         medias.push({
           type: 'audio',
-          quality: 'Audio MP3 (128 kbps)',
+          quality: 'Audio MP3 (320 kbps)',
           format: 'mp3',
-          size: primarySize ? Math.round(primarySize * 0.28) : undefined,
-          url: primaryStreamUrl,
+          size: bestAudioSize ? Math.round(bestAudioSize * 1.1) : undefined,
+          url: bestAudioUrl,
+        })
+        medias.push({
+          type: 'audio',
+          quality: 'Audio M4A (Original AAC)',
+          format: 'm4a',
+          size: bestAudioSize,
+          url: bestAudioUrl,
         })
       }
 
@@ -129,28 +148,68 @@ async function fetchInvidiousVideo(videoId: string): Promise<ScraperResult | nul
   return null
 }
 
+let cachedYt: any = null
+
+async function getInnertube() {
+  const { Innertube, Platform, ClientType } = await import('youtubei.js')
+
+  if (!Platform.shim.eval) {
+    Platform.shim.eval = (data: any, env: any) => {
+      const code = typeof data === 'string' ? data : (data?.output || '')
+      return vm.runInNewContext(`(function() {\n${code}\n})()`, env)
+    }
+  }
+
+  if (!cachedYt) {
+    cachedYt = await Innertube.create({
+      client_type: ClientType.IOS,
+    })
+  }
+  return cachedYt
+}
+
 async function fetchInnertubeVideo(videoId: string): Promise<ScraperResult | null> {
   try {
-    const { Innertube, Platform, ClientType } = await import('youtubei.js')
-
-    if (!Platform.shim.eval) {
-      Platform.shim.eval = (data: any, env: any) => {
-        const code = typeof data === 'string' ? data : (data?.output || '')
-        return vm.runInNewContext(`(function() {\n${code}\n})()`, env)
-      }
-    }
-
-    const yt = await Innertube.create({
-      client_type: ClientType.ANDROID,
-    })
+    const yt = await getInnertube()
     const info = await yt.getBasicInfo(videoId)
 
     if (!info || !info.basic_info) return null
 
     const medias: MediaItem[] = []
-    const formats = info.streaming_data?.formats || []
+    const seen = new Set<string>()
 
-    for (const f of formats) {
+    const adaptive = info.streaming_data?.adaptive_formats || []
+    const progressive = info.streaming_data?.formats || []
+
+    // 1. Extract best audio format (prefer MP4/M4A AAC)
+    const audioFormats = adaptive.filter((f: any) => f.has_audio && !f.has_video && f.url)
+    const bestAudio = audioFormats.find((f: any) => f.mime_type?.includes('mp4')) || audioFormats[0]
+
+    // 2. Extract adaptive video formats (1080p, 1440p, 2160p, 720p, etc.)
+    const videoFormats = adaptive.filter((f: any) => f.has_video && f.url)
+    const mp4Videos = videoFormats.filter((f: any) => f.mime_type?.includes('mp4'))
+    const otherVideos = videoFormats.filter((f: any) => !f.mime_type?.includes('mp4'))
+    const candidateVideos = [...mp4Videos, ...otherVideos]
+
+    candidateVideos.sort((a: any, b: any) => parseQualityHeight(b.quality_label) - parseQualityHeight(a.quality_label))
+
+    for (const f of candidateVideos) {
+      const q = f.quality_label
+      if (!q || seen.has(q)) continue
+      seen.add(q)
+
+      medias.push({
+        type: 'video',
+        quality: q,
+        format: 'mp4',
+        size: f.content_length ?? undefined,
+        url: f.url,
+        audioUrl: f.has_audio ? undefined : bestAudio?.url,
+      })
+    }
+
+    // 3. Fallback to progressive formats if any quality was not captured
+    for (const f of progressive) {
       let directUrl = f.url
       if (!directUrl && typeof (f as any).decipher === 'function') {
         try {
@@ -159,24 +218,36 @@ async function fetchInnertubeVideo(videoId: string): Promise<ScraperResult | nul
       }
 
       if (directUrl && f.has_video) {
-        // Video Option (MP4)
-        medias.push({
-          type: 'video',
-          quality: f.quality_label || '360p',
-          format: 'mp4',
-          size: f.content_length ?? undefined,
-          url: directUrl,
-        })
-
-        // Audio Option (MP3 128 kbps extracted from progressive stream)
-        medias.push({
-          type: 'audio',
-          quality: 'Audio MP3 (128 kbps)',
-          format: 'mp3',
-          size: f.content_length ? Math.round(f.content_length * 0.28) : undefined,
-          url: directUrl,
-        })
+        const q = f.quality_label || '360p'
+        if (!seen.has(q)) {
+          seen.add(q)
+          medias.push({
+            type: 'video',
+            quality: q,
+            format: 'mp4',
+            size: f.content_length ?? undefined,
+            url: directUrl,
+          })
+        }
       }
+    }
+
+    // 4. Dedicated Audio Formats
+    if (bestAudio?.url) {
+      medias.push({
+        type: 'audio',
+        quality: 'Audio MP3 (320 kbps)',
+        format: 'mp3',
+        size: bestAudio.content_length ? Math.round(bestAudio.content_length * 1.1) : undefined,
+        url: bestAudio.url,
+      })
+      medias.push({
+        type: 'audio',
+        quality: 'Audio M4A (Original AAC)',
+        format: 'm4a',
+        size: bestAudio.content_length ?? undefined,
+        url: bestAudio.url,
+      })
     }
 
     if (medias.length > 0) {
@@ -191,6 +262,7 @@ async function fetchInnertubeVideo(videoId: string): Promise<ScraperResult | nul
       }
     }
   } catch (err: any) {
+    cachedYt = null
     console.warn('Innertube YouTube resolve failed:', err.message)
   }
   return null
@@ -226,21 +298,21 @@ export const youtubeScraper: PlatformScraper = {
       } catch {}
     }
 
-    // Strategy 1: Invidious Resolver Cluster
-    if (videoId) {
-      const invidiousResult = await fetchInvidiousVideo(videoId)
-      if (invidiousResult && invidiousResult.success) {
-        if (!invidiousResult.author && metaAuthor) invidiousResult.author = metaAuthor
-        return invidiousResult
-      }
-    }
-
-    // Strategy 2: Innertube YouTube Resolver Engine (Android Client)
+    // Strategy 1: Innertube YouTube Engine (iOS Native Client with 1080p+ Full HD)
     if (videoId) {
       const innertubeResult = await fetchInnertubeVideo(videoId)
       if (innertubeResult && innertubeResult.success) {
         if (!innertubeResult.author && metaAuthor) innertubeResult.author = metaAuthor
         return innertubeResult
+      }
+    }
+
+    // Strategy 2: Invidious Resolver Cluster
+    if (videoId) {
+      const invidiousResult = await fetchInvidiousVideo(videoId)
+      if (invidiousResult && invidiousResult.success) {
+        if (!invidiousResult.author && metaAuthor) invidiousResult.author = metaAuthor
+        return invidiousResult
       }
     }
 
