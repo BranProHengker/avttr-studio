@@ -20,7 +20,11 @@ import {
   Moon,
   Info,
   Sparkles,
-  X
+  X,
+  Columns,
+  AlignLeft,
+  AlignCenter,
+  AlignRight
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
@@ -87,6 +91,7 @@ const specimenTheme = ref<'dark' | 'light'>('light')
 const fontSize = ref(32)
 const letterSpacing = ref(0)
 const lineHeight = ref(1.4)
+const specimenTextAlign = ref<'left' | 'center' | 'right'>('left')
 
 // UNCUT Scraping & Pagination State
 const uncutResults = ref<UncutFontItem[]>([])
@@ -115,8 +120,9 @@ const googlePageSize = ref(12)
 // Selected Font for Inspector Detail Modal
 const isDetailModalOpen = ref(false)
 const activeModalFont = ref<any>(null)
+const activeModalTab = ref<'overview' | 'pairing' | 'charmap' | 'snippets'>('overview')
 
-const openFontDetail = (font: any) => {
+const openFontDetail = (font: any, tab: 'overview' | 'pairing' | 'charmap' | 'snippets' = 'overview') => {
   activeModalFont.value = {
     id: font.id,
     name: font.name,
@@ -131,6 +137,7 @@ const openFontDetail = (font: any) => {
     weights: font.weights,
     fontshareName: font.fontshareName,
   }
+  activeModalTab.value = tab
   isDetailModalOpen.value = true
 }
 
@@ -405,6 +412,13 @@ const pickRandomFont = () => {
   })
 }
 
+// Open Smart Font Pairing Studio
+const openPairingStudio = () => {
+  const topFont = filteredGoogleFonts.value[0] || FONTS_DATABASE[0]
+  loadFontDynamically(topFont)
+  openFontDetail(topFont, 'pairing')
+}
+
 // Custom Font File Upload (.ttf, .otf, .woff, .woff2)
 const handleCustomFontUpload = async (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0]
@@ -445,24 +459,41 @@ const handleCustomFontUpload = async (e: Event) => {
   }
 }
 
-// 1-Click Code Generation & Copy
-const getEmbedCode = (font: FontItem, type: 'html' | 'css' | 'import' | 'tailwind') => {
-  if (font.source === 'fontshare') {
-    if (type === 'html') return `<link href="https://api.fontshare.com/v2/css?f[]=${font.fontshareName}@${font.weights.join(',')}&display=swap" rel="stylesheet">`
-    if (type === 'import') return `@import url('https://api.fontshare.com/v2/css?f[]=${font.fontshareName}@${font.weights.join(',')}&display=swap');`
+// Universal 1-Click Code Generation & Copy (Google, Fontshare, UNCUT, DaFont, Custom)
+const getEmbedCode = (font: any, type: 'html' | 'css' | 'import' | 'tailwind') => {
+  const source = font.source || (font.slug ? 'uncut' : 'google')
+  const weights = font.weights || [400, 700]
+
+  if (source === 'fontshare') {
+    if (type === 'html') return `<link href="https://api.fontshare.com/v2/css?f[]=${font.fontshareName}@${weights.join(',')}&display=swap" rel="stylesheet">`
+    if (type === 'import') return `@import url('https://api.fontshare.com/v2/css?f[]=${font.fontshareName}@${weights.join(',')}&display=swap');`
     if (type === 'css') return `font-family: '${font.name}', sans-serif;`
     if (type === 'tailwind') return `fontFamily: {\n  '${font.id}': ["'${font.name}'", 'sans-serif'],\n}`
   }
 
+  if (source === 'uncut') {
+    const slug = (font.slug || font.id || '').replace(/^uncut-/, '')
+    if (type === 'html') return `<link rel="preload" href="/fonts/${slug}.woff2" as="font" type="font/woff2" crossorigin>`
+    if (type === 'import' || type === 'css') return `@font-face {\n  font-family: '${font.name}';\n  src: url('/fonts/${slug}.woff2') format('woff2');\n  font-weight: normal;\n  font-style: normal;\n  font-display: swap;\n}`
+    if (type === 'tailwind') return `fontFamily: {\n  '${slug}': ["'${font.name}'", '${font.category || 'sans-serif'}'],\n}`
+  }
+
+  if (source === 'dafont') {
+    const slug = (font.id || '').replace(/-/g, '_')
+    if (type === 'html') return `<link rel="preload" href="/fonts/${slug}.ttf" as="font" type="font/ttf" crossorigin>`
+    if (type === 'import' || type === 'css') return `/* Extract ${font.name} archive to /public/fonts/ */\n@font-face {\n  font-family: '${font.name}';\n  src: url('/fonts/${slug}.ttf') format('truetype');\n  font-weight: normal;\n  font-style: normal;\n  font-display: swap;\n}`
+    if (type === 'tailwind') return `fontFamily: {\n  '${font.id}': ["'${font.name}'", 'cursive', 'sans-serif'],\n}`
+  }
+
   const fontParam = encodeURIComponent(font.name).replace(/%20/g, '+')
-  if (type === 'html') return `<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link href="https://fonts.googleapis.com/css2?family=${fontParam}:wght@${font.weights.join(';')}&display=swap" rel="stylesheet">`
-  if (type === 'import') return `@import url('https://fonts.googleapis.com/css2?family=${fontParam}:wght@${font.weights.join(';')}&display=swap');`
+  if (type === 'html') return `<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link href="https://fonts.googleapis.com/css2?family=${fontParam}:wght@${weights.join(';')}&display=swap" rel="stylesheet">`
+  if (type === 'import') return `@import url('https://fonts.googleapis.com/css2?family=${fontParam}:wght@${weights.join(';')}&display=swap');`
   if (type === 'css') return `font-family: '${font.name}', ${font.category === 'serif' ? 'serif' : font.category === 'monospace' ? 'monospace' : 'sans-serif'};`
   if (type === 'tailwind') return `fontFamily: {\n  '${font.id}': ["'${font.name}'", '${font.category === 'serif' ? 'serif' : font.category === 'monospace' ? 'monospace' : 'sans-serif'}'],\n}`
   return ''
 }
 
-const copySnippet = (font: FontItem, type: 'html' | 'css' | 'import' | 'tailwind') => {
+const copySnippet = (font: any, type: 'html' | 'css' | 'import' | 'tailwind') => {
   const code = getEmbedCode(font, type)
   copy(code)
 }
@@ -511,6 +542,12 @@ onMounted(() => {
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
+        <!-- Smart Pairing Studio Button -->
+        <Button variant="secondary" size="sm" class="h-8 px-3 text-xs font-semibold shadow-xs" @click="openPairingStudio">
+          <Columns class="w-3.5 h-3.5 mr-1.5" />
+          <span>Smart Pairing</span>
+        </Button>
+
         <!-- Random Font Button -->
         <Button variant="primary" size="sm" class="h-8 px-3 text-xs font-semibold shadow-xs" @click="pickRandomFont">
           <Shuffle class="w-3.5 h-3.5 mr-1.5" />
@@ -701,6 +738,37 @@ onMounted(() => {
           </button>
         </div>
 
+        <!-- Specimen Alignment Toggles -->
+        <div class="flex items-center gap-0.5 bg-[var(--bg-card)] p-1 rounded-lg border border-[var(--border-subtle)]">
+          <button
+            type="button"
+            class="p-1 rounded cursor-pointer transition-colors"
+            :class="specimenTextAlign === 'left' ? 'bg-[var(--primary)] text-[var(--primary-foreground)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+            title="Align Left"
+            @click="specimenTextAlign = 'left'"
+          >
+            <AlignLeft class="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            class="p-1 rounded cursor-pointer transition-colors"
+            :class="specimenTextAlign === 'center' ? 'bg-[var(--primary)] text-[var(--primary-foreground)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+            title="Align Center"
+            @click="specimenTextAlign = 'center'"
+          >
+            <AlignCenter class="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            class="p-1 rounded cursor-pointer transition-colors"
+            :class="specimenTextAlign === 'right' ? 'bg-[var(--primary)] text-[var(--primary-foreground)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+            title="Align Right"
+            @click="specimenTextAlign = 'right'"
+          >
+            <AlignRight class="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         <div class="flex items-center gap-2">
           <span>Size:</span>
           <input
@@ -773,18 +841,39 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Download ZIP Action -->
-              <a
-                :href="uf.downloadUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="px-3 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
-                title="Download font ZIP archive"
-                @click.stop
-              >
-                <Download class="w-3.5 h-3.5" />
-                <span>Download ZIP</span>
-              </a>
+              <!-- Card Actions Row (Pair, CSS, Download) -->
+              <div class="flex items-center gap-1.5 shrink-0" @click.stop>
+                <button
+                  type="button"
+                  class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                  title="Test in Smart Font Pairing Studio"
+                  @click="openFontDetail(uf, 'pairing')"
+                >
+                  <Columns class="w-3 h-3" />
+                  <span>Pair</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                  title="Copy @font-face CSS snippet"
+                  @click="copySnippet(uf, 'css')"
+                >
+                  <Code class="w-3 h-3" />
+                  <span>CSS</span>
+                </button>
+
+                <a
+                  :href="uf.downloadUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="px-2.5 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs transition-opacity shrink-0"
+                  title="Download font ZIP archive"
+                >
+                  <Download class="w-3.5 h-3.5" />
+                  <span class="hidden sm:inline">ZIP</span>
+                </a>
+              </div>
             </div>
 
             <!-- UNCUT Specimen Vector Preview Viewport -->
@@ -905,18 +994,39 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Download ZIP Action -->
-              <a
-                :href="df.downloadUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="px-3 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
-                title="Download font ZIP archive"
-                @click.stop
-              >
-                <Download class="w-3.5 h-3.5" />
-                <span>Download ZIP</span>
-              </a>
+              <!-- Card Actions Row (Pair, CSS, Download) -->
+              <div class="flex items-center gap-1.5 shrink-0" @click.stop>
+                <button
+                  type="button"
+                  class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                  title="Test in Smart Font Pairing Studio"
+                  @click="openFontDetail(df, 'pairing')"
+                >
+                  <Columns class="w-3 h-3" />
+                  <span>Pair</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                  title="Copy local @font-face CSS snippet"
+                  @click="copySnippet(df, 'css')"
+                >
+                  <Code class="w-3 h-3" />
+                  <span>CSS</span>
+                </button>
+
+                <a
+                  :href="df.downloadUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="px-2.5 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs transition-opacity shrink-0"
+                  title="Download font ZIP archive"
+                >
+                  <Download class="w-3.5 h-3.5" />
+                  <span class="hidden sm:inline">ZIP</span>
+                </a>
+              </div>
             </div>
 
             <!-- DaFont Live Specimen Image Preview Viewport (High-Contrast Clean Specimen Box) -->
@@ -1034,6 +1144,16 @@ onMounted(() => {
                 <button
                   type="button"
                   class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
+                  title="Test in Smart Font Pairing Studio"
+                  @click="openFontDetail(font, 'pairing')"
+                >
+                  <Columns class="w-3 h-3" />
+                  <span>Pair</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] rounded-md border border-[var(--border-subtle)] transition-colors cursor-pointer text-[11px] flex items-center gap-1 font-mono"
                   title="Copy CSS font-family"
                   @click="copySnippet(font, 'css')"
                 >
@@ -1069,6 +1189,7 @@ onMounted(() => {
                   fontSize: `${fontSize}px`,
                   letterSpacing: `${letterSpacing}px`,
                   lineHeight: lineHeight,
+                  textAlign: specimenTextAlign,
                 }"
               >
                 {{ previewText || font.name }}
@@ -1128,6 +1249,7 @@ onMounted(() => {
       v-model="isDetailModalOpen"
       :font="activeModalFont"
       :initial-preview-text="previewText"
+      :initial-tab="activeModalTab"
     />
   </div>
 </template>
