@@ -19,6 +19,7 @@ import {
   Sun,
   Moon,
   Info,
+  Sparkles,
   X
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
@@ -52,16 +53,31 @@ export interface DaFontItem {
   category?: string
 }
 
+export interface UncutFontItem {
+  id: string
+  name: string
+  slug: string
+  category: 'sans-serif' | 'serif' | 'display' | 'monospace'
+  authors: string
+  date: string
+  previewUrl: string
+  downloadUrl: string
+  pageUrl: string
+  source: 'uncut'
+  license: string
+}
+
 const toast = useToast()
 const { copy } = useClipboard()
 
-// Active Source Tab: 'all' | 'google' | 'dafont'
-const activeSource = ref<'all' | 'google' | 'dafont'>('all')
+// Active Source Tab: 'all' | 'uncut' | 'google' | 'dafont'
+const activeSource = ref<'all' | 'uncut' | 'google' | 'dafont'>('all')
 
 // Search & Filter State
 const searchQuery = ref('')
 const selectedCategory = ref<string>('all')
 const selectedDaFontCat = ref<string>('')
+const selectedUncutCat = ref<string>('all')
 const previewText = ref('The quick brown fox jumps over the lazy dog')
 
 // Specimen Preview Canvas Theme Toggle (for maximum readability & accessibility)
@@ -71,6 +87,20 @@ const specimenTheme = ref<'dark' | 'light'>('light')
 const fontSize = ref(32)
 const letterSpacing = ref(0)
 const lineHeight = ref(1.4)
+
+// UNCUT Scraping & Pagination State
+const uncutResults = ref<UncutFontItem[]>([])
+const isLoadingUncut = ref(false)
+const uncutPage = ref(1)
+const uncutTotalPages = ref(1)
+
+const uncutCategories = [
+  { id: 'all', label: 'All Contemporary' },
+  { id: 'display', label: 'Display' },
+  { id: 'sans-serif', label: 'Sans-Serif' },
+  { id: 'serif', label: 'Serif' },
+  { id: 'monospace', label: 'Monospace' },
+]
 
 // DaFont Scraping & Pagination State
 const daFontResults = ref<DaFontItem[]>([])
@@ -87,7 +117,20 @@ const isDetailModalOpen = ref(false)
 const activeModalFont = ref<any>(null)
 
 const openFontDetail = (font: any) => {
-  activeModalFont.value = font
+  activeModalFont.value = {
+    id: font.id,
+    name: font.name,
+    source: font.source || (font.slug ? 'uncut' : 'google'),
+    author: font.authors || font.author || font.designer,
+    designer: font.authors || font.author || font.designer,
+    category: font.category,
+    license: font.license,
+    downloadUrl: font.downloadUrl,
+    previewUrl: font.previewUrl,
+    pageUrl: font.pageUrl,
+    weights: font.weights,
+    fontshareName: font.fontshareName,
+  }
   isDetailModalOpen.value = true
 }
 
@@ -274,13 +317,52 @@ const triggerDebouncedDaFontFetch = (resetPage = true) => {
   }, 400)
 }
 
+// Fetch UNCUT Results via Nitro API
+let uncutDebounceTimer: any = null
+
+const fetchUncut = async () => {
+  if (activeSource.value === 'google') return
+
+  isLoadingUncut.value = true
+  try {
+    const params = new URLSearchParams()
+    if (searchQuery.value.trim()) params.set('q', searchQuery.value.trim())
+    if (selectedUncutCat.value && selectedUncutCat.value !== 'all') params.set('cat', selectedUncutCat.value)
+    params.set('page', uncutPage.value.toString())
+    params.set('limit', '12')
+
+    const data: any = await $fetch(`/api/fonts/uncut?${params.toString()}`)
+    if (data?.success && Array.isArray(data.fonts)) {
+      uncutResults.value = data.fonts
+      uncutTotalPages.value = data.totalPages || 1
+    } else {
+      uncutResults.value = []
+      uncutTotalPages.value = 1
+    }
+  } catch {
+    uncutResults.value = []
+    uncutTotalPages.value = 1
+  } finally {
+    isLoadingUncut.value = false
+  }
+}
+
+const triggerDebouncedUncutFetch = (resetPage = true) => {
+  if (resetPage) uncutPage.value = 1
+  if (uncutDebounceTimer) clearTimeout(uncutDebounceTimer)
+  uncutDebounceTimer = setTimeout(() => {
+    fetchUncut()
+  }, 350)
+}
+
 // Watchers
 watch(
-  [searchQuery, selectedDaFontCat, activeSource],
+  [searchQuery, selectedDaFontCat, selectedUncutCat, activeSource],
   () => {
     googlePage.value = 1
     if (activeSource.value !== 'google') {
       triggerDebouncedDaFontFetch(true)
+      triggerDebouncedUncutFetch(true)
     }
   }
 )
@@ -401,226 +483,383 @@ onMounted(() => {
     window.addEventListener('keydown', handleKeyDown)
     FONTS_DATABASE.slice(0, 15).forEach((f) => loadFontDynamically(f))
     fetchDaFont()
+    fetchUncut()
   }
 })
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header & Breadcrumbs -->
-    <div>
-      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
-        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">
-          Dashboard
-        </NuxtLink>
-        <span>/</span>
-        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
-        <span>/</span>
-        <span class="text-[var(--text-primary)] font-medium">Font Library</span>
+  <div class="space-y-6 pb-12 w-full">
+    <!-- Breadcrumbs -->
+    <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
+      <NuxtLink to="/" class="hover:text-white transition-colors">Dashboard</NuxtLink>
+      <span>/</span>
+      <span>Design</span>
+      <span>/</span>
+      <span class="text-[var(--text-primary)]">Font Library</span>
+    </div>
+
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div class="space-y-1">
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+          Font Library & Studio
+        </h1>
+        <p class="text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
+          Browse, search, and live-preview Google Fonts, UNCUT.wtf & DaFont directory with instant ZIP downloads and CSS embeds.
+        </p>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            Font Library
-          </h1>
-          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Browse, search, and live-preview Google Fonts & DaFont directory with instant ZIP downloads and CSS embeds.
-          </p>
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Random Font Button -->
+        <Button variant="primary" size="sm" class="h-8 px-3 text-xs font-semibold shadow-xs" @click="pickRandomFont">
+          <Shuffle class="w-3.5 h-3.5 mr-1.5" />
+          <span>Random WebFont</span>
+          <kbd class="ml-1.5 px-1 py-0.2 text-[10px] bg-black/20 text-inherit rounded font-mono">Space</kbd>
+        </Button>
+
+        <!-- Custom Font Upload Label -->
+        <label class="h-8 px-3 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] text-xs text-[var(--text-primary)] rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-xs">
+          <Upload class="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
+          <span>Upload Font</span>
+          <input type="file" accept=".ttf,.otf,.woff,.woff2" class="hidden" @change="handleCustomFontUpload" />
+        </label>
+      </div>
+    </div>
+
+    <!-- Source Selector Segmented Tabs (HeroPasteBar Standard) -->
+    <div class="flex items-center px-0.5">
+      <div class="flex items-center bg-zinc-200/60 dark:bg-[#171717] border border-zinc-200 dark:border-[#262626] rounded-lg p-0.5 overflow-x-auto max-w-full">
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+          :class="activeSource === 'all' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
+          @click="activeSource = 'all'"
+        >
+          <Globe class="w-3.5 h-3.5" />
+          <span>All Fonts</span>
+        </button>
+
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+          :class="activeSource === 'uncut' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
+          @click="activeSource = 'uncut'"
+        >
+          <Sparkles class="w-3.5 h-3.5" />
+          <span>UNCUT.wtf (160+ Contemporary)</span>
+        </button>
+
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+          :class="activeSource === 'google' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
+          @click="activeSource = 'google'"
+        >
+          <Type class="w-3.5 h-3.5" />
+          <span>Google WebFonts</span>
+        </button>
+
+        <button
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap"
+          :class="activeSource === 'dafont' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
+          @click="activeSource = 'dafont'"
+        >
+          <Palette class="w-3.5 h-3.5" />
+          <span>DaFont Directory</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search & Specimen Omnibar Row (Consistent Standalone Inputs) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 w-full">
+      <!-- Search Input Omnibar -->
+      <div class="lg:col-span-5 relative flex items-center w-full">
+        <div class="absolute left-4 pointer-events-none text-[var(--text-secondary)]">
+          <Search class="w-4 h-4 text-[var(--text-secondary)]" />
+        </div>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search across Google, UNCUT & DaFont..."
+          class="w-full h-12 pl-11 pr-10 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all font-mono"
+        />
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="absolute right-3 p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
+          title="Clear search"
+          @click="searchQuery = ''"
+        >
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+
+      <!-- Custom Sample Preview Text Bar -->
+      <div class="lg:col-span-7 relative flex items-center w-full">
+        <div class="absolute left-4 pointer-events-none text-[var(--text-secondary)]">
+          <Type class="w-4 h-4 text-[var(--text-secondary)]" />
+        </div>
+        <input
+          v-model="previewText"
+          type="text"
+          placeholder="Type custom specimen preview text..."
+          class="w-full h-12 pl-11 pr-36 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all"
+        />
+        <div class="absolute right-2 flex items-center gap-1">
+          <button
+            v-for="p in textPresets"
+            :key="p.label"
+            type="button"
+            class="px-1.5 py-0.5 text-[10px] bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] rounded transition-colors cursor-pointer hidden sm:inline-block font-mono"
+            :title="p.text"
+            @click="previewText = p.text"
+          >
+            {{ p.label }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Filters & Specimen Controls Row -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <!-- Category Filter Pills -->
+      <div v-if="activeSource === 'uncut'" class="flex flex-wrap items-center gap-1.5">
+        <button
+          v-for="cat in uncutCategories"
+          :key="cat.id"
+          type="button"
+          class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer"
+          :class="
+            selectedUncutCat === cat.id
+              ? 'bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs'
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+          "
+          @click="selectedUncutCat = cat.id; triggerDebouncedUncutFetch(true)"
+        >
+          {{ cat.label }}
+        </button>
+      </div>
+
+      <div v-else-if="activeSource === 'dafont'" class="flex flex-wrap items-center gap-1.5">
+        <button
+          v-for="cat in daFontCategories"
+          :key="cat.id"
+          type="button"
+          class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer"
+          :class="
+            selectedDaFontCat === cat.id
+              ? 'bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs'
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+          "
+          @click="selectedDaFontCat = cat.id"
+        >
+          {{ cat.label }}
+        </button>
+      </div>
+
+      <div v-else class="flex flex-wrap items-center gap-1.5">
+        <button
+          v-for="cat in categories"
+          :key="cat.id"
+          type="button"
+          class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer"
+          :class="
+            selectedCategory === cat.id
+              ? 'bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs'
+              : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+          "
+          @click="selectedCategory = cat.id"
+        >
+          {{ cat.label }}
+        </button>
+      </div>
+
+      <!-- Controls: Specimen Contrast Mode & Size/Spacing -->
+      <div class="flex flex-wrap items-center gap-4 text-xs text-[var(--text-secondary)]">
+        <!-- Specimen Preview Contrast Canvas Background Toggle -->
+        <div class="flex items-center gap-1 bg-[var(--bg-card)] p-1 rounded-lg border border-[var(--border-subtle)]">
+          <span class="text-[11px] px-1 text-[var(--text-tertiary)] font-mono">Canvas:</span>
+          <button
+            type="button"
+            class="p-1 rounded cursor-pointer transition-colors"
+            :class="specimenTheme === 'light' ? 'bg-white text-black shadow-xs font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+            title="Light Specimen Canvas (High Contrast Black on White)"
+            @click="specimenTheme = 'light'"
+          >
+            <Sun class="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            class="p-1 rounded cursor-pointer transition-colors"
+            :class="specimenTheme === 'dark' ? 'bg-zinc-900 text-white shadow-xs font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+            title="Dark Specimen Canvas"
+            @click="specimenTheme = 'dark'"
+          >
+            <Moon class="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Random Font Button -->
-          <Button variant="primary" size="sm" class="font-semibold text-xs shadow-xs" @click="pickRandomFont">
-            <Shuffle class="w-3.5 h-3.5 mr-1.5" />
-            <span>Random WebFont</span>
-            <kbd class="ml-1.5 px-1.5 py-0.5 text-[10px] bg-black/20 text-inherit rounded">Space</kbd>
-          </Button>
+          <span>Size:</span>
+          <input
+            v-model.number="fontSize"
+            type="range"
+            min="16"
+            max="64"
+            step="2"
+            class="w-20 sm:w-24 h-1.5 rounded-lg appearance-none cursor-pointer bg-[var(--border-subtle)] accent-[var(--primary)]"
+          />
+          <span class="font-mono text-[var(--text-primary)] w-8 text-right">{{ fontSize }}px</span>
+        </div>
 
-          <!-- Custom Font Upload Label -->
-          <label class="px-3 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] text-xs text-[var(--text-primary)] rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-xs">
-            <Upload class="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
-            <span>Upload Font</span>
-            <input type="file" accept=".ttf,.otf,.woff,.woff2" class="hidden" @change="handleCustomFontUpload" />
-          </label>
+        <div class="flex items-center gap-2">
+          <span>Spacing:</span>
+          <input
+            v-model.number="letterSpacing"
+            type="range"
+            min="-2"
+            max="8"
+            step="0.5"
+            class="w-16 sm:w-20 h-1.5 rounded-lg appearance-none cursor-pointer bg-[var(--border-subtle)] accent-[var(--primary)]"
+          />
+          <span class="font-mono text-[var(--text-primary)] w-8 text-right">{{ letterSpacing }}px</span>
         </div>
       </div>
     </div>
 
-    <!-- Source Selector Segmented Tabs -->
-    <div class="p-1 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-xl inline-flex gap-1 shadow-xs">
-      <button
-        type="button"
-        class="flex items-center gap-2 py-2 px-4 rounded-lg text-xs transition-all cursor-pointer"
-        :class="activeSource === 'all' ? 'bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'"
-        @click="activeSource = 'all'"
-      >
-        <Globe class="w-4 h-4" />
-        <span>All Fonts (Google & DaFont)</span>
-      </button>
+    <!-- SECTION: UNCUT.wtf Directory (Contemporary Typefaces) -->
+    <div v-if="activeSource === 'uncut' || (activeSource === 'all' && uncutResults.length > 0)" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <Sparkles class="w-4 h-4 text-[var(--text-secondary)]" />
+          <h2 class="text-sm font-mono uppercase tracking-wider font-semibold text-[var(--text-primary)]">
+            UNCUT.wtf Directory (Page {{ uncutPage }} of {{ uncutTotalPages }} • 160+ Contemporary Typefaces)
+          </h2>
+        </div>
+        <div v-if="isLoadingUncut" class="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] font-mono">
+          <Loader2 class="w-3.5 h-3.5 animate-spin" />
+          <span>Syncing UNCUT fonts...</span>
+        </div>
+      </div>
 
-      <button
-        type="button"
-        class="flex items-center gap-2 py-2 px-4 rounded-lg text-xs transition-all cursor-pointer"
-        :class="activeSource === 'google' ? 'bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'"
-        @click="activeSource = 'google'"
-      >
-        <Type class="w-4 h-4" />
-        <span>Google WebFonts</span>
-      </button>
+      <!-- UNCUT Cards Grid -->
+      <div v-if="uncutResults.length > 0" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            v-for="uf in uncutResults"
+            :key="uf.id"
+            class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] hover:border-[var(--border-card-hover)] rounded-[14px] transition-all space-y-4 flex flex-col justify-between shadow-xs cursor-pointer group"
+            @click="openFontDetail(uf)"
+          >
+            <!-- Card Header -->
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <h3 class="font-bold text-sm text-[var(--text-primary)] tracking-tight group-hover:underline underline-offset-2 truncate">
+                    {{ uf.name }}
+                  </h3>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)] font-mono uppercase shrink-0">
+                    {{ uf.category }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 mt-1 text-[11px] text-[var(--text-tertiary)]">
+                  <span class="truncate">by <strong class="text-[var(--text-secondary)] font-medium">{{ uf.authors }}</strong></span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--bg-card-hover)] text-[var(--text-secondary)] border border-[var(--border-subtle)] shrink-0">
+                    SIL OFL
+                  </span>
+                </div>
+              </div>
 
-      <button
-        type="button"
-        class="flex items-center gap-2 py-2 px-4 rounded-lg text-xs transition-all cursor-pointer"
-        :class="activeSource === 'dafont' ? 'bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'"
-        @click="activeSource = 'dafont'"
-      >
-        <Palette class="w-4 h-4" />
-        <span>DaFont Directory (ZIP Downloads)</span>
-      </button>
+              <!-- Download ZIP Action -->
+              <a
+                :href="uf.downloadUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-3 py-1.5 bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-opacity shrink-0"
+                title="Download font ZIP archive"
+                @click.stop
+              >
+                <Download class="w-3.5 h-3.5" />
+                <span>Download ZIP</span>
+              </a>
+            </div>
+
+            <!-- UNCUT Specimen Vector Preview Viewport -->
+            <div
+              class="py-3 px-4 rounded-xl border min-h-[96px] flex items-center justify-center overflow-hidden transition-colors"
+              :class="
+                specimenTheme === 'light'
+                  ? 'bg-[#FFFFFF] border-zinc-200 text-zinc-950 shadow-xs'
+                  : 'bg-[#0D0D0D] border-zinc-800 text-white'
+              "
+            >
+              <img
+                :src="uf.previewUrl"
+                :alt="uf.name"
+                loading="lazy"
+                decoding="async"
+                class="max-h-[76px] max-w-full object-contain transition-all group-hover:scale-105"
+                :class="specimenTheme === 'dark' ? 'invert brightness-200 contrast-125' : 'brightness-100'"
+              />
+            </div>
+
+            <!-- Card Footer -->
+            <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-tertiary)]" @click.stop>
+              <span class="font-mono text-[10px] text-[var(--text-tertiary)]">Source: uncut.wtf</span>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="hover:text-[var(--text-primary)] transition-colors cursor-pointer font-medium"
+                  @click="copy(uf.downloadUrl)"
+                >
+                  Copy Link
+                </button>
+                <span>•</span>
+                <button
+                  type="button"
+                  class="hover:text-[var(--text-primary)] transition-colors cursor-pointer font-medium flex items-center gap-1"
+                  @click="openFontDetail(uf)"
+                >
+                  <span>Full Specimen</span>
+                  <Info class="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UNCUT PAGINATION COMPONENT -->
+        <div v-if="uncutTotalPages > 1" class="flex items-center justify-center pt-2">
+          <Pagination
+            v-model="uncutPage"
+            :total-pages="uncutTotalPages"
+            :disabled="isLoadingUncut"
+            @change="fetchUncut"
+          />
+        </div>
+      </div>
+
+      <!-- UNCUT Empty State -->
+      <Card v-else-if="!isLoadingUncut" :hoverable="false" class="p-10 text-center space-y-3">
+        <div class="w-12 h-12 rounded-xl bg-[var(--bg-input)] border border-[var(--border-subtle)] mx-auto flex items-center justify-center text-[var(--text-tertiary)]">
+          <Sparkles class="w-6 h-6" />
+        </div>
+        <div class="space-y-1">
+          <h3 class="text-sm font-semibold text-[var(--text-primary)]">
+            Font tidak ditemukan di direktori UNCUT.wtf
+          </h3>
+          <p class="text-xs text-[var(--text-secondary)]">
+            {{ searchQuery ? `Tidak ada font yang cocok dengan kata kunci "${searchQuery}" di UNCUT.wtf.` : 'Tidak ada font yang tersedia untuk kategori ini.' }}
+          </p>
+        </div>
+        <Button size="sm" variant="secondary" @click="searchQuery = ''; selectedUncutCat = 'all'; fetchUncut()">
+          Reset Pencarian UNCUT
+        </Button>
+      </Card>
     </div>
-
-    <!-- Playground Customizer Omnibar -->
-    <Card :hoverable="false" class="p-4 sm:p-5 space-y-4">
-      <!-- Search & Sample Text Bar -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <!-- Search Input -->
-        <div class="lg:col-span-4 relative flex items-center">
-          <Search class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search fonts across Google Fonts & DaFont..."
-            class="w-full pl-10 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-glow)] placeholder-[var(--text-tertiary)]"
-            :class="searchQuery ? 'pr-9' : 'pr-3'"
-          />
-          <button
-            v-if="searchQuery"
-            type="button"
-            class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-md hover:bg-white/10 active:scale-95"
-            title="Clear search"
-            aria-label="Clear search"
-            @click="searchQuery = ''"
-          >
-            <X class="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <!-- Custom Sample Text Input -->
-        <div class="lg:col-span-8 relative">
-          <Type class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            v-model="previewText"
-            type="text"
-            placeholder="Type your custom preview text here..."
-            class="w-full pl-10 pr-28 py-2.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-xs sm:text-sm transition-all focus:outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-glow)] placeholder-[var(--text-tertiary)]"
-          />
-          <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <button
-              v-for="p in textPresets"
-              :key="p.label"
-              type="button"
-              class="px-1.5 py-0.5 text-[10px] bg-[var(--bg-card-hover)] hover:bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] rounded transition-colors cursor-pointer hidden sm:inline-block"
-              :title="p.text"
-              @click="previewText = p.text"
-            >
-              {{ p.label }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Categories, Theme Specimen Toggle & Controls Row -->
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-2 border-t border-[var(--border-subtle)]">
-        <!-- Category Filter Pills (Google Fonts or DaFont) -->
-        <div v-if="activeSource !== 'dafont'" class="flex flex-wrap items-center gap-1.5">
-          <button
-            v-for="cat in categories"
-            :key="cat.id"
-            type="button"
-            class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer"
-            :class="
-              selectedCategory === cat.id
-                ? 'bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs'
-                : 'bg-[var(--bg-input)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-            "
-            @click="selectedCategory = cat.id"
-          >
-            {{ cat.label }}
-          </button>
-        </div>
-
-        <!-- DaFont Category Theme Pills -->
-        <div v-else class="flex flex-wrap items-center gap-1.5">
-          <button
-            v-for="cat in daFontCategories"
-            :key="cat.id"
-            type="button"
-            class="px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer"
-            :class="
-              selectedDaFontCat === cat.id
-                ? 'bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shadow-xs'
-                : 'bg-[var(--bg-input)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-            "
-            @click="selectedDaFontCat = cat.id"
-          >
-            {{ cat.label }}
-          </button>
-        </div>
-
-        <!-- Controls: Specimen Contrast Mode & Size/Spacing -->
-        <div class="flex flex-wrap items-center gap-4 text-xs text-[var(--text-secondary)]">
-          <!-- Specimen Preview Contrast Canvas Background Toggle -->
-          <div class="flex items-center gap-1.5 bg-[var(--bg-input)] p-1 rounded-lg border border-[var(--border-subtle)]">
-            <span class="text-[11px] px-1 text-[var(--text-tertiary)] font-mono">Canvas:</span>
-            <button
-              type="button"
-              class="p-1 rounded cursor-pointer transition-colors"
-              :class="specimenTheme === 'light' ? 'bg-white text-black shadow-xs font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
-              title="Light Specimen Canvas (High Contrast Black on White)"
-              @click="specimenTheme = 'light'"
-            >
-              <Sun class="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              class="p-1 rounded cursor-pointer transition-colors"
-              :class="specimenTheme === 'dark' ? 'bg-zinc-900 text-white shadow-xs font-bold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
-              title="Dark Specimen Canvas"
-              @click="specimenTheme = 'dark'"
-            >
-              <Moon class="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <span>Size:</span>
-            <input
-              v-model.number="fontSize"
-              type="range"
-              min="16"
-              max="64"
-              step="2"
-              class="w-20 sm:w-24 h-1.5 rounded-lg appearance-none cursor-pointer bg-[var(--border-subtle)] accent-[var(--primary)]"
-            />
-            <span class="font-mono text-[var(--text-primary)] w-8 text-right">{{ fontSize }}px</span>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <span>Spacing:</span>
-            <input
-              v-model.number="letterSpacing"
-              type="range"
-              min="-2"
-              max="8"
-              step="0.5"
-              class="w-16 sm:w-20 h-1.5 rounded-lg appearance-none cursor-pointer bg-[var(--border-subtle)] accent-[var(--primary)]"
-            />
-            <span class="font-mono text-[var(--text-primary)] w-8 text-right">{{ letterSpacing }}px</span>
-          </div>
-        </div>
-      </div>
-    </Card>
 
     <!-- SECTION: DaFont Directory Scraped Results -->
     <div v-if="activeSource === 'dafont' || (activeSource === 'all' && daFontResults.length > 0)" class="space-y-4">

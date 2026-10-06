@@ -26,7 +26,7 @@ import Badge from '~/components/ui/Badge.vue'
 export interface SelectedFontDetail {
   id: string
   name: string
-  source: 'dafont' | 'google' | 'fontshare' | 'custom'
+  source: 'dafont' | 'google' | 'fontshare' | 'custom' | 'uncut'
   author?: string
   designer?: string
   category?: string
@@ -36,6 +36,7 @@ export interface SelectedFontDetail {
   weights?: number[]
   fontshareName?: string
   previewUrl?: string
+  pageUrl?: string
 }
 
 interface Props {
@@ -212,6 +213,17 @@ const getEmbedCode = (type: 'html' | 'css' | 'import' | 'tailwind') => {
           >
             <ExternalLink class="w-4 h-4" />
           </a>
+
+          <a
+            v-else-if="font.source === 'uncut'"
+            :href="font.pageUrl || `https://uncut.wtf`"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="p-2 bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] rounded-lg text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            title="Open on UNCUT.wtf"
+          >
+            <ExternalLink class="w-4 h-4" />
+          </a>
         </div>
       </div>
     </template>
@@ -349,9 +361,26 @@ const getEmbedCode = (type: 'html' | 'css' | 'import' | 'tailwind') => {
                   : 'bg-[#0D0D0D] text-white border-zinc-800'
               "
             >
-              <!-- For Google Fonts: Live WebFont DOM -->
+              <!-- For UNCUT: SVG Specimen Preview Image -->
               <div
-                v-if="font.source !== 'dafont'"
+                v-if="font.source === 'uncut'"
+                class="w-full flex flex-col items-center justify-center p-4 gap-2"
+              >
+                <img
+                  v-if="font.previewUrl"
+                  :src="font.previewUrl"
+                  :alt="font.name"
+                  class="max-w-full max-h-[160px] object-contain transition-all"
+                  :class="modalCanvasTheme === 'dark' ? 'invert brightness-200' : 'brightness-100'"
+                />
+                <span class="text-[11px] font-mono text-[var(--text-tertiary)] opacity-80">
+                  Specimen Vector from UNCUT.wtf
+                </span>
+              </div>
+
+              <!-- For Google / Fontshare: Live WebFont DOM -->
+              <div
+                v-else-if="font.source !== 'dafont'"
                 class="w-full text-center break-words select-all leading-normal"
                 :style="{
                   fontFamily: `'${font.name}', sans-serif`,
@@ -362,7 +391,7 @@ const getEmbedCode = (type: 'html' | 'css' | 'import' | 'tailwind') => {
                 {{ modalPreviewText || font.name }}
               </div>
 
-              <!-- For DaFont: Dynamic Real Specimen Renders (Handles multiple font variants if available) -->
+              <!-- For DaFont: Dynamic Real Specimen Renders -->
               <template v-else>
                 <div
                   v-if="daFontDetail?.previewUrls && daFontDetail.previewUrls.length > 0"

@@ -1,5 +1,6 @@
 import { defineEventHandler, getQuery } from 'h3'
 import * as cheerio from 'cheerio'
+import uncutFonts from '../../utils/uncutFonts.json'
 
 export interface FontDetailResponse {
   success: boolean
@@ -16,7 +17,7 @@ export interface FontDetailResponse {
   previewUrls?: string[]
   illustrations: string[]
   charmaps: string[]
-  source: 'dafont' | 'google' | 'fontshare' | 'custom'
+  source: 'dafont' | 'google' | 'fontshare' | 'custom' | 'uncut'
   weights?: number[]
   fontshareName?: string
 }
@@ -149,6 +150,32 @@ export default defineEventHandler(async (event): Promise<FontDetailResponse | { 
         success: false,
         error: err.message || 'Failed to fetch font detail from DaFont',
       }
+    }
+  }
+
+  if (source === 'uncut') {
+    const cleanSlug = slug.replace(/^uncut-/, '')
+    const font = (uncutFonts as any[]).find((f) => f.slug === cleanSlug || f.id === slug)
+    if (font) {
+      return {
+        success: true,
+        id: font.id,
+        name: font.name,
+        author: font.authors,
+        designer: font.authors,
+        category: font.category,
+        license: font.license,
+        downloadUrl: font.downloadUrl,
+        previewUrl: font.previewUrl,
+        previewUrls: [font.previewUrl],
+        illustrations: [],
+        charmaps: [],
+        source: 'uncut',
+      }
+    }
+    return {
+      success: false,
+      error: `UNCUT font "${slug}" not found`,
     }
   }
 
