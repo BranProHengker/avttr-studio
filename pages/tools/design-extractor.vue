@@ -50,18 +50,6 @@ const activeTab = ref<ActiveTab>('palette')
 const exportFormat = ref<ExportFormat>('designMd')
 const isCopied = ref(false)
 
-const PRESETS = [
-  { name: 'Tailwind CSS', url: 'https://tailwindcss.com' },
-  { name: 'GitHub', url: 'https://github.com' },
-  { name: 'Linear', url: 'https://linear.app' },
-  { name: 'Nuxt', url: 'https://nuxt.com' },
-]
-
-const loadPreset = (url: string) => {
-  inputUrl.value = url
-  handleExtract()
-}
-
 const handlePaste = async () => {
   try {
     const text = await navigator.clipboard.readText()
@@ -208,91 +196,66 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
         <span class="text-[var(--text-primary)]">Web Design & Token Extractor</span>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-            Web Design & Token Extractor
-          </h1>
-          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-            Reverse-engineer any website into design tokens, typography, color palettes, detected tech stack, and ready-to-use DESIGN.md or Tailwind theme.
-          </p>
-        </div>
-        <div class="flex items-center gap-2">
-          <Badge variant="badge">Local Engine</Badge>
-          <Badge variant="secondary">Zero AI Latency</Badge>
-        </div>
+      <div class="space-y-1">
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+          Web Design & Token Extractor
+        </h1>
+        <p class="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+          Reverse-engineer any website into design tokens, typography, color palettes, detected tech stack, and ready-to-use DESIGN.md or Tailwind theme.
+        </p>
       </div>
     </div>
 
     <!-- Standardized Omnibar (HeroPasteBar Standard) -->
-    <div class="space-y-3">
-      <div class="flex flex-col sm:flex-row items-center gap-2.5">
-        <div class="relative w-full flex-1 flex items-center">
-          <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
-            <Globe class="w-4 h-4" />
-          </div>
-          <input
-            id="design-url-input"
-            v-model="inputUrl"
-            type="url"
-            placeholder="https://example.com or paste any website URL..."
-            class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
-            :disabled="isLoading"
-            @keydown.enter="handleExtract"
-          />
-          <div class="absolute right-2.5 flex items-center gap-1">
-            <button
-              v-if="inputUrl"
-              type="button"
-              title="Clear input"
-              aria-label="Clear input"
-              class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
-              @click="inputUrl = ''"
-            >
-              <X class="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              title="Paste from clipboard"
-              aria-label="Paste from clipboard"
-              class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
-              @click="handlePaste"
-            >
-              <Clipboard class="w-4 h-4" />
-            </button>
-          </div>
+    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
+      <div class="relative w-full flex-1 flex items-center">
+        <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
+          <Globe class="w-4 h-4" />
         </div>
-
-        <Button
-          id="btn-extract-tokens"
-          variant="primary"
-          size="default"
-          class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
-          :loading="isLoading"
-          :disabled="isLoading || !inputUrl.trim()"
-          @click="handleExtract"
-        >
-          <Search v-if="!isLoading" class="w-4 h-4 mr-1.5" />
-          <span>{{ isLoading ? 'Extracting...' : 'Extract Tokens' }}</span>
-        </Button>
+        <input
+          id="design-url-input"
+          v-model="inputUrl"
+          type="url"
+          placeholder="https://example.com or paste any website URL..."
+          class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
+          :disabled="isLoading"
+          @keydown.enter="handleExtract"
+        />
+        <div class="absolute right-2.5 flex items-center gap-1">
+          <button
+            v-if="inputUrl"
+            type="button"
+            title="Clear input"
+            aria-label="Clear input"
+            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
+            @click="inputUrl = ''"
+          >
+            <X class="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            title="Paste from clipboard"
+            aria-label="Paste from clipboard"
+            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
+            @click="handlePaste"
+          >
+            <Clipboard class="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <!-- Quick Presets -->
-      <div class="flex flex-wrap items-center gap-2 text-xs">
-        <span class="text-[11px] uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mr-1">
-          Sample sites:
-        </span>
-        <Button
-          v-for="p in PRESETS"
-          :key="p.name"
-          variant="secondary"
-          size="sm"
-          class="h-7 px-2.5 text-xs font-normal cursor-pointer"
-          @click="loadPreset(p.url)"
-        >
-          {{ p.name }}
-        </Button>
-      </div>
+      <Button
+        id="btn-extract-tokens"
+        variant="primary"
+        size="default"
+        class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
+        :loading="isLoading"
+        :disabled="isLoading || !inputUrl.trim()"
+        @click="handleExtract"
+      >
+        <Search v-if="!isLoading" class="w-4 h-4 mr-1.5" />
+        <span>{{ isLoading ? 'Extracting...' : 'Extract Tokens' }}</span>
+      </Button>
     </div>
 
     <!-- Loading State -->

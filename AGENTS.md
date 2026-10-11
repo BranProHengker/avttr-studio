@@ -196,8 +196,7 @@ export interface ScraperResult {
   * Input: `w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono`.
   * Trailing Micro-Actions: `absolute right-2.5 flex items-center gap-1` with compact icon buttons for Clear (`X`) and Paste (`Clipboard`).
   * Submit Action CTA: Standalone `<Button variant="primary" size="default" class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer" :loading="..." ...>`.
-  * Presets / Samples: Placed directly beneath the omnibar (`flex flex-wrap items-center gap-2 text-xs pt-1`) using `<Button variant="secondary" size="sm" class="h-7 px-2.5 text-xs font-normal cursor-pointer">`.
-  * Strict Bans: Never wrap in an extra `<Card>`, never embed the primary submit button inside the input text field, and never insert decorative divider lines (`"QUICK TEST:"`, `"OR ENTER LINK"`).
+  * Strict Bans: Never wrap in an extra `<Card>`, never embed the primary submit button inside the input text field, never add decorative sample presets rows (`"SAMPLE SITES:"`, `"QUICK TEST:"`), and never insert decorative divider lines (`"OR ENTER LINK"`). Keep the Omnibar clean and focused.
 
 * **Standardized File Upload & Dropzone Standard (DESIGN.md Section 10):**
   * All tools requiring local file uploads MUST use the standardized standalone dashed dropzone (`relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none`).
@@ -218,11 +217,11 @@ export interface ScraperResult {
   * `<Badge>` (`components/ui/Badge.vue`): Mandatory for all pills and tags (`variant="badge" | "primary" | "secondary" | "outline" | "ghost"`).
   * `<Card>` (`components/ui/Card.vue`): Mandatory for all bento cards and content panels (`rounded-[14px]`).
 
-* **Standard Breadcrumb Hierarchy & Categorization Standard (DESIGN.md Section 14):**
+* **Standard Breadcrumb Hierarchy & Clean Header Standard (DESIGN.md Section 14):**
   * Format: `Dashboard / [Category] / [Page Name]` with mono font and subtle hover transitions.
   * Strict Taxonomy: `Downloader`, `Media Tools`, `Image & Design`, `Text & Fonts`, `Colors`, or `Developer`.
   * Strict Ban: Never use generic `"Tools"` in breadcrumbs. Always use the specific category matching the sidebar.
-  * Header Flex Row: Title (`text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]`), subtitle description, and right-aligned `<Badge variant="badge">Client Privacy</Badge>` (or appropriate privacy/engine pill).
+  * Header Layout: Title (`text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]`) and concise subtitle description. Do NOT clutter headers with arbitrary decorative marketing badges (`"Local Engine"`, `"Zero AI Latency"`).
 
 * **New Tool Onboarding Checklist (The 4 Anchors - DESIGN.md Section 15):**
   * Whenever a new tool or downloader route is created, AI agents MUST register the tool in all 4 synchronization points:

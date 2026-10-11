@@ -369,30 +369,15 @@ All tools requiring website URLs, external links, or single-input queries (Web D
         <span>{{ isLoading ? 'Processing...' : 'Execute Action' }}</span>
       </Button>
     </div>
-
-    <!-- Quick Presets Row (Optional) -->
-    <div v-if="PRESETS.length" class="flex flex-wrap items-center gap-2 text-xs">
-      <span class="text-[11px] uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mr-1">
-        Sample targets:
-      </span>
-      <Button
-        v-for="p in PRESETS"
-        :key="p.name"
-        variant="secondary"
-        size="sm"
-        class="h-7 px-2.5 text-xs font-normal cursor-pointer"
-        @click="loadPreset(p.url)"
-      >
-        {{ p.name }}
-      </Button>
-    </div>
   </div>
   ```
 
 ### B. Strict Prohibitions on Omnibar Architecture
 1. **Never Wrap in a `<Card>`:** The URL omnibar must sit directly in the fluid page layout. Wrapping it inside a `<Card>` creates excessive visual nesting.
 2. **Never Put Action Button Inside Input:** The primary submit CTA must remain outside the input on desktop as a standalone `h-12 px-5 rounded-xl` `<Button variant="primary">`. Only compact utility icons (`X` Clear, `Clipboard` Paste) live inside the trailing input slot.
-3. **Never Use Decorative Dividers:** Banned: `"QUICK TEST:"`, `"OR ENTER LINK"`, or separator lines inside wrapper boxes.
+3. **No Decorative Presets / Sample Chips:** Do NOT add arbitrary rows of preset buttons (`"SAMPLE SITES:"`, `"QUICK TEST:"`) underneath the omnibar unless explicitly asked by the user. Keep the input clean and uncluttered.
+4. **No Arbitrary Badges in Headers:** Do NOT litter page headers with decorative marketing badges (e.g. `"Local Engine"`, `"Zero AI Latency"`). Keep headers clean with title and description only.
+5. **Never Use Decorative Dividers:** Banned: `"QUICK TEST:"`, `"OR ENTER LINK"`, or separator lines inside wrapper boxes.
 
 ---
 
