@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   ShieldCheck,
   ShieldAlert,
@@ -24,12 +24,14 @@ import {
   EyeOff,
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { useI18n } from '~/composables/useI18n'
 import type { SecurityAuditResult, HeaderAnalysisItem } from '~/server/utils/securityAudit'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 
 const toast = useToast()
+const { t, locale } = useI18n()
 
 const inputUrl = ref('')
 const loading = ref(false)
@@ -40,6 +42,70 @@ const expandedCards = ref<Record<string, boolean>>({})
 const snippetTabs = ref<Record<string, 'nginx' | 'cloudflare' | 'nuxt' | 'vercel'>>({})
 const showRawHeaders = ref(false)
 const copiedSnippetKey = ref<string | null>(null)
+
+// Bilingual text dictionary
+const ui = computed(() => {
+  const isId = locale.value === 'id'
+  return {
+    subtitle: isId
+      ? 'Pemeriksa rapor keamanan header HTTP, enkripsi HTTPS, dan pencegah serangan siber pada website Anda.'
+      : 'Audit HTTP security headers, evaluate HTTPS/TLS posture, and prevent cyber attacks on your website.',
+    placeholder: isId
+      ? 'Masukkan domain atau URL (contoh: heybran.my.id atau https://github.com)'
+      : 'Enter domain or URL (e.g. heybran.my.id or https://github.com)',
+    btnScan: isId ? 'Periksa Web' : 'Audit Site',
+    emptyTitle: isId ? 'Apa Saja yang Diperiksa?' : 'What Is Being Checked?',
+    card1Title: isId ? 'HSTS & Enkripsi HTTPS' : 'HSTS & Transport Security',
+    card1Desc: isId
+      ? 'Memastikan browser selalu terhubung lewat koneksi aman dan kebal dari pembajakan SSL di jaringan Wi-Fi umum.'
+      : 'Forces browsers to always connect via encrypted HTTPS, defending against SSL stripping on public Wi-Fi.',
+    card2Title: isId ? 'Anti-Clickjacking (X-Frame)' : 'Anti-Clickjacking (X-Frame)',
+    card2Desc: isId
+      ? 'Mencegah website Anda disusupkan ke dalam iframe transparan milik hacker untuk memanipulasi klik pengguna.'
+      : 'Prevents unauthorized framing of your site in invisible attacker iframes.',
+    card3Title: isId ? 'Content Security Policy (CSP)' : 'Content Security Policy (CSP)',
+    card3Desc: isId
+      ? 'Menyaring script berbahaya dari luar agar tidak bisa menyusup dan mencuri cookie pengguna di browser.'
+      : 'Whitelists approved script and asset sources to block Cross-Site Scripting (XSS).',
+    card4Title: isId ? 'Kebocoran Info Server' : 'Server Info Disclosure',
+    card4Desc: isId
+      ? 'Mendeteksi apakah server Anda membocorkan versi Apache, Nginx, atau PHP yang bisa dijadikan sasaran eksploitasi.'
+      : 'Detects leaked Apache, Nginx, or PHP versions that expose software vulnerabilities.',
+    filterAll: isId ? 'Semua Header' : 'All Headers',
+    filterIssues: isId ? 'Perlu Dibenahi' : 'Issues',
+    filterPassed: isId ? 'Sudah Aman' : 'Passed',
+    statsPassed: isId ? 'Lolos' : 'Passed',
+    statsWarnings: isId ? 'Peringatan' : 'Warnings',
+    statsFailed: isId ? 'Perlu Dibenahi' : 'Issues',
+    httpsActive: isId ? 'HTTPS Aktif' : 'HTTPS Active',
+    httpsInsecure: isId ? 'HTTP Polos (Tidak Aman)' : 'Plain HTTP (Insecure)',
+    infoLeakAlert: isId ? 'Peringatan: Informasi Internal Server Bocor' : 'Warning: Internal Server Information Leaked',
+    infoLeakDesc: isId
+      ? 'Website Anda menampilkan versi software yang digunakan. Hacker bisa memanfaatkan informasi ini untuk mencari celah keamanan spesifik.'
+      : 'Your website exposes underlying software versions. Attackers can leverage this to look up targeted vulnerabilities.',
+    remedyPrefix: isId ? 'Solusi: ' : 'Fix: ',
+    sectionResults: isId ? 'Rincian Hasil Pemeriksaan' : 'Detailed Audit Results',
+    statusInstalled: isId ? 'Terpasang' : 'Installed',
+    statusOptimize: isId ? 'Perlu Dioptimalkan' : 'Needs Optimization',
+    statusMissing: isId ? 'Belum Ada' : 'Missing',
+    detectedValue: isId ? 'Nilai yang Terdeteksi' : 'Detected Value',
+    whatItDoes: isId ? 'Apa Fungsinya?' : 'What Does It Do?',
+    riskIfMissing: isId ? 'Risiko Bila Dibiarkan' : 'Risk If Missing',
+    howToFix: isId ? 'Cara Memperbaiki (Tinggal Salin Kode)' : 'How to Fix (1-Click Copy Code)',
+    copyBtn: isId ? 'Salin' : 'Copy',
+    copiedBtn: isId ? 'Tersalin' : 'Copied',
+    rawHeadersTitle: isId ? 'Semua Response Header Mentah' : 'Raw HTTP Response Headers',
+    toggleShow: isId ? 'Tampilkan' : 'Show',
+    toggleHide: isId ? 'Sembunyikan' : 'Hide',
+    toastPasted: isId ? 'Ditempel dari clipboard' : 'Pasted from clipboard',
+    toastClipboardDenied: isId ? 'Akses clipboard ditolak' : 'Clipboard access denied',
+    toastClipboardDeniedDesc: isId ? 'Silakan tempel URL secara manual.' : 'Please paste the URL manually.',
+    toastInputRequired: isId ? 'Masukkan domain atau URL yang ingin diperiksa.' : 'Please enter a valid domain or URL.',
+    toastScanSuccess: isId ? 'Pemeriksaan Selesai' : 'Audit Complete',
+    toastCopied: isId ? 'Disalin ke Clipboard' : 'Copied to Clipboard',
+    toastCopiedDesc: isId ? 'Konfigurasi siap ditempel di server Anda.' : 'Configuration is ready to paste into your server.',
+  }
+})
 
 const clearInput = () => {
   inputUrl.value = ''
@@ -53,18 +119,18 @@ const pasteFromClipboard = async () => {
       const text = await navigator.clipboard.readText()
       if (text) {
         inputUrl.value = text.trim()
-        toast.info('Ditempel dari clipboard', text.trim().slice(0, 40) + '...')
+        toast.info(ui.value.toastPasted, text.trim().slice(0, 40) + '...')
       }
     }
   } catch {
-    toast.error('Akses clipboard ditolak', 'Silakan tempel URL secara manual.')
+    toast.error(ui.value.toastClipboardDenied, ui.value.toastClipboardDeniedDesc)
   }
 }
 
 const handleScan = async () => {
   const raw = inputUrl.value.trim()
   if (!raw) {
-    error.value = 'Masukkan domain atau URL yang ingin diperiksa.'
+    error.value = ui.value.toastInputRequired
     return
   }
 
@@ -75,25 +141,31 @@ const handleScan = async () => {
   try {
     const data = await $fetch<SecurityAuditResult>('/api/tools/security-check', {
       method: 'POST',
-      body: { url: raw },
+      body: { url: raw, lang: locale.value },
     })
 
     result.value = data
-    // Expand missing/warn headers by default for instant visibility
     data.headersAnalyzed.forEach((item) => {
       expandedCards.value[item.key] = item.status !== 'pass'
       snippetTabs.value[item.key] = 'nginx'
     })
 
-    toast.success('Pemeriksaan Selesai', `Skor Keamanan: ${data.grade} (${data.score}/100)`)
+    toast.success(ui.value.toastScanSuccess, `Grade: ${data.grade} (${data.score}/100)`)
   } catch (err: any) {
-    const msg = err?.data?.statusMessage || err?.message || 'Gagal memeriksa website target'
+    const msg = err?.data?.statusMessage || err?.message || 'Failed to inspect target website'
     error.value = msg
-    toast.error('Scan Gagal', msg)
+    toast.error('Audit Failed', msg)
   } finally {
     loading.value = false
   }
 }
+
+// Re-fetch in new language if user switches locale while looking at a result
+watch(locale, () => {
+  if (result.value && inputUrl.value && !loading.value) {
+    handleScan()
+  }
+})
 
 const filteredHeaders = computed(() => {
   if (!result.value) return []
@@ -122,45 +194,46 @@ const copySnippet = async (text: string, snippetId: string) => {
       setTimeout(() => {
         copiedSnippetKey.value = null
       }, 2000)
-      toast.success('Disalin ke Clipboard', 'Konfigurasi siap ditempel di server Anda.')
+      toast.success(ui.value.toastCopied, ui.value.toastCopiedDesc)
     }
   } catch {
-    toast.error('Gagal menyalin', 'Silakan salin teks secara manual.')
+    toast.error('Failed to copy', 'Please select and copy manually.')
   }
 }
 
 const getGradeColorClasses = (grade: string) => {
+  const isId = locale.value === 'id'
   switch (grade) {
     case 'A+':
     case 'A':
       return {
         bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
         ring: 'border-emerald-500/40',
-        label: 'Sangat Baik',
+        label: isId ? 'Sangat Baik' : 'Excellent',
       }
     case 'B':
       return {
         bg: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
         ring: 'border-sky-500/40',
-        label: 'Cukup Aman',
+        label: isId ? 'Cukup Aman' : 'Good',
       }
     case 'C':
       return {
         bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
         ring: 'border-amber-500/40',
-        label: 'Perlu Perhatian',
+        label: isId ? 'Perlu Perhatian' : 'Needs Attention',
       }
     case 'D':
       return {
         bg: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20',
         ring: 'border-orange-500/40',
-        label: 'Banyak Celah',
+        label: isId ? 'Banyak Celah' : 'Vulnerable',
       }
     default:
       return {
         bg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
         ring: 'border-rose-500/40',
-        label: 'Tidak Terlindungi',
+        label: isId ? 'Tidak Terlindungi' : 'Unprotected',
       }
   }
 }
@@ -183,7 +256,7 @@ const getGradeColorClasses = (grade: string) => {
         Web Security & Header Inspector
       </h1>
       <p class="text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
-        Pemeriksa rapor keamanan header HTTP, enkripsi HTTPS, dan pencegah serangan siber pada website Anda.
+        {{ ui.subtitle }}
       </p>
     </div>
 
@@ -200,7 +273,7 @@ const getGradeColorClasses = (grade: string) => {
           v-model="inputUrl"
           id="security-url-input"
           type="text"
-          placeholder="Masukkan domain atau URL (contoh: heybran.my.id atau https://github.com)"
+          :placeholder="ui.placeholder"
           class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
           :disabled="loading"
           @keydown.enter="handleScan"
@@ -212,7 +285,7 @@ const getGradeColorClasses = (grade: string) => {
             v-if="inputUrl"
             id="btn-clear-security-input"
             type="button"
-            title="Hapus"
+            title="Clear"
             class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             @click="clearInput"
           >
@@ -221,7 +294,7 @@ const getGradeColorClasses = (grade: string) => {
           <button
             id="btn-paste-security-input"
             type="button"
-            title="Tempel dari Clipboard"
+            title="Paste from Clipboard"
             class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             @click="pasteFromClipboard"
           >
@@ -240,7 +313,7 @@ const getGradeColorClasses = (grade: string) => {
         @click="handleScan"
       >
         <ShieldCheck class="w-4 h-4 mr-1.5" />
-        Periksa Web
+        {{ ui.btnScan }}
       </Button>
     </div>
 
@@ -256,7 +329,7 @@ const getGradeColorClasses = (grade: string) => {
     <!-- Empty State: 4 Capability Bento Cards (DESIGN.md Section 12) -->
     <div v-if="!result && !loading" class="space-y-4 pt-2">
       <div class="text-xs font-mono uppercase tracking-wider text-[var(--text-tertiary)]">
-        Apa Saja yang Diperiksa?
+        {{ ui.emptyTitle }}
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card :hoverable="false" class="p-4 space-y-2.5">
@@ -264,10 +337,10 @@ const getGradeColorClasses = (grade: string) => {
             <Lock class="w-4 h-4" />
           </div>
           <div class="text-xs font-semibold text-[var(--text-primary)]">
-            HSTS & Enkripsi HTTPS
+            {{ ui.card1Title }}
           </div>
           <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Memastikan browser selalu terhubung lewat koneksi aman dan kebal dari pembajakan SSL di jaringan Wi-Fi umum.
+            {{ ui.card1Desc }}
           </p>
           <div class="pt-1">
             <Badge variant="badge" size="sm">Transport Security</Badge>
@@ -279,10 +352,10 @@ const getGradeColorClasses = (grade: string) => {
             <Layers class="w-4 h-4" />
           </div>
           <div class="text-xs font-semibold text-[var(--text-primary)]">
-            Anti-Clickjacking (X-Frame)
+            {{ ui.card2Title }}
           </div>
           <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Mencegah website Anda disusupkan ke dalam iframe transparan milik hacker untuk memanipulasi klik pengguna.
+            {{ ui.card2Desc }}
           </p>
           <div class="pt-1">
             <Badge variant="badge" size="sm">Frame Guard</Badge>
@@ -294,10 +367,10 @@ const getGradeColorClasses = (grade: string) => {
             <ShieldAlert class="w-4 h-4" />
           </div>
           <div class="text-xs font-semibold text-[var(--text-primary)]">
-            Content Security Policy (CSP)
+            {{ ui.card3Title }}
           </div>
           <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Menyaring script berbahaya dari luar agar tidak bisa menyusup dan mencuri cookie pengguna di browser.
+            {{ ui.card3Desc }}
           </p>
           <div class="pt-1">
             <Badge variant="badge" size="sm">Anti-XSS Filter</Badge>
@@ -309,10 +382,10 @@ const getGradeColorClasses = (grade: string) => {
             <Server class="w-4 h-4" />
           </div>
           <div class="text-xs font-semibold text-[var(--text-primary)]">
-            Kebocoran Info Server
+            {{ ui.card4Title }}
           </div>
           <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Mendeteksi apakah server Anda membocorkan versi Apache, Nginx, atau PHP yang bisa dijadikan sasaran eksploitasi.
+            {{ ui.card4Desc }}
           </p>
           <div class="pt-1">
             <Badge variant="badge" size="sm">Fingerprint Audit</Badge>
@@ -365,7 +438,7 @@ const getGradeColorClasses = (grade: string) => {
                 </span>
                 <span>•</span>
                 <span :class="result.isHttps ? 'text-emerald-500 font-medium' : 'text-rose-500 font-medium'">
-                  {{ result.isHttps ? 'HTTPS Aktif' : 'HTTP Polos (Tidak Aman)' }}
+                  {{ result.isHttps ? ui.httpsActive : ui.httpsInsecure }}
                 </span>
               </div>
             </div>
@@ -375,15 +448,15 @@ const getGradeColorClasses = (grade: string) => {
           <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
             <div class="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
               <div class="text-lg font-bold text-emerald-500 font-mono">{{ result.summary.passed }}</div>
-              <div class="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-medium">Lolos</div>
+              <div class="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-medium">{{ ui.statsPassed }}</div>
             </div>
             <div class="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
               <div class="text-lg font-bold text-amber-500 font-mono">{{ result.summary.warnings }}</div>
-              <div class="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-medium">Peringatan</div>
+              <div class="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-medium">{{ ui.statsWarnings }}</div>
             </div>
             <div class="px-3.5 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
               <div class="text-lg font-bold text-rose-500 font-mono">{{ result.summary.failed }}</div>
-              <div class="text-[10px] text-rose-600 dark:text-rose-400 uppercase font-medium">Perlu Dibenahi</div>
+              <div class="text-[10px] text-rose-600 dark:text-rose-400 uppercase font-medium">{{ ui.statsFailed }}</div>
             </div>
           </div>
         </div>
@@ -396,7 +469,7 @@ const getGradeColorClasses = (grade: string) => {
             class="text-xs h-8 cursor-pointer"
             @click="activeFilter = 'all'"
           >
-            Semua Header ({{ result.headersAnalyzed.length }})
+            {{ ui.filterAll }} ({{ result.headersAnalyzed.length }})
           </Button>
           <Button
             size="sm"
@@ -404,7 +477,7 @@ const getGradeColorClasses = (grade: string) => {
             class="text-xs h-8 cursor-pointer"
             @click="activeFilter = 'issues'"
           >
-            Perlu Dibenahi ({{ result.summary.failed + result.summary.warnings }})
+            {{ ui.filterIssues }} ({{ result.summary.failed + result.summary.warnings }})
           </Button>
           <Button
             size="sm"
@@ -412,7 +485,7 @@ const getGradeColorClasses = (grade: string) => {
             class="text-xs h-8 cursor-pointer"
             @click="activeFilter = 'passed'"
           >
-            Sudah Aman ({{ result.summary.passed }})
+            {{ ui.filterPassed }} ({{ result.summary.passed }})
           </Button>
         </div>
       </Card>
@@ -425,10 +498,10 @@ const getGradeColorClasses = (grade: string) => {
       >
         <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider font-mono">
           <AlertTriangle class="w-4 h-4" />
-          Peringatan: Informasi Internal Server Bocor
+          {{ ui.infoLeakAlert }}
         </div>
         <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-          Website Anda menampilkan versi software yang digunakan. Hacker bisa memanfaatkan informasi ini untuk mencari celah keamanan spesifik.
+          {{ ui.infoLeakDesc }}
         </p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
@@ -445,7 +518,7 @@ const getGradeColorClasses = (grade: string) => {
             </div>
             <p class="text-[11px] text-[var(--text-secondary)]">{{ leak.description }}</p>
             <div class="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
-              Solusi: {{ leak.remedy }}
+              {{ ui.remedyPrefix }}{{ leak.remedy }}
             </div>
           </div>
         </div>
@@ -454,7 +527,7 @@ const getGradeColorClasses = (grade: string) => {
       <!-- Detailed Headers Evaluation List -->
       <div class="space-y-3">
         <div class="text-xs font-mono uppercase tracking-wider text-[var(--text-tertiary)]">
-          Rincian Hasil Pemeriksaan
+          {{ ui.sectionResults }}
         </div>
 
         <div
@@ -493,7 +566,7 @@ const getGradeColorClasses = (grade: string) => {
                     size="sm"
                     class="text-[10px]"
                   >
-                    {{ item.status === 'pass' ? 'Terpasang' : item.status === 'warn' ? 'Perlu Dioptimalkan' : 'Belum Ada' }}
+                    {{ item.status === 'pass' ? ui.statusInstalled : item.status === 'warn' ? ui.statusOptimize : ui.statusMissing }}
                   </Badge>
                 </div>
                 <div class="text-[11px] text-[var(--text-secondary)] font-mono mt-0.5">
@@ -506,7 +579,7 @@ const getGradeColorClasses = (grade: string) => {
             <button
               type="button"
               class="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors"
-              :title="expandedCards[item.key] ? 'Tutup Rincian' : 'Buka Rincian'"
+              :title="expandedCards[item.key] ? ui.toggleHide : ui.toggleShow"
             >
               <ChevronUp v-if="expandedCards[item.key]" class="w-4 h-4" />
               <ChevronDown v-else class="w-4 h-4" />
@@ -520,7 +593,7 @@ const getGradeColorClasses = (grade: string) => {
           >
             <!-- Current Value (if present) -->
             <div v-if="item.value" class="space-y-1">
-              <div class="text-[11px] font-mono uppercase text-[var(--text-tertiary)]">Nilai yang Terdeteksi</div>
+              <div class="text-[11px] font-mono uppercase text-[var(--text-tertiary)]">{{ ui.detectedValue }}</div>
               <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] font-mono text-xs text-zinc-300 break-all select-all">
                 {{ item.value }}
               </div>
@@ -531,7 +604,7 @@ const getGradeColorClasses = (grade: string) => {
               <div class="p-3.5 rounded-xl bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1">
                 <div class="font-semibold text-[var(--text-primary)] flex items-center gap-1.5 text-xs">
                   <Info class="w-3.5 h-3.5 text-sky-400" />
-                  Apa Fungsinya?
+                  {{ ui.whatItDoes }}
                 </div>
                 <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
                   {{ item.explanation }}
@@ -541,7 +614,7 @@ const getGradeColorClasses = (grade: string) => {
               <div class="p-3.5 rounded-xl bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1">
                 <div class="font-semibold text-rose-500 flex items-center gap-1.5 text-xs">
                   <ShieldAlert class="w-3.5 h-3.5" />
-                  Risiko Bila Dibiarkan
+                  {{ ui.riskIfMissing }}
                 </div>
                 <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
                   {{ item.risk }}
@@ -554,7 +627,7 @@ const getGradeColorClasses = (grade: string) => {
               <div class="flex items-center justify-between">
                 <div class="text-[11px] font-mono uppercase text-[var(--text-tertiary)] flex items-center gap-1.5">
                   <FileCode class="w-3.5 h-3.5" />
-                  Cara Memperbaiki (Tinggal Salin Kode)
+                  {{ ui.howToFix }}
                 </div>
 
                 <!-- Environment Switcher Tabs -->
@@ -604,7 +677,7 @@ const getGradeColorClasses = (grade: string) => {
                 >
                   <Check v-if="copiedSnippetKey === `${item.key}-${snippetTabs[item.key]}`" class="w-3.5 h-3.5 text-emerald-400" />
                   <Copy v-else class="w-3.5 h-3.5" />
-                  <span>{{ copiedSnippetKey === `${item.key}-${snippetTabs[item.key]}` ? 'Tersalin' : 'Salin' }}</span>
+                  <span>{{ copiedSnippetKey === `${item.key}-${snippetTabs[item.key]}` ? ui.copiedBtn : ui.copyBtn }}</span>
                 </button>
               </div>
             </div>
@@ -620,10 +693,10 @@ const getGradeColorClasses = (grade: string) => {
         >
           <div class="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)] font-mono">
             <Server class="w-4 h-4 text-zinc-400" />
-            Semua Response Header Mentah ({{ Object.keys(result.rawHeaders).length }})
+            {{ ui.rawHeadersTitle }} ({{ Object.keys(result.rawHeaders).length }})
           </div>
           <button type="button" class="text-xs text-[var(--text-secondary)] hover:text-white font-mono flex items-center gap-1">
-            <span>{{ showRawHeaders ? 'Sembunyikan' : 'Tampilkan' }}</span>
+            <span>{{ showRawHeaders ? ui.toggleHide : ui.toggleShow }}</span>
             <ChevronUp v-if="showRawHeaders" class="w-3.5 h-3.5" />
             <ChevronDown v-else class="w-3.5 h-3.5" />
           </button>

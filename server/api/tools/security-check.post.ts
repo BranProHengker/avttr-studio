@@ -5,6 +5,7 @@ import { evaluateSecurityHeaders, type SecurityAuditResult } from '~/server/util
 
 interface RequestPayload {
   url: string
+  lang?: 'en' | 'id'
 }
 
 export default defineEventHandler(async (event): Promise<SecurityAuditResult> => {
@@ -90,7 +91,7 @@ export default defineEventHandler(async (event): Promise<SecurityAuditResult> =>
       rawHeaders[key] = val
     })
 
-    return evaluateSecurityHeaders(rawHeaders, raw, finalUrl, responseTimeMs, resolvedIp)
+    return evaluateSecurityHeaders(rawHeaders, raw, finalUrl, responseTimeMs, resolvedIp, body.lang || 'en')
   } catch (err: any) {
     clearTimeout(timeoutId)
     const responseTimeMs = Date.now() - startTime
