@@ -9,6 +9,9 @@ interface ApiResponse {
   success: boolean
   data?: ExtractedDesignData
   error?: string
+  aiUsed?: boolean
+  aiFallback?: boolean
+  aiError?: string
 }
 
 export default defineEventHandler(async (event): Promise<ApiResponse> => {
@@ -29,11 +32,17 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
     })
   }
 
+  const config = useRuntimeConfig()
+  const groqApiKey = (config.groqApiKey as string) || ''
+
   try {
-    const data = await extractDesignFromUrl(rawUrl)
+    const data = await extractDesignFromUrl(rawUrl, groqApiKey)
     return {
       success: true,
       data,
+      aiUsed: data.aiUsed,
+      aiFallback: data.aiFallback,
+      aiError: data.aiError,
     }
   } catch (err: any) {
     return {

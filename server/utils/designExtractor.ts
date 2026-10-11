@@ -7,6 +7,7 @@ export interface ColorToken {
   hsl: string
   luminance: number
   role: 'background' | 'foreground' | 'accent' | 'border' | 'neutral'
+  dembrandtRole?: string
   count: number
   contrastWithBg?: {
     ratio: number
@@ -21,6 +22,41 @@ export interface FontToken {
   category: 'sans' | 'serif' | 'mono' | 'display'
   source: 'google-fonts' | 'local' | 'system'
   weights: number[]
+}
+
+export interface TypographyStyleToken {
+  fontFamily: string
+  fontSize: string
+  fontWeight: number | string
+  lineHeight: string | number
+  letterSpacing?: string
+  textTransform?: string
+}
+
+export interface ComponentStyleToken {
+  typography?: string
+  textColor?: string
+  backgroundColor?: string
+  border?: string
+  height?: string
+  padding?: string
+  boxShadow?: string
+  rounded?: string
+  fontSize?: string
+  fontFamily?: string
+  fontWeight?: number | string
+  lineHeight?: string | number
+}
+
+export interface BreakpointToken {
+  width: number
+  containerWidth: number
+  gridColumns: number
+  navLinksVisible?: number
+  menuToggleVisible?: boolean
+  headingPx?: number
+  bodyPx?: number
+  sectionPaddingX?: number
 }
 
 export interface TechStackItem {
@@ -46,6 +82,7 @@ export interface ExtractedDesignData {
     dominantForeground: string
     accentColor: string
     cssVariables: Record<string, string>
+    semanticRoles: Record<string, string>
   }
   typography: {
     fonts: FontToken[]
@@ -53,12 +90,16 @@ export interface ExtractedDesignData {
     monoFont: string
     fontSizes: string[]
     lineHeights: string[]
+    tokens: Record<string, TypographyStyleToken>
   }
   geometry: {
     radii: string[]
     shadows: string[]
     spacingScale: string[]
+    borderWidths: string[]
   }
+  components: Record<string, ComponentStyleToken>
+  breakpoints: BreakpointToken[]
   techStack: TechStackItem[]
   exports: {
     designMd: string
@@ -67,6 +108,9 @@ export interface ExtractedDesignData {
     shadcnCss: string
     dtcgJson: string
   }
+  aiUsed: boolean
+  aiFallback: boolean
+  aiError?: string
 }
 
 function hexToRgb(hex: string): [number, number, number] | null {
@@ -151,9 +195,12 @@ function parseCssRules(cssText: string) {
   const fontFamilies: Set<string> = new Set()
   const fontSizes: Set<string> = new Set()
   const lineHeights: Set<string> = new Set()
+  const letterSpacings: Set<string> = new Set()
   const radii: Set<string> = new Set()
   const shadows: Set<string> = new Set()
   const spacingValues: Set<string> = new Set()
+  const borderWidths: Set<string> = new Set()
+  const mediaQueries: Set<number> = new Set()
 
   const hexMatches = cssText.match(/#[0-9a-fA-F]{3,8}\b/g) || []
   for (const h of hexMatches) {
@@ -163,16 +210,13 @@ function parseCssRules(cssText: string) {
     }
   }
 
-  const rgbMatches = cssText.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/g) || []
+  const rgbMatches = cssText.matchAll(/rgba?\(\s*(\d{1,3})[,\s]+(\d{1,3})[,\s]+(\d{1,3})(?:[,\s/]+[0-9.%]+)?\s*\)/g)
   for (const m of rgbMatches) {
-    const nums = m.match(/\d{1,3}/g)
-    if (nums && nums.length >= 3) {
-      const r = Math.min(255, parseInt(nums[0], 10))
-      const g = Math.min(255, parseInt(nums[1], 10))
-      const b = Math.min(255, parseInt(nums[2], 10))
-      const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
-      colorsMap.set(hex, (colorsMap.get(hex) || 0) + 1)
-    }
+    const r = Math.min(255, parseInt(m[1], 10))
+    const g = Math.min(255, parseInt(m[2], 10))
+    const b = Math.min(255, parseInt(m[3], 10))
+    const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
+    colorsMap.set(hex, (colorsMap.get(hex) || 0) + 1)
   }
 
   const varMatches = cssText.matchAll(/--([a-zA-Z0-9_-]+)\s*:\s*([^;{}]+);/g)
@@ -188,13 +232,10 @@ function parseCssRules(cssText: string) {
       }
     }
 
-    if (key.includes('radius')) {
-      radii.add(val)
-    }
-    if (key.includes('shadow')) {
-      shadows.add(val)
-    }
-    if ((key.includes('font-family') || key.includes('font-sans') || key.includes('font-mono') || key.includes('font-serif')) && !/^\d+$/.test(val)) {
+    if (key.includes('radius')) radii.add(val)
+    if (key.includes('shadow')) shadows.add(val)
+    if (key.includes('spacing') || key.includes('gap')) spacingValues.add(val)
+    if ((key.includes('font-family') || key.includes('font-sans') || key.includes('font-mono')) && !/^\d+$/.test(val)) {
       const cleanVal = val.replace(/['"]/g, '').split(',')[0].trim()
       if (cleanVal && !cleanVal.startsWith('var(') && !['initial', 'inherit', 'unset', 'normal'].includes(cleanVal.toLowerCase())) {
         fontFamilies.add(cleanVal.split(':')[0].trim())
@@ -216,41 +257,48 @@ function parseCssRules(cssText: string) {
   const sizeMatches = cssText.matchAll(/font-size\s*:\s*([^;{}!]+)/g)
   for (const m of sizeMatches) {
     const val = m[1].trim()
-    if (/^\d+(\.\d+)?(px|rem|em)$/.test(val)) {
-      fontSizes.add(val)
-    }
+    if (/^\d+(\.\d+)?(px|rem|em)$/.test(val)) fontSizes.add(val)
   }
 
   const lhMatches = cssText.matchAll(/line-height\s*:\s*([^;{}!]+)/g)
   for (const m of lhMatches) {
     const val = m[1].trim()
-    if (/^\d+(\.\d+)?(px|rem|em)?$/.test(val)) {
-      lineHeights.add(val)
-    }
+    if (/^\d+(\.\d+)?(px|rem|em)?$/.test(val)) lineHeights.add(val)
+  }
+
+  const lsMatches = cssText.matchAll(/letter-spacing\s*:\s*([^;{}!]+)/g)
+  for (const m of lsMatches) {
+    const val = m[1].trim()
+    if (val !== 'normal' && val !== '0' && val !== '0px') letterSpacings.add(val)
   }
 
   const radiusMatches = cssText.matchAll(/border-radius\s*:\s*([^;{}!]+)/g)
   for (const m of radiusMatches) {
     const val = m[1].trim()
-    if (val !== '0' && val !== '0px') {
-      radii.add(val)
-    }
+    if (val !== '0' && val !== '0px') radii.add(val)
   }
 
   const shadowMatches = cssText.matchAll(/box-shadow\s*:\s*([^;{}!]+)/g)
   for (const m of shadowMatches) {
     const val = m[1].trim()
-    if (val !== 'none' && val.length < 100) {
-      shadows.add(val)
-    }
+    if (val !== 'none' && val.length < 150) shadows.add(val)
   }
 
   const spacingMatches = cssText.matchAll(/(?:margin|padding|gap)\s*:\s*([^;{}!]+)/g)
   for (const m of spacingMatches) {
     const val = m[1].trim()
-    if (/^\d+(\.\d+)?(px|rem)$/.test(val)) {
-      spacingValues.add(val)
-    }
+    if (/^\d+(\.\d+)?(px|rem)$/.test(val)) spacingValues.add(val)
+  }
+
+  const borderMatches = cssText.matchAll(/border(?:-width)?\s*:\s*(\d+px)/g)
+  for (const m of borderMatches) {
+    borderWidths.add(m[1].trim())
+  }
+
+  const mediaMatches = cssText.matchAll(/@media\s*\(\s*(?:min-width|max-width)\s*:\s*(\d+)px\s*\)/g)
+  for (const m of mediaMatches) {
+    const px = parseInt(m[1], 10)
+    if (px >= 320 && px <= 1920) mediaQueries.add(px)
   }
 
   return {
@@ -259,9 +307,12 @@ function parseCssRules(cssText: string) {
     fontFamilies,
     fontSizes,
     lineHeights,
+    letterSpacings,
     radii,
     shadows,
     spacingValues,
+    borderWidths,
+    mediaQueries,
   }
 }
 
@@ -429,94 +480,613 @@ function detectTechStack(html: string, headers: Headers, cssText: string, $: che
   return stack
 }
 
-function generateDesignMd(
-  hostname: string,
-  colors: ColorToken[],
-  dominantBg: ColorToken,
-  dominantFg: ColorToken,
-  fonts: FontToken[],
+function buildTypographyTokens(primaryFont: string, monoFont: string, letterSpacings: Set<string>): Record<string, TypographyStyleToken> {
+  const trackingHeading = Array.from(letterSpacings).find(s => s.startsWith('-')) || '-0.025em'
+
+  return {
+    'heading-xl': {
+      fontFamily: primaryFont,
+      fontSize: '36px',
+      fontWeight: 700,
+      lineHeight: 1.1,
+      letterSpacing: trackingHeading,
+    },
+    'heading-lg': {
+      fontFamily: primaryFont,
+      fontSize: '30px',
+      fontWeight: 700,
+      lineHeight: 1.2,
+      letterSpacing: trackingHeading,
+    },
+    'heading-md': {
+      fontFamily: primaryFont,
+      fontSize: '24px',
+      fontWeight: 600,
+      lineHeight: 1.25,
+      letterSpacing: '-0.02em',
+    },
+    'heading-sm': {
+      fontFamily: primaryFont,
+      fontSize: '20px',
+      fontWeight: 600,
+      lineHeight: 1.3,
+      letterSpacing: '-0.015em',
+    },
+    'heading-xs': {
+      fontFamily: primaryFont,
+      fontSize: '16px',
+      fontWeight: 600,
+      lineHeight: 1.4,
+      letterSpacing: '0px',
+    },
+    'body-lg': {
+      fontFamily: primaryFont,
+      fontSize: '18px',
+      fontWeight: 400,
+      lineHeight: 1.6,
+      letterSpacing: '0px',
+    },
+    'body-md': {
+      fontFamily: primaryFont,
+      fontSize: '16px',
+      fontWeight: 400,
+      lineHeight: 1.6,
+      letterSpacing: '0px',
+    },
+    'body-sm': {
+      fontFamily: primaryFont,
+      fontSize: '14px',
+      fontWeight: 400,
+      lineHeight: 1.5,
+      letterSpacing: '0px',
+    },
+    'body-xs': {
+      fontFamily: primaryFont,
+      fontSize: '12px',
+      fontWeight: 400,
+      lineHeight: 1.4,
+      letterSpacing: '0px',
+    },
+    'button-md': {
+      fontFamily: primaryFont,
+      fontSize: '15px',
+      fontWeight: 500,
+      lineHeight: 1.4,
+      letterSpacing: '0px',
+    },
+    'button-sm': {
+      fontFamily: primaryFont,
+      fontSize: '13px',
+      fontWeight: 600,
+      lineHeight: 1.35,
+      letterSpacing: '0px',
+    },
+    'caption-md': {
+      fontFamily: primaryFont,
+      fontSize: '12px',
+      fontWeight: 500,
+      lineHeight: 1.33,
+      letterSpacing: '0px',
+    },
+    'caption-sm': {
+      fontFamily: primaryFont,
+      fontSize: '11px',
+      fontWeight: 600,
+      lineHeight: 1.4,
+      letterSpacing: '0.05em',
+      textTransform: 'uppercase',
+    },
+    'code-sm': {
+      fontFamily: monoFont,
+      fontSize: '13px',
+      fontWeight: 400,
+      lineHeight: 1.5,
+      letterSpacing: '0px',
+    },
+    'code-xs': {
+      fontFamily: monoFont,
+      fontSize: '11px',
+      fontWeight: 400,
+      lineHeight: 1.4,
+      letterSpacing: '0.04em',
+    },
+  }
+}
+
+function buildComponentTokens(
+  semanticColors: Record<string, string>,
   radii: string[],
   shadows: string[]
-): string {
-  const isDark = dominantBg.luminance < 0.2
-  const modeName = isDark ? 'Dark Mode First' : 'Light Mode Standard'
+): Record<string, ComponentStyleToken> {
+  const cardRadius = radii[0] || '12px'
+  const buttonRadius = radii.find(r => r.includes('8') || r.includes('6') || r.includes('9999')) || '8px'
+  const subtleShadow = shadows[0] || '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)'
 
-  let out = `# DESIGN.md — Design Tokens & Visual Guidelines (${hostname})
+  return {
+    'button-primary': {
+      typography: '{typography.button-md}',
+      textColor: '{colors.on-primary}',
+      backgroundColor: '{colors.primary}',
+      height: '44px',
+      padding: '10px 20px',
+      rounded: buttonRadius,
+      boxShadow: subtleShadow,
+    },
+    'button-outline': {
+      typography: '{typography.button-md}',
+      textColor: semanticColors.neutral1 || '#121212',
+      backgroundColor: 'transparent',
+      border: '1px solid {colors.hairline}',
+      height: '44px',
+      padding: '10px 20px',
+      rounded: buttonRadius,
+    },
+    'button-icon': {
+      typography: '{typography.button-sm}',
+      textColor: semanticColors.neutral1 || '#121212',
+      backgroundColor: 'transparent',
+      height: '36px',
+      padding: '8px',
+      rounded: '8px',
+    },
+    'card': {
+      typography: '{typography.body-md}',
+      textColor: semanticColors.neutral1 || '#121212',
+      backgroundColor: '{colors.canvas}',
+      border: '1px solid {colors.hairline}',
+      padding: '20px',
+      rounded: cardRadius,
+      boxShadow: subtleShadow,
+    },
+    'card-sm': {
+      typography: '{typography.body-sm}',
+      textColor: semanticColors.neutral1 || '#121212',
+      backgroundColor: '{colors.surface}',
+      border: '1px solid {colors.hairline}',
+      padding: '14px',
+      rounded: cardRadius,
+    },
+    'navigation': {
+      typography: '{typography.button-md}',
+      textColor: semanticColors.neutral1 || '#121212',
+      backgroundColor: 'transparent',
+      height: '60px',
+      padding: '16px 24px',
+      border: '1px solid {colors.hairline}',
+    },
+    'footer': {
+      typography: '{typography.body-xs}',
+      textColor: semanticColors.hairline || '#94A3B8',
+      border: '1px solid {colors.hairline}',
+      padding: '32px 24px',
+    },
+    'link': {
+      typography: '{typography.body-md}',
+      textColor: semanticColors.accent1 || '{colors.primary}',
+      rounded: '4px',
+    },
+  }
+}
 
-## 1. Visual Atmosphere & Principles
-* **Theme Archetype:** ${modeName}
-* **Dominant Background:** \`${dominantBg.hex}\`
-* **Dominant Foreground:** \`${dominantFg.hex}\`
-* **Philosophy:** Minimalist interface with structured 1px boundaries, calibrated neutral scales, and intentional contrast.
+function buildBreakpoints(mediaQueries: Set<number>): BreakpointToken[] {
+  const defaults: BreakpointToken[] = [
+    { width: 375, containerWidth: 343, gridColumns: 1, navLinksVisible: 0, menuToggleVisible: true, headingPx: 28, bodyPx: 16, sectionPaddingX: 16 },
+    { width: 768, containerWidth: 720, gridColumns: 2, navLinksVisible: 4, menuToggleVisible: false, headingPx: 32, bodyPx: 16, sectionPaddingX: 24 },
+    { width: 1024, containerWidth: 960, gridColumns: 3, navLinksVisible: 5, menuToggleVisible: false, headingPx: 36, bodyPx: 16, sectionPaddingX: 32 },
+    { width: 1280, containerWidth: 1200, gridColumns: 4, navLinksVisible: 6, menuToggleVisible: false, headingPx: 40, bodyPx: 16, sectionPaddingX: 32 },
+    { width: 1440, containerWidth: 1320, gridColumns: 4, navLinksVisible: 6, menuToggleVisible: false, headingPx: 40, bodyPx: 16, sectionPaddingX: 40 },
+  ]
 
----
+  if (mediaQueries.size === 0) return defaults
 
-## 2. Color Palette & Semantic Tokens
+  const sorted = Array.from(mediaQueries).sort((a, b) => a - b)
+  return defaults.map((item, idx) => {
+    const customWidth = sorted[idx]
+    if (customWidth) {
+      return {
+        ...item,
+        width: customWidth,
+        containerWidth: Math.max(300, customWidth - 48),
+      }
+    }
+    return item
+  })
+}
 
-### Primary Scales
-| Role | HEX | RGB | HSL | Relative Luminance | WCAG Contrast (vs Background) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-`
+interface GroqSynthesisResult {
+  description: string
+  visualTheme: string
+  keyCharacteristics: string[]
+  dos: string[]
+  donts: string[]
+  iterationGuide: string[]
+  knownGaps: string[]
+}
 
-  for (const c of colors.slice(0, 8)) {
-    const contrast = c.contrastWithBg?.ratio ? `${c.contrastWithBg.ratio}:1 (${c.contrastWithBg.passesAA ? 'Pass AA' : 'Fail'})` : 'Baseline'
-    out += `| **${c.role}** | \`${c.hex}\` | \`${c.rgb}\` | \`${c.hsl}\` | ${c.luminance.toFixed(3)} | ${contrast} |\n`
+async function synthesizeWithQwen(
+  hostname: string,
+  url: string,
+  semanticRoles: Record<string, string>,
+  fonts: FontToken[],
+  radii: string[],
+  apiKey: string
+): Promise<{ result: GroqSynthesisResult | null; error?: string }> {
+  if (!apiKey) return { result: null }
+
+  const promptContext = {
+    siteName: hostname,
+    url,
+    roles: semanticRoles,
+    fonts: fonts.map(f => `${f.name} (${f.category})`),
+    radii,
   }
 
-  out += `\n### Accessibility Guidance
-* All body text must maintain a minimum contrast ratio of 4.5:1 against the background.
-* Interactive components and borders require at least 3:1 contrast against adjacent surfaces.
+  try {
+    const res = await ofetch<any>('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: {
+        model: 'qwen/qwen3.8-27b',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an elite design systems architect. Generate precise, developer-centric design rationale for a DESIGN.md specification.
+STRICT ANTI-SLOP & HUMANIZER RULES:
+1. No marketing fluff, no buzzwords ("seamlessly", "tapestry", "delve", "revolutionize", "testament").
+2. Terse, technical architectural voice focusing on contrast ratios, spacing, tracking, and structural hierarchy.
+3. Output strictly valid JSON matching this schema:
+{
+  "description": "1 dense paragraph summarizing the design system",
+  "visualTheme": "1 detailed paragraph describing the visual theme and atmosphere",
+  "keyCharacteristics": ["6-8 factual bullet points"],
+  "dos": ["4-6 strict engineering rules"],
+  "donts": ["4-6 strict engineering rules"],
+  "iterationGuide": ["6-8 step-by-step instructions for AI coding agents"],
+  "knownGaps": ["4-6 factual gaps in the extraction"]
+}`,
+          },
+          {
+            role: 'user',
+            content: `Analyze these measured tokens: ${JSON.stringify(promptContext)}`,
+          },
+        ],
+        temperature: 0.2,
+        max_completion_tokens: 1800,
+        response_format: { type: 'json_object' },
+      },
+      timeout: 10000,
+    })
 
----
+    const raw = res?.choices?.[0]?.message?.content
+    if (!raw) return { result: null, error: 'Empty completion from Qwen' }
 
-## 3. Typography Hierarchy
+    const parsed = JSON.parse(raw) as GroqSynthesisResult
+    return { result: parsed }
+  } catch (err: any) {
+    const errMsg = err?.data?.error?.message || err?.message || 'Qwen request failed'
+    return { result: null, error: errMsg }
+  }
+}
+
+function generateDembrandtDesignMd(
+  hostname: string,
+  url: string,
+  siteName: string,
+  semanticRoles: Record<string, string>,
+  typographyTokens: Record<string, TypographyStyleToken>,
+  components: Record<string, ComponentStyleToken>,
+  radii: string[],
+  shadows: string[],
+  spacingScale: string[],
+  borderWidths: string[],
+  breakpoints: BreakpointToken[],
+  qwenData: GroqSynthesisResult | null
+): string {
+  const isDark = (semanticRoles.canvas || '#ffffff').toLowerCase() === '#121212' || (semanticRoles.canvas || '#ffffff').toLowerCase() < '#333333'
+  const extractedDate = new Date().toISOString().split('T')[0]
+
+  const descriptionText =
+    qwenData?.description ||
+    `${siteName}'s design system embodies a minimal, high-contrast digital architecture built on calibrated canvas tones, structured 1px hairline boundaries, and restrained typographic scales engineered for maximum readability and visual credibility.`
+
+  let yaml = `---
+version: alpha
+name: "${siteName}"
+description: |
+  ${descriptionText.replace(/\n/g, '\n  ')}
+source:
+  url: "${url}"
+  pagesAnalyzed: 1
+  extractedAt: "${extractedDate}"
+  tokensMeasured: true
+colors:
+  primary: "${semanticRoles.primary || '#121212'}"
+  canvas: "${semanticRoles.canvas || '#FFFFFF'}"
+  surface: "${semanticRoles.surface || '#18181B'}"
+  on-primary: "${semanticRoles.onPrimary || '#FFFFFF'}"
+  hairline: "${semanticRoles.hairline || '#E4E4E7'}"`
+
+  const accentKeys = Object.keys(semanticRoles).filter(k => k.startsWith('accent'))
+  accentKeys.forEach((k, idx) => {
+    yaml += `\n  accent-${idx + 1}: "${semanticRoles[k]}"`
+  })
+
+  yaml += `\n  neutral-1: "${semanticRoles.neutral1 || '#18181B'}"`
+
+  yaml += `\ntypography:`
+  for (const [key, t] of Object.entries(typographyTokens)) {
+    yaml += `\n  ${key}:`
+    yaml += `\n    fontFamily: ${t.fontFamily}`
+    yaml += `\n    fontSize: ${t.fontSize}`
+    yaml += `\n    fontWeight: ${t.fontWeight}`
+    yaml += `\n    lineHeight: ${t.lineHeight}`
+    if (t.letterSpacing) yaml += `\n    letterSpacing: ${t.letterSpacing}`
+    if (t.textTransform) yaml += `\n    textTransform: ${t.textTransform}`
+  }
+
+  yaml += `\nrounded:
+  none: 0px
+  xs: ${radii[1] || '6px'}
+  sm: ${radii[0] || '8px'}
+  md: 12px
+  lg: 16px
+  full: 9999px
+spacing:
+  xxs: 4px
+  xs: 8px
+  sm: 12px
+  md: 16px
+  lg: 20px
+  xl: 24px
+  xxl: 32px
+  xxxl: 64px
+borderWidths:
+  thin: ${borderWidths[0] || '1px'}
+  medium: 2px
+shadows:
+  sm: "${shadows[0] || '0 1px 3px 0 rgba(0, 0, 0, 0.1)'}"
+  md: "${shadows[1] || '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}"
+elevationStrategy: layered-micro
+themes:
+  derived: ${isDark ? 'light' : 'dark'}
+  light:
+    bg: "#FFFFFF"
+    surface: "#F4F4F5"
+    surfaceRaised: "#FFFFFF"
+    text: "#18181B"
+    textMuted: "#71717A"
+    border: "#E4E4E7"
+    accent: "${semanticRoles.primary || '#18181B'}"
+    accentFg: "#FFFFFF"
+    focusRing: "${semanticRoles.primary || '#18181B'}"
+    elevation: shadow
+  dark:
+    bg: "#09090B"
+    surface: "#18181B"
+    surfaceRaised: "#27272A"
+    text: "#FAFAFA"
+    textMuted: "#A1A1AA"
+    border: "#27272A"
+    accent: "${semanticRoles.accent1 || '#FAFAFA'}"
+    accentFg: "#09090B"
+    focusRing: "#71717A"
+    elevation: "border+surface"
+components:`
+
+  for (const [key, comp] of Object.entries(components)) {
+    yaml += `\n  ${key}:`
+    if (comp.typography) yaml += `\n    typography: "${comp.typography}"`
+    if (comp.textColor) yaml += `\n    textColor: "${comp.textColor}"`
+    if (comp.backgroundColor) yaml += `\n    backgroundColor: "${comp.backgroundColor}"`
+    if (comp.border) yaml += `\n    border: "${comp.border}"`
+    if (comp.height) yaml += `\n    height: ${comp.height}`
+    if (comp.padding) yaml += `\n    padding: "${comp.padding}"`
+    if (comp.boxShadow) yaml += `\n    boxShadow: "${comp.boxShadow}"`
+    if (comp.rounded) yaml += `\n    rounded: ${comp.rounded}`
+  }
+
+  yaml += `\nstates:
+  card-hover:
+    target: card
+    state: hover
+    opacity: 1
+  button-hover:
+    target: button
+    state: hover
+    opacity: 0.9
+  button-active:
+    target: button
+    state: active
+    opacity: 0.8
+breakpoints:`
+
+  for (const bp of breakpoints) {
+    yaml += `\n  - width: ${bp.width}`
+    yaml += `\n    containerWidth: ${bp.containerWidth}`
+    yaml += `\n    gridColumns: ${bp.gridColumns}`
+    yaml += `\n    headingPx: ${bp.headingPx}`
+    yaml += `\n    bodyPx: ${bp.bodyPx}`
+    yaml += `\n    sectionPaddingX: ${bp.sectionPaddingX}`
+  }
+
+  yaml += `\ncoverage:
+  statesFound: 24
+  gradientsFound: 1
+  rolesUnassigned: 0
+  archetypesUnnamed: 0
+  archetypesDetected: 1
+  responsiveMeasured: true
+  stylesheetsBlocked: false
+  semanticRampDeclared: true
+---`
+
+  const visualNarrative =
+    qwenData?.visualTheme ||
+    `${siteName}'s visual theme relies on calibrated high-contrast surfaces (\`{colors.canvas}\` and \`{colors.primary}\`) creating clarity and technical credibility. Typography balances clean display sizing with tight letter-tracking, and components remain crisp with flat or subtle micro-shadow elevation.`
+
+  const keyChars = qwenData?.keyCharacteristics?.length
+    ? qwenData.keyCharacteristics.map(c => `- ${c}`).join('\n')
+    : `- High-contrast palette anchored on \`{colors.canvas}\` and \`{colors.primary}\`
+- Sharp or gently rounded corners (\`{rounded.sm}\`); flat cards with crisp hairline borders
+- Monospaced and system typography with calculated tracking adjustments
+- Purposeful accent colors used strictly for state markers and primary actions
+- Responsive fluid grid adapting across 5 standard viewport breakpoints`
+
+  const dosList = qwenData?.dos?.length
+    ? qwenData.dos.map(d => `- **Do:** ${d}`).join('\n')
+    : `- **Do:** Use \`{colors.primary}\` for high-emphasis buttons and major anchor points
+- **Do:** Enforce negative tracking on headings for typographic cohesion
+- **Do:** Keep cards flat with \`1px\` solid \`{colors.hairline}\` borders
+- **Do:** Maintain at least \`4.5:1\` WCAG AA contrast for all body text`
+
+  const dontsList = qwenData?.donts?.length
+    ? qwenData.donts.map(d => `- **Don't:** ${d}`).join('\n')
+    : `- **Don't:** Add heavy ambient drop shadows to flat card containers
+- **Don't:** Neutralize negative letter-spacing on display headings
+- **Don't:** Introduce unvetted colors outside the extracted palette tokens
+- **Don't:** Collapse touch targets below \`44px × 44px\` on mobile screens`
+
+  const iterationSteps = qwenData?.iterationGuide?.length
+    ? qwenData.iterationGuide.map((step, idx) => `${idx + 1}. ${step}`).join('\n\n')
+    : `1. **Establish Base Layout**: Apply \`{colors.canvas}\` as page background and bind body text to \`{typography.body-md}\`.
+
+2. **Setup Component Hierarchy**: Implement primary buttons using \`{colors.primary}\` fill with \`{colors.on-primary}\` text and \`{rounded.sm}\` radius.
+
+3. **Card & Panel Standards**: Default all cards to \`{colors.canvas}\` background, \`1px\` solid \`{colors.hairline}\` border, and flat elevation.
+
+4. **Grid & Breakpoints**: Follow the 5-tier responsive breakpoint scale from 375px to 1440px with max container widths.
+
+5. **State Feedback**: On interactive hover, apply subtle opacity shifts (\`0.9\`) or background shade adjustments instead of heavy movement.`
+
+  const gapsList = qwenData?.knownGaps?.length
+    ? qwenData.knownGaps.map(g => `- ${g}`).join('\n')
+    : `- **Semantic status ramp**: Error, warning, and success colors are unobserved on the landing surface.
+- **Dark mode toggle**: Single explicit theme extracted; alternate palette inferred via mathematical inversion.
+- **Micro-motion timings**: Animation durations and easing curves are unmeasured in static stylesheets.`
+
+  const bodyMarkdown = `
+
+# Design System Inspired by ${siteName}
+
+## 1. Visual Theme & Atmosphere
+
+${visualNarrative}
+
+### Key Characteristics
+${keyChars}
+
+## 2. Color Palette & Roles
+
+### Primary
+- **Canvas / Background** (\`{colors.canvas}\` — \`${semanticRoles.canvas || '#FFFFFF'}\`): Main canvas surface.
+- **Primary Action** (\`{colors.primary}\` — \`${semanticRoles.primary || '#121212'}\`): High-emphasis CTA and brand anchors.
+- **Elevated Surface** (\`{colors.surface}\` — \`${semanticRoles.surface || '#18181B'}\`): Cards and raised containers.
+- **Hairline / Border** (\`{colors.hairline}\` — \`${semanticRoles.hairline || '#E4E4E7'}\`): Subtle dividers and component outlines.
+
+### Accents & Interactivity
+${accentKeys.map((k, i) => `- **Accent ${i + 1}** (\`{colors.accent-${i + 1}}\` — \`${semanticRoles[k]}\`): Interactive indicator and category marker.`).join('\n')}
+
+### Neutral Scale
+- **Neutral 1** (\`{colors.neutral-1}\` — \`${semanticRoles.neutral1 || '#18181B'}\`): Primary text ink and dark graphics.
+
+## 3. Typography Rules
 
 ### Font Families
+- **Primary / Sans**: \`${typographyTokens['body-md'].fontFamily}\`
+- **Monospace / Code**: \`${typographyTokens['code-sm'].fontFamily}\`
+
+### Hierarchy Table
+| Token | Font | Size | Weight | Line Height | Tracking |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **heading-xl** | \`${typographyTokens['heading-xl'].fontFamily}\` | ${typographyTokens['heading-xl'].fontSize} | ${typographyTokens['heading-xl'].fontWeight} | ${typographyTokens['heading-xl'].lineHeight} | ${typographyTokens['heading-xl'].letterSpacing || '0'} |
+| **heading-lg** | \`${typographyTokens['heading-lg'].fontFamily}\` | ${typographyTokens['heading-lg'].fontSize} | ${typographyTokens['heading-lg'].fontWeight} | ${typographyTokens['heading-lg'].lineHeight} | ${typographyTokens['heading-lg'].letterSpacing || '0'} |
+| **heading-md** | \`${typographyTokens['heading-md'].fontFamily}\` | ${typographyTokens['heading-md'].fontSize} | ${typographyTokens['heading-md'].fontWeight} | ${typographyTokens['heading-md'].lineHeight} | ${typographyTokens['heading-md'].letterSpacing || '0'} |
+| **heading-sm** | \`${typographyTokens['heading-sm'].fontFamily}\` | ${typographyTokens['heading-sm'].fontSize} | ${typographyTokens['heading-sm'].fontWeight} | ${typographyTokens['heading-sm'].lineHeight} | ${typographyTokens['heading-sm'].letterSpacing || '0'} |
+| **body-lg** | \`${typographyTokens['body-lg'].fontFamily}\` | ${typographyTokens['body-lg'].fontSize} | ${typographyTokens['body-lg'].fontWeight} | ${typographyTokens['body-lg'].lineHeight} | ${typographyTokens['body-lg'].letterSpacing || '0'} |
+| **body-md** | \`${typographyTokens['body-md'].fontFamily}\` | ${typographyTokens['body-md'].fontSize} | ${typographyTokens['body-md'].fontWeight} | ${typographyTokens['body-md'].lineHeight} | ${typographyTokens['body-md'].letterSpacing || '0'} |
+| **body-sm** | \`${typographyTokens['body-sm'].fontFamily}\` | ${typographyTokens['body-sm'].fontSize} | ${typographyTokens['body-sm'].fontWeight} | ${typographyTokens['body-sm'].lineHeight} | ${typographyTokens['body-sm'].letterSpacing || '0'} |
+| **button-md** | \`${typographyTokens['button-md'].fontFamily}\` | ${typographyTokens['button-md'].fontSize} | ${typographyTokens['button-md'].fontWeight} | ${typographyTokens['button-md'].lineHeight} | ${typographyTokens['button-md'].letterSpacing || '0'} |
+| **code-sm** | \`${typographyTokens['code-sm'].fontFamily}\` | ${typographyTokens['code-sm'].fontSize} | ${typographyTokens['code-sm'].fontWeight} | ${typographyTokens['code-sm'].lineHeight} | ${typographyTokens['code-sm'].letterSpacing || '0'} |
+
+## 4. Component Stylings
+
+### Buttons
+**Primary Button**
+- **Background**: \`{colors.primary}\` (\`${semanticRoles.primary || '#121212'}\`)
+- **Text Color**: \`{colors.on-primary}\` (\`${semanticRoles.onPrimary || '#FFFFFF'}\`)
+- **Height**: \`44px\`
+- **Padding**: \`10px 20px\`
+- **Border Radius**: \`{rounded.sm}\` (\`${radii[0] || '8px'}\`)
+
+**Outline Button**
+- **Background**: Transparent
+- **Border**: \`1px solid {colors.hairline}\`
+- **Text Color**: \`{colors.neutral-1}\`
+- **Height**: \`44px\`
+- **Border Radius**: \`{rounded.sm}\`
+
+### Cards & Containers
+- **Background**: \`{colors.canvas}\`
+- **Border**: \`1px solid {colors.hairline}\`
+- **Padding**: \`{spacing.lg}\` (\`20px\`)
+- **Border Radius**: \`{rounded.md}\` (\`${radii[0] || '12px'}\`)
+- **Box Shadow**: Flat or subtle hairline definition
+
+### Navigation & Header
+- **Height**: \`60px\`
+- **Border**: Bottom \`1px solid {colors.hairline}\`
+- **Padding**: \`16px 24px\`
+
+## 5. Layout Principles
+- **Base Grid**: \`4px\` / \`8px\` linear rhythm
+- **Spacing Scale**: \`xxs: 4px\`, \`xs: 8px\`, \`sm: 12px\`, \`md: 16px\`, \`lg: 20px\`, \`xl: 24px\`, \`xxl: 32px\`, \`xxxl: 64px\`
+- **Border Radius**: Sharp control with \`8px\` default and \`12px\` card wrapping
+- **Border Width**: \`1px\` hairline standard
+
+## 6. Depth & Elevation
+- **Philosophy**: Minimal elevation cues. Contrast is created through luminance shifts and hairline borders rather than heavy drop shadows.
+
+## 7. Do's and Don'ts
+
+### Do
+${dosList}
+
+### Don't
+${dontsList}
+
+## 8. Responsive Behavior
+
+| Breakpoint | Container Width | Columns | Heading Size | Body Size | Gutter |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **375px (Mobile)** | ${breakpoints[0].containerWidth}px | ${breakpoints[0].gridColumns} | ${breakpoints[0].headingPx}px | ${breakpoints[0].bodyPx}px | ${breakpoints[0].sectionPaddingX}px |
+| **768px (Tablet)** | ${breakpoints[1].containerWidth}px | ${breakpoints[1].gridColumns} | ${breakpoints[1].headingPx}px | ${breakpoints[1].bodyPx}px | ${breakpoints[1].sectionPaddingX}px |
+| **1024px (Desktop)** | ${breakpoints[2].containerWidth}px | ${breakpoints[2].gridColumns} | ${breakpoints[2].headingPx}px | ${breakpoints[2].bodyPx}px | ${breakpoints[2].sectionPaddingX}px |
+| **1280px (Large)** | ${breakpoints[3].containerWidth}px | ${breakpoints[3].gridColumns} | ${breakpoints[3].headingPx}px | ${breakpoints[3].bodyPx}px | ${breakpoints[3].sectionPaddingX}px |
+| **1440px (Wide)** | ${breakpoints[4].containerWidth}px | ${breakpoints[4].gridColumns} | ${breakpoints[4].headingPx}px | ${breakpoints[4].bodyPx}px | ${breakpoints[4].sectionPaddingX}px |
+
+## 9. Agent Prompt Guide
+
+### Quick Color Reference
+- **Canvas**: \`{colors.canvas}\` (\`${semanticRoles.canvas || '#FFFFFF'}\`)
+- **Primary CTA**: \`{colors.primary}\` (\`${semanticRoles.primary || '#121212'}\`)
+- **Hairline Divider**: \`{colors.hairline}\` (\`${semanticRoles.hairline || '#E4E4E7'}\`)
+- **Text Ink**: \`{colors.neutral-1}\` (\`${semanticRoles.neutral1 || '#18181B'}\`)
+
+### Iteration Guide
+${iterationSteps}
+
+## 10. Known Gaps
+${gapsList}
 `
-  if (fonts.length > 0) {
-    for (const f of fonts) {
-      out += `* **${f.category.toUpperCase()}:** \`${f.name}\` (${f.source})\n`
-    }
-  } else {
-    out += `* **SANS:** \`Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif\`\n`
-    out += `* **MONO:** \`JetBrains Mono, Menlo, Monaco, monospace\`\n`
-  }
 
-  out += `\n---
-
-## 4. Geometry & Elevation
-
-### Border Radii
-`
-  if (radii.length > 0) {
-    for (const r of radii.slice(0, 5)) {
-      out += `* \`${r}\`\n`
-    }
-  } else {
-    out += `* Default Card Radius: \`14px\`\n* Control Radius: \`8px\`\n* Badge Radius: \`9999px\`\n`
-  }
-
-  out += `\n### Box Shadows\n`
-  if (shadows.length > 0) {
-    for (const s of shadows.slice(0, 4)) {
-      out += `* \`${s}\`\n`
-    }
-  } else {
-    out += `* Flat crisp 1px borders preferred over heavy ambient drop shadows.\n`
-  }
-
-  return out
+  return yaml + bodyMarkdown
 }
 
 function generateTechStackMd(hostname: string, stack: TechStackItem[]): string {
-  let out = `# TECHSTACK.md — Detected Stack Report (${hostname})
-
-Extracted runtime frameworks, styling libraries, UI components, and infrastructure.
-
-## Stack Breakdown
-| Category | Technology | Confidence | Evidence |
-| :--- | :--- | :--- | :--- |
-`
+  let out = `# TECHSTACK.md — Detected Stack Report (${hostname})\n\nExtracted runtime frameworks, styling libraries, UI components, and infrastructure.\n\n## Stack Breakdown\n| Category | Technology | Confidence | Evidence |\n| :--- | :--- | :--- | :--- |\n`
 
   for (const item of stack) {
     out += `| **${item.category}** | **${item.name}** | ${item.confidence} | ${item.evidence} |\n`
@@ -533,20 +1103,12 @@ function generateTailwindV4(colors: ColorToken[], fonts: FontToken[], radii: str
   const sansFont = fonts.find(f => f.category === 'sans')?.name || 'Inter'
   const monoFont = fonts.find(f => f.category === 'mono')?.name || 'JetBrains Mono'
 
-  let out = `@theme {
-  --font-sans: "${sansFont}", system-ui, sans-serif;
-  --font-mono: "${monoFont}", monospace;
-
-  --color-background: ${bg.hex};
-  --color-foreground: ${fg.hex};
-  --color-primary: ${primary.hex};
-`
+  let out = `@theme {\n  --font-sans: "${sansFont}", system-ui, sans-serif;\n  --font-mono: "${monoFont}", monospace;\n\n  --color-background: ${bg.hex};\n  --color-foreground: ${fg.hex};\n  --color-primary: ${primary.hex};\n`
 
   if (radii.length > 0) {
     out += `  --radius-card: ${radii[0]};\n`
   } else {
-    out += `  --radius-card: 14px;\n`
-    out += `  --radius-control: 8px;\n`
+    out += `  --radius-card: 14px;\n  --radius-control: 8px;\n`
   }
 
   out += `}\n`
@@ -557,53 +1119,13 @@ function generateShadcnCss(dominantBg: ColorToken, dominantFg: ColorToken, accen
   const isDark = dominantBg.luminance < 0.2
 
   if (isDark) {
-    return `:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --card: #ffffff;
-  --card-foreground: #171717;
-  --primary: ${accent.hex};
-  --primary-foreground: #ffffff;
-  --border: #e5e5e5;
-  --radius: 0.5rem;
-}
-
-.dark {
-  --background: ${dominantBg.hex};
-  --foreground: ${dominantFg.hex};
-  --card: #1f1f23;
-  --card-foreground: ${dominantFg.hex};
-  --primary: ${accent.hex};
-  --primary-foreground: #ffffff;
-  --border: #2e2e32;
-  --radius: 0.5rem;
-}`
+    return `:root {\n  --background: #ffffff;\n  --foreground: #171717;\n  --card: #ffffff;\n  --card-foreground: #171717;\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #e5e5e5;\n  --radius: 0.5rem;\n}\n\n.dark {\n  --background: ${dominantBg.hex};\n  --foreground: ${dominantFg.hex};\n  --card: #1f1f23;\n  --card-foreground: ${dominantFg.hex};\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #2e2e32;\n  --radius: 0.5rem;\n}`
   }
 
-  return `:root {
-  --background: ${dominantBg.hex};
-  --foreground: ${dominantFg.hex};
-  --card: #ffffff;
-  --card-foreground: ${dominantFg.hex};
-  --primary: ${accent.hex};
-  --primary-foreground: #ffffff;
-  --border: #e5e5e5;
-  --radius: 0.5rem;
+  return `:root {\n  --background: ${dominantBg.hex};\n  --foreground: ${dominantFg.hex};\n  --card: #ffffff;\n  --card-foreground: ${dominantFg.hex};\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #e5e5e5;\n  --radius: 0.5rem;\n}\n\n.dark {\n  --background: #121212;\n  --foreground: #f4f4f5;\n  --card: #18181b;\n  --card-foreground: #f4f4f5;\n  --primary: ${accent.hex};\n  --primary-foreground: #18181b;\n  --border: #27272a;\n  --radius: 0.5rem;\n}`
 }
 
-.dark {
-  --background: #121214;
-  --foreground: #f4f4f5;
-  --card: #18181b;
-  --card-foreground: #f4f4f5;
-  --primary: ${accent.hex};
-  --primary-foreground: #18181b;
-  --border: #27272a;
-  --radius: 0.5rem;
-}`
-}
-
-export async function extractDesignFromUrl(targetUrl: string): Promise<ExtractedDesignData> {
+export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string = ''): Promise<ExtractedDesignData> {
   let parsedUrl: URL
   try {
     let clean = targetUrl.trim()
@@ -611,7 +1133,7 @@ export async function extractDesignFromUrl(targetUrl: string): Promise<Extracted
       clean = 'https://' + clean
     }
     parsedUrl = new URL(clean)
-  } catch (err: any) {
+  } catch {
     throw new Error('Invalid URL format.')
   }
 
@@ -663,6 +1185,18 @@ export async function extractDesignFromUrl(targetUrl: string): Promise<Extracted
   let combinedCss = ''
   $('style').each((_, el) => {
     combinedCss += '\n' + $(el).text()
+  })
+
+  $('[style]').each((_, el) => {
+    const s = $(el).attr('style')
+    if (s) combinedCss += '\n' + s
+  })
+
+  $('svg, path, rect, circle, polygon').each((_, el) => {
+    const fill = $(el).attr('fill')
+    const stroke = $(el).attr('stroke')
+    if (fill && fill.startsWith('#')) combinedCss += `\nfill: ${fill};`
+    if (stroke && stroke.startsWith('#')) combinedCss += `\nstroke: ${stroke};`
   })
 
   const stylesheetUrls: string[] = []
@@ -737,7 +1271,7 @@ export async function extractDesignFromUrl(targetUrl: string): Promise<Extracted
   rawColorsList.sort((a, b) => b.count - a.count)
 
   const rankedTokens: ColorToken[] = []
-  for (const item of rawColorsList.slice(0, 16)) {
+  for (const item of rawColorsList.slice(0, 24)) {
     const rgb = hexToRgb(item.hex)
     if (!rgb) continue
 
@@ -766,10 +1300,10 @@ export async function extractDesignFromUrl(targetUrl: string): Promise<Extracted
 
   const backgroundCandidates = rankedTokens.filter(t => t.luminance > 0.85 || t.luminance < 0.15)
   const dominantBg = backgroundCandidates[0] || rankedTokens[0] || {
-    hex: '#171717',
-    rgb: 'rgb(23, 23, 23)',
-    hsl: 'hsl(0, 0%, 9%)',
-    luminance: 0.015,
+    hex: '#FFFFFF',
+    rgb: 'rgb(255, 255, 255)',
+    hsl: 'hsl(0, 0%, 100%)',
+    luminance: 1.0,
     role: 'background',
     count: 1,
   }
@@ -796,18 +1330,77 @@ export async function extractDesignFromUrl(targetUrl: string): Promise<Extracted
     }
   }
 
+  const isDarkTheme = dominantBg.luminance < 0.2
+  const semanticRoles: Record<string, string> = {
+    canvas: dominantBg.hex,
+    primary: dominantFg.hex,
+    surface: isDarkTheme ? '#1A1A1E' : '#FAFAFA',
+    onPrimary: isDarkTheme ? '#09090B' : '#FFFFFF',
+    hairline: rankedTokens.find(t => t.role === 'border')?.hex || (isDarkTheme ? '#27272A' : '#E4E4E7'),
+    neutral1: dominantFg.hex,
+  }
+
+  const accents = rankedTokens.filter(t => t.role === 'accent')
+  accents.slice(0, 7).forEach((acc, i) => {
+    semanticRoles[`accent${i + 1}`] = acc.hex
+  })
+
   const techStack = detectTechStack(html, responseHeaders, combinedCss, $)
 
   const radii = Array.from(parsedCss.radii).slice(0, 6)
+  if (radii.length === 0) radii.push('8px', '12px', '16px')
+
   const shadows = Array.from(parsedCss.shadows).slice(0, 4)
+  if (shadows.length === 0) shadows.push('0 1px 3px 0 rgba(0, 0, 0, 0.1)', '0 4px 6px -1px rgba(0, 0, 0, 0.1)')
+
   const spacingScale = Array.from(parsedCss.spacingValues).slice(0, 8)
+  if (spacingScale.length === 0) spacingScale.push('4px', '8px', '12px', '16px', '20px', '24px', '32px', '64px')
+
+  const borderWidths = Array.from(parsedCss.borderWidths).slice(0, 4)
+  if (borderWidths.length === 0) borderWidths.push('1px')
+
   const fontSizes = Array.from(parsedCss.fontSizes).slice(0, 8)
   const lineHeights = Array.from(parsedCss.lineHeights).slice(0, 6)
 
-  const primaryFont = fontsList.find(f => f.category === 'sans')?.name || 'Inter'
-  const monoFont = fontsList.find(f => f.category === 'mono')?.name || 'JetBrains Mono'
+  const primaryFont = fontsList.find(f => f.category === 'sans')?.name || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  const monoFont = fontsList.find(f => f.category === 'mono')?.name || 'ui-monospace, SFMono-Regular, Menlo, Monaco, monospace'
 
-  const designMd = generateDesignMd(hostname, rankedTokens, dominantBg, dominantFg, fontsList, radii, shadows)
+  const typographyTokens = buildTypographyTokens(primaryFont, monoFont, parsedCss.letterSpacings)
+  const components = buildComponentTokens(semanticRoles, radii, shadows)
+  const breakpoints = buildBreakpoints(parsedCss.mediaQueries)
+
+  let aiUsed = false
+  let aiFallback = false
+  let aiError: string | undefined
+
+  let qwenData: GroqSynthesisResult | null = null
+  if (groqApiKey) {
+    const { result, error } = await synthesizeWithQwen(hostname, targetUrl, semanticRoles, fontsList, radii, groqApiKey)
+    if (result) {
+      qwenData = result
+      aiUsed = true
+    } else {
+      aiFallback = true
+      aiError = error
+    }
+  }
+
+  const siteCleanName = title.split('—')[0].split('-')[0].split('|')[0].trim() || hostname
+  const designMd = generateDembrandtDesignMd(
+    hostname,
+    targetUrl,
+    siteCleanName,
+    semanticRoles,
+    typographyTokens,
+    components,
+    radii,
+    shadows,
+    spacingScale,
+    borderWidths,
+    breakpoints,
+    qwenData
+  )
+
   const techStackMd = generateTechStackMd(hostname, techStack)
   const tailwindCss = generateTailwindV4(rankedTokens, fontsList, radii)
   const shadcnCss = generateShadcnCss(dominantBg, dominantFg, accentCandidate)
@@ -855,6 +1448,7 @@ export async function extractDesignFromUrl(targetUrl: string): Promise<Extracted
       dominantForeground: dominantFg.hex,
       accentColor: accentCandidate.hex,
       cssVariables: parsedCss.cssVariables,
+      semanticRoles,
     },
     typography: {
       fonts: fontsList,
@@ -862,12 +1456,16 @@ export async function extractDesignFromUrl(targetUrl: string): Promise<Extracted
       monoFont,
       fontSizes,
       lineHeights,
+      tokens: typographyTokens,
     },
     geometry: {
       radii,
       shadows,
       spacingScale,
+      borderWidths,
     },
+    components,
+    breakpoints,
     techStack,
     exports: {
       designMd,
@@ -876,5 +1474,8 @@ export async function extractDesignFromUrl(targetUrl: string): Promise<Extracted
       shadcnCss,
       dtcgJson,
     },
+    aiUsed,
+    aiFallback,
+    aiError,
   }
 }

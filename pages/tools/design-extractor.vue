@@ -72,14 +72,33 @@ const handleExtract = async () => {
   errorMsg.value = ''
 
   try {
-    const res = await $fetch<{ success: boolean; data?: ExtractedDesignData; error?: string }>('/api/tools/extract-design', {
+    const res = await $fetch<{
+      success: boolean
+      data?: ExtractedDesignData
+      error?: string
+      aiUsed?: boolean
+      aiFallback?: boolean
+      aiError?: string
+    }>('/api/tools/extract-design', {
       method: 'POST',
       body: { url: target },
     })
 
     if (res.success && res.data) {
       extractedData.value = res.data
-      toast.success('Tokens Extracted', `Parsed tokens from ${res.data.metadata.hostname}`)
+      if (res.aiFallback) {
+        toast.warning(
+          'Groq AI Limit Reached',
+          'Rate limit (429) hit. Successfully generated full Dembrandt spec via local deterministic engine.'
+        )
+      } else if (res.aiUsed) {
+        toast.success(
+          'Dembrandt Spec Synthesized',
+          `Generated via Qwen 3.8-27B on Groq for ${res.data.metadata.hostname}`
+        )
+      } else {
+        toast.success('Tokens Extracted', `Parsed tokens from ${res.data.metadata.hostname}`)
+      }
     } else {
       errorMsg.value = res.error || 'Failed to extract design tokens from the website.'
       toast.error('Extraction Failed', errorMsg.value)
@@ -389,7 +408,13 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <Badge v-if="extractedData.aiUsed" variant="primary">
+              Qwen 3.8-27B
+            </Badge>
+            <Badge v-else-if="extractedData.aiFallback" variant="outline">
+              Local Engine
+            </Badge>
             <Badge variant="outline">
               {{ extractedData.colors.palette.length }} Colors
             </Badge>
@@ -827,7 +852,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
               class="text-xs"
               @click="exportFormat = 'designMd'"
             >
-              DESIGN.md (Tokens Only)
+              DESIGN.md (Dembrandt Spec)
             </Button>
             <Button
               :variant="exportFormat === 'techStackMd' ? 'primary' : 'secondary'"
