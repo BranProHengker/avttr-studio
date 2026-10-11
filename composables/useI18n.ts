@@ -362,6 +362,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Web Design & Token Extractor',
         description: 'Reverse-engineer any website into design tokens, typography, color palettes, detected tech stack, and ready-to-use DESIGN.md or Tailwind theme.',
       },
+      'web-security': {
+        title: 'Web Security & Header Inspector',
+        description: 'Audit HTTP security headers, evaluate TLS/HSTS posture, check info disclosure leaks, and get 1-click fix snippets.',
+      },
     },
   },
   id: {
@@ -611,6 +615,10 @@ const translations: Record<Locale, Translations> = {
       'design-extractor': {
         title: 'Ekstraktor Desain & Token Web',
         description: 'Ekstrak token desain, tipografi, palet warna, tech stack, dan file DESIGN.md atau tema Tailwind dari website mana pun.',
+      },
+      'web-security': {
+        title: 'Web Security & Header Inspector',
+        description: 'Uji rapor keamanan header HTTP, deteksi kebocoran info server, dan dapatkan panduan perbaikan instan.',
       },
     },
   },
