@@ -19,7 +19,9 @@ import {
   Cpu,
   FileText,
   Clipboard,
-  X
+  X,
+  Eye,
+  Sparkles
 } from 'lucide-vue-next'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-markup'
@@ -201,6 +203,166 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
     default: return 'ghost'
   }
 }
+
+const viewMode = ref<'preview' | 'code'>('preview')
+const isMarkdownFormat = computed(() => exportFormat.value === 'designMd' || exportFormat.value === 'techStackMd')
+
+const frontmatterSpec = computed(() => {
+  if (!extractedData.value || exportFormat.value !== 'designMd') return null
+  return {
+    title: extractedData.value.metadata.title,
+    hostname: extractedData.value.metadata.hostname,
+    url: extractedData.value.metadata.url,
+    canvas: extractedData.value.colors.semanticRoles.canvas || '#FFFFFF',
+    primary: extractedData.value.colors.semanticRoles.primary || '#121212',
+    surface: extractedData.value.colors.semanticRoles.surface || '#FFFFFF',
+    hairline: extractedData.value.colors.semanticRoles.hairline || '#E4E4E7',
+    fontSans: extractedData.value.typography.primaryFont,
+    fontMono: extractedData.value.typography.monoFont,
+    radius: extractedData.value.geometry.radii[0] || '8px',
+  }
+})
+
+function renderMarkdownToHtml(markdown: string): string {
+  if (!markdown) return ''
+
+  const body = markdown.replace(/^---[\s\S]*?---\n*/, '').trim()
+
+  const formatInline = (text: string): string => {
+    let out = text
+    out = out.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-[var(--text-primary)]">$1</strong>')
+    out = out.replace(/`?(#(?:[0-9a-fA-F]{3,8}))`?/g, (_match, hex) => {
+      return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--bg-app)] border border-[var(--border-subtle)] font-mono text-[11px] text-[var(--text-primary)]"><span class="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/20 dark:border-white/20" style="background-color: ${hex};"></span>${hex}</span>`
+    })
+    out = out.replace(/`?\{colors\.([a-zA-Z0-9_-]+)\}`?/g, (_match, roleKey) => {
+      let resolvedColor = ''
+      if (extractedData.value) {
+        const roles = extractedData.value.colors.semanticRoles
+        if (roleKey === 'canvas') resolvedColor = roles.canvas
+        else if (roleKey === 'primary') resolvedColor = roles.primary
+        else if (roleKey === 'surface') resolvedColor = roles.surface
+        else if (roleKey === 'hairline') resolvedColor = roles.hairline
+        else if (roleKey === 'on-primary') resolvedColor = roles.onPrimary
+        else if (roleKey === 'neutral-1') resolvedColor = roles.neutral1
+      }
+      if (resolvedColor) {
+        return `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--bg-app)] border border-[var(--border-subtle)] font-mono text-[11px] text-[var(--text-primary)]"><span class="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/20 dark:border-white/20" style="background-color: ${resolvedColor};"></span>{colors.${roleKey}}</span>`
+      }
+      return `<code class="px-1.5 py-0.5 rounded bg-[var(--bg-app)] border border-[var(--border-subtle)] font-mono text-[11px] text-[var(--text-primary)]">{colors.${roleKey}}</code>`
+    })
+    out = out.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-[var(--bg-app)] border border-[var(--border-subtle)] font-mono text-[11px] text-[var(--text-primary)]">$1</code>')
+    return out
+  }
+
+  const lines = body.split('\n')
+  const htmlChunks: string[] = []
+  let inTable = false
+  let tableHeaders: string[] = []
+  let tableRows: string[][] = []
+
+  const flushTable = () => {
+    if (!inTable) return
+    let t = '<div class="overflow-x-auto my-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)]"><table class="w-full text-xs text-left border-collapse">'
+    if (tableHeaders.length > 0) {
+      t += '<thead class="bg-[var(--bg-app)] border-b border-[var(--border-card)] text-[var(--text-tertiary)] uppercase font-mono text-[10px] tracking-wider"><tr>'
+      for (const h of tableHeaders) {
+        t += `<th class="px-4 py-2.5 font-semibold">${formatInline(h)}</th>`
+      }
+      t += '</tr></thead>'
+    }
+    t += '<tbody class="divide-y divide-[var(--border-subtle)]">'
+    for (const row of tableRows) {
+      t += '<tr class="hover:bg-[var(--bg-card-hover)] transition-colors">'
+      for (const cell of row) {
+        t += `<td class="px-4 py-2.5 text-[var(--text-secondary)] font-mono text-[11px]">${formatInline(cell)}</td>`
+      }
+      t += '</tr>'
+    }
+    t += '</tbody></table></div>'
+    htmlChunks.push(t)
+    inTable = false
+    tableHeaders = []
+    tableRows = []
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i]
+    const trimmed = rawLine.trim()
+
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      const cells = trimmed
+        .slice(1, -1)
+        .split('|')
+        .map(c => c.trim())
+
+      if (cells.every(c => /^:?-+:?$/.test(c))) {
+        continue
+      }
+
+      if (!inTable) {
+        inTable = true
+        tableHeaders = cells
+      } else {
+        tableRows.push(cells)
+      }
+      continue
+    } else if (inTable) {
+      flushTable()
+    }
+
+    if (!trimmed) {
+      continue
+    }
+
+    if (trimmed.startsWith('# ')) {
+      htmlChunks.push(`<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] mt-6 mb-3 pb-2 border-b border-[var(--border-subtle)]">${formatInline(trimmed.slice(2))}</h1>`)
+      continue
+    }
+    if (trimmed.startsWith('## ')) {
+      htmlChunks.push(`<h2 class="text-base sm:text-lg font-bold text-[var(--text-primary)] mt-6 mb-2.5 pb-1 border-b border-[var(--border-subtle)]/40">${formatInline(trimmed.slice(3))}</h2>`)
+      continue
+    }
+    if (trimmed.startsWith('### ')) {
+      htmlChunks.push(`<h3 class="text-sm font-semibold text-[var(--text-primary)] mt-4 mb-2">${formatInline(trimmed.slice(4))}</h3>`)
+      continue
+    }
+
+    if (trimmed.startsWith('- **Do:**') || trimmed.startsWith('- **Do**')) {
+      const content = trimmed.replace(/^-\s*\*\*Do:?\*\*\s*/, '')
+      htmlChunks.push(`<div class="my-1.5 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-start gap-2.5 text-emerald-950 dark:text-emerald-200"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">DO</span><span>${formatInline(content)}</span></div>`)
+      continue
+    }
+    if (trimmed.startsWith('- **Don\'t:**') || trimmed.startsWith('- **Don\'t**')) {
+      const content = trimmed.replace(/^-\s*\*\*Don't:?\*\*\s*/, '')
+      htmlChunks.push(`<div class="my-1.5 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs flex items-start gap-2.5 text-rose-950 dark:text-rose-200"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-600 dark:text-rose-400 shrink-0">DON'T</span><span>${formatInline(content)}</span></div>`)
+      continue
+    }
+
+    if (trimmed.startsWith('- ')) {
+      htmlChunks.push(`<div class="flex items-start gap-2 my-1.5 text-xs text-[var(--text-secondary)] leading-relaxed"><span class="w-1.5 h-1.5 rounded-full bg-[var(--text-tertiary)] shrink-0 mt-1.5"></span><span>${formatInline(trimmed.slice(2))}</span></div>`)
+      continue
+    }
+
+    const numMatch = trimmed.match(/^(\d+)\.\s*(.*)/)
+    if (numMatch) {
+      htmlChunks.push(`<div class="flex items-start gap-3 my-2.5 p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]"><span class="w-5 h-5 rounded-full bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center font-mono text-[11px] font-bold text-[var(--text-primary)] shrink-0">${numMatch[1]}</span><span class="leading-relaxed">${formatInline(numMatch[2])}</span></div>`)
+      continue
+    }
+
+    htmlChunks.push(`<p class="text-xs text-[var(--text-secondary)] leading-relaxed my-2">${formatInline(trimmed)}</p>`)
+  }
+
+  if (inTable) {
+    flushTable()
+  }
+
+  return htmlChunks.join('\n')
+}
+
+const renderedMarkdownHtml = computed(() => {
+  if (!isMarkdownFormat.value) return ''
+  return renderMarkdownToHtml(currentExportContent.value)
+})
 </script>
 
 <template>
@@ -382,7 +544,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
     <!-- Results Workspace -->
     <div v-else class="space-y-6">
       <!-- Target Site Summary & Tech Stack Chips -->
-      <Card class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
+      <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div class="flex items-start gap-3 min-w-0">
             <img
@@ -510,7 +672,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
       <div v-if="activeTab === 'palette'" class="space-y-6">
         <!-- Dominant Archetypes -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
+          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
             <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
               Background Archetype
             </div>
@@ -530,7 +692,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
             </div>
           </Card>
 
-          <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
+          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
             <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
               Foreground Archetype
             </div>
@@ -550,7 +712,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
             </div>
           </Card>
 
-          <Card class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
+          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
             <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
               Accent Archetype
             </div>
@@ -570,6 +732,95 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
             </div>
           </Card>
         </div>
+
+        <!-- Live Canvas & Surface Contrast Hierarchy Preview -->
+        <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-[var(--text-primary)]">
+                Live Canvas & Surface Contrast Hierarchy
+              </h3>
+              <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+                Visual validation of detected canvas background against raised surfaces and text ink.
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <Badge variant="outline" class="font-mono text-[11px]">
+                Canvas: {{ extractedData.colors.dominantBackground }}
+              </Badge>
+              <Badge variant="outline" class="font-mono text-[11px]">
+                Surface: {{ extractedData.colors.semanticRoles.surface }}
+              </Badge>
+            </div>
+          </div>
+
+          <!-- Mockup Viewport -->
+          <div
+            class="p-6 sm:p-8 rounded-xl border border-[var(--border-subtle)] space-y-4 transition-all"
+            :style="{ backgroundColor: extractedData.colors.dominantBackground }"
+          >
+            <div class="flex items-center justify-between text-xs font-mono font-medium" :style="{ color: extractedData.colors.dominantForeground }">
+              <span class="inline-flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full border border-black/20" :style="{ backgroundColor: extractedData.colors.dominantBackground }"></span>
+                Canvas (0dp): {{ extractedData.colors.dominantBackground }}
+              </span>
+              <span class="opacity-70 text-[11px]">Natural Eyedropper Surface</span>
+            </div>
+
+            <!-- Elevated Container -->
+            <div
+              class="p-5 sm:p-6 rounded-xl border shadow-xs space-y-3 transition-all"
+              :style="{
+                backgroundColor: extractedData.colors.semanticRoles.surface,
+                borderColor: extractedData.colors.semanticRoles.hairline,
+                color: extractedData.colors.dominantForeground,
+              }"
+            >
+              <div class="flex items-center justify-between">
+                <div class="font-bold text-sm sm:text-base" :style="{ color: extractedData.colors.dominantForeground }">
+                  Elevated Surface Card (1dp)
+                </div>
+                <span
+                  class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold"
+                  :style="{
+                    backgroundColor: extractedData.colors.accentColor + '18',
+                    color: extractedData.colors.accentColor,
+                    border: '1px solid ' + extractedData.colors.accentColor + '30',
+                  }"
+                >
+                  Accent: {{ extractedData.colors.accentColor }}
+                </span>
+              </div>
+
+              <p class="text-xs leading-relaxed opacity-85" :style="{ color: extractedData.colors.dominantForeground }">
+                This preview validates true perceptual contrast between the detected root canvas (<strong class="font-mono">{{ extractedData.colors.dominantBackground }}</strong>), the raised card container (<strong class="font-mono">{{ extractedData.colors.semanticRoles.surface }}</strong>), and hairline dividers (<strong class="font-mono">{{ extractedData.colors.semanticRoles.hairline }}</strong>).
+              </p>
+
+              <div class="pt-2 flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  class="px-4 py-2 rounded-lg text-xs font-semibold shadow-xs cursor-pointer transition-transform active:scale-95"
+                  :style="{
+                    backgroundColor: extractedData.colors.semanticRoles.primary,
+                    color: extractedData.colors.semanticRoles.onPrimary || '#FFFFFF',
+                  }"
+                >
+                  Primary Action Button
+                </button>
+                <button
+                  type="button"
+                  class="px-4 py-2 rounded-lg text-xs font-semibold bg-transparent cursor-pointer transition-colors"
+                  :style="{
+                    border: '1px solid ' + extractedData.colors.semanticRoles.hairline,
+                    color: extractedData.colors.dominantForeground,
+                  }"
+                >
+                  Outline Control
+                </button>
+              </div>
+            </div>
+          </div>
+        </Card>
 
         <!-- Color Swatches Grid -->
         <div class="space-y-3">
@@ -649,6 +900,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
           <Card
             v-for="font in extractedData.typography.fonts"
             :key="font.name"
+            :hoverable="false"
             class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3"
           >
             <div class="flex items-center justify-between">
@@ -680,7 +932,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
         </div>
 
         <!-- Live Font Tester -->
-        <Card class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
+        <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h3 class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
               <Sliders class="w-4 h-4 text-[var(--text-secondary)]" />
@@ -745,6 +997,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
             <Card
               v-for="r in (extractedData.geometry.radii.length ? extractedData.geometry.radii : ['4px', '8px', '14px', '9999px'])"
               :key="r"
+              :hoverable="false"
               class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] text-center space-y-3"
             >
               <div
@@ -767,6 +1020,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
             <Card
               v-for="(s, idx) in extractedData.geometry.shadows"
               :key="idx"
+              :hoverable="false"
               class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3"
             >
               <div
@@ -889,6 +1143,31 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
           </div>
 
           <div class="flex items-center gap-2">
+            <!-- View Mode Switch (Rendered vs Raw Markdown) -->
+            <div
+              v-if="isMarkdownFormat"
+              class="flex items-center bg-[var(--bg-app)] p-0.5 rounded-lg border border-[var(--border-subtle)]"
+            >
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+                :class="viewMode === 'preview' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+                @click="viewMode = 'preview'"
+              >
+                <Eye class="w-3.5 h-3.5" />
+                <span>Rendered</span>
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+                :class="viewMode === 'code' ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+                @click="viewMode = 'code'"
+              >
+                <Code class="w-3.5 h-3.5" />
+                <span>Raw</span>
+              </button>
+            </div>
+
             <Button
               variant="primary"
               size="sm"
@@ -897,7 +1176,7 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
             >
               <Check v-if="isCopied" class="w-3.5 h-3.5 text-emerald-300" />
               <Copy v-else class="w-3.5 h-3.5" />
-              <span>{{ isCopied ? 'Copied' : 'Copy Code' }}</span>
+              <span>{{ isCopied ? 'Copied' : 'Copy' }}</span>
             </Button>
             <Button
               variant="secondary"
@@ -911,13 +1190,81 @@ const getRoleBadgeVariant = (role: ColorToken['role']) => {
           </div>
         </div>
 
-        <!-- Code Viewer Card -->
-        <Card class="overflow-hidden bg-[#121214] border border-[var(--border-card)]">
+        <!-- Rendered Markdown Specification View -->
+        <div v-if="isMarkdownFormat && viewMode === 'preview'" class="space-y-4">
+          <!-- Specification Header Card (Frontmatter Overview) -->
+          <Card v-if="frontmatterSpec" :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <Badge variant="primary" size="sm">Specification</Badge>
+                  <Badge variant="outline" size="sm">alpha</Badge>
+                  <span class="text-xs text-[var(--text-tertiary)] font-mono">1 Page Analyzed</span>
+                </div>
+                <h3 class="text-base font-bold text-[var(--text-primary)]">
+                  {{ frontmatterSpec.title }}
+                </h3>
+              </div>
+              <a
+                :href="frontmatterSpec.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-mono"
+              >
+                <span>{{ frontmatterSpec.hostname }}</span>
+                <ExternalLink class="w-3 h-3" />
+              </a>
+            </div>
+
+            <!-- Frontmatter Key Color Roles -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1 select-none">
+                <span class="text-[10px] uppercase tracking-wider font-mono text-[var(--text-tertiary)] font-semibold">Canvas</span>
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-xs border border-black/20" :style="{ backgroundColor: frontmatterSpec.canvas }"></span>
+                  <span class="font-mono font-bold text-[var(--text-primary)]">{{ frontmatterSpec.canvas }}</span>
+                </div>
+              </div>
+
+              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1 select-none">
+                <span class="text-[10px] uppercase tracking-wider font-mono text-[var(--text-tertiary)] font-semibold">Surface</span>
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-xs border border-black/20" :style="{ backgroundColor: frontmatterSpec.surface }"></span>
+                  <span class="font-mono font-bold text-[var(--text-primary)]">{{ frontmatterSpec.surface }}</span>
+                </div>
+              </div>
+
+              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1 select-none">
+                <span class="text-[10px] uppercase tracking-wider font-mono text-[var(--text-tertiary)] font-semibold">Primary CTA</span>
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-xs border border-black/20" :style="{ backgroundColor: frontmatterSpec.primary }"></span>
+                  <span class="font-mono font-bold text-[var(--text-primary)]">{{ frontmatterSpec.primary }}</span>
+                </div>
+              </div>
+
+              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1 select-none">
+                <span class="text-[10px] uppercase tracking-wider font-mono text-[var(--text-tertiary)] font-semibold">Hairline</span>
+                <div class="flex items-center gap-2">
+                  <span class="w-3.5 h-3.5 rounded-xs border border-black/20" :style="{ backgroundColor: frontmatterSpec.hairline }"></span>
+                  <span class="font-mono font-bold text-[var(--text-primary)]">{{ frontmatterSpec.hairline }}</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <!-- Formatted Markdown Document Container -->
+          <Card :hoverable="false" class="p-6 sm:p-8 bg-[var(--bg-card)] border border-[var(--border-card)]">
+            <div class="max-w-none prose dark:prose-invert space-y-2" v-html="renderedMarkdownHtml" />
+          </Card>
+        </div>
+
+        <!-- Raw Code Viewer (Fallback & Toggle) -->
+        <Card v-else :hoverable="false" class="overflow-hidden bg-[#121214] border border-[var(--border-card)]">
           <div class="flex items-center justify-between px-4 py-2 bg-[#18181b] border-b border-[#27272a] text-xs font-mono text-zinc-400">
             <span>{{ currentExportFilename }}</span>
-            <span class="text-[11px] opacity-75">{{ exportFormat }}</span>
+            <span class="text-[11px] opacity-75 uppercase">{{ exportFormat }}</span>
           </div>
-          <pre class="p-4 text-xs font-mono text-zinc-200 overflow-x-auto max-h-[500px] leading-relaxed"><code v-html="highlightedExportCode"></code></pre>
+          <pre class="p-4 text-xs font-mono text-zinc-200 overflow-x-auto max-h-[600px] leading-relaxed"><code v-html="highlightedExportCode"></code></pre>
         </Card>
       </div>
     </div>

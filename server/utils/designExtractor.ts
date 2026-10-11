@@ -189,6 +189,105 @@ function normalizeHex(hex: string): string {
   return val
 }
 
+const TAILWIND_COLOR_PALETTES: Record<string, string> = {
+  'slate-50': '#f8fafc', 'slate-100': '#f1f5f9', 'slate-200': '#e2e8f0', 'slate-800': '#1e293b', 'slate-900': '#0f172a', 'slate-950': '#020617',
+  'gray-50': '#f9fafb', 'gray-100': '#f3f4f6', 'gray-200': '#e5e7eb', 'gray-800': '#1f2937', 'gray-900': '#111827', 'gray-950': '#030712',
+  'zinc-50': '#fafafa', 'zinc-100': '#f4f4f5', 'zinc-200': '#e4e4e7', 'zinc-800': '#27272a', 'zinc-900': '#18181b', 'zinc-950': '#09090b',
+  'neutral-50': '#fafafa', 'neutral-100': '#f5f5f5', 'neutral-200': '#e5e5e5', 'neutral-800': '#262626', 'neutral-900': '#171717', 'neutral-950': '#0a0a0a',
+  'stone-50': '#fafaf9', 'stone-100': '#f5f5f4', 'stone-200': '#e7e5e4', 'stone-800': '#292524', 'stone-900': '#1c1917', 'stone-950': '#0c0a09',
+  'white': '#ffffff',
+  'black': '#000000',
+}
+
+export interface ExplicitRootTheme {
+  lightBg?: string
+  darkBg?: string
+  lightFg?: string
+  darkFg?: string
+}
+
+export function extractExplicitRootTheme(html: string, combinedCss: string, $: cheerio.CheerioAPI): ExplicitRootTheme {
+  const result: ExplicitRootTheme = {}
+
+  // 1. Inspect body and html class strings
+  const bodyClass = ($('body').attr('class') || '') + ' ' + ($('html').attr('class') || '')
+
+  const extractHexClass = (className: string, prefix: 'bg' | 'text', isDark: boolean): string | null => {
+    const regex = isDark
+      ? new RegExp(`dark:${prefix}-\\[#([0-9a-fA-F]{3,8})\\]`)
+      : new RegExp(`(?:^|\\s)${prefix}-\\[#([0-9a-fA-F]{3,8})\\]`)
+    const match = className.match(regex)
+    if (match) return normalizeHex('#' + match[1])
+
+    for (const [key, hex] of Object.entries(TAILWIND_COLOR_PALETTES)) {
+      const p = isDark
+        ? new RegExp(`dark:${prefix}-${key}\\b`)
+        : new RegExp(`(?:^|\\s)${prefix}-${key}\\b`)
+      if (p.test(className)) return hex
+    }
+    return null
+  }
+
+  const lightBgClass = extractHexClass(bodyClass, 'bg', false)
+  const darkBgClass = extractHexClass(bodyClass, 'bg', true)
+  const lightFgClass = extractHexClass(bodyClass, 'text', false)
+  const darkFgClass = extractHexClass(bodyClass, 'text', true)
+
+  if (lightBgClass) result.lightBg = lightBgClass
+  if (darkBgClass) result.darkBg = darkBgClass
+  if (lightFgClass) result.lightFg = lightFgClass
+  if (darkFgClass) result.darkFg = darkFgClass
+
+  // 2. Inspect inline styles on body and html
+  const bodyStyle = ($('body').attr('style') || '') + ';' + ($('html').attr('style') || '')
+  if (bodyStyle) {
+    const bgMatch = bodyStyle.match(/(?:^|;)\s*background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\))/i)
+    if (bgMatch && !result.lightBg) {
+      if (bgMatch[1].startsWith('#')) {
+        result.lightBg = normalizeHex(bgMatch[1])
+      }
+    }
+    const fgMatch = bodyStyle.match(/(?:^|;)\s*color\s*:\s*(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\))/i)
+    if (fgMatch && !result.lightFg) {
+      if (fgMatch[1].startsWith('#')) {
+        result.lightFg = normalizeHex(fgMatch[1])
+      }
+    }
+  }
+
+  // 3. Inspect meta theme-color
+  $('meta[name="theme-color"]').each((_, el) => {
+    const content = $(el).attr('content')?.trim()
+    const media = $(el).attr('media')?.toLowerCase() || ''
+    if (content && content.startsWith('#')) {
+      const norm = normalizeHex(content)
+      if (media.includes('dark')) {
+        if (!result.darkBg) result.darkBg = norm
+      } else {
+        if (!result.lightBg) result.lightBg = norm
+      }
+    }
+  })
+
+  // 4. Inspect CSS rules for body/html/root
+  if (!result.lightBg) {
+    const bodyCssBg = combinedCss.match(/(?:^|[\s{}])(?:body|html)\s*\{[^}]*background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,8})\b/i)
+    if (bodyCssBg) {
+      result.lightBg = normalizeHex(bodyCssBg[1])
+    }
+  }
+
+  if (!result.lightBg) {
+    const rootCssBg = combinedCss.match(/:root\s*\{[^}]*--(?:background|bg|canvas)\s*:\s*(#[0-9a-fA-F]{3,8})\b/i)
+    if (rootCssBg) {
+      result.lightBg = normalizeHex(rootCssBg[1])
+    }
+  }
+
+  return result
+}
+
+
 function parseCssRules(cssText: string) {
   const colorsMap: Map<string, number> = new Map()
   const cssVariables: Record<string, string> = {}
@@ -783,7 +882,8 @@ function generateDembrandtDesignMd(
   spacingScale: string[],
   borderWidths: string[],
   breakpoints: BreakpointToken[],
-  qwenData: GroqSynthesisResult | null
+  qwenData: GroqSynthesisResult | null,
+  explicitRoot?: ExplicitRootTheme
 ): string {
   const isDark = (semanticRoles.canvas || '#ffffff').toLowerCase() === '#121212' || (semanticRoles.canvas || '#ffffff').toLowerCase() < '#333333'
   const extractedDate = new Date().toISOString().split('T')[0]
@@ -853,23 +953,23 @@ elevationStrategy: layered-micro
 themes:
   derived: ${isDark ? 'light' : 'dark'}
   light:
-    bg: "#FFFFFF"
-    surface: "#F4F4F5"
+    bg: "${isDark ? (explicitRoot?.lightBg || '#FFFFFF') : (semanticRoles.canvas || '#FFFFFF')}"
+    surface: "${isDark ? '#F4F4F5' : (semanticRoles.surface || '#FFFFFF')}"
     surfaceRaised: "#FFFFFF"
-    text: "#18181B"
+    text: "${isDark ? '#18181B' : (semanticRoles.neutral1 || '#18181B')}"
     textMuted: "#71717A"
-    border: "#E4E4E7"
+    border: "${semanticRoles.hairline || '#E4E4E7'}"
     accent: "${semanticRoles.primary || '#18181B'}"
     accentFg: "#FFFFFF"
     focusRing: "${semanticRoles.primary || '#18181B'}"
     elevation: shadow
   dark:
-    bg: "#09090B"
-    surface: "#18181B"
+    bg: "${isDark ? (semanticRoles.canvas || '#09090B') : (explicitRoot?.darkBg || '#09090B')}"
+    surface: "${isDark ? '#18181B' : '#18181B'}"
     surfaceRaised: "#27272A"
-    text: "#FAFAFA"
+    text: "${isDark ? (semanticRoles.neutral1 || '#FAFAFA') : (explicitRoot?.darkFg || '#FAFAFA')}"
     textMuted: "#A1A1AA"
-    border: "#27272A"
+    border: "${isDark ? (semanticRoles.hairline || '#27272A') : '#27272A'}"
     accent: "${semanticRoles.accent1 || '#FAFAFA'}"
     accentFg: "#09090B"
     focusRing: "#71717A"
@@ -1096,10 +1196,10 @@ function generateTechStackMd(hostname: string, stack: TechStackItem[]): string {
   return out
 }
 
-function generateTailwindV4(colors: ColorToken[], fonts: FontToken[], radii: string[]): string {
-  const primary = colors.find(c => c.role === 'accent') || colors[0]
-  const bg = colors.find(c => c.role === 'background') || colors[0]
-  const fg = colors.find(c => c.role === 'foreground') || colors[1] || colors[0]
+function generateTailwindV4(colors: ColorToken[], fonts: FontToken[], radii: string[], dominantBg?: ColorToken, dominantFg?: ColorToken): string {
+  const primary = colors.find(c => c.role === 'accent') || dominantFg || colors[0]
+  const bg = dominantBg || colors.find(c => c.role === 'background') || colors[0]
+  const fg = dominantFg || colors.find(c => c.role === 'foreground') || colors[1] || colors[0]
   const sansFont = fonts.find(f => f.category === 'sans')?.name || 'Inter'
   const monoFont = fonts.find(f => f.category === 'mono')?.name || 'JetBrains Mono'
 
@@ -1115,14 +1215,19 @@ function generateTailwindV4(colors: ColorToken[], fonts: FontToken[], radii: str
   return out
 }
 
-function generateShadcnCss(dominantBg: ColorToken, dominantFg: ColorToken, accent: ColorToken): string {
+function generateShadcnCss(dominantBg: ColorToken, dominantFg: ColorToken, accent: ColorToken, explicitRoot?: ExplicitRootTheme): string {
   const isDark = dominantBg.luminance < 0.2
+  const lightBg = isDark ? (explicitRoot?.lightBg || '#ffffff') : dominantBg.hex
+  const darkBg = isDark ? dominantBg.hex : (explicitRoot?.darkBg || '#121212')
+  const lightFg = isDark ? '#171717' : dominantFg.hex
+  const darkFg = isDark ? dominantFg.hex : (explicitRoot?.darkFg || '#f4f4f5')
+  const lightCard = lightBg.toLowerCase() === '#ffffff' ? '#fafafa' : '#ffffff'
 
   if (isDark) {
-    return `:root {\n  --background: #ffffff;\n  --foreground: #171717;\n  --card: #ffffff;\n  --card-foreground: #171717;\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #e5e5e5;\n  --radius: 0.5rem;\n}\n\n.dark {\n  --background: ${dominantBg.hex};\n  --foreground: ${dominantFg.hex};\n  --card: #1f1f23;\n  --card-foreground: ${dominantFg.hex};\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #2e2e32;\n  --radius: 0.5rem;\n}`
+    return `:root {\n  --background: ${lightBg};\n  --foreground: ${lightFg};\n  --card: ${lightCard};\n  --card-foreground: ${lightFg};\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #e5e5e5;\n  --radius: 0.5rem;\n}\n\n.dark {\n  --background: ${darkBg};\n  --foreground: ${darkFg};\n  --card: #1f1f23;\n  --card-foreground: ${darkFg};\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #2e2e32;\n  --radius: 0.5rem;\n}`
   }
 
-  return `:root {\n  --background: ${dominantBg.hex};\n  --foreground: ${dominantFg.hex};\n  --card: #ffffff;\n  --card-foreground: ${dominantFg.hex};\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #e5e5e5;\n  --radius: 0.5rem;\n}\n\n.dark {\n  --background: #121212;\n  --foreground: #f4f4f5;\n  --card: #18181b;\n  --card-foreground: #f4f4f5;\n  --primary: ${accent.hex};\n  --primary-foreground: #18181b;\n  --border: #27272a;\n  --radius: 0.5rem;\n}`
+  return `:root {\n  --background: ${lightBg};\n  --foreground: ${lightFg};\n  --card: ${lightCard};\n  --card-foreground: ${lightFg};\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #e5e5e5;\n  --radius: 0.5rem;\n}\n\n.dark {\n  --background: ${darkBg};\n  --foreground: ${darkFg};\n  --card: #18181b;\n  --card-foreground: ${darkFg};\n  --primary: ${accent.hex};\n  --primary-foreground: #18181b;\n  --border: #27272a;\n  --radius: 0.5rem;\n}`
 }
 
 export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string = ''): Promise<ExtractedDesignData> {
@@ -1264,6 +1369,18 @@ export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string
     }
   }
 
+  const explicitRoot = extractExplicitRootTheme(html, combinedCss, $)
+
+  if (explicitRoot.lightBg) {
+    parsedCss.colorsMap.set(explicitRoot.lightBg, 9999)
+  }
+  if (explicitRoot.darkBg) {
+    parsedCss.colorsMap.set(explicitRoot.darkBg, 5000)
+  }
+  if (explicitRoot.lightFg) {
+    parsedCss.colorsMap.set(explicitRoot.lightFg, 9000)
+  }
+
   const rawColorsList: Array<{ hex: string; count: number }> = []
   for (const [hex, count] of parsedCss.colorsMap.entries()) {
     rawColorsList.push({ hex, count })
@@ -1280,7 +1397,9 @@ export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string
     const luminance = calculateRelativeLuminance(r, g, b)
 
     let role: ColorToken['role'] = 'neutral'
-    if (l > 92 || l < 8) {
+    if (explicitRoot.lightBg && item.hex.toLowerCase() === explicitRoot.lightBg.toLowerCase()) {
+      role = 'background'
+    } else if (l > 92 || l < 8) {
       role = l > 92 ? 'background' : 'foreground'
     } else if (s > 45) {
       role = 'accent'
@@ -1298,24 +1417,40 @@ export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string
     })
   }
 
-  const backgroundCandidates = rankedTokens.filter(t => t.luminance > 0.85 || t.luminance < 0.15)
-  const dominantBg = backgroundCandidates[0] || rankedTokens[0] || {
-    hex: '#FFFFFF',
-    rgb: 'rgb(255, 255, 255)',
-    hsl: 'hsl(0, 0%, 100%)',
-    luminance: 1.0,
-    role: 'background',
-    count: 1,
+  // Authoritative Dominant Background
+  let dominantBg: ColorToken
+  const explicitBgToken = explicitRoot.lightBg ? rankedTokens.find(t => t.hex.toLowerCase() === explicitRoot.lightBg!.toLowerCase()) : null
+  if (explicitBgToken) {
+    dominantBg = explicitBgToken
+    dominantBg.role = 'background'
+  } else {
+    const backgroundCandidates = rankedTokens.filter(t => t.luminance > 0.85 || t.luminance < 0.15)
+    dominantBg = backgroundCandidates[0] || rankedTokens[0] || {
+      hex: '#FFFFFF',
+      rgb: 'rgb(255, 255, 255)',
+      hsl: 'hsl(0, 0%, 100%)',
+      luminance: 1.0,
+      role: 'background',
+      count: 1,
+    }
   }
 
-  const foregroundCandidates = rankedTokens.filter(t => Math.abs(t.luminance - dominantBg.luminance) > 0.5)
-  const dominantFg = foregroundCandidates[0] || {
-    hex: dominantBg.luminance < 0.5 ? '#ffffff' : '#111111',
-    rgb: dominantBg.luminance < 0.5 ? 'rgb(255, 255, 255)' : 'rgb(17, 17, 17)',
-    hsl: dominantBg.luminance < 0.5 ? 'hsl(0, 0%, 100%)' : 'hsl(0, 0%, 7%)',
-    luminance: dominantBg.luminance < 0.5 ? 1.0 : 0.01,
-    role: 'foreground',
-    count: 1,
+  // Authoritative Dominant Foreground
+  let dominantFg: ColorToken
+  const explicitFgToken = explicitRoot.lightFg ? rankedTokens.find(t => t.hex.toLowerCase() === explicitRoot.lightFg!.toLowerCase()) : null
+  if (explicitFgToken) {
+    dominantFg = explicitFgToken
+    dominantFg.role = 'foreground'
+  } else {
+    const foregroundCandidates = rankedTokens.filter(t => Math.abs(t.luminance - dominantBg.luminance) > 0.5)
+    dominantFg = foregroundCandidates[0] || {
+      hex: dominantBg.luminance < 0.5 ? '#ffffff' : '#111111',
+      rgb: dominantBg.luminance < 0.5 ? 'rgb(255, 255, 255)' : 'rgb(17, 17, 17)',
+      hsl: dominantBg.luminance < 0.5 ? 'hsl(0, 0%, 100%)' : 'hsl(0, 0%, 7%)',
+      luminance: dominantBg.luminance < 0.5 ? 1.0 : 0.01,
+      role: 'foreground',
+      count: 1,
+    }
   }
 
   const accentCandidate = rankedTokens.find(t => t.role === 'accent') || dominantFg
@@ -1331,10 +1466,11 @@ export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string
   }
 
   const isDarkTheme = dominantBg.luminance < 0.2
+  const isPureWhiteCanvas = dominantBg.hex.toLowerCase() === '#ffffff'
   const semanticRoles: Record<string, string> = {
     canvas: dominantBg.hex,
     primary: dominantFg.hex,
-    surface: isDarkTheme ? '#1A1A1E' : '#FAFAFA',
+    surface: isDarkTheme ? (explicitRoot.darkBg && explicitRoot.darkBg !== '#09090b' ? '#242426' : '#1A1A1E') : (isPureWhiteCanvas ? '#FAFAFA' : '#FFFFFF'),
     onPrimary: isDarkTheme ? '#09090B' : '#FFFFFF',
     hairline: rankedTokens.find(t => t.role === 'border')?.hex || (isDarkTheme ? '#27272A' : '#E4E4E7'),
     neutral1: dominantFg.hex,
@@ -1398,12 +1534,13 @@ export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string
     spacingScale,
     borderWidths,
     breakpoints,
-    qwenData
+    qwenData,
+    explicitRoot
   )
 
   const techStackMd = generateTechStackMd(hostname, techStack)
-  const tailwindCss = generateTailwindV4(rankedTokens, fontsList, radii)
-  const shadcnCss = generateShadcnCss(dominantBg, dominantFg, accentCandidate)
+  const tailwindCss = generateTailwindV4(rankedTokens, fontsList, radii, dominantBg, dominantFg)
+  const shadcnCss = generateShadcnCss(dominantBg, dominantFg, accentCandidate, explicitRoot)
 
   const dtcgJson = JSON.stringify(
     {
