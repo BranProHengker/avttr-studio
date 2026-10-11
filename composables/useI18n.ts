@@ -358,6 +358,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Link Bypasser & Redirect Tracer',
         description: 'Trace full redirect chains, bypass ad & social shorteners, and strip tracking tokens safely.',
       },
+      'design-extractor': {
+        title: 'Web Design & Token Extractor',
+        description: 'Reverse-engineer any website into design tokens, typography, color palettes, detected tech stack, and ready-to-use DESIGN.md or Tailwind theme.',
+      },
     },
   },
   id: {
@@ -603,6 +607,10 @@ const translations: Record<Locale, Translations> = {
       'link-bypasser': {
         title: 'Link Bypasser & Pelacak Redirect',
         description: 'Lacak rantai redirect URL lengkap, bypass link iklan & gateway medsos, dan bersihkan tracker otomatis.',
+      },
+      'design-extractor': {
+        title: 'Ekstraktor Desain & Token Web',
+        description: 'Ekstrak token desain, tipografi, palet warna, tech stack, dan file DESIGN.md atau tema Tailwind dari website mana pun.',
       },
     },
   },

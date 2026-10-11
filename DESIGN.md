@@ -118,12 +118,12 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 ### A. Buttons
 
 #### 1. Primary Button
-* **Background:** `#1447E6`
-* **Text:** `#FFFFFF`, `14px`, weight `500`
-* **Height:** `40px` | **Padding:** `8px 16px` | **Radius:** `8px`
-* **Hover:** Background `#193CB8`, Box-shadow `rgba(20, 71, 230, 0.2) 0px 4px 8px`
-* **Active:** Background `#0F2FA0`
-* **Disabled:** Background `#CCCCCC` (Dark: `#2C2C2C`), Text `#999999`, cursor `not-allowed`
+* **Background:** `var(--primary)` (`#F5F5F7` in Dark / `#1D1D1F` in Light)
+* **Text:** `var(--primary-foreground)` (`#1D1D1F` in Dark / `#FFFFFF` in Light), `14px`, weight `600`
+* **Height:** `40px` (Compact: `32px`, Hero: `48px`) | **Padding:** `8px 16px` | **Radius:** `8px` (`rounded-lg`, Hero: `rounded-xl`)
+* **Hover:** Background `var(--primary-hover)` (`#E5E5EA` in Dark / `#3A3A3C` in Light), subtle shadow
+* **Active:** Background `var(--primary-active)`, transform `scale-[0.98]`
+* **Disabled:** Opacity `50%`, cursor `not-allowed`, active transform suppressed
 
 #### 2. Secondary Button
 * **Background:** `var(--bg-card-hover)`
@@ -301,5 +301,191 @@ All tools requiring local file uploads (Video to GIF, Audio Cutter, Image Conver
   * Subtitle (`text-xs text-[var(--text-secondary)] mt-1`): `Supports [formats] up to [size]. 100% processed client-side.`
 * **Prohibition on Unnecessary Dividers:**
   * **Strictly Forbidden:** Never include decorative divider lines with text like `"OR DROP FILE"` between URL bars and dropzones. The spatial hierarchy alone separates the inputs cleanly.
+
+---
+
+## 11. Standardized URL Omnibox & Action Form Architecture
+
+All tools requiring website URLs, external links, or single-input queries (Web Design Extractor, Link Bypasser, SkillSpector, Open Graph Previewer, Anime Trace, Media Downloaders, etc.) MUST use this unified omnibar layout modeled after `HeroPasteBar`:
+
+### A. Layout & Geometry Standard
+* **Outer Container:** Standalone responsive flex row — **NEVER** wrap inside an extra `<Card>`.
+  ```html
+  <div class="space-y-3 w-full">
+    <div class="flex flex-col sm:flex-row items-center gap-2.5">
+      <!-- Input Wrapper -->
+      <div class="relative w-full flex-1 flex items-center">
+        <!-- Leading Icon -->
+        <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
+          <Globe class="w-4 h-4" />
+        </div>
+
+        <!-- Main Input -->
+        <input
+          id="tool-url-input"
+          v-model="inputUrl"
+          type="url"
+          placeholder="https://example.com or paste target URL..."
+          class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
+          :disabled="isLoading"
+          @keydown.enter="handleSubmit"
+        />
+
+        <!-- Trailing Micro-Actions -->
+        <div class="absolute right-2.5 flex items-center gap-1">
+          <button
+            v-if="inputUrl"
+            type="button"
+            title="Clear input"
+            aria-label="Clear input"
+            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
+            @click="inputUrl = ''"
+          >
+            <X class="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            title="Paste from clipboard"
+            aria-label="Paste from clipboard"
+            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
+            @click="handlePaste"
+          >
+            <Clipboard class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Action Button -->
+      <Button
+        id="btn-submit-action"
+        variant="primary"
+        size="default"
+        class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
+        :loading="isLoading"
+        :disabled="isLoading || !inputUrl.trim()"
+        @click="handleSubmit"
+      >
+        <Search v-if="!isLoading" class="w-4 h-4 mr-1.5" />
+        <span>{{ isLoading ? 'Processing...' : 'Execute Action' }}</span>
+      </Button>
+    </div>
+
+    <!-- Quick Presets Row (Optional) -->
+    <div v-if="PRESETS.length" class="flex flex-wrap items-center gap-2 text-xs">
+      <span class="text-[11px] uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mr-1">
+        Sample targets:
+      </span>
+      <Button
+        v-for="p in PRESETS"
+        :key="p.name"
+        variant="secondary"
+        size="sm"
+        class="h-7 px-2.5 text-xs font-normal cursor-pointer"
+        @click="loadPreset(p.url)"
+      >
+        {{ p.name }}
+      </Button>
+    </div>
+  </div>
+  ```
+
+### B. Strict Prohibitions on Omnibar Architecture
+1. **Never Wrap in a `<Card>`:** The URL omnibar must sit directly in the fluid page layout. Wrapping it inside a `<Card>` creates excessive visual nesting.
+2. **Never Put Action Button Inside Input:** The primary submit CTA must remain outside the input on desktop as a standalone `h-12 px-5 rounded-xl` `<Button variant="primary">`. Only compact utility icons (`X` Clear, `Clipboard` Paste) live inside the trailing input slot.
+3. **Never Use Decorative Dividers:** Banned: `"QUICK TEST:"`, `"OR ENTER LINK"`, or separator lines inside wrapper boxes.
+
+---
+
+## 12. Standardized Empty & Initial State Architecture
+
+When a tool is opened and no input has been processed yet, AI agents MUST follow one of these two standardized empty states:
+
+### Pattern A: Tools Operating on Local Files
+* Render the **Standardized Standalone Dashed Dropzone** (`DESIGN.md Section 10`).
+
+### Pattern B: Tools Operating on URLs, Text, or Code
+* Render the **4 Capability Bento Cards Grid**:
+  ```html
+  <div class="space-y-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card
+        v-for="feature in features"
+        :key="feature.title"
+        :hoverable="false"
+        class="p-4 space-y-2 bg-[var(--bg-card)] border border-[var(--border-card)]"
+      >
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
+            <component :is="feature.icon" class="w-3.5 h-3.5" />
+          </div>
+          <h3 class="text-xs font-semibold text-[var(--text-primary)]">{{ feature.title }}</h3>
+        </div>
+        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">{{ feature.description }}</p>
+        <div class="flex flex-wrap gap-1 pt-1">
+          <Badge v-for="tag in feature.tags" :key="tag" variant="badge" size="sm">{{ tag }}</Badge>
+        </div>
+      </Card>
+    </div>
+  </div>
+  ```
+* **Prohibition:** Strictly forbidden to render a single sad, empty card with a centered question mark or generic `"No data yet"` banner. Use feature capability cards that educate the user on what the tool can do.
+
+---
+
+## 13. Primitive UI Component Mandate (`components/ui/`)
+
+To prevent CSS drift and ensure 100% cross-page visual harmony:
+
+1. **`<Input>` (`components/ui/Input.vue`):**
+   * MUST be used for all internal form fields (e.g. search bars, caption editors, font testers, prompt fields, settings dialogs).
+   * Do NOT write raw `<input>` with custom inline classes for standard inputs.
+2. **`<Button>` (`components/ui/Button.vue`):**
+   * MUST be used for all clickable actions: Primary CTAs (`variant="primary"`), secondary controls (`variant="secondary"`), ghost triggers (`variant="ghost"`), outline actions (`variant="outline"`), destructive actions (`variant="destructive"`).
+   * Do NOT write ad-hoc `<button>` elements with inline background or hover styles.
+3. **`<Badge>` (`components/ui/Badge.vue`):**
+   * MUST be used for all tags, counters, status pills, and format labels (`variant="badge" | "primary" | "secondary" | "outline" | "ghost"`).
+4. **`<Card>` (`components/ui/Card.vue`):**
+   * MUST be used for all grouped content panels, metric cards, preview containers, and bento tiles.
+
+---
+
+## 14. Breadcrumb Hierarchy & Categorization Standard
+
+Every page header must start with left-aligned breadcrumbs strictly mapped to the sidebar taxonomy:
+
+```html
+<div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">
+  <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
+  <span>/</span>
+  <span class="text-[var(--text-secondary)] font-medium">{{ categoryName }}</span>
+  <span>/</span>
+  <span class="text-[var(--text-primary)]">{{ pageTitle }}</span>
+</div>
+```
+
+### Approved Taxonomy Values:
+* `Downloader` — All media downloader routes (`/d/[platform]`)
+* `Media Tools` — Audio Cutter, Video to GIF, Video Resizer, LRC Studio
+* `Image & Design` — Device Mockup, Image Compressor, Image Converter, BG Remover, SVG Optimizer, QR Generator, Brat Generator, Sticker Maker, Anime Trace, Code to Image
+* `Text & Fonts` — Font Library, Teleprompter, Doc to Markdown
+* `Colors` — Color Palette, Color Converter
+* `Developer` — Web Design & Token Extractor, Link Bypasser, SkillSpector, Open Graph Previewer, Hash Encoder, PairDrop, PDF Tools
+
+**Strict Prohibition:** Never output generic `"Tools"` in the breadcrumbs. Always use the specific category above.
+
+---
+
+## 15. New Tool Onboarding Checklist (The 4 Anchors)
+
+When creating or modifying a tool route, AI agents MUST register the tool in all 4 synchronization points:
+
+1. **Search & Command Palette (`composables/useSearch.ts`):** Register ID, title, route, category, description, and keywords.
+2. **Internationalization (`composables/useI18n.ts`):** Add translation entries in both `en` and `id` dictionaries.
+3. **Sidebar Navigation (`components/layout/AppSidebar.vue`):**
+   * Add tool route to `isCategoryActive(category)`.
+   * Add to `radialCategories[category]`.
+   * Add to expanded desktop submenu category list.
+4. **Brand Icon (`components/ui/BrandIcon.vue`):** If the tool represents a unique brand/service, add its clean vector SVG.
+
 
 

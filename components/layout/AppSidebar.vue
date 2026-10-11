@@ -106,6 +106,7 @@ const isCategoryActive = (category: string) => {
     return [
       '/tools/skillspector',
       '/tools/link-bypasser',
+      '/tools/design-extractor',
       '/tools/svg-optimizer',
       '/tools/code-to-image',
       '/tools/hash-encoder',
@@ -193,6 +194,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
     items: [
       { path: '/tools/skillspector', label: 'SkillSpector', iconComponent: FolderCheck },
       { path: '/tools/link-bypasser', label: 'Link Bypasser', brandName: 'link-bypasser' },
+      { path: '/tools/design-extractor', label: 'Design Extractor', brandName: 'design-extractor' },
       { path: '/tools/svg-optimizer', label: 'SVG Optimizer', iconComponent: FileCode },
       { path: '/tools/code-to-image', label: 'Code to Image', iconComponent: Code2 },
       { path: '/tools/hash-encoder', label: 'Hash Encoder', iconComponent: Hash },
@@ -475,8 +477,8 @@ const activeRadialData = computed(() => {
 
       <!-- Full Expanded View (Accordion Sidebar) -->
       <div
-        class="flex flex-col flex-1 min-h-0"
-        :class="isCollapsed ? 'lg:!hidden' : ''"
+        class="flex-col flex-1 min-h-0"
+        :class="isCollapsed ? 'flex lg:hidden' : 'flex'"
       >
         <!-- Top Brand Header (Flat threeui style: Logo + Title + GitHub Link) -->
         <div class="px-4 py-3.5 border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
@@ -1013,6 +1015,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 Link Bypasser
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/design-extractor"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/design-extractor')
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                Design Extractor
               </NuxtLink>
               <NuxtLink
                 to="/tools/svg-optimizer"

@@ -2,6 +2,9 @@ export function useSidebar() {
   const isCollapsed = useCookie<boolean>('avttr_sidebar_collapsed', {
     default: () => false,
     watch: true,
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: 'lax',
+    path: '/',
   })
 
   // Synchronize with existing localStorage on client
