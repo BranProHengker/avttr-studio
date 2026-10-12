@@ -45,10 +45,10 @@ const extractedData = ref<ExtractedDesignData | null>(null)
 const previewFontSize = ref(20)
 const previewText = ref('The quick brown fox jumps over the lazy dog')
 
-type ActiveTab = 'palette' | 'typography' | 'geometry' | 'stack' | 'export'
+type ActiveTab = 'export' | 'palette' | 'typography' | 'geometry' | 'stack'
 type ExportFormat = 'designMd' | 'techStackMd' | 'tailwindCss' | 'shadcnCss' | 'dtcgJson'
 
-const activeTab = ref<ActiveTab>('palette')
+const activeTab = ref<ActiveTab>('export')
 const exportFormat = ref<ExportFormat>('designMd')
 const isCopied = ref(false)
 
@@ -617,6 +617,16 @@ const renderedMarkdownHtml = computed(() => {
         <button
           type="button"
           class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          :class="activeTab === 'export' ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+          @click="activeTab = 'export'"
+        >
+          <FileText class="w-4 h-4" />
+          <span>DESIGN.md</span>
+        </button>
+
+        <button
+          type="button"
+          class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
           :class="activeTab === 'palette' ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
           @click="activeTab = 'palette'"
         >
@@ -656,446 +666,9 @@ const renderedMarkdownHtml = computed(() => {
           <span>Tech Stack</span>
           <span class="text-[10px] opacity-70">({{ extractedData.techStack.length }})</span>
         </button>
-
-        <button
-          type="button"
-          class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
-          :class="activeTab === 'export' ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
-          @click="activeTab = 'export'"
-        >
-          <Code class="w-4 h-4" />
-          <span>Code Export</span>
-        </button>
       </div>
 
-      <!-- Tab 1: Color Palette -->
-      <div v-if="activeTab === 'palette'" class="space-y-6">
-        <!-- Dominant Archetypes -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
-            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
-              Background Archetype
-            </div>
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
-                :style="{ backgroundColor: extractedData.colors.dominantBackground }"
-              />
-              <div class="min-w-0">
-                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
-                  {{ extractedData.colors.dominantBackground }}
-                </div>
-                <div class="text-[11px] text-[var(--text-secondary)]">
-                  Primary canvas surface
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
-            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
-              Foreground Archetype
-            </div>
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
-                :style="{ backgroundColor: extractedData.colors.dominantForeground }"
-              />
-              <div class="min-w-0">
-                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
-                  {{ extractedData.colors.dominantForeground }}
-                </div>
-                <div class="text-[11px] text-[var(--text-secondary)]">
-                  Primary typography color
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
-            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
-              Accent Archetype
-            </div>
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
-                :style="{ backgroundColor: extractedData.colors.accentColor }"
-              />
-              <div class="min-w-0">
-                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
-                  {{ extractedData.colors.accentColor }}
-                </div>
-                <div class="text-[11px] text-[var(--text-secondary)]">
-                  Interactive brand accent
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <!-- Live Canvas & Surface Contrast Hierarchy Preview -->
-        <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 class="text-sm font-bold text-[var(--text-primary)]">
-                Live Canvas & Surface Contrast Hierarchy
-              </h3>
-              <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-                Visual validation of detected canvas background against raised surfaces and text ink.
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <Badge variant="outline" class="font-mono text-[11px]">
-                Canvas: {{ extractedData.colors.dominantBackground }}
-              </Badge>
-              <Badge variant="outline" class="font-mono text-[11px]">
-                Surface: {{ extractedData.colors.semanticRoles.surface }}
-              </Badge>
-            </div>
-          </div>
-
-          <!-- Mockup Viewport -->
-          <div
-            class="p-6 sm:p-8 rounded-xl border border-[var(--border-subtle)] space-y-4 transition-all"
-            :style="{ backgroundColor: extractedData.colors.dominantBackground }"
-          >
-            <div class="flex items-center justify-between text-xs font-mono font-medium" :style="{ color: extractedData.colors.dominantForeground }">
-              <span class="inline-flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full border border-black/20" :style="{ backgroundColor: extractedData.colors.dominantBackground }"></span>
-                Canvas (0dp): {{ extractedData.colors.dominantBackground }}
-              </span>
-              <span class="opacity-70 text-[11px]">Natural Eyedropper Surface</span>
-            </div>
-
-            <!-- Elevated Container -->
-            <div
-              class="p-5 sm:p-6 rounded-xl border shadow-xs space-y-3 transition-all"
-              :style="{
-                backgroundColor: extractedData.colors.semanticRoles.surface,
-                borderColor: extractedData.colors.semanticRoles.hairline,
-                color: extractedData.colors.dominantForeground,
-              }"
-            >
-              <div class="flex items-center justify-between">
-                <div class="font-bold text-sm sm:text-base" :style="{ color: extractedData.colors.dominantForeground }">
-                  Elevated Surface Card (1dp)
-                </div>
-                <span
-                  class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold"
-                  :style="{
-                    backgroundColor: extractedData.colors.accentColor + '18',
-                    color: extractedData.colors.accentColor,
-                    border: '1px solid ' + extractedData.colors.accentColor + '30',
-                  }"
-                >
-                  Accent: {{ extractedData.colors.accentColor }}
-                </span>
-              </div>
-
-              <p class="text-xs leading-relaxed opacity-85" :style="{ color: extractedData.colors.dominantForeground }">
-                This preview validates true perceptual contrast between the detected root canvas (<strong class="font-mono">{{ extractedData.colors.dominantBackground }}</strong>), the raised card container (<strong class="font-mono">{{ extractedData.colors.semanticRoles.surface }}</strong>), and hairline dividers (<strong class="font-mono">{{ extractedData.colors.semanticRoles.hairline }}</strong>).
-              </p>
-
-              <div class="pt-2 flex flex-wrap items-center gap-2.5">
-                <button
-                  type="button"
-                  class="px-4 py-2 rounded-lg text-xs font-semibold shadow-xs cursor-pointer transition-transform active:scale-95"
-                  :style="{
-                    backgroundColor: extractedData.colors.semanticRoles.primary,
-                    color: extractedData.colors.semanticRoles.onPrimary || '#FFFFFF',
-                  }"
-                >
-                  Primary Action Button
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-2 rounded-lg text-xs font-semibold bg-transparent cursor-pointer transition-colors"
-                  :style="{
-                    border: '1px solid ' + extractedData.colors.semanticRoles.hairline,
-                    color: extractedData.colors.dominantForeground,
-                  }"
-                >
-                  Outline Control
-                </button>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <!-- Color Swatches Grid -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-[var(--text-primary)]">
-              Extracted Colors & WCAG AA Ratios
-            </h3>
-            <span class="text-xs text-[var(--text-secondary)]">
-              Evaluated against dominant background ({{ extractedData.colors.dominantBackground }})
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <Card
-              v-for="color in extractedData.colors.palette"
-              :key="color.hex"
-              class="p-3.5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3 hover:border-[var(--border-card-hover)] transition-all"
-            >
-              <div
-                class="w-full h-14 rounded-lg border border-[var(--border-subtle)] flex items-end justify-end p-2 cursor-pointer shadow-xs"
-                :style="{ backgroundColor: color.hex }"
-                @click="copyToClipboard(color.hex, color.hex)"
-              >
-                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-black/60 text-white backdrop-blur-xs">
-                  Copy
-                </span>
-              </div>
-
-              <div class="space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="font-mono text-xs font-bold text-[var(--text-primary)]">
-                    {{ color.hex }}
-                  </span>
-                  <Badge :variant="getRoleBadgeVariant(color.role)">
-                    {{ color.role }}
-                  </Badge>
-                </div>
-
-                <div class="text-[11px] font-mono text-[var(--text-secondary)] truncate">
-                  {{ color.rgb }}
-                </div>
-
-                <!-- WCAG AA Badge -->
-                <div v-if="color.contrastWithBg" class="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
-                  <span class="text-[11px] text-[var(--text-secondary)] font-mono">
-                    {{ color.contrastWithBg.ratio }}:1
-                  </span>
-                  <span
-                    v-if="color.contrastWithBg.passesAA"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  >
-                    Pass AA
-                  </span>
-                  <span
-                    v-else-if="color.contrastWithBg.passesAALarge"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                  >
-                    AA Large
-                  </span>
-                  <span
-                    v-else
-                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/20"
-                  >
-                    Below AA
-                  </span>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 2: Typography -->
-      <div v-if="activeTab === 'typography'" class="space-y-6">
-        <!-- Detected Fonts -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card
-            v-for="font in extractedData.typography.fonts"
-            :key="font.name"
-            :hoverable="false"
-            class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <h4 class="text-sm font-bold text-[var(--text-primary)]">
-                  {{ font.name }}
-                </h4>
-                <span class="text-xs text-[var(--text-secondary)] uppercase font-mono">
-                  {{ font.category }} • {{ font.source }}
-                </span>
-              </div>
-              <Badge variant="outline">
-                Weights: {{ font.weights.join(', ') }}
-              </Badge>
-            </div>
-
-            <div
-              class="p-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] text-[var(--text-primary)]"
-              :style="{ fontFamily: font.name }"
-            >
-              <div class="text-base truncate">
-                Sphinx of black quartz, judge my vow.
-              </div>
-              <div class="text-xs opacity-75 mt-1 font-mono">
-                ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <!-- Live Font Tester -->
-        <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h3 class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-              <Sliders class="w-4 h-4 text-[var(--text-secondary)]" />
-              <span>Interactive Font Tester</span>
-            </h3>
-            <div class="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
-              <span>Size: {{ previewFontSize }}px</span>
-              <input
-                v-model="previewFontSize"
-                type="range"
-                min="12"
-                max="48"
-                class="w-28 accent-[var(--text-primary)]"
-              />
-            </div>
-          </div>
-
-          <Input
-            id="font-tester-input"
-            v-model="previewText"
-            size="sm"
-            placeholder="Type sample text..."
-            class="text-xs"
-          />
-
-          <div
-            class="p-5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] text-[var(--text-primary)] transition-all overflow-x-auto"
-            :style="{
-              fontFamily: extractedData.typography.primaryFont,
-              fontSize: `${previewFontSize}px`,
-            }"
-          >
-            {{ previewText || 'Preview text here' }}
-          </div>
-        </Card>
-
-        <!-- Detected Scales -->
-        <div v-if="extractedData.typography.fontSizes.length > 0" class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Detected Font Sizes
-          </h4>
-          <div class="flex flex-wrap gap-2">
-            <span
-              v-for="s in extractedData.typography.fontSizes"
-              :key="s"
-              class="px-3 py-1 rounded-md text-xs font-mono bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)]"
-            >
-              {{ s }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 3: Geometry & Elevation -->
-      <div v-if="activeTab === 'geometry'" class="space-y-6">
-        <!-- Radii -->
-        <div class="space-y-3">
-          <h3 class="text-sm font-bold text-[var(--text-primary)]">
-            Border Radii Tokens
-          </h3>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Card
-              v-for="r in (extractedData.geometry.radii.length ? extractedData.geometry.radii : ['4px', '8px', '14px', '9999px'])"
-              :key="r"
-              :hoverable="false"
-              class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] text-center space-y-3"
-            >
-              <div
-                class="w-16 h-16 mx-auto bg-[var(--bg-app)] border-2 border-[var(--text-secondary)] shadow-xs transition-all"
-                :style="{ borderRadius: r }"
-              />
-              <div class="font-mono text-xs font-bold text-[var(--text-primary)]">
-                {{ r }}
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        <!-- Shadows -->
-        <div v-if="extractedData.geometry.shadows.length > 0" class="space-y-3">
-          <h3 class="text-sm font-bold text-[var(--text-primary)]">
-            Elevation & Box Shadows
-          </h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card
-              v-for="(s, idx) in extractedData.geometry.shadows"
-              :key="idx"
-              :hoverable="false"
-              class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3"
-            >
-              <div
-                class="h-16 rounded-lg bg-[var(--bg-card)] flex items-center justify-center text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)]"
-                :style="{ boxShadow: s }"
-              >
-                Elevation Level {{ idx + 1 }}
-              </div>
-              <div class="text-[11px] font-mono text-[var(--text-tertiary)] truncate">
-                {{ s }}
-              </div>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 4: Tech Stack (Dedicated per user request) -->
-      <div v-if="activeTab === 'stack'" class="space-y-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-sm font-bold text-[var(--text-primary)]">
-              Detected Tech Stack Breakdown
-            </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
-              Identified through DOM signatures, asset structures, and HTTP response headers.
-            </p>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            class="gap-1.5 text-xs cursor-pointer"
-            @click="exportFormat = 'techStackMd'; activeTab = 'export'"
-          >
-            <FileText class="w-3.5 h-3.5" />
-            <span>Export TECHSTACK.md</span>
-          </Button>
-        </div>
-
-        <div v-if="extractedData.techStack.length === 0" class="p-8 text-center bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl text-xs text-[var(--text-secondary)]">
-          No distinctive framework or library signatures detected on this target.
-        </div>
-
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card
-            v-for="item in extractedData.techStack"
-            :key="item.name"
-            class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2 hover:border-[var(--border-card-hover)] transition-all"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-                  <Cpu class="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 class="text-sm font-bold text-[var(--text-primary)]">
-                    {{ item.name }}
-                  </h4>
-                  <span class="text-[11px] uppercase tracking-wider font-mono text-[var(--text-tertiary)]">
-                    {{ item.category }}
-                  </span>
-                </div>
-              </div>
-              <Badge variant="outline">
-                {{ item.confidence }} confidence
-              </Badge>
-            </div>
-
-            <p class="text-xs text-[var(--text-secondary)] pt-1 border-t border-[var(--border-subtle)]">
-              {{ item.evidence }}
-            </p>
-          </Card>
-        </div>
-      </div>
-
-      <!-- Tab 5: Code Export -->
+      <!-- Tab 1: DESIGN.md & Code Export -->
       <div v-if="activeTab === 'export'" class="space-y-4">
         <!-- Export Format Selector Row -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1266,6 +839,344 @@ const renderedMarkdownHtml = computed(() => {
           </div>
           <pre class="p-4 text-xs font-mono text-zinc-200 overflow-x-auto max-h-[600px] leading-relaxed"><code v-html="highlightedExportCode"></code></pre>
         </Card>
+      </div>
+
+      <!-- Tab 2: Color Palette -->
+      <div v-if="activeTab === 'palette'" class="space-y-6">
+        <!-- Dominant Archetypes -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
+              Background Archetype
+            </div>
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
+                :style="{ backgroundColor: extractedData.colors.dominantBackground }"
+              />
+              <div class="min-w-0">
+                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
+                  {{ extractedData.colors.dominantBackground }}
+                </div>
+                <div class="text-[11px] text-[var(--text-secondary)]">
+                  Primary canvas surface
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
+              Foreground Archetype
+            </div>
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
+                :style="{ backgroundColor: extractedData.colors.dominantForeground }"
+              />
+              <div class="min-w-0">
+                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
+                  {{ extractedData.colors.dominantForeground }}
+                </div>
+                <div class="text-[11px] text-[var(--text-secondary)]">
+                  Primary typography color
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
+            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
+              Accent Archetype
+            </div>
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
+                :style="{ backgroundColor: extractedData.colors.accentColor }"
+              />
+              <div class="min-w-0">
+                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
+                  {{ extractedData.colors.accentColor }}
+                </div>
+                <div class="text-[11px] text-[var(--text-secondary)]">
+                  Interactive brand accent
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <!-- Color Swatches Grid -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-[var(--text-primary)]">
+              Extracted Colors & WCAG AA Ratios
+            </h3>
+            <span class="text-xs text-[var(--text-secondary)]">
+              Evaluated against dominant background ({{ extractedData.colors.dominantBackground }})
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <Card
+              v-for="color in extractedData.colors.palette"
+              :key="color.hex"
+              class="p-3.5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3 hover:border-[var(--border-card-hover)] transition-all"
+            >
+              <div
+                class="w-full h-14 rounded-lg border border-[var(--border-subtle)] flex items-end justify-end p-2 cursor-pointer shadow-xs"
+                :style="{ backgroundColor: color.hex }"
+                @click="copyToClipboard(color.hex, color.hex)"
+              >
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-black/60 text-white backdrop-blur-xs">
+                  Copy
+                </span>
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-[var(--text-primary)]">
+                    {{ color.hex }}
+                  </span>
+                  <Badge :variant="getRoleBadgeVariant(color.role)">
+                    {{ color.role }}
+                  </Badge>
+                </div>
+
+                <div class="text-[11px] font-mono text-[var(--text-secondary)] truncate">
+                  {{ color.rgb }}
+                </div>
+
+                <!-- WCAG AA Badge -->
+                <div v-if="color.contrastWithBg" class="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
+                  <span class="text-[11px] text-[var(--text-secondary)] font-mono">
+                    {{ color.contrastWithBg.ratio }}:1
+                  </span>
+                  <span
+                    v-if="color.contrastWithBg.passesAA"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  >
+                    Pass AA
+                  </span>
+                  <span
+                    v-else-if="color.contrastWithBg.passesAALarge"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                  >
+                    AA Large
+                  </span>
+                  <span
+                    v-else
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/20"
+                  >
+                    Below AA
+                  </span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Typography -->
+      <div v-if="activeTab === 'typography'" class="space-y-6">
+        <!-- Detected Fonts -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card
+            v-for="font in extractedData.typography.fonts"
+            :key="font.name"
+            :hoverable="false"
+            class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-sm font-bold text-[var(--text-primary)]">
+                  {{ font.name }}
+                </h4>
+                <span class="text-xs text-[var(--text-secondary)] uppercase font-mono">
+                  {{ font.category }} • {{ font.source }}
+                </span>
+              </div>
+              <Badge variant="outline">
+                Weights: {{ font.weights.join(', ') }}
+              </Badge>
+            </div>
+
+            <div
+              class="p-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] text-[var(--text-primary)]"
+              :style="{ fontFamily: font.name }"
+            >
+              <div class="text-base truncate">
+                Sphinx of black quartz, judge my vow.
+              </div>
+              <div class="text-xs opacity-75 mt-1 font-mono">
+                ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <!-- Live Font Tester -->
+        <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h3 class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <Sliders class="w-4 h-4 text-[var(--text-secondary)]" />
+              <span>Interactive Font Tester</span>
+            </h3>
+            <div class="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+              <span>Size: {{ previewFontSize }}px</span>
+              <input
+                v-model="previewFontSize"
+                type="range"
+                min="12"
+                max="48"
+                class="w-28 accent-[var(--text-primary)]"
+              />
+            </div>
+          </div>
+
+          <Input
+            id="font-tester-input"
+            v-model="previewText"
+            size="sm"
+            placeholder="Type sample text..."
+            class="text-xs"
+          />
+
+          <div
+            class="p-5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] text-[var(--text-primary)] transition-all overflow-x-auto"
+            :style="{
+              fontFamily: extractedData.typography.primaryFont,
+              fontSize: `${previewFontSize}px`,
+            }"
+          >
+            {{ previewText || 'Preview text here' }}
+          </div>
+        </Card>
+
+        <!-- Detected Scales -->
+        <div v-if="extractedData.typography.fontSizes.length > 0" class="space-y-2">
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+            Detected Font Sizes
+          </h4>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="s in extractedData.typography.fontSizes"
+              :key="s"
+              class="px-3 py-1 rounded-md text-xs font-mono bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)]"
+            >
+              {{ s }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Geometry & Elevation -->
+      <div v-if="activeTab === 'geometry'" class="space-y-6">
+        <!-- Radii -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-bold text-[var(--text-primary)]">
+            Border Radii Tokens
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Card
+              v-for="r in (extractedData.geometry.radii.length ? extractedData.geometry.radii : ['4px', '8px', '14px', '9999px'])"
+              :key="r"
+              :hoverable="false"
+              class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] text-center space-y-3"
+            >
+              <div
+                class="w-16 h-16 mx-auto bg-[var(--bg-app)] border-2 border-[var(--text-secondary)] shadow-xs transition-all"
+                :style="{ borderRadius: r }"
+              />
+              <div class="font-mono text-xs font-bold text-[var(--text-primary)]">
+                {{ r }}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        <!-- Shadows -->
+        <div v-if="extractedData.geometry.shadows.length > 0" class="space-y-3">
+          <h3 class="text-sm font-bold text-[var(--text-primary)]">
+            Elevation & Box Shadows
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card
+              v-for="(s, idx) in extractedData.geometry.shadows"
+              :key="idx"
+              :hoverable="false"
+              class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3"
+            >
+              <div
+                class="h-16 rounded-lg bg-[var(--bg-card)] flex items-center justify-center text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)]"
+                :style="{ boxShadow: s }"
+              >
+                Elevation Level {{ idx + 1 }}
+              </div>
+              <div class="text-[11px] font-mono text-[var(--text-tertiary)] truncate">
+                {{ s }}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: Tech Stack (Dedicated per user request) -->
+      <div v-if="activeTab === 'stack'" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-[var(--text-primary)]">
+              Detected Tech Stack Breakdown
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+              Identified through DOM signatures, asset structures, and HTTP response headers.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            class="gap-1.5 text-xs cursor-pointer"
+            @click="exportFormat = 'techStackMd'; activeTab = 'export'"
+          >
+            <FileText class="w-3.5 h-3.5" />
+            <span>Export TECHSTACK.md</span>
+          </Button>
+        </div>
+
+        <div v-if="extractedData.techStack.length === 0" class="p-8 text-center bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl text-xs text-[var(--text-secondary)]">
+          No distinctive framework or library signatures detected on this target.
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card
+            v-for="item in extractedData.techStack"
+            :key="item.name"
+            class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2 hover:border-[var(--border-card-hover)] transition-all"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
+                  <Cpu class="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-[var(--text-primary)]">
+                    {{ item.name }}
+                  </h4>
+                  <span class="text-[11px] uppercase tracking-wider font-mono text-[var(--text-tertiary)]">
+                    {{ item.category }}
+                  </span>
+                </div>
+              </div>
+              <Badge variant="outline">
+                {{ item.confidence }} confidence
+              </Badge>
+            </div>
+
+            <p class="text-xs text-[var(--text-secondary)] pt-1 border-t border-[var(--border-subtle)]">
+              {{ item.evidence }}
+            </p>
+          </Card>
+        </div>
       </div>
     </div>
   </div>
