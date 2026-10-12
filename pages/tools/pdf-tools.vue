@@ -422,7 +422,7 @@ const handleExecuteImgToPdf = async () => {
       <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">
         <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
         <span>/</span>
-        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+        <span class="text-[var(--text-secondary)] font-medium">Media Tools</span>
         <span>/</span>
         <span class="text-[var(--text-primary)]">PDF Studio</span>
       </div>
@@ -521,7 +521,7 @@ const handleExecuteImgToPdf = async () => {
             class="flex items-center justify-between p-3.5 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-lg hover:border-[var(--border-card-hover)] transition-all"
           >
             <div class="flex items-center gap-3 min-w-0 pr-3">
-              <div class="w-8 h-8 rounded bg-[#212121] border border-[#2E2E2E] flex items-center justify-center shrink-0 text-xs font-bold text-[var(--text-secondary)]">
+              <div class="w-8 h-8 rounded bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center shrink-0 text-xs font-bold text-[var(--text-secondary)]">
                 {{ idx + 1 }}
               </div>
               <div class="min-w-0">
@@ -540,7 +540,7 @@ const handleExecuteImgToPdf = async () => {
             <div class="flex items-center gap-1 shrink-0">
               <button
                 type="button"
-                class="p-1.5 text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] rounded transition-colors disabled:opacity-30 cursor-pointer"
+                class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded transition-colors disabled:opacity-30 cursor-pointer"
                 :disabled="idx === 0"
                 title="Move Up"
                 @click="moveMergeItem(idx, 'up')"
@@ -549,7 +549,7 @@ const handleExecuteImgToPdf = async () => {
               </button>
               <button
                 type="button"
-                class="p-1.5 text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-card-hover)] rounded transition-colors disabled:opacity-30 cursor-pointer"
+                class="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded transition-colors disabled:opacity-30 cursor-pointer"
                 :disabled="idx === mergeFiles.length - 1"
                 title="Move Down"
                 @click="moveMergeItem(idx, 'down')"
@@ -630,8 +630,8 @@ const handleExecuteImgToPdf = async () => {
         <Card class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
           <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-4">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-10 h-10 rounded-lg bg-[#212121] border border-[#2E2E2E] flex items-center justify-center text-white shrink-0">
-                <FileCheck class="w-5 h-5 text-emerald-400" />
+              <div class="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center shrink-0">
+                <FileCheck class="w-5 h-5 text-emerald-500" />
               </div>
               <div class="min-w-0">
                 <h4 class="text-sm font-semibold text-[var(--text-primary)] truncate">
@@ -791,7 +791,7 @@ const handleExecuteImgToPdf = async () => {
               :key="item.id"
               class="p-2.5 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-lg hover:border-[var(--border-card-hover)] transition-all space-y-2 relative group"
             >
-              <div class="aspect-4/3 rounded bg-[#121212] overflow-hidden flex items-center justify-center border border-[#212121]">
+              <div class="aspect-4/3 rounded bg-zinc-100 dark:bg-[#121212] overflow-hidden flex items-center justify-center border border-zinc-200 dark:border-[#212121]">
                 <img
                   :src="item.previewUrl"
                   alt="Preview"
@@ -800,7 +800,7 @@ const handleExecuteImgToPdf = async () => {
               </div>
 
               <div class="flex items-center justify-between gap-1 text-xs">
-                <span class="font-bold text-white/80">#{{ idx + 1 }}</span>
+                <span class="font-bold text-[var(--text-secondary)]">#{{ idx + 1 }}</span>
                 <span class="text-[10px] text-[var(--text-tertiary)] font-mono truncate max-w-[90px]">{{ item.name }}</span>
               </div>
 
@@ -809,7 +809,7 @@ const handleExecuteImgToPdf = async () => {
                 <div class="flex items-center gap-1">
                   <button
                     type="button"
-                    class="p-1 text-[var(--text-secondary)] hover:text-white rounded disabled:opacity-20 cursor-pointer"
+                    class="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded disabled:opacity-20 cursor-pointer"
                     :disabled="idx === 0"
                     title="Move Left"
                     @click="moveImgItem(idx, 'up')"
@@ -818,7 +818,7 @@ const handleExecuteImgToPdf = async () => {
                   </button>
                   <button
                     type="button"
-                    class="p-1 text-[var(--text-secondary)] hover:text-white rounded disabled:opacity-20 cursor-pointer"
+                    class="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded disabled:opacity-20 cursor-pointer"
                     :disabled="idx === imageFiles.length - 1"
                     title="Move Right"
                     @click="moveImgItem(idx, 'down')"

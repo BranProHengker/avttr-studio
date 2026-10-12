@@ -31,13 +31,13 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 ```css
 :root {
   /* LIGHT THEME TOKENS (APPLE SYSTEM SOFT PALETTE) */
-  --bg-app: #F5F5F7;
-  --bg-sidebar: #FFFFFF;
+  --bg-app: #f8f9fa;
+  --bg-sidebar: #f8f9fa;
   --bg-card: #FFFFFF;
-  --bg-card-hover: #EBECEF;
+  --bg-card-hover: #F1F3F5;
   --bg-surface-elevated: #FFFFFF;
   --bg-input: #FFFFFF;
-  --bg-input-search: #EBECEF;
+  --bg-input-search: #F1F3F5;
   
   --border-subtle: #E5E5EA;
   --border-card: #E5E5EA;

@@ -860,32 +860,32 @@ onUnmounted(() => {
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer"
-                :class="strokeWidth === 0 ? 'border-white bg-white/15 text-white font-medium shadow-xs ring-1 ring-white/20' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                :class="strokeWidth === 0 ? 'border-zinc-900 dark:border-white bg-zinc-900 text-white dark:bg-white dark:text-black font-medium shadow-xs ring-1 ring-zinc-900/20 dark:ring-white/20' : 'border-zinc-200 dark:border-[#2E2E2E] bg-zinc-100 dark:bg-[#1A1A1A] text-zinc-600 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-[#3E3E3E]'"
                 @click="strokeWidth = 0"
               >
-                <div class="w-3.5 h-3.5 rounded-[3px] border border-white/20 shrink-0 overflow-hidden bg-[linear-gradient(45deg,#555_25%,transparent_25%),linear-gradient(-45deg,#555_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#555_75%),linear-gradient(-45deg,transparent_75%,#555_75%)] bg-[size:4px_4px] bg-[#1a1a1a]" />
+                <div class="w-3.5 h-3.5 rounded-[3px] border border-zinc-300 dark:border-white/20 shrink-0 overflow-hidden bg-[linear-gradient(45deg,#555_25%,transparent_25%),linear-gradient(-45deg,#555_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#555_75%),linear-gradient(-45deg,transparent_75%,#555_75%)] bg-[size:4px_4px] bg-[#1a1a1a]" />
                 <span>No Outline</span>
               </button>
               <button
                 type="button"
-                class="px-2.5 py-1 text-xs rounded-lg border transition-all"
-                :class="strokeWidth === 4 ? 'border-white bg-white text-black font-medium' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                class="px-2.5 py-1 text-xs rounded-lg border transition-all cursor-pointer"
+                :class="strokeWidth === 4 ? 'border-zinc-900 dark:border-white bg-zinc-900 text-white dark:bg-white dark:text-black font-medium shadow-xs' : 'border-zinc-200 dark:border-[#2E2E2E] bg-zinc-100 dark:bg-[#1A1A1A] text-zinc-600 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-[#3E3E3E]'"
                 @click="strokeWidth = 4"
               >
                 Thin (4px)
               </button>
               <button
                 type="button"
-                class="px-2.5 py-1 text-xs rounded-lg border transition-all"
-                :class="strokeWidth === 10 ? 'border-white bg-white text-black font-medium' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                class="px-2.5 py-1 text-xs rounded-lg border transition-all cursor-pointer"
+                :class="strokeWidth === 10 ? 'border-zinc-900 dark:border-white bg-zinc-900 text-white dark:bg-white dark:text-black font-medium shadow-xs' : 'border-zinc-200 dark:border-[#2E2E2E] bg-zinc-100 dark:bg-[#1A1A1A] text-zinc-600 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-[#3E3E3E]'"
                 @click="strokeWidth = 10"
               >
                 Medium (10px)
               </button>
               <button
                 type="button"
-                class="px-2.5 py-1 text-xs rounded-lg border transition-all"
-                :class="strokeWidth === 18 ? 'border-white bg-white text-black font-medium' : 'border-[#2E2E2E] bg-[#1A1A1A] text-gray-400 hover:text-white hover:border-[#3E3E3E]'"
+                class="px-2.5 py-1 text-xs rounded-lg border transition-all cursor-pointer"
+                :class="strokeWidth === 18 ? 'border-zinc-900 dark:border-white bg-zinc-900 text-white dark:bg-white dark:text-black font-medium shadow-xs' : 'border-zinc-200 dark:border-[#2E2E2E] bg-zinc-100 dark:bg-[#1A1A1A] text-zinc-600 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-[#3E3E3E]'"
                 @click="strokeWidth = 18"
               >
                 Thick (18px)
@@ -1023,7 +1023,7 @@ onUnmounted(() => {
               <label class="text-xs text-[var(--text-secondary)] block mb-1">Font Family</label>
               <select
                 v-model="fontFamily"
-                class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[#2E2E2E] bg-[#141416] text-white focus:outline-none focus:border-[#4E4E4E]"
+                class="w-full px-2.5 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-[#2E2E2E] bg-white dark:bg-[#141416] text-[var(--text-primary)] focus:outline-none focus:border-zinc-400 dark:focus:border-[#4E4E4E]"
               >
                 <option value="impact">Impact (Classic Meme)</option>
                 <option value="sans">Bold Sans (Modern)</option>
@@ -1219,37 +1219,37 @@ onUnmounted(() => {
         <!-- Live Preview Deck -->
         <Card class="p-4 sm:p-5 space-y-4">
           <!-- Preview Mode Tabs -->
-          <div class="flex items-center justify-between gap-2 border-b border-[#2E2E2E] pb-3">
+          <div class="flex items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
             <span class="text-xs font-medium text-[var(--text-secondary)]">Preview Environment:</span>
-            <div class="flex items-center gap-1 bg-[#1A1A1A] p-1 rounded-lg border border-[#2E2E2E]">
+            <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#1A1A1A] p-1 rounded-lg border border-zinc-200 dark:border-[#2E2E2E]">
               <button
                 type="button"
-                class="px-2 py-0.5 text-xs rounded transition-colors"
-                :class="previewMode === 'wa-dark' ? 'bg-[#2A2A2A] text-white font-medium' : 'text-gray-400 hover:text-white'"
+                class="px-2 py-0.5 text-xs rounded transition-colors cursor-pointer"
+                :class="previewMode === 'wa-dark' ? 'bg-white dark:bg-[#2A2A2A] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white'"
                 @click="previewMode = 'wa-dark'"
               >
                 WA Dark
               </button>
               <button
                 type="button"
-                class="px-2 py-0.5 text-xs rounded transition-colors"
-                :class="previewMode === 'wa-light' ? 'bg-[#2A2A2A] text-white font-medium' : 'text-gray-400 hover:text-white'"
+                class="px-2 py-0.5 text-xs rounded transition-colors cursor-pointer"
+                :class="previewMode === 'wa-light' ? 'bg-white dark:bg-[#2A2A2A] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white'"
                 @click="previewMode = 'wa-light'"
               >
                 WA Light
               </button>
               <button
                 type="button"
-                class="px-2 py-0.5 text-xs rounded transition-colors"
-                :class="previewMode === 'telegram' ? 'bg-[#2A2A2A] text-white font-medium' : 'text-gray-400 hover:text-white'"
+                class="px-2 py-0.5 text-xs rounded transition-colors cursor-pointer"
+                :class="previewMode === 'telegram' ? 'bg-white dark:bg-[#2A2A2A] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white'"
                 @click="previewMode = 'telegram'"
               >
                 Telegram
               </button>
               <button
                 type="button"
-                class="px-2 py-0.5 text-xs rounded transition-colors"
-                :class="previewMode === 'transparent' ? 'bg-[#2A2A2A] text-white font-medium' : 'text-gray-400 hover:text-white'"
+                class="px-2 py-0.5 text-xs rounded transition-colors cursor-pointer"
+                :class="previewMode === 'transparent' ? 'bg-white dark:bg-[#2A2A2A] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white'"
                 @click="previewMode = 'transparent'"
               >
                 Grid
@@ -1298,31 +1298,31 @@ onUnmounted(() => {
             <div class="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                class="p-2.5 rounded-lg border text-left transition-all"
-                :class="targetFormat === 'whatsapp' ? 'border-white bg-[#212121] text-white' : 'border-[#2E2E2E] bg-[#141416] text-[var(--text-secondary)] hover:border-[#3E3E3E]'"
+                class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
+                :class="targetFormat === 'whatsapp' ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-[#212121] text-zinc-900 dark:text-white shadow-xs' : 'border-zinc-200 dark:border-[#2E2E2E] bg-zinc-50 dark:bg-[#141416] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-[#3E3E3E]'"
                 @click="targetFormat = 'whatsapp'"
               >
-                <div class="text-xs font-semibold text-white">WhatsApp</div>
+                <div class="text-xs font-semibold text-zinc-900 dark:text-white">WhatsApp</div>
                 <div class="text-[10px] opacity-70 mt-0.5">.webp (EXIF)</div>
               </button>
 
               <button
                 type="button"
-                class="p-2.5 rounded-lg border text-left transition-all"
-                :class="targetFormat === 'telegram' ? 'border-white bg-[#212121] text-white' : 'border-[#2E2E2E] bg-[#141416] text-[var(--text-secondary)] hover:border-[#3E3E3E]'"
+                class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
+                :class="targetFormat === 'telegram' ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-[#212121] text-zinc-900 dark:text-white shadow-xs' : 'border-zinc-200 dark:border-[#2E2E2E] bg-zinc-50 dark:bg-[#141416] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-[#3E3E3E]'"
                 @click="targetFormat = 'telegram'"
               >
-                <div class="text-xs font-semibold text-white">Telegram</div>
+                <div class="text-xs font-semibold text-zinc-900 dark:text-white">Telegram</div>
                 <div class="text-[10px] opacity-70 mt-0.5">512×512 .webp</div>
               </button>
 
               <button
                 type="button"
-                class="p-2.5 rounded-lg border text-left transition-all"
-                :class="targetFormat === 'png' ? 'border-white bg-[#212121] text-white' : 'border-[#2E2E2E] bg-[#141416] text-[var(--text-secondary)] hover:border-[#3E3E3E]'"
+                class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
+                :class="targetFormat === 'png' ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-[#212121] text-zinc-900 dark:text-white shadow-xs' : 'border-zinc-200 dark:border-[#2E2E2E] bg-zinc-50 dark:bg-[#141416] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-[#3E3E3E]'"
                 @click="targetFormat = 'png'"
               >
-                <div class="text-xs font-semibold text-white">Direct PNG</div>
+                <div class="text-xs font-semibold text-zinc-900 dark:text-white">Direct PNG</div>
                 <div class="text-[10px] opacity-70 mt-0.5">Transparent</div>
               </button>
             </div>
@@ -1330,7 +1330,7 @@ onUnmounted(() => {
             <!-- Size Check Indicator -->
             <div class="flex items-center justify-between text-xs px-1">
               <span class="text-[var(--text-secondary)]">Canvas Resolution:</span>
-              <span class="font-mono text-white">512 × 512 px</span>
+              <span class="font-mono text-[var(--text-primary)]">512 × 512 px</span>
             </div>
             <div class="flex items-center justify-between text-xs px-1">
               <span class="text-[var(--text-secondary)]">Estimated Size:</span>

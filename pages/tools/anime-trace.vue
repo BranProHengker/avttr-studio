@@ -645,34 +645,34 @@ const resetAll = () => {
       <!-- 1. Video Player & Side-by-Side Comparison -->
       <Card class="p-4 sm:p-5 space-y-4">
         <!-- Technical Meta Bar (Clean, no slop badges) -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#2E2E2E]">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-subtle)]">
           <div class="flex items-center gap-3 text-xs font-mono text-[var(--text-secondary)] flex-wrap">
-            <span class="text-white font-medium">
-              Episode: <strong class="text-white">{{ currentMatch.episode !== null && currentMatch.episode !== undefined ? currentMatch.episode : '1 / OVA' }}</strong>
+            <span class="text-[var(--text-primary)] font-medium">
+              Episode: <strong class="text-[var(--text-primary)]">{{ currentMatch.episode !== null && currentMatch.episode !== undefined ? currentMatch.episode : '1 / OVA' }}</strong>
             </span>
-            <span class="text-zinc-600">•</span>
+            <span class="text-zinc-400 dark:text-zinc-600">•</span>
             <span>
-              Time: <strong class="text-white">{{ formatTime(currentMatch.at) }}</strong>
-              <span class="text-zinc-500 ml-1 font-normal">({{ currentMatch.from.toFixed(1) }}s – {{ currentMatch.to.toFixed(1) }}s)</span>
+              Time: <strong class="text-[var(--text-primary)]">{{ formatTime(currentMatch.at) }}</strong>
+              <span class="text-[var(--text-tertiary)] ml-1 font-normal">({{ currentMatch.from.toFixed(1) }}s – {{ currentMatch.to.toFixed(1) }}s)</span>
             </span>
-            <span class="text-zinc-600">•</span>
+            <span class="text-zinc-400 dark:text-zinc-600">•</span>
             <span>
-              Similarity: <strong class="text-white">{{ (currentMatch.similarity * 100).toFixed(2) }}%</strong>
+              Similarity: <strong class="text-[var(--text-primary)]">{{ (currentMatch.similarity * 100).toFixed(2) }}%</strong>
             </span>
           </div>
 
           <!-- Video vs Exact Frame Mode Switcher -->
-          <div class="flex items-center gap-1 bg-[#141416] p-0.5 rounded-md border border-[#2E2E2E] self-start sm:self-auto">
+          <div class="flex items-center gap-1 bg-zinc-100 dark:bg-[#141416] p-0.5 rounded-md border border-zinc-200 dark:border-[#2E2E2E] self-start sm:self-auto">
             <button
               class="px-2.5 py-1 rounded text-xs transition-colors"
-              :class="previewMode === 'video' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
+              :class="previewMode === 'video' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
               @click="previewMode = 'video'"
             >
               Video Clip
             </button>
             <button
               class="px-2.5 py-1 rounded text-xs transition-colors"
-              :class="previewMode === 'image' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
+              :class="previewMode === 'image' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
               @click="previewMode = 'image'"
             >
               Exact Frame
@@ -688,7 +688,7 @@ const resetAll = () => {
               <ImageIcon class="w-3.5 h-3.5" />
               <span>Your Screenshot</span>
             </div>
-            <div class="aspect-video rounded-lg overflow-hidden bg-[#141416] border border-[#2E2E2E] flex items-center justify-center">
+            <div class="aspect-video rounded-lg overflow-hidden bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center">
               <img
                 v-if="previewImageUrl"
                 :src="previewImageUrl"
@@ -708,16 +708,16 @@ const resetAll = () => {
               </span>
               <button
                 v-if="previewMode === 'video' && currentMatch.video"
-                class="text-[11px] text-[var(--text-secondary)] hover:text-white flex items-center gap-1"
+                class="text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] flex items-center gap-1"
                 @click="isVideoMuted = !isVideoMuted"
               >
                 <VolumeX v-if="isVideoMuted" class="w-3 h-3" />
-                <Volume2 v-else class="w-3 h-3 text-white" />
+                <Volume2 v-else class="w-3 h-3 text-[var(--text-primary)]" />
                 <span>{{ isVideoMuted ? 'Muted' : 'Audio On' }}</span>
               </button>
             </div>
 
-            <div class="aspect-video rounded-lg overflow-hidden bg-[#141416] border border-[#2E2E2E] flex items-center justify-center relative">
+            <div class="aspect-video rounded-lg overflow-hidden bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center relative">
               <video
                 v-if="previewMode === 'video' && currentMatch.video"
                 ref="videoPlayerRef"
@@ -741,16 +741,16 @@ const resetAll = () => {
         </div>
 
         <!-- File Source -->
-        <div class="text-[11px] text-[var(--text-tertiary)] font-mono truncate pt-2 border-t border-[#2E2E2E]">
+        <div class="text-[11px] text-[var(--text-tertiary)] font-mono truncate pt-2 border-t border-[var(--border-subtle)]">
           File: {{ currentMatch.filename }}
         </div>
       </Card>
 
       <!-- 2. Authentic Anime Details Card (Matches trace.moe exact UI structure from screenshot) -->
-      <Card v-if="currentAniList" class="p-5 sm:p-7 space-y-3 bg-[#141416] border-[#2E2E2E]">
+      <Card v-if="currentAniList" class="p-5 sm:p-7 space-y-3">
         <!-- Title: Native Japanese Header -->
         <div>
-          <h2 class="text-xl sm:text-2xl font-normal text-white tracking-tight break-words">
+          <h2 class="text-xl sm:text-2xl font-normal text-[var(--text-primary)] tracking-tight break-words">
             {{ currentAniList.title?.native || currentAniList.title?.romaji }}
           </h2>
           <!-- Subtitle: Romaji in soft blue -->
@@ -765,7 +765,7 @@ const resetAll = () => {
         </div>
 
         <!-- Dotted Divider -->
-        <div class="border-b border-dotted border-zinc-700/80 my-3"></div>
+        <div class="border-b border-dotted border-zinc-300 dark:border-zinc-700/80 my-3"></div>
 
         <!-- Episode & Airing Overview -->
         <div class="text-xs text-[var(--text-secondary)] space-y-1 leading-relaxed font-normal">
@@ -774,14 +774,14 @@ const resetAll = () => {
         </div>
 
         <!-- Dotted Divider -->
-        <div class="border-b border-dotted border-zinc-700/80 my-3"></div>
+        <div class="border-b border-dotted border-zinc-300 dark:border-zinc-700/80 my-3"></div>
 
         <!-- Two-column Layout: Data Table (Left) & Poster Art (Right) -->
         <div class="flex flex-col md:flex-row gap-6 items-start">
           <!-- Left: Definition Table with Dotted Dividers -->
           <div class="flex-1 min-w-0 w-full space-y-3 text-xs">
             <!-- Row: Alias -->
-            <div v-if="animeAliases.length" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-800/80 pb-3 gap-1">
+            <div v-if="animeAliases.length" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-200 dark:border-zinc-800/80 pb-3 gap-1">
               <div class="w-28 shrink-0 text-[var(--text-tertiary)] font-normal">Alias</div>
               <div class="flex-1 space-y-1 text-[var(--text-secondary)] leading-relaxed break-words">
                 <div v-for="alias in animeAliases" :key="alias">{{ alias }}</div>
@@ -789,13 +789,13 @@ const resetAll = () => {
             </div>
 
             <!-- Row: Genre -->
-            <div v-if="animeGenresText" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-800/80 pb-3 gap-1">
+            <div v-if="animeGenresText" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-200 dark:border-zinc-800/80 pb-3 gap-1">
               <div class="w-28 shrink-0 text-[var(--text-tertiary)] font-normal">Genre</div>
               <div class="flex-1 text-[var(--text-secondary)]">{{ animeGenresText }}</div>
             </div>
 
             <!-- Row: Studio -->
-            <div v-if="animeStudios.length" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-800/80 pb-3 gap-1">
+            <div v-if="animeStudios.length" class="flex flex-col sm:flex-row sm:gap-6 border-b border-dotted border-zinc-200 dark:border-zinc-800/80 pb-3 gap-1">
               <div class="w-28 shrink-0 text-[var(--text-tertiary)] font-normal">Studio</div>
               <div class="flex-1 space-y-1">
                 <div v-for="std in animeStudios" :key="std.id || std.name">
@@ -836,13 +836,13 @@ const resetAll = () => {
             <img
               :src="animeCoverImage"
               :alt="currentAniList.title?.romaji || 'Anime Poster'"
-              class="w-full h-auto object-cover border border-[#2E2E2E]"
+              class="w-full h-auto object-cover border border-zinc-200 dark:border-[#2E2E2E] rounded-lg"
             />
           </div>
         </div>
 
         <!-- Dotted Footer Divider -->
-        <div class="border-b border-dotted border-zinc-700/80 my-3"></div>
+        <div class="border-b border-dotted border-zinc-300 dark:border-zinc-700/80 my-3"></div>
 
         <!-- Footnote / Attribution -->
         <div class="text-right text-[11px] text-[var(--text-tertiary)] font-mono">
@@ -874,12 +874,12 @@ const resetAll = () => {
           <div
             v-for="(item, idx) in searchResults"
             :key="item.image + idx"
-            class="p-2.5 rounded-lg border bg-[#141416] hover:bg-[#1A1A1E] transition-colors cursor-pointer flex gap-3 select-none"
-            :class="selectedMatchIndex === idx ? 'border-white' : 'border-[#2E2E2E] hover:border-[#3E3E3E]'"
+            class="p-2.5 rounded-lg border bg-zinc-50 dark:bg-[#141416] hover:bg-zinc-100 dark:hover:bg-[#1A1A1E] transition-colors cursor-pointer flex gap-3 select-none"
+            :class="selectedMatchIndex === idx ? 'border-zinc-900 dark:border-white shadow-xs' : 'border-zinc-200 dark:border-[#2E2E2E] hover:border-zinc-300 dark:hover:border-[#3E3E3E]'"
             @click="selectedMatchIndex = idx"
           >
             <!-- Thumbnail -->
-            <div class="w-24 h-16 rounded overflow-hidden bg-[#212121] shrink-0 relative">
+            <div class="w-24 h-16 rounded overflow-hidden bg-zinc-200 dark:bg-[#212121] shrink-0 relative">
               <img :src="item.image" alt="Scene thumbnail" class="w-full h-full object-cover" />
               <div class="absolute bottom-0.5 right-0.5 px-1 py-0.2 bg-black/80 rounded text-[9px] text-white font-mono">
                 {{ formatTime(item.at) }}
@@ -888,7 +888,7 @@ const resetAll = () => {
 
             <!-- Metadata -->
             <div class="flex-1 min-w-0 space-y-1">
-              <div class="text-xs font-medium text-white truncate" :title="typeof item.anilist !== 'number' ? item.anilist.title?.romaji || '' : item.filename">
+              <div class="text-xs font-medium text-[var(--text-primary)] truncate" :title="typeof item.anilist !== 'number' ? item.anilist.title?.romaji || '' : item.filename">
                 {{ typeof item.anilist !== 'number' ? (item.anilist.title?.romaji || item.anilist.title?.english || item.filename) : item.filename }}
               </div>
 

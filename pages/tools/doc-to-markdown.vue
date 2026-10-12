@@ -242,24 +242,24 @@ const renderedHtml = computed(() => {
 
   // Code blocks
   raw = raw.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
-    return `<pre class="bg-[#141416] border border-[#2E2E2E] rounded-lg p-3 my-3 text-xs font-mono overflow-x-auto text-emerald-300"><code>${code.trim()}</code></pre>`
+    return `<pre class="bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-lg p-3 my-3 text-xs font-mono overflow-x-auto text-emerald-600 dark:text-emerald-300"><code>${code.trim()}</code></pre>`
   })
 
   // Inline code
-  raw = raw.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-[#212121] text-amber-300 font-mono text-[12px] border border-[#2E2E2E]">$1</code>')
+  raw = raw.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-[#212121] text-amber-700 dark:text-amber-300 font-mono text-[12px] border border-zinc-200 dark:border-[#2E2E2E]">$1</code>')
 
   // Headings
-  raw = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-semibold text-white mt-4 mb-2">$1</h3>')
-  raw = raw.replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-white mt-5 mb-2 pb-1 border-b border-[#2E2E2E]">$1</h2>')
-  raw = raw.replace(/^# (.*$)/gim, '<h1 class="text-xl sm:text-2xl font-bold text-white mt-6 mb-3 pb-1 border-b border-[#3E3E3E]">$1</h1>')
+  raw = raw.replace(/^### (.*$)/gim, '<h3 class="text-base font-semibold text-[var(--text-primary)] mt-4 mb-2">$1</h3>')
+  raw = raw.replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold text-[var(--text-primary)] mt-5 mb-2 pb-1 border-b border-zinc-200 dark:border-[#2E2E2E]">$1</h2>')
+  raw = raw.replace(/^# (.*$)/gim, '<h1 class="text-xl sm:text-2xl font-bold text-[var(--text-primary)] mt-6 mb-3 pb-1 border-b border-zinc-200 dark:border-[#3E3E3E]">$1</h1>')
 
   // Blockquotes
   raw = raw.replace(/^\> (.*$)/gim, '<blockquote class="border-l-2 border-emerald-500 pl-3 my-2 text-[var(--text-secondary)] italic">$1</blockquote>')
 
   // Bold & Italic
   raw = raw.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
-  raw = raw.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-  raw = raw.replace(/\*(.*?)\*/g, '<em class="text-zinc-300">$1</em>')
+  raw = raw.replace(/\*\*(.*?)\*\*/g, '<strong class="text-[var(--text-primary)] font-semibold">$1</strong>')
+  raw = raw.replace(/\*(.*?)\*/g, '<em class="text-[var(--text-secondary)]">$1</em>')
 
   // Markdown Tables (basic parser)
   const lines = raw.split('\n')
@@ -282,17 +282,17 @@ const renderedHtml = computed(() => {
 
       if (!inTable) {
         inTable = true
-        tableHtml = '<div class="my-4 overflow-x-auto border border-[#2E2E2E] rounded-lg"><table class="w-full text-xs text-left border-collapse">'
+        tableHtml = '<div class="my-4 overflow-x-auto border border-zinc-200 dark:border-[#2E2E2E] rounded-lg"><table class="w-full text-xs text-left border-collapse">'
         // First row is header
-        tableHtml += '<thead class="bg-[#18181B] border-b border-[#2E2E2E] text-white"><tr>'
+        tableHtml += '<thead class="bg-zinc-100 dark:bg-[#18181B] border-b border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-primary)]"><tr>'
         cells.forEach((c) => {
-          tableHtml += `<th class="px-3 py-2 font-semibold border-r border-[#2E2E2E] last:border-r-0">${c}</th>`
+          tableHtml += `<th class="px-3 py-2 font-semibold border-r border-zinc-200 dark:border-[#2E2E2E] last:border-r-0">${c}</th>`
         })
-        tableHtml += '</tr></thead><tbody class="divide-y divide-[#2E2E2E]">'
+        tableHtml += '</tr></thead><tbody class="divide-y divide-zinc-200 dark:divide-[#2E2E2E]">'
       } else {
-        tableHtml += '<tr class="hover:bg-[#1C1C1F] transition-colors">'
+        tableHtml += '<tr class="hover:bg-zinc-50 dark:hover:bg-[#1C1C1F] transition-colors">'
         cells.forEach((c) => {
-          tableHtml += `<td class="px-3 py-2 border-r border-[#2E2E2E] last:border-r-0 text-[var(--text-secondary)]">${c}</td>`
+          tableHtml += `<td class="px-3 py-2 border-r border-zinc-200 dark:border-[#2E2E2E] last:border-r-0 text-[var(--text-secondary)]">${c}</td>`
         })
         tableHtml += '</tr>'
       }
@@ -451,33 +451,33 @@ const renderedHtml = computed(() => {
     <!-- Conversion Workspace (Split View) -->
     <div v-else-if="convertedMarkdown" class="space-y-4">
       <!-- Action Toolbar -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#141416] border border-[#2E2E2E] rounded-[14px]">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px]">
         <!-- File Info & Stats -->
         <div class="flex items-center gap-3 text-xs font-mono text-[var(--text-secondary)] flex-wrap">
-          <span class="text-white font-medium truncate max-w-xs" :title="selectedFile?.name">
+          <span class="text-[var(--text-primary)] font-medium truncate max-w-xs" :title="selectedFile?.name">
             {{ selectedFile?.name || 'document' }}
           </span>
-          <span class="text-zinc-600">•</span>
-          <span>Words: <strong class="text-white">{{ stats.words }}</strong></span>
-          <span class="text-zinc-600">•</span>
-          <span>Characters: <strong class="text-white">{{ stats.chars }}</strong></span>
+          <span class="text-zinc-400 dark:text-zinc-600">•</span>
+          <span>Words: <strong class="text-[var(--text-primary)]">{{ stats.words }}</strong></span>
+          <span class="text-zinc-400 dark:text-zinc-600">•</span>
+          <span>Characters: <strong class="text-[var(--text-primary)]">{{ stats.chars }}</strong></span>
         </div>
 
         <!-- Toolbar Buttons -->
         <div class="flex items-center gap-2 flex-wrap">
           <!-- View Switcher -->
-          <div class="flex items-center bg-[#1E1E22] p-0.5 rounded-md border border-[#2E2E2E]">
+          <div class="flex items-center bg-zinc-100 dark:bg-[#1E1E22] p-0.5 rounded-md border border-zinc-200 dark:border-[#2E2E2E]">
             <button
-              class="px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1.5"
-              :class="activeTab === 'preview' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
+              class="px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1.5 cursor-pointer"
+              :class="activeTab === 'preview' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'"
               @click="activeTab = 'preview'"
             >
               <Eye class="w-3.5 h-3.5" />
               <span>Preview</span>
             </button>
             <button
-              class="px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1.5"
-              :class="activeTab === 'raw' ? 'bg-[#2E2E2E] text-white font-medium' : 'text-[var(--text-tertiary)] hover:text-white'"
+              class="px-2.5 py-1 text-xs rounded transition-colors flex items-center gap-1.5 cursor-pointer"
+              :class="activeTab === 'raw' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'"
               @click="activeTab = 'raw'"
             >
               <Code2 class="w-3.5 h-3.5" />
@@ -489,10 +489,10 @@ const renderedHtml = computed(() => {
           <Button
             id="btn-copy-markdown"
             variant="secondary"
-            class="h-8 px-3 text-xs font-medium border-[#2E2E2E] flex items-center gap-1.5"
+            class="h-8 px-3 text-xs font-medium flex items-center gap-1.5"
             @click="copyMarkdown"
           >
-            <Check v-if="hasCopied" class="w-3.5 h-3.5 text-emerald-400" />
+            <Check v-if="hasCopied" class="w-3.5 h-3.5 text-emerald-500" />
             <Copy v-else class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
             <span>{{ hasCopied ? 'Copied' : 'Copy' }}</span>
           </Button>
@@ -511,7 +511,7 @@ const renderedHtml = computed(() => {
           <!-- Reset / New File -->
           <Button
             variant="ghost"
-            class="h-8 px-2 text-xs text-[var(--text-tertiary)] hover:text-white"
+            class="h-8 px-2 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
             title="Upload another file"
             @click="resetWorkspace"
           >
@@ -529,7 +529,7 @@ const renderedHtml = computed(() => {
             <span>{{ selectedFile?.type?.includes('pdf') ? 'PDF' : 'Image' }}</span>
           </div>
 
-          <div class="rounded-lg overflow-hidden bg-[#141416] border border-[#2E2E2E] max-h-[650px] flex items-center justify-center relative overflow-y-auto">
+          <div class="rounded-lg overflow-hidden bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] max-h-[650px] flex items-center justify-center relative overflow-y-auto">
             <!-- PDF Document Frame -->
             <iframe
               v-if="selectedFile?.type?.includes('pdf') && previewUrl"
@@ -560,7 +560,7 @@ const renderedHtml = computed(() => {
           <div v-else class="flex-1 flex flex-col space-y-2">
             <textarea
               v-model="convertedMarkdown"
-              class="w-full flex-1 min-h-[550px] p-3 text-xs font-mono bg-[#141416] border border-[#2E2E2E] rounded-lg text-white focus:outline-none focus:border-zinc-500 resize-y leading-relaxed"
+              class="w-full flex-1 min-h-[550px] p-3 text-xs font-mono bg-zinc-50 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 resize-y leading-relaxed"
               placeholder="Markdown content..."
             ></textarea>
           </div>

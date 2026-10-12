@@ -412,11 +412,11 @@ onUnmounted(() => {
   <div class="space-y-6 pb-12 w-full">
     <!-- Breadcrumb -->
     <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-tertiary)]">
-      <NuxtLink to="/" class="hover:text-white transition-colors">Dashboard</NuxtLink>
+      <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
       <span>/</span>
-      <span>Tools</span>
+      <span>Media Tools</span>
       <span>/</span>
-      <span class="text-white">Video to GIF</span>
+      <span class="text-[var(--text-primary)]">Video to GIF</span>
     </div>
 
     <!-- Hidden File Input -->
@@ -446,7 +446,7 @@ onUnmounted(() => {
           class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
           @click="fileInputRef?.click()"
         >
-          <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
+          <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-[var(--text-secondary)]" />
           <span>{{ locale === 'id' ? 'Ganti Video' : 'Change Video' }}</span>
         </Button>
       </div>
@@ -570,7 +570,7 @@ onUnmounted(() => {
         <div class="flex items-center gap-3 pt-1">
           <button
             type="button"
-            class="w-9 h-9 rounded-lg bg-[#222226] hover:bg-[#2c2c32] text-white flex items-center justify-center cursor-pointer transition-colors shrink-0"
+            class="w-9 h-9 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-[#222226] dark:hover:bg-[#2c2c32] text-zinc-900 dark:text-white flex items-center justify-center cursor-pointer transition-colors shrink-0 border border-zinc-200 dark:border-white/10"
             @click="togglePlayPause"
           >
             <Pause v-if="isPlaying" class="w-4 h-4 fill-current" />
@@ -583,14 +583,14 @@ onUnmounted(() => {
             :max="totalDuration || 60"
             step="0.05"
             :value="currentTime"
-            class="flex-1 accent-white cursor-pointer"
+            class="flex-1 accent-zinc-900 dark:accent-white cursor-pointer"
             @input="(e) => seekTo(Number((e.target as HTMLInputElement).value))"
           />
 
           <button
             type="button"
             class="p-2 rounded-lg border text-xs font-mono transition-colors cursor-pointer shrink-0"
-            :class="isLooping ? 'bg-[#2E2E2E] border-white/20 text-white' : 'bg-[#18181b] border-transparent text-neutral-400 hover:text-white'"
+            :class="isLooping ? 'bg-zinc-900 dark:bg-[#2E2E2E] border-zinc-900 dark:border-white/20 text-white' : 'bg-zinc-100 dark:bg-[#18181b] border-zinc-200 dark:border-white/5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
             title="Toggle Segment Loop"
             @click="isLooping = !isLooping"
           >
@@ -613,7 +613,7 @@ onUnmounted(() => {
 
           <button
             type="button"
-            class="text-xs font-mono text-neutral-400 hover:text-white cursor-pointer flex items-center gap-1 transition-colors"
+            class="text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer flex items-center gap-1 transition-colors"
             @click="resetTrim"
           >
             <RotateCcw class="w-3.5 h-3.5" />
@@ -624,7 +624,7 @@ onUnmounted(() => {
         <!-- Two Columns: Start Cut & End Cut with Range + Number Input -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Start Cut -->
-          <div class="p-3.5 rounded-lg bg-[#18181b] border border-white/5 space-y-2.5">
+          <div class="p-3.5 rounded-lg bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-white/5 space-y-2.5">
             <div class="flex items-center justify-between">
               <label class="text-xs font-mono text-[var(--text-secondary)]">Start Cut</label>
               <div class="flex items-center gap-1.5">
@@ -636,16 +636,16 @@ onUnmounted(() => {
                     min="0"
                     :max="Math.max(0, endTime - 0.1)"
                     step="0.1"
-                    class="w-20 h-7.5 px-2 bg-[#121214] border border-[#2E2E2E] focus:border-white/40 text-white font-mono text-xs rounded-md text-center focus:outline-none"
+                    class="w-20 h-7.5 px-2 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] font-mono text-xs rounded-md text-center focus:outline-none"
                     @change="(e) => updateStartTime(Number((e.target as HTMLInputElement).value))"
                   />
-                  <span class="text-xs font-mono text-neutral-500">sec</span>
+                  <span class="text-xs font-mono text-[var(--text-tertiary)]">sec</span>
                 </div>
 
                 <!-- Quick Button to Set to Current Playhead -->
                 <button
                   type="button"
-                  class="px-2 py-1 rounded bg-[#252528] hover:bg-[#303034] text-[11px] font-mono text-white/80 hover:text-white border border-white/10 cursor-pointer transition-colors"
+                  class="px-2 py-1 rounded bg-white dark:bg-[#252528] hover:bg-zinc-100 dark:hover:bg-[#303034] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-zinc-200 dark:border-white/10 cursor-pointer transition-colors"
                   title="Set Start Cut to current playhead"
                   @click="setStartToCurrent"
                 >
@@ -661,13 +661,13 @@ onUnmounted(() => {
               min="0"
               :max="Math.max(0, endTime - 0.1)"
               step="0.1"
-              class="w-full accent-white cursor-pointer"
+              class="w-full accent-zinc-900 dark:accent-white cursor-pointer"
               @input="seekTo(startTime)"
             />
           </div>
 
           <!-- End Cut -->
-          <div class="p-3.5 rounded-lg bg-[#18181b] border border-white/5 space-y-2.5">
+          <div class="p-3.5 rounded-lg bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-white/5 space-y-2.5">
             <div class="flex items-center justify-between">
               <label class="text-xs font-mono text-[var(--text-secondary)]">End Cut</label>
               <div class="flex items-center gap-1.5">
@@ -679,16 +679,16 @@ onUnmounted(() => {
                     :min="startTime + 0.1"
                     :max="totalDuration || 60"
                     step="0.1"
-                    class="w-20 h-7.5 px-2 bg-[#121214] border border-[#2E2E2E] focus:border-white/40 text-white font-mono text-xs rounded-md text-center focus:outline-none"
+                    class="w-20 h-7.5 px-2 bg-white dark:bg-[#121214] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] font-mono text-xs rounded-md text-center focus:outline-none"
                     @change="(e) => updateEndTime(Number((e.target as HTMLInputElement).value))"
                   />
-                  <span class="text-xs font-mono text-neutral-500">sec</span>
+                  <span class="text-xs font-mono text-[var(--text-tertiary)]">sec</span>
                 </div>
 
                 <!-- Quick Button to Set to Current Playhead -->
                 <button
                   type="button"
-                  class="px-2 py-1 rounded bg-[#252528] hover:bg-[#303034] text-[11px] font-mono text-white/80 hover:text-white border border-white/10 cursor-pointer transition-colors"
+                  class="px-2 py-1 rounded bg-white dark:bg-[#252528] hover:bg-zinc-100 dark:hover:bg-[#303034] text-[11px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-zinc-200 dark:border-white/10 cursor-pointer transition-colors"
                   title="Set End Cut to current playhead"
                   @click="setEndToCurrent"
                 >
@@ -704,7 +704,7 @@ onUnmounted(() => {
               :min="startTime + 0.1"
               :max="totalDuration || 60"
               step="0.1"
-              class="w-full accent-white cursor-pointer"
+              class="w-full accent-zinc-900 dark:accent-white cursor-pointer"
               @input="seekTo(endTime)"
             />
           </div>
@@ -749,7 +749,7 @@ onUnmounted(() => {
                 :key="rate"
                 type="button"
                 class="py-1.5 px-2 rounded-lg text-xs font-mono border transition-all cursor-pointer text-center"
-                :class="fps === rate ? 'bg-white text-black font-bold border-white shadow-xs' : 'bg-[#18181b] border-white/10 text-neutral-400 hover:text-white'"
+                :class="fps === rate ? 'bg-zinc-900 text-white dark:bg-white dark:text-black font-bold border-zinc-900 dark:border-white shadow-xs' : 'bg-zinc-100 dark:bg-[#18181b] border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white'"
                 @click="fps = rate"
               >
                 {{ rate }}
@@ -766,7 +766,7 @@ onUnmounted(() => {
                 :key="spd"
                 type="button"
                 class="py-1.5 px-1 rounded-lg text-xs font-mono border transition-all cursor-pointer text-center"
-                :class="playbackSpeed === spd ? 'bg-white text-black font-bold border-white shadow-xs' : 'bg-[#18181b] border-white/10 text-neutral-400 hover:text-white'"
+                :class="playbackSpeed === spd ? 'bg-zinc-900 text-white dark:bg-white dark:text-black font-bold border-zinc-900 dark:border-white shadow-xs' : 'bg-zinc-100 dark:bg-[#18181b] border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white'"
                 @click="playbackSpeed = spd"
               >
                 {{ spd }}x
@@ -776,14 +776,14 @@ onUnmounted(() => {
         </div>
 
         <!-- Encoding Progress Bar -->
-        <div v-if="isGenerating" class="space-y-2 pt-2 border-t border-[#262626]">
+        <div v-if="isGenerating" class="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
           <div class="flex justify-between text-xs font-mono">
-            <span class="text-white/80">{{ statusMessage }}</span>
-            <span class="text-white font-bold">{{ generationProgress }}%</span>
+            <span class="text-[var(--text-secondary)]">{{ statusMessage }}</span>
+            <span class="text-[var(--text-primary)] font-bold">{{ generationProgress }}%</span>
           </div>
-          <div class="w-full h-1.5 bg-[#222226] rounded-full overflow-hidden">
+          <div class="w-full h-1.5 bg-zinc-200 dark:bg-[#222226] rounded-full overflow-hidden">
             <div
-              class="h-full bg-white transition-all duration-200"
+              class="h-full bg-zinc-900 dark:bg-white transition-all duration-200"
               :style="{ width: `${generationProgress}%` }"
             />
           </div>
@@ -805,13 +805,13 @@ onUnmounted(() => {
         </div>
 
         <!-- Rendered Output Card -->
-        <div v-else class="p-4 rounded-xl bg-[#18181b] border border-white/15 space-y-3 pt-3">
+        <div v-else class="p-4 rounded-xl bg-zinc-50 dark:bg-[#18181b] border border-zinc-200 dark:border-white/15 space-y-3 pt-3">
           <div class="flex items-center justify-between text-xs font-mono">
-            <span class="text-white font-semibold">GIF Ready</span>
+            <span class="text-[var(--text-primary)] font-semibold">GIF Ready</span>
             <span class="text-[var(--text-tertiary)]">{{ formatBytes(generatedGifSize) }}</span>
           </div>
 
-          <div class="w-full rounded-lg bg-black border border-white/10 overflow-hidden flex items-center justify-center p-2 max-h-56">
+          <div class="w-full rounded-lg bg-zinc-100 dark:bg-black border border-zinc-200 dark:border-white/10 overflow-hidden flex items-center justify-center p-2 max-h-56">
             <img
               :src="generatedGifUrl"
               alt="Generated GIF"
@@ -835,7 +835,7 @@ onUnmounted(() => {
               class="h-10 rounded-xl font-medium text-xs cursor-pointer"
               @click="copyGifToClipboard"
             >
-              <Check v-if="isCopied" class="w-3.5 h-3.5 mr-1.5 text-white" />
+              <Check v-if="isCopied" class="w-3.5 h-3.5 mr-1.5 text-emerald-500" />
               <Copy v-else class="w-3.5 h-3.5 mr-1.5" />
               <span>{{ isCopied ? 'Copied' : 'Copy GIF' }}</span>
             </Button>

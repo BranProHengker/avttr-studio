@@ -534,7 +534,7 @@ onUnmounted(() => {
         <nav class="flex items-center gap-1.5 text-xs font-mono text-[var(--text-tertiary)]">
           <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
           <span>/</span>
-          <span>Assets</span>
+          <span>Media Tools</span>
           <span>/</span>
           <span class="text-[var(--text-primary)] font-medium">Teleprompter Studio</span>
         </nav>

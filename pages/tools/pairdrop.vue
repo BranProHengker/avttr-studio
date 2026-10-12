@@ -475,7 +475,7 @@ onUnmounted(() => {
           Dashboard
         </NuxtLink>
         <span>/</span>
-        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+        <span class="text-[var(--text-secondary)] font-medium">Media Tools</span>
         <span>/</span>
         <span class="text-[var(--text-primary)]">PairDrop</span>
       </div>
@@ -561,20 +561,20 @@ onUnmounted(() => {
           class="text-xs"
           @click="copyShareUrl"
         >
-          <Check v-if="copiedUrl" class="w-3.5 h-3.5 mr-1.5 text-white" />
-          <Share2 v-else class="w-3.5 h-3.5 mr-1.5 text-white" />
+          <Check v-if="copiedUrl" class="w-3.5 h-3.5 mr-1.5 text-current" />
+          <Share2 v-else class="w-3.5 h-3.5 mr-1.5 text-current" />
           <span>{{ copiedUrl ? 'Copied' : 'Share Link' }}</span>
         </Button>
       </div>
     </div>
 
     <!-- Central Orbital Radar Arena -->
-    <div class="relative w-full rounded-[14px] border border-[#212121] bg-[#121214] overflow-hidden min-h-[440px] sm:min-h-[500px] flex flex-col justify-between p-6 sm:p-10 select-none">
+    <div class="relative w-full rounded-[14px] border border-zinc-200 dark:border-[#212121] bg-white dark:bg-[#121214] shadow-xs overflow-hidden min-h-[440px] sm:min-h-[500px] flex flex-col justify-between p-6 sm:p-10 select-none">
       <!-- Background Concentric Orbital Rings Animation -->
-      <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-        <div class="w-[260px] h-[260px] sm:w-[340px] sm:h-[340px] rounded-full border border-white/20 animate-ping [animation-duration:4s]" />
-        <div class="absolute w-[380px] h-[380px] sm:w-[480px] sm:h-[480px] rounded-full border border-white/10" />
-        <div class="absolute w-[520px] h-[520px] sm:w-[640px] sm:h-[640px] rounded-full border border-white/5" />
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-25">
+        <div class="w-[260px] h-[260px] sm:w-[340px] sm:h-[340px] rounded-full border border-zinc-400/40 dark:border-white/20 animate-ping [animation-duration:4s]" />
+        <div class="absolute w-[380px] h-[380px] sm:w-[480px] sm:h-[480px] rounded-full border border-zinc-300/50 dark:border-white/10" />
+        <div class="absolute w-[520px] h-[520px] sm:w-[640px] sm:h-[640px] rounded-full border border-zinc-200/60 dark:border-white/5" />
       </div>
 
       <!-- Top Radar Status Notice -->
@@ -591,11 +591,11 @@ onUnmounted(() => {
       <div class="relative z-10 my-auto py-8">
         <!-- Empty Discovered State -->
         <div v-if="peers.length === 0" class="text-center max-w-sm mx-auto space-y-4">
-          <div class="w-16 h-16 rounded-2xl bg-[#1c1c1f] border border-[#2e2e32] flex items-center justify-center mx-auto text-[var(--text-secondary)] shadow-sm">
-            <Radio class="w-8 h-8 text-white/60 animate-pulse" />
+          <div class="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-[#1c1c1f] border border-zinc-200 dark:border-[#2e2e32] flex items-center justify-center mx-auto text-[var(--text-secondary)] shadow-xs">
+            <Radio class="w-8 h-8 text-zinc-500 dark:text-white/60 animate-pulse" />
           </div>
           <div>
-            <h3 class="text-sm font-semibold text-white">
+            <h3 class="text-sm font-semibold text-zinc-900 dark:text-white">
               Scanning for Nearby Devices
             </h3>
             <p class="text-xs text-[var(--text-secondary)] mt-1 max-w-xs mx-auto">
@@ -612,8 +612,8 @@ onUnmounted(() => {
             class="group relative flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl border transition-all duration-200 cursor-pointer w-[140px] sm:w-[170px]"
             :class="[
               dragTargetPeerId === peer.peerId
-                ? 'bg-white/10 border-white scale-105 shadow-[0_0_20px_rgba(255,255,255,0.15)]'
-                : 'bg-[#18181b] border-[#2e2e32] hover:border-white/50 hover:bg-[#202024] hover:scale-102 shadow-xs'
+                ? 'bg-zinc-100 dark:bg-white/10 border-zinc-900 dark:border-white scale-105 shadow-[0_0_20px_rgba(0,0,0,0.1)] dark:shadow-[0_0_20px_rgba(255,255,255,0.15)]'
+                : 'bg-zinc-50 dark:bg-[#18181b] border-zinc-200 dark:border-[#2e2e32] hover:border-zinc-400 dark:hover:border-white/50 hover:bg-zinc-100/80 dark:hover:bg-[#202024] hover:scale-102 shadow-xs'
             ]"
             @click="triggerFileSelect(peer)"
             @dragover="onDragOverPeer($event, peer.peerId)"
@@ -621,12 +621,12 @@ onUnmounted(() => {
             @drop="onDropOnPeer($event, peer)"
           >
             <!-- Device Avatar Icon -->
-            <div class="relative w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white mb-2.5 transition-transform group-hover:scale-110">
+            <div class="relative w-12 h-12 rounded-xl bg-zinc-200/60 dark:bg-white/10 border border-zinc-300/60 dark:border-white/20 flex items-center justify-center text-zinc-900 dark:text-white mb-2.5 transition-transform group-hover:scale-110">
               <component :is="getDeviceIcon(peer.deviceType)" class="w-6 h-6" />
             </div>
 
             <!-- Device Name -->
-            <span class="text-xs font-semibold text-white truncate max-w-full text-center group-hover:text-white">
+            <span class="text-xs font-semibold text-zinc-900 dark:text-white truncate max-w-full text-center group-hover:text-zinc-900 dark:group-hover:text-white">
               {{ peer.name }}
             </span>
 
@@ -641,7 +641,7 @@ onUnmounted(() => {
             <div class="mt-2.5 flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <button
                 type="button"
-                class="px-2 py-1 rounded bg-white/10 hover:bg-white text-white hover:text-black text-[11px] font-medium transition-colors cursor-pointer"
+                class="px-2 py-1 rounded bg-zinc-200/80 hover:bg-zinc-900 hover:text-white dark:bg-white/10 dark:hover:bg-white text-zinc-800 dark:text-white dark:hover:text-black text-[11px] font-medium transition-colors cursor-pointer"
                 title="Send File"
                 @click.stop="triggerFileSelect(peer)"
               >
@@ -649,7 +649,7 @@ onUnmounted(() => {
               </button>
               <button
                 type="button"
-                class="p-1 rounded bg-white/10 hover:bg-white text-white hover:text-black transition-colors cursor-pointer"
+                class="p-1 rounded bg-zinc-200/80 hover:bg-zinc-900 hover:text-white dark:bg-white/10 dark:hover:bg-white text-zinc-800 dark:text-white dark:hover:text-black transition-colors cursor-pointer"
                 title="Send Text Message"
                 @click.stop="openSendText(peer)"
               >
@@ -661,23 +661,23 @@ onUnmounted(() => {
       </div>
 
       <!-- Bottom "You" Center Node Card -->
-      <div class="relative z-10 pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="relative z-10 pt-4 border-t border-zinc-200 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-white text-black font-bold flex items-center justify-center shrink-0 shadow-md">
+          <div class="w-10 h-10 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-black font-bold flex items-center justify-center shrink-0 shadow-xs">
             <component :is="getDeviceIcon(myDeviceType)" class="w-5 h-5" />
           </div>
           <div>
             <div class="flex items-center gap-2">
               <span class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">You</span>
-              <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-white/10 text-white/80 uppercase">{{ myOs }}</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-700 dark:text-white/80 border border-zinc-200 dark:border-transparent uppercase">{{ myOs }}</span>
             </div>
 
             <!-- Name with in-place rename -->
             <div v-if="!isEditingName" class="flex items-center gap-2">
-              <span class="text-sm font-bold text-white">{{ myPeerName }}</span>
+              <span class="text-sm font-bold text-zinc-900 dark:text-white">{{ myPeerName }}</span>
               <button
                 type="button"
-                class="text-[11px] text-[var(--text-tertiary)] hover:text-white transition-colors cursor-pointer"
+                class="text-[11px] text-[var(--text-tertiary)] hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                 title="Rename device"
                 @click="startEditName"
               >
@@ -685,7 +685,7 @@ onUnmounted(() => {
               </button>
               <button
                 type="button"
-                class="text-[11px] text-[var(--text-tertiary)] hover:text-white transition-colors cursor-pointer"
+                class="text-[11px] text-[var(--text-tertiary)] hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                 title="Randomize name"
                 @click="randomizeMyName"
               >
@@ -699,7 +699,7 @@ onUnmounted(() => {
                 v-model="editNameInput"
                 type="text"
                 maxlength="25"
-                class="bg-[#222] border border-white/20 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-white"
+                class="bg-zinc-50 dark:bg-[#222] border border-zinc-300 dark:border-white/20 rounded px-2 py-0.5 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-zinc-500 dark:focus:border-white"
                 @keyup.enter="saveName"
               />
               <Button size="sm" variant="primary" class="text-xs px-2 py-0.5 h-6" @click="saveName">
@@ -710,7 +710,7 @@ onUnmounted(() => {
         </div>
 
         <div class="text-xs text-[var(--text-secondary)] flex items-center gap-2">
-          <ShieldCheck class="w-4 h-4 text-white/60 shrink-0" />
+          <ShieldCheck class="w-4 h-4 text-zinc-500 dark:text-white/60 shrink-0" />
           <span>End-to-End Direct P2P Encryption</span>
         </div>
       </div>
@@ -719,16 +719,16 @@ onUnmounted(() => {
     <!-- Active Transfer Progress Floating Drawer -->
     <div
       v-if="activeTransfer"
-      class="fixed bottom-6 right-6 z-50 w-[90vw] sm:w-[380px] p-4 rounded-2xl bg-[#1b1b1e] border border-white/20 shadow-2xl space-y-3 backdrop-blur-md animate-in slide-in-from-bottom duration-200"
+      class="fixed bottom-6 right-6 z-50 w-[90vw] sm:w-[380px] p-4 rounded-2xl bg-white dark:bg-[#1b1b1e] border border-zinc-200 dark:border-white/20 shadow-2xl space-y-3 backdrop-blur-md animate-in slide-in-from-bottom duration-200"
     >
       <div class="flex items-start justify-between gap-2">
         <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-            <FileUp v-if="activeTransfer.direction === 'send'" class="w-4 h-4 text-white" />
-            <Download v-else class="w-4 h-4 text-white" />
+          <div class="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-white/10 text-zinc-900 dark:text-white flex items-center justify-center shrink-0">
+            <FileUp v-if="activeTransfer.direction === 'send'" class="w-4 h-4 text-current" />
+            <Download v-else class="w-4 h-4 text-current" />
           </div>
           <div class="min-w-0">
-            <div class="text-xs font-bold text-white truncate">
+            <div class="text-xs font-bold text-zinc-900 dark:text-white truncate">
               {{ activeTransfer.direction === 'send' ? 'Sending' : 'Receiving' }}: {{ activeTransfer.fileName }}
             </div>
             <div class="text-[11px] text-[var(--text-tertiary)] truncate">
@@ -739,7 +739,7 @@ onUnmounted(() => {
 
         <button
           type="button"
-          class="text-white/60 hover:text-white p-1 cursor-pointer"
+          class="text-zinc-400 hover:text-zinc-900 dark:text-white/60 dark:hover:text-white p-1 cursor-pointer"
           @click="cancelTransfer"
         >
           <X class="w-4 h-4" />
@@ -748,9 +748,9 @@ onUnmounted(() => {
 
       <!-- Progress bar -->
       <div class="space-y-1">
-        <div class="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+        <div class="h-2 w-full rounded-full bg-zinc-100 dark:bg-white/10 overflow-hidden">
           <div
-            class="h-full bg-white rounded-full transition-all duration-150"
+            class="h-full bg-zinc-900 dark:bg-white rounded-full transition-all duration-150"
             :style="{ width: `${activeTransfer.progress}%` }"
           />
         </div>
@@ -768,17 +768,17 @@ onUnmounted(() => {
       @close="rejectIncoming"
     >
       <div v-if="incomingRequest" class="space-y-4">
-        <div class="p-4 rounded-xl bg-[#141416] border border-[#282828] flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-            <FileText class="w-6 h-6 text-white" />
+        <div class="p-4 rounded-xl bg-zinc-50 dark:bg-[#141416] border border-zinc-200 dark:border-[#282828] flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-zinc-200/60 dark:bg-white/10 border border-zinc-300/60 dark:border-white/20 flex items-center justify-center shrink-0">
+            <FileText class="w-6 h-6 text-zinc-900 dark:text-white" />
           </div>
           <div class="min-w-0">
-            <div class="text-sm font-bold text-white truncate">{{ incomingRequest.file.name }}</div>
+            <div class="text-sm font-bold text-zinc-900 dark:text-white truncate">{{ incomingRequest.file.name }}</div>
             <div class="text-xs text-[var(--text-secondary)] mt-0.5">
               Size: {{ formatSize(incomingRequest.file.size) }}
             </div>
             <div class="text-[11px] text-[var(--text-tertiary)] mt-0.5">
-              Sent by <strong class="text-white">{{ incomingRequest.fromPeer.name }}</strong> ({{ incomingRequest.fromPeer.os }})
+              Sent by <strong class="text-zinc-900 dark:text-white">{{ incomingRequest.fromPeer.name }}</strong> ({{ incomingRequest.fromPeer.os }})
             </div>
           </div>
         </div>
@@ -806,10 +806,10 @@ onUnmounted(() => {
     >
       <div v-if="incomingText" class="space-y-4">
         <div class="text-xs text-[var(--text-tertiary)]">
-          From <strong class="text-white">{{ incomingText.fromPeer.name }}</strong>:
+          From <strong class="text-zinc-900 dark:text-white">{{ incomingText.fromPeer.name }}</strong>:
         </div>
 
-        <div class="p-3.5 bg-[#141416] border border-[#282828] rounded-xl text-sm font-mono text-white select-all break-words max-h-60 overflow-y-auto">
+        <div class="p-3.5 bg-zinc-50 dark:bg-[#141416] border border-zinc-200 dark:border-[#282828] rounded-xl text-sm font-mono text-zinc-900 dark:text-white select-all break-words max-h-60 overflow-y-auto">
           {{ incomingText.text }}
         </div>
 
@@ -842,7 +842,7 @@ onUnmounted(() => {
           v-model="textToSend"
           rows="4"
           placeholder="Paste or type text message here..."
-          class="w-full p-3 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-sm focus:outline-none focus:border-white"
+          class="w-full p-3 bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-primary)] rounded-lg text-sm focus:outline-none focus:border-zinc-400 dark:focus:border-white"
         />
         <div class="flex items-center justify-end gap-2 pt-2">
           <Button variant="secondary" @click="showSendTextModal = false">
@@ -868,7 +868,7 @@ onUnmounted(() => {
         </p>
 
         <!-- QR Canvas Render -->
-        <div class="p-3 bg-[#141416] border border-[#282828] rounded-2xl flex items-center justify-center shadow-lg">
+        <div class="p-3 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#282828] rounded-2xl flex items-center justify-center shadow-lg">
           <div class="w-[240px] h-[240px] [&>svg]:w-full [&>svg]:h-full" v-html="pairingQrSvg" />
         </div>
 
@@ -985,7 +985,7 @@ onUnmounted(() => {
               type="text"
               maxlength="25"
               placeholder="e.g. 7X9K2 or OFFICE"
-              class="w-full p-3.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-white text-center font-mono text-lg font-bold tracking-widest uppercase rounded-xl focus:outline-none focus:border-white placeholder:normal-case placeholder:font-normal placeholder:text-sm placeholder:tracking-normal"
+              class="w-full p-3.5 bg-[var(--bg-input)] border border-[var(--border-card)] text-zinc-900 dark:text-white text-center font-mono text-lg font-bold tracking-widest uppercase rounded-xl focus:outline-none focus:border-zinc-400 dark:focus:border-white placeholder:normal-case placeholder:font-normal placeholder:text-sm placeholder:tracking-normal"
               autofocus
               @keyup.enter="submitJoinCode"
             />
@@ -995,7 +995,7 @@ onUnmounted(() => {
             <span>Need a fresh room?</span>
             <button
               type="button"
-              class="text-xs text-white hover:underline cursor-pointer flex items-center gap-1"
+              class="text-xs text-zinc-700 dark:text-white hover:underline cursor-pointer flex items-center gap-1"
               @click="generateRandomRoomCode"
             >
               <RefreshCw class="w-3 h-3" />
@@ -1005,10 +1005,10 @@ onUnmounted(() => {
         </div>
 
         <!-- Current Room Notice -->
-        <div class="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
+        <div class="p-3 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 flex items-center justify-between text-xs">
           <div>
             <div class="text-[11px] text-[var(--text-tertiary)]">Your Current Room</div>
-            <div class="font-mono font-bold text-white">
+            <div class="font-mono font-bold text-zinc-900 dark:text-white">
               {{ currentRoom === 'auto' ? 'Local Wi-Fi (Auto)' : `#${currentRoom}` }}
             </div>
           </div>

@@ -326,11 +326,11 @@ const resetAll = () => {
   <div class="space-y-6 pb-12 w-full">
     <!-- Header & Breadcrumbs (Standard Design Mandate) -->
     <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-tertiary)]">
-      <NuxtLink to="/" class="hover:text-white transition-colors">Dashboard</NuxtLink>
+      <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
       <span>/</span>
-      <span>Tools</span>
+      <span>Image & Design</span>
       <span>/</span>
-      <span class="text-white">{{ t.tools['background-remover']?.title || 'Background Remover' }}</span>
+      <span class="text-[var(--text-primary)]">{{ t.tools['background-remover']?.title || 'Background Remover' }}</span>
     </div>
 
     <!-- Title Header Row -->
@@ -351,7 +351,7 @@ const resetAll = () => {
           class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
           @click="resetAll"
         >
-          <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-white/70" />
+          <FolderOpen class="w-3.5 h-3.5 mr-1.5 text-[var(--text-secondary)]" />
           <span>{{ locale === 'id' ? 'Upload Foto Lain' : 'Upload Another' }}</span>
         </Button>
       </div>
@@ -457,16 +457,16 @@ const resetAll = () => {
           <!-- Processing Overlay -->
           <div
             v-if="isProcessing"
-            class="absolute inset-0 bg-black/80 backdrop-blur-xs z-20 flex flex-col items-center justify-center p-6 text-center space-y-4"
+            class="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-xs z-20 flex flex-col items-center justify-center p-6 text-center space-y-4"
           >
-            <div class="w-10 h-10 border-3 border-white/20 border-t-white rounded-full animate-spin" />
-            <div class="text-sm font-semibold text-white">{{ progressStatus }}</div>
+            <div class="w-10 h-10 border-3 border-zinc-300 dark:border-white/20 border-t-zinc-900 dark:border-t-white rounded-full animate-spin" />
+            <div class="text-sm font-semibold text-[var(--text-primary)]">{{ progressStatus }}</div>
           </div>
 
           <!-- Cutout Canvas Preview -->
           <div
             class="w-full max-h-[440px] rounded-xl border border-[var(--border-subtle)] flex items-center justify-center overflow-hidden relative shadow-inner p-4"
-            :class="bgType === 'transparent' ? 'bg-[radial-gradient(#333_1px,transparent_1px)] [background-size:16px_16px] bg-[#1a1a1a]' : ''"
+            :class="bgType === 'transparent' ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#333_1px,transparent_1px)] [background-size:16px_16px] bg-zinc-100 dark:bg-[#1a1a1a]' : ''"
             :style="
               bgType === 'color'
                 ? { backgroundColor: solidBgColor }
@@ -563,7 +563,7 @@ const resetAll = () => {
               :key="grad"
               type="button"
               class="h-10 rounded-lg border border-[var(--border-subtle)] transition-transform hover:scale-105 cursor-pointer shadow-xs"
-              :class="gradientChoice === grad ? 'ring-2 ring-white' : ''"
+              :class="gradientChoice === grad ? 'ring-2 ring-zinc-900 dark:ring-white' : ''"
               :style="{ backgroundImage: grad }"
               @click="gradientChoice = grad"
             />

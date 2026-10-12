@@ -461,11 +461,11 @@ onMounted(async () => {
     </div>
 
     <!-- Mode Selector Segmented Control -->
-    <div class="p-1 bg-[#1F1F1F] border border-[var(--border-subtle)] rounded-xl inline-flex gap-1 w-full sm:w-auto">
+    <div class="p-1 bg-zinc-100 dark:bg-[#171717] border border-zinc-200 dark:border-[var(--border-subtle)] rounded-xl inline-flex gap-1 w-full sm:w-auto">
       <button
         type="button"
         class="flex-1 sm:flex-none flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs transition-all cursor-pointer"
-        :class="outputMode === 'static' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+        :class="outputMode === 'static' ? 'bg-white dark:bg-[#252528] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
         @click="setOutputMode('static')"
       >
         <ImageIcon class="w-4 h-4" />
@@ -475,7 +475,7 @@ onMounted(async () => {
       <button
         type="button"
         class="flex-1 sm:flex-none flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs transition-all cursor-pointer"
-        :class="outputMode === 'animated' ? 'bg-white text-black font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-white'"
+        :class="outputMode === 'animated' ? 'bg-white dark:bg-[#252528] text-[var(--text-primary)] font-semibold shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
         @click="setOutputMode('animated')"
       >
         <Film class="w-4 h-4" />

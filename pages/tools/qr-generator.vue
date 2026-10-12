@@ -818,13 +818,13 @@ onMounted(async () => {
                 class="p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 relative overflow-hidden"
                 :class="
                   selectedArtisticStyle === styleItem.id
-                    ? 'border-white bg-[#252528] ring-1 ring-white/20'
-                    : 'border-[var(--border-subtle)] bg-[var(--bg-input)] hover:border-white/40 hover:bg-[#1f1f22]'
+                    ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-[#252528] ring-1 ring-zinc-900/20 dark:ring-white/20 shadow-xs'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-input)] hover:border-zinc-400 dark:hover:border-white/40 hover:bg-zinc-50 dark:hover:bg-[#1f1f22]'
                 "
                 @click="selectedArtisticStyle = styleItem.id"
               >
                 <div class="flex items-center justify-between w-full">
-                  <span class="text-xs font-bold text-white tracking-tight">
+                  <span class="text-xs font-bold text-zinc-900 dark:text-white tracking-tight">
                     {{ styleItem.name }}
                   </span>
                 </div>
@@ -840,11 +840,11 @@ onMounted(async () => {
         <Card v-if="generatorMode === 'artistic'" :hoverable="false" class="p-5 space-y-4">
           <div class="flex items-center justify-between cursor-pointer group" @click="toggleSection('artisticParams')">
             <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
-              <Sliders class="w-3.5 h-3.5 text-[var(--text-secondary)] group-hover:text-white transition-colors" />
+              <Sliders class="w-3.5 h-3.5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
               Fine-Tuning & Anchors
             </h3>
             <ChevronDown
-              class="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-white transition-transform duration-200"
+              class="w-4 h-4 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-transform duration-200"
               :class="openSections.artisticParams ? 'rotate-180' : ''"
             />
           </div>

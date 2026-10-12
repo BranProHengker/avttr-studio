@@ -366,11 +366,11 @@ const handleContainerTouchMove = (e: TouchEvent) => {
   <div class="space-y-6 pb-12 w-full">
     <!-- Header & Breadcrumbs (Standard Design Mandate) -->
     <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-tertiary)]">
-      <NuxtLink to="/" class="hover:text-white transition-colors">Dashboard</NuxtLink>
+      <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
       <span>/</span>
-      <span>Tools</span>
+      <span>Image & Design</span>
       <span>/</span>
-      <span class="text-white">{{ t.tools['image-compressor']?.title || 'Image Compressor' }}</span>
+      <span class="text-[var(--text-primary)]">{{ t.tools['image-compressor']?.title || 'Image Compressor' }}</span>
     </div>
 
     <!-- Title Header Row -->
@@ -391,7 +391,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
           @click="fileInputRef?.click()"
         >
-          <Plus class="w-3.5 h-3.5 mr-1.5 text-white/70" />
+          <Plus class="w-3.5 h-3.5 mr-1.5 text-[var(--text-secondary)]" />
           <span>{{ t.addImages }}</span>
         </Button>
       </div>
@@ -619,7 +619,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
             <button
               type="button"
               @click="removeItem(item.id)"
-              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-red-400 hover:bg-[#2E2E2E] transition-colors cursor-pointer"
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-[#2E2E2E] transition-colors cursor-pointer"
               title="Remove item"
             >
               <Trash2 class="w-4 h-4" />
@@ -696,7 +696,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         <div
           v-if="compareViewMode === 'slider'"
           ref="compareContainerRef"
-          class="relative w-full h-[240px] xs:h-[300px] sm:h-[480px] bg-[#111111] rounded-xl overflow-hidden select-none border border-[var(--border-subtle)] flex items-center justify-center cursor-ew-resize"
+          class="relative w-full h-[240px] xs:h-[300px] sm:h-[480px] bg-zinc-100 dark:bg-[#111111] rounded-xl overflow-hidden select-none border border-[var(--border-subtle)] flex items-center justify-center cursor-ew-resize"
           @mousedown="isInteractingSlider = true"
           @mouseup="isInteractingSlider = false"
           @mouseleave="isInteractingSlider = false"
@@ -734,11 +734,11 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           </div>
 
           <!-- Top-Left & Top-Right Floating Monochrome Badges -->
-          <div class="absolute top-3 left-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#1E1E1E]/90 backdrop-blur-md text-[11px] sm:text-xs font-medium text-white border border-[var(--border-subtle)] z-20 shadow-lg flex items-center gap-1.5">
+          <div class="absolute top-3 left-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/90 dark:bg-[#1E1E1E]/90 backdrop-blur-md text-[11px] sm:text-xs font-medium text-[var(--text-primary)] border border-zinc-200 dark:border-[var(--border-subtle)] z-20 shadow-md flex items-center gap-1.5">
             <span>Original ({{ formatBytes(activeCompareItem.originalSize) }})</span>
           </div>
 
-          <div class="absolute top-3 right-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#1E1E1E]/90 backdrop-blur-md text-[11px] sm:text-xs font-medium text-white border border-[var(--border-subtle)] z-20 shadow-lg flex items-center gap-1.5">
+          <div class="absolute top-3 right-3 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/90 dark:bg-[#1E1E1E]/90 backdrop-blur-md text-[11px] sm:text-xs font-medium text-[var(--text-primary)] border border-zinc-200 dark:border-[var(--border-subtle)] z-20 shadow-md flex items-center gap-1.5">
             <span>Compressed ({{ formatBytes(activeCompareItem.compressedSize) }})</span>
           </div>
 
@@ -755,21 +755,21 @@ const handleContainerTouchMove = (e: TouchEvent) => {
           <!-- Left: Original -->
           <div class="space-y-2">
             <div class="flex items-center justify-between text-xs font-mono text-[var(--text-secondary)] px-1">
-              <span class="font-semibold text-white">Original File</span>
+              <span class="font-semibold text-[var(--text-primary)]">Original File</span>
               <span>{{ formatBytes(activeCompareItem.originalSize) }}</span>
             </div>
-            <div class="h-[180px] xs:h-[220px] sm:h-[380px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
+            <div class="h-[180px] xs:h-[220px] sm:h-[380px] bg-zinc-100 dark:bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
               <img :src="activeCompareItem.originalUrl" :alt="activeCompareItem.name" class="max-w-full max-h-full object-contain" />
             </div>
           </div>
 
           <!-- Right: Compressed -->
           <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs font-mono text-white px-1">
+            <div class="flex items-center justify-between text-xs font-mono text-[var(--text-primary)] px-1">
               <span class="font-semibold">Compressed File</span>
               <span>{{ formatBytes(activeCompareItem.compressedSize) }} (-{{ activeCompareItem.savedPercent }}%)</span>
             </div>
-            <div class="h-[180px] xs:h-[220px] sm:h-[380px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
+            <div class="h-[180px] xs:h-[220px] sm:h-[380px] bg-zinc-100 dark:bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
               <img :src="activeCompareItem.compressedUrl" :alt="activeCompareItem.name" class="max-w-full max-h-full object-contain" />
             </div>
           </div>
@@ -778,14 +778,14 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         <!-- MODE 3: Single View (Original or Compressed) -->
         <div v-else class="space-y-2">
           <div class="flex items-center justify-between text-xs font-mono px-1">
-            <span class="font-semibold text-white">
+            <span class="font-semibold text-[var(--text-primary)]">
               {{ compareViewMode === 'original' ? 'Original View' : 'Compressed View' }}
             </span>
             <span class="text-[var(--text-tertiary)]">
               {{ formatBytes(compareViewMode === 'original' ? activeCompareItem.originalSize : activeCompareItem.compressedSize) }}
             </span>
           </div>
-          <div class="h-[220px] xs:h-[280px] sm:h-[440px] bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
+          <div class="h-[220px] xs:h-[280px] sm:h-[440px] bg-zinc-100 dark:bg-[#111111] rounded-xl overflow-hidden border border-[var(--border-subtle)] flex items-center justify-center p-2">
             <img
               :src="compareViewMode === 'original' ? activeCompareItem.originalUrl : activeCompareItem.compressedUrl"
               :alt="activeCompareItem.name"
@@ -798,14 +798,14 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         <div v-if="compareViewMode === 'slider'" class="space-y-1 pt-1">
           <div class="flex items-center justify-between text-xs text-[var(--text-tertiary)] font-mono">
             <span>Split Position (Left: Original • Right: Compressed)</span>
-            <span class="text-white">{{ comparisonSliderPos }}%</span>
+            <span class="text-[var(--text-primary)]">{{ comparisonSliderPos }}%</span>
           </div>
           <input
             type="range"
             min="0"
             max="100"
             v-model.number="comparisonSliderPos"
-            class="w-full h-1.5 bg-[#2E2E2E] rounded-lg appearance-none cursor-ew-resize accent-white"
+            class="w-full h-1.5 bg-zinc-200 dark:bg-[#2E2E2E] rounded-lg appearance-none cursor-ew-resize accent-zinc-900 dark:accent-white"
           />
         </div>
 
@@ -813,7 +813,7 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         <div class="flex items-center justify-between pt-3 border-t border-[var(--border-subtle)]">
           <div class="text-xs text-[var(--text-tertiary)] font-mono hidden sm:block">
             {{ activeCompareItem.width > 0 ? `${activeCompareItem.width} × ${activeCompareItem.height} px • ` : '' }}
-            <span class="text-white font-semibold">-{{ formatBytes(activeCompareItem.originalSize - activeCompareItem.compressedSize) }} saved</span>
+            <span class="text-[var(--text-primary)] font-semibold">-{{ formatBytes(activeCompareItem.originalSize - activeCompareItem.compressedSize) }} saved</span>
           </div>
 
           <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
