@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import {
   FolderCheck,
   ShieldCheck,
@@ -13,6 +13,8 @@ import {
   Archive,
   FileCode,
   Folder,
+  Eye,
+  Code2,
 } from 'lucide-vue-next'
 import JSZip from 'jszip'
 import Button from '~/components/ui/Button.vue'
@@ -74,6 +76,208 @@ const findingsForActiveFile = computed(() => {
     }
   }
   return map
+})
+
+const hasFindingsInActiveFile = computed(() => {
+  return Object.keys(findingsForActiveFile.value).length > 0
+})
+
+const isMarkdownFile = computed(() => {
+  if (!activeFile.value) return false
+  return /\.md$/i.test(activeFile.value.path)
+})
+
+const markdownViewMode = ref<'preview' | 'raw'>('preview')
+
+interface ParsedSkillDoc {
+  frontmatter: Record<string, string> | null
+  html: string
+}
+
+const parsedMarkdownDoc = computed<ParsedSkillDoc>(() => {
+  if (!activeFile.value || !isMarkdownFile.value) {
+    return { frontmatter: null, html: '' }
+  }
+
+  const content = activeFile.value.content
+  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/)
+
+  let frontmatter: Record<string, string> | null = null
+  let body = content
+
+  if (fmMatch) {
+    const rawYaml = fmMatch[1]
+    body = fmMatch[2]
+    const fm: Record<string, string> = {}
+    const lines = rawYaml.split(/\r?\n/)
+    let currentKey = ''
+    for (const line of lines) {
+      const keyMatch = line.match(/^([a-zA-Z0-9_-]+):\s*(.*)$/)
+      if (keyMatch) {
+        currentKey = keyMatch[1]
+        fm[currentKey] = keyMatch[2].trim()
+      } else if (currentKey && (line.startsWith('  ') || line.startsWith('\t'))) {
+        fm[currentKey] = (fm[currentKey] ? fm[currentKey] + ' ' : '') + line.trim()
+      }
+    }
+    frontmatter = Object.keys(fm).length > 0 ? fm : null
+  }
+
+  const formatInline = (text: string): string => {
+    let out = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+
+    out = out.replace(/\*\*\*(.*?)\*\*\*/g, '<strong class="font-bold text-[var(--text-primary)]"><em>$1</em></strong>')
+    out = out.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-[var(--text-primary)]">$1</strong>')
+    out = out.replace(/\*(.*?)\*/g, '<em class="text-[var(--text-secondary)] italic">$1</em>')
+
+    out = out.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] font-mono text-[11px] text-[var(--text-primary)]">$1</code>')
+    out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-400 underline underline-offset-2">$1</a>')
+
+    return out
+  }
+
+  const rawLines = body.split(/\r?\n/)
+  const htmlChunks: string[] = []
+  let inCodeBlock = false
+  let codeBlockLang = ''
+  let codeBlockLines: string[] = []
+  let inTable = false
+  let tableHeaders: string[] = []
+  let tableRows: string[][] = []
+
+  const flushTable = () => {
+    if (!inTable) return
+    let t = '<div class="overflow-x-auto my-4 rounded-xl border border-zinc-200 dark:border-[var(--border-card)] bg-white dark:bg-[var(--bg-card)]"><table class="w-full text-xs text-left border-collapse">'
+    if (tableHeaders.length > 0) {
+      t += '<thead class="bg-zinc-50 dark:bg-[var(--bg-app)] border-b border-zinc-200 dark:border-[var(--border-card)] text-[var(--text-secondary)] uppercase font-mono text-[10px] tracking-wider"><tr>'
+      for (const h of tableHeaders) {
+        t += `<th class="px-4 py-2.5 font-semibold">${formatInline(h)}</th>`
+      }
+      t += '</tr></thead>'
+    }
+    t += '<tbody class="divide-y divide-zinc-200 dark:divide-[var(--border-subtle)]">'
+    for (const row of tableRows) {
+      t += '<tr class="hover:bg-zinc-50/80 dark:hover:bg-[var(--bg-card-hover)] transition-colors">'
+      for (const cell of row) {
+        t += `<td class="px-4 py-2.5 text-[var(--text-secondary)] font-mono text-[11px]">${formatInline(cell)}</td>`
+      }
+      t += '</tr>'
+    }
+    t += '</tbody></table></div>'
+    htmlChunks.push(t)
+    inTable = false
+    tableHeaders = []
+    tableRows = []
+  }
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const rawLine = rawLines[i]
+    const trimmed = rawLine.trim()
+
+    if (trimmed.startsWith('```')) {
+      if (!inCodeBlock) {
+        if (inTable) flushTable()
+        inCodeBlock = true
+        codeBlockLang = trimmed.slice(3).trim()
+        codeBlockLines = []
+      } else {
+        inCodeBlock = false
+        const escapedCode = codeBlockLines.join('\n')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+        htmlChunks.push(`
+          <div class="my-3 rounded-xl border border-zinc-200 dark:border-[#2E2E2E] bg-zinc-50 dark:bg-[#141416] overflow-hidden">
+            <div class="px-3.5 py-1.5 bg-zinc-100 dark:bg-[#1a1a1c] border-b border-zinc-200 dark:border-[#2E2E2E] text-[10px] font-mono text-[var(--text-tertiary)] flex items-center justify-between">
+              <span>${codeBlockLang || 'code'}</span>
+            </div>
+            <pre class="p-3.5 text-xs font-mono overflow-x-auto text-[var(--text-primary)] leading-relaxed select-text"><code>${escapedCode}</code></pre>
+          </div>
+        `)
+      }
+      continue
+    }
+
+    if (inCodeBlock) {
+      codeBlockLines.push(rawLine)
+      continue
+    }
+
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      const cells = trimmed
+        .slice(1, -1)
+        .split('|')
+        .map(c => c.trim())
+
+      if (cells.every(c => /^:?-+:?$/.test(c))) {
+        continue
+      }
+
+      if (!inTable) {
+        inTable = true
+        tableHeaders = cells
+      } else {
+        tableRows.push(cells)
+      }
+      continue
+    } else if (inTable) {
+      flushTable()
+    }
+
+    if (!trimmed) {
+      continue
+    }
+
+    if (/^(---|___|\*\*\*)$/.test(trimmed)) {
+      htmlChunks.push('<hr class="my-5 border-zinc-200 dark:border-[var(--border-subtle)]" />')
+      continue
+    }
+
+    if (trimmed.startsWith('# ')) {
+      htmlChunks.push(`<h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] mt-7 mb-3 pb-2 border-b border-zinc-200 dark:border-[var(--border-subtle)]">${formatInline(trimmed.slice(2))}</h1>`)
+      continue
+    }
+    if (trimmed.startsWith('## ')) {
+      htmlChunks.push(`<h2 class="text-base sm:text-lg font-bold text-[var(--text-primary)] mt-6 mb-2.5 pb-1 border-b border-zinc-200/80 dark:border-[var(--border-subtle)]/40">${formatInline(trimmed.slice(3))}</h2>`)
+      continue
+    }
+    if (trimmed.startsWith('### ')) {
+      htmlChunks.push(`<h3 class="text-sm font-semibold text-[var(--text-primary)] mt-4 mb-2">${formatInline(trimmed.slice(4))}</h3>`)
+      continue
+    }
+    if (trimmed.startsWith('#### ')) {
+      htmlChunks.push(`<h4 class="text-xs font-semibold text-[var(--text-primary)] mt-3 mb-1.5 uppercase tracking-wider font-mono">${formatInline(trimmed.slice(5))}</h4>`)
+      continue
+    }
+
+    if (trimmed.startsWith('> ')) {
+      htmlChunks.push(`<blockquote class="border-l-2 border-zinc-400 dark:border-zinc-600 pl-3.5 my-2.5 text-xs text-[var(--text-secondary)] italic leading-relaxed">${formatInline(trimmed.slice(2))}</blockquote>`)
+      continue
+    }
+
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      htmlChunks.push(`<div class="flex items-start gap-2.5 my-1.5 text-xs text-[var(--text-secondary)] leading-relaxed"><span class="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600 shrink-0 mt-1.5"></span><span class="flex-1">${formatInline(trimmed.slice(2))}</span></div>`)
+      continue
+    }
+
+    const numMatch = trimmed.match(/^(\d+)\.\s*(.*)/)
+    if (numMatch) {
+      htmlChunks.push(`<div class="flex items-start gap-3 my-2 text-xs text-[var(--text-secondary)] leading-relaxed"><span class="font-mono text-[11px] font-bold text-[var(--text-tertiary)] shrink-0 mt-0.5">${numMatch[1]}.</span><span class="flex-1">${formatInline(numMatch[2])}</span></div>`)
+      continue
+    }
+
+    htmlChunks.push(`<p class="text-xs text-[var(--text-secondary)] leading-relaxed my-2">${formatInline(trimmed)}</p>`)
+  }
+
+  if (inTable) flushTable()
+
+  return {
+    frontmatter,
+    html: htmlChunks.join('\n')
+  }
 })
 
 const handlePaste = async () => {
@@ -353,6 +557,7 @@ const copyCode = async () => {
 const scrollToFinding = (finding: SecurityFinding) => {
   activeFinding.value = finding
   activeFilePath.value = finding.filename
+  markdownViewMode.value = 'raw'
   nextTick(() => {
     const el = document.getElementById(`code-line-${finding.line}`)
     if (el) {
@@ -360,6 +565,12 @@ const scrollToFinding = (finding: SecurityFinding) => {
     }
   })
 }
+
+watch(activeFilePath, (newPath) => {
+  if (/\.md$/i.test(newPath)) {
+    markdownViewMode.value = 'preview'
+  }
+})
 
 const resetScanner = () => {
   report.value = null
@@ -621,7 +832,7 @@ const resetScanner = () => {
       <div class="w-full bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] overflow-hidden">
         <!-- File Selector / Tabs Header -->
         <div class="px-4 py-2 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs font-mono">
-          <div class="flex items-center gap-1.5 overflow-x-auto py-0.5 max-w-[80%]">
+          <div class="flex items-center gap-1.5 overflow-x-auto py-0.5 max-w-[70%] sm:max-w-[75%]">
             <button
               v-for="f in files"
               :key="f.path"
@@ -629,8 +840,8 @@ const resetScanner = () => {
               class="px-2.5 py-1 rounded text-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer border"
               :class="
                 activeFile?.path === f.path
-                  ? 'bg-[#2E2E2E] text-white font-medium border-white/20 shadow-xs'
-                  : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/5 border-transparent'
+                  ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium border-zinc-200 dark:border-white/20 shadow-xs'
+                  : 'text-[var(--text-secondary)] hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 border-transparent'
               "
               @click="activeFilePath = f.path"
             >
@@ -639,13 +850,114 @@ const resetScanner = () => {
             </button>
           </div>
 
-          <span class="text-[11px] text-[var(--text-secondary)] shrink-0">
-            {{ codeLines.length }} lines
-          </span>
+          <!-- Controls: Markdown Preview / Raw Switcher & Line Count -->
+          <div class="flex items-center gap-2.5 shrink-0">
+            <!-- View Mode Switcher for Markdown -->
+            <div
+              v-if="isMarkdownFile"
+              class="flex items-center p-0.5 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E]"
+            >
+              <button
+                type="button"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer"
+                :class="
+                  markdownViewMode === 'preview'
+                    ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                "
+                @click="markdownViewMode = 'preview'"
+              >
+                <Eye class="w-3.5 h-3.5" />
+                <span>Preview</span>
+              </button>
+              <button
+                type="button"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer"
+                :class="
+                  markdownViewMode === 'raw'
+                    ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                "
+                @click="markdownViewMode = 'raw'"
+              >
+                <Code2 class="w-3.5 h-3.5" />
+                <span>Raw</span>
+              </button>
+            </div>
+
+            <span class="text-[11px] text-[var(--text-secondary)] shrink-0 font-mono">
+              {{ codeLines.length }} lines
+            </span>
+          </div>
         </div>
 
-        <!-- Full-Width Code Lines Viewer -->
-        <div class="max-h-[640px] overflow-y-auto overflow-x-auto p-4 font-mono text-xs select-text">
+        <!-- Rendered Markdown Preview (Active on Markdown file & Preview mode) -->
+        <div
+          v-if="isMarkdownFile && markdownViewMode === 'preview'"
+          class="max-h-[640px] overflow-y-auto p-5 sm:p-6 space-y-6 select-text"
+        >
+          <!-- Frontmatter Specification Bento Card -->
+          <div
+            v-if="parsedMarkdownDoc.frontmatter"
+            class="p-4 rounded-xl border border-zinc-200 dark:border-[#2E2E2E] bg-zinc-50 dark:bg-[#141416] space-y-3"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono uppercase font-bold tracking-wider text-[var(--text-tertiary)]">
+                Skill Specification (Frontmatter)
+              </span>
+              <Badge variant="outline" size="sm" class="text-[10px] font-mono">
+                YAML Metadata
+              </Badge>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div
+                v-for="(val, key) in parsedMarkdownDoc.frontmatter"
+                :key="key"
+                class="p-2.5 rounded-lg bg-white dark:bg-[#1c1c1f] border border-zinc-200/80 dark:border-[#262626] space-y-0.5"
+              >
+                <div class="text-[10px] font-mono font-semibold text-[var(--text-secondary)] uppercase">
+                  {{ key }}
+                </div>
+                <div class="text-xs font-mono text-[var(--text-primary)] break-words">
+                  {{ val }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Finding warning indicator in active file -->
+          <div
+            v-if="hasFindingsInActiveFile"
+            class="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-300"
+          >
+            <div class="flex items-center gap-2">
+              <AlertTriangle class="w-4 h-4 shrink-0" />
+              <span>
+                File ini memiliki {{ Object.keys(findingsForActiveFile).length }} baris dengan indikasi risiko keamanan.
+              </span>
+            </div>
+            <button
+              type="button"
+              class="font-mono text-[11px] underline underline-offset-2 hover:text-amber-500 cursor-pointer shrink-0"
+              @click="markdownViewMode = 'raw'"
+            >
+              Lihat di Raw Code
+            </button>
+          </div>
+
+          <!-- Rendered Markdown Body Content -->
+          <div
+            class="prose dark:prose-invert max-w-none text-xs leading-relaxed text-[var(--text-primary)]"
+            v-html="parsedMarkdownDoc.html"
+          />
+        </div>
+
+        <!-- Full-Width Code Lines Viewer (Raw mode or Non-Markdown) -->
+        <div
+          v-else
+          class="max-h-[640px] overflow-y-auto overflow-x-auto p-4 font-mono text-xs select-text"
+        >
           <div
             v-for="(line, idx) in codeLines"
             :id="`code-line-${idx + 1}`"
@@ -658,10 +970,10 @@ const resetScanner = () => {
                   : 'bg-amber-950/40 text-amber-200 border border-amber-800/40'
                 : activeFinding?.line === idx + 1 && activeFinding?.filename === activeFile?.path
                 ? 'bg-white/10'
-                : 'hover:bg-white/5 text-neutral-300'
+                : 'hover:bg-zinc-100 dark:hover:bg-white/5 text-[var(--text-secondary)] dark:text-neutral-300'
             ]"
           >
-            <span class="w-10 shrink-0 text-right text-[11px] select-none text-neutral-600">
+            <span class="w-10 shrink-0 text-right text-[11px] select-none text-neutral-500 dark:text-neutral-600">
               {{ idx + 1 }}
             </span>
 
