@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Globe,
   Upload,
@@ -218,6 +218,75 @@ const processScreenshot = (file: File) => {
   reader.readAsDataURL(file)
 }
 
+// Manual Paste Image from Clipboard button
+const handlePasteFromClipboard = async () => {
+  try {
+    if (!navigator.clipboard?.read) {
+      toast.error(
+        locale.value === 'id' ? 'Browser Terbatas' : 'Browser Limited',
+        locale.value === 'id' ? 'Gunakan tombol shortcut Ctrl+V untuk menempel gambar langsung' : 'Press Ctrl+V to paste the image directly'
+      )
+      return
+    }
+
+    const items = await navigator.clipboard.read()
+    for (const item of items) {
+      const imgType = item.types.find((t) => t.startsWith('image/'))
+      if (imgType) {
+        const blob = await item.getType(imgType)
+        const file = new File([blob], 'clipboard-screenshot.png', { type: imgType })
+        activeMode.value = 'shot'
+        processScreenshot(file)
+        toast.success(
+          locale.value === 'id' ? 'Screenshot Ditempel' : 'Screenshot Pasted',
+          locale.value === 'id' ? 'Gambar dari clipboard berhasil dimuat' : 'Image loaded from clipboard'
+        )
+        return
+      }
+    }
+
+    toast.error(
+      locale.value === 'id' ? 'Tidak Ada Gambar' : 'No Image Found',
+      locale.value === 'id' ? 'Clipboard Anda tidak memuat gambar. Salin screenshot terlebih dahulu.' : 'No image found in clipboard. Copy a screenshot first.'
+    )
+  } catch (err: any) {
+    toast.error(
+      locale.value === 'id' ? 'Gagal Akses Clipboard' : 'Clipboard Access Failed',
+      locale.value === 'id' ? 'Izin akses clipboard ditolak. Silakan tekan Ctrl+V langsung di halaman.' : 'Clipboard permission denied. Please press Ctrl+V directly on the page.'
+    )
+  }
+}
+
+// Global window paste listener for instant Ctrl+V
+const handleGlobalPaste = (e: ClipboardEvent) => {
+  const items = e.clipboardData?.items
+  if (!items) return
+
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.startsWith('image/')) {
+      const file = items[i].getAsFile()
+      if (file) {
+        e.preventDefault()
+        activeMode.value = 'shot'
+        processScreenshot(file)
+        toast.success(
+          locale.value === 'id' ? 'Screenshot Ditempel' : 'Screenshot Pasted',
+          locale.value === 'id' ? 'Memulai analisis piksel dari screenshot' : 'Starting pixel analysis from screenshot'
+        )
+        return
+      }
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('paste', handleGlobalPaste)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('paste', handleGlobalPaste)
+})
+
 // Client-side Canvas Image Analysis
 const analyzeImagePixels = (imgSrc: string, filename: string) => {
   isAnalyzing.value = true
@@ -363,6 +432,24 @@ const scoreColorClass = computed(() => {
   if (s > 25) return 'text-yellow-500 border-yellow-500/30 bg-yellow-500/10'
   return 'text-emerald-500 border-emerald-500/30 bg-emerald-500/10'
 })
+
+// Category badge color
+const categoryBadgeClass = (cat: string) => {
+  switch (cat) {
+    case 'fingerprint':
+      return 'border-rose-500/30 text-rose-400 bg-rose-500/10'
+    case 'copy':
+      return 'border-amber-500/30 text-amber-400 bg-amber-500/10'
+    case 'layout':
+      return 'border-sky-500/30 text-sky-400 bg-sky-500/10'
+    case 'nitpick':
+      return 'border-zinc-500/30 text-zinc-400 bg-zinc-500/10'
+    case 'visual':
+      return 'border-purple-500/30 text-purple-400 bg-purple-500/10'
+    default:
+      return 'border-zinc-500/30 text-zinc-400 bg-zinc-500/10'
+  }
+}
 </script>
 
 <template>
@@ -486,6 +573,19 @@ const scoreColorClass = computed(() => {
       <p class="text-xs text-[var(--text-secondary)] mt-1">
         {{ locale === 'id' ? 'Mendukung PNG, JPG, WebP. 100% diproses di browser melalui analisis piksel Canvas.' : 'Supports PNG, JPG, WebP. 100% client-side Canvas pixel analysis.' }}
       </p>
+
+      <div class="flex items-center justify-center gap-2 pt-4">
+        <Button
+          id="btn-paste-screenshot"
+          variant="secondary"
+          size="sm"
+          class="rounded-lg text-xs cursor-pointer shadow-xs"
+          @click.stop="handlePasteFromClipboard"
+        >
+          <Clipboard class="w-3.5 h-3.5 mr-1.5" />
+          {{ locale === 'id' ? 'Tempel dari Clipboard (Ctrl+V)' : 'Paste from Clipboard (Ctrl+V)' }}
+        </Button>
+      </div>
     </div>
 
     <!-- Live Scanner Terminal (Log Pemindaian) -->
@@ -692,7 +792,12 @@ const scoreColorClass = computed(() => {
               class="p-4 space-y-2"
             >
               <div class="flex items-center justify-between">
-                <Badge variant="outline" size="sm" class="text-[10px] font-mono">
+                <Badge
+                  variant="outline"
+                  size="sm"
+                  class="text-[10px] font-mono capitalize"
+                  :class="categoryBadgeClass(item.cat)"
+                >
                   {{ item.cat }}
                 </Badge>
                 <span class="text-xs font-mono font-bold text-rose-400">+{{ item.pts }} pts</span>
