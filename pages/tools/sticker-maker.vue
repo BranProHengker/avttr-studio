@@ -778,6 +778,21 @@ onUnmounted(() => {
           </button>
         </div>
       </div>
+
+      <!-- AI Cutout Engine & Model Notice (Unboxed Minimalist) -->
+      <div class="flex items-start gap-2.5 text-xs px-1 text-left">
+        <Info class="w-4 h-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
+        <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
+          <div class="text-xs font-medium text-[var(--text-primary)]">
+            {{ locale === 'id' ? 'Catatan Engine AI Cutout' : 'AI Cutout Engine Notice' }}
+          </div>
+          <p class="text-[11px] text-[var(--text-tertiary)]">
+            {{ locale === 'id'
+              ? 'Fitur auto-cutout stiker ditenagai oleh Remove.bg Neural Vision Engine untuk isolasi subjek presisi tinggi. Penambahan stroke border dan pop shadow diproses langsung di browser Canvas.'
+              : 'Sticker auto-cutout is powered by Remove.bg Neural Vision Engine for crisp subject isolation. Stroke borders and pop shadows are rendered 100% client-side via Canvas API.' }}
+          </p>
+        </div>
+      </div>
     </div>
 
     <!-- Main Workspace Grid (Only when source image loaded) -->

@@ -588,6 +588,21 @@ const categoryBadgeClass = (cat: string) => {
       </div>
     </div>
 
+    <!-- AI Roaster Engine & Model Notice (Unboxed Minimalist) -->
+    <div v-if="!inspection" class="flex items-start gap-2.5 text-xs px-1">
+      <Info class="w-4 h-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
+      <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
+        <div class="text-xs font-medium text-[var(--text-primary)]">
+          {{ locale === 'id' ? 'Catatan Engine AI & Model Roaster' : 'AI Roaster Engine & Model Notice' }}
+        </div>
+        <p class="text-[11px] text-[var(--text-tertiary)]">
+          {{ locale === 'id'
+            ? 'Deteksi heuristik dan pemindaian AST berjalan deterministik di server & Canvas. Fitur vonis roasting ditenagai oleh Google Gemini 2.5 Flash-Lite API (dengan fallback Gemini 2.5 Flash).'
+            : 'Heuristic AST and Canvas pixel scans run deterministically. Roasting verdicts are generated via Google Gemini 2.5 Flash-Lite API (with automated Gemini 2.5 Flash fallback).' }}
+        </p>
+      </div>
+    </div>
+
     <!-- Live Scanner Terminal (Log Pemindaian) -->
     <div
       v-if="scanLogs.length > 0 || isAnalyzing"

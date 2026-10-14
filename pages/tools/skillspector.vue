@@ -15,6 +15,8 @@ import {
   Folder,
   Eye,
   CodeBrackets as Code2,
+  PasteClipboard as Clipboard,
+  X,
 } from '@iconoir/vue'
 import JSZip from 'jszip'
 import Button from '~/components/ui/Button.vue'
@@ -290,6 +292,10 @@ const handlePaste = async () => {
   } catch {
     showToast({ title: 'Gagal membaca clipboard', type: 'error' })
   }
+}
+
+const clearInput = () => {
+  inputQuery.value = ''
 }
 
 const handleInspect = async () => {
@@ -604,39 +610,56 @@ const resetScanner = () => {
       </p>
     </div>
 
-    <!-- Search Omnibar -->
-    <div class="relative flex items-center w-full">
-      <div class="absolute left-4 pointer-events-none text-[var(--text-secondary)]">
-        <FolderCheck class="w-5 h-5 text-[var(--text-secondary)]" />
+    <!-- Search Omnibar (DESIGN.md Section 11 Architecture) -->
+    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
+      <div class="relative flex-1 w-full flex items-center">
+        <!-- Leading Icon -->
+        <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
+          <FolderCheck class="w-4 h-4" />
+        </div>
+
+        <input
+          v-model="inputQuery"
+          type="text"
+          placeholder="https://github.com/owner/repo atau npx skills add..."
+          class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
+          :disabled="isLoading"
+          @keydown.enter="handleInspect"
+        />
+
+        <!-- Trailing Micro-Actions -->
+        <div class="absolute right-2.5 flex items-center gap-1">
+          <button
+            v-if="inputQuery"
+            type="button"
+            class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
+            title="Clear"
+            @click="clearInput"
+          >
+            <X class="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
+            title="Paste"
+            @click="handlePaste"
+          >
+            <Clipboard class="w-4 h-4" />
+          </button>
+        </div>
       </div>
-      <input
-        v-model="inputQuery"
-        type="text"
-        placeholder="Paste GitHub repo, skill URL, or command (npx skills add https://github.com/... --skill ...)..."
-        class="w-full h-12 pl-12 pr-28 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all font-mono"
-        @keydown.enter="handleInspect"
-      />
-      <div class="absolute right-2 flex items-center gap-1.5">
-        <Button
-          v-if="!inputQuery"
-          variant="secondary"
-          size="sm"
-          class="h-8 px-2.5 text-xs cursor-pointer"
-          @click="handlePaste"
-        >
-          Paste
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          class="h-8 px-3 text-xs font-medium cursor-pointer"
-          :disabled="isLoading || !inputQuery.trim()"
-          @click="handleInspect"
-        >
-          <Loader2 v-if="isLoading" class="w-3.5 h-3.5 animate-spin mr-1.5" />
-          <span>{{ isLoading ? 'Inspecting...' : 'Inspect' }}</span>
-        </Button>
-      </div>
+
+      <!-- Standalone CTA Action Button -->
+      <Button
+        variant="primary"
+        size="default"
+        class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
+        :disabled="isLoading || !inputQuery.trim()"
+        @click="handleInspect"
+      >
+        <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin mr-1.5" />
+        <span>{{ isLoading ? 'Inspecting...' : 'Inspect Skill' }}</span>
+      </Button>
     </div>
 
     <!-- Recursive Folder Dropzone -->

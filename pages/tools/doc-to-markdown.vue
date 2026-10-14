@@ -377,40 +377,18 @@ const renderedHtml = computed(() => {
         <div class="text-xs text-[var(--text-secondary)] mt-1">
           {{ locale === 'id' ? 'Mendukung PDF, PNG, JPG, WebP. Tabel, rumus, dan layout terkonversi otomatis.' : 'Supports PDF, PNG, JPG, WebP. Preserves tables, formulas, and headings.' }}
         </div>
-
-        <!-- Quick Action Buttons -->
-        <div class="mt-6 flex items-center justify-center gap-2.5 flex-wrap" @click.stop>
-          <Button
-            variant="secondary"
-            class="h-9 px-3.5 text-xs font-medium border border-zinc-200 dark:border-[#2E2E2E] flex items-center gap-1.5"
-            @click="handlePasteFromClipboard"
-          >
-            <Clipboard class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-            <span>Paste Screenshot</span>
-            <kbd class="hidden sm:inline-block px-1 py-0.2 bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] rounded text-[10px] text-[var(--text-tertiary)] font-mono">Ctrl+V</kbd>
-          </Button>
-
-          <Button
-            variant="outline"
-            class="h-9 px-3.5 text-xs font-medium border border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            @click="fileInputRef?.click()"
-          >
-            <Upload class="w-3.5 h-3.5 mr-1" />
-            <span>Browse Files</span>
-          </Button>
-        </div>
       </div>
 
-      <!-- Daily Quota & Usage Notice -->
-      <div class="p-3.5 sm:p-4 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] flex items-start gap-3 text-xs">
-        <AlertCircle class="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+      <!-- Daily Quota & Usage Notice (Unboxed Minimalist) -->
+      <div class="flex items-start gap-2.5 text-xs px-1">
+        <AlertCircle class="w-4 h-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
         <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
-          <div class="text-xs font-semibold text-[var(--text-primary)]">
-            {{ locale === 'id' ? 'Catatan Kuota Harian' : 'Daily Quota Notice' }}
+          <div class="text-xs font-medium text-[var(--text-primary)]">
+            {{ locale === 'id' ? 'Catatan Kuota & Model AI' : 'AI Model & Daily Quota Notice' }}
           </div>
           <p class="text-[11px] text-[var(--text-tertiary)]">
             {{ locale === 'id'
-              ? 'Fitur ini didukung oleh Google Gemini 2.5 Flash-Lite API untuk parsing dokumen ke Markdown berkecepatan tinggi. Bila kuota token harian habis, Anda dapat menggunakannya kembali saat kuota di-reset.'
+              ? 'Fitur ini didukung oleh Google Gemini 2.5 Flash-Lite API untuk parsing dokumen ke Markdown berkecepatan tinggi. Jika kuota token harian habis, kuota akan di-reset otomatis pada hari berikutnya.'
               : 'This feature is powered by Google Gemini 2.5 Flash-Lite API for ultra-fast document parsing into Markdown. If the daily token quota is exhausted, it will reset automatically.' }}
           </p>
         </div>

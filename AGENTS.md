@@ -208,8 +208,15 @@ export interface ScraperResult {
 
 * **Standardized Empty & Initial State Architecture (DESIGN.md Section 12):**
   * Local File Tools: Standalone Dashed Dropzone (`DESIGN.md Section 10`).
-  * URL / Query Tools: 4 Capability Bento Cards Grid (`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`) with `<Card :hoverable="false" class="p-4 space-y-2">`, `w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)]` icon, `text-xs font-semibold text-[var(--text-primary)]` title, `text-[11px] text-[var(--text-secondary)]` description, and `<Badge variant="badge" size="sm">` chips.
-  * Strict Ban: Never render a single generic centered icon card with empty `"No data yet"` placeholder text.
+  * URL / Query Tools: Standalone Omnibar (`DESIGN.md Section 11`). Clean initial state — DO NOT inject 4-capability bento cards or dummy placeholder boxes under the Omnibar on individual utility tools.
+  * Secondary notices (AI model attribution, API quota bar) must be clean unboxed inline rows (`flex items-center gap-2 text-xs text-[var(--text-tertiary)]`).
+  * Strict Ban: Never render dummy placeholder cards ("No data yet") or forced bento capability grids on individual utility tools.
+
+* **Anti-Over-Carding & Minimalist Unboxed Doctrine (DESIGN.md Section 16):**
+  * **Solitary Icons & Links:** Single icon triggers (GitHub link, settings cog, theme toggle, mobile search trigger) MUST NEVER be wrapped in `<Card>` or card boxes (`bg-[var(--bg-card)] border border-[var(--border-card)] shadow-xs`). Use ghost/unboxed styling (`p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-lg transition-colors`).
+  * **AI Notices & Quota Bars:** Render unboxed (`flex items-center gap-2 text-xs text-[var(--text-tertiary)]`), never wrapped in container cards or bento grids.
+  * **Toolbars & Switchers:** Render directly in layout or on a subtle unboxed pill surface without double-nested cards.
+  * **Meaningful Cards Only:** Use `<Card>` ONLY for significant content blocks (e.g. download results, configuration panels). Never wrap every small UI element in a card.
 
 * **Primitive UI Component Mandate (DESIGN.md Section 13):**
   * `<Input>` (`components/ui/Input.vue`): Mandatory for all internal form fields (testers, sliders, dialogs, captions). Never write raw `<input>` with custom inline classes.
@@ -223,12 +230,13 @@ export interface ScraperResult {
   * Strict Ban: Never use generic `"Tools"` in breadcrumbs. Always use the specific category matching the sidebar.
   * Header Layout: Title (`text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]`) and concise subtitle description. Do NOT clutter headers with arbitrary decorative marketing badges (`"Local Engine"`, `"Zero AI Latency"`).
 
-* **New Tool Onboarding Checklist (The 4 Anchors - DESIGN.md Section 15):**
-  * Whenever a new tool or downloader route is created, AI agents MUST register the tool in all 4 synchronization points:
+* **New Tool Onboarding Checklist (The 5 Anchors - DESIGN.md Section 15):**
+  * Whenever a new tool or downloader route is created, AI agents MUST register the tool in all 5 synchronization points:
     1. Search & Command Palette: `composables/useSearch.ts`
     2. Internationalization: `composables/useI18n.ts` (both EN and ID dictionaries)
     3. Sidebar Navigation: `components/layout/AppSidebar.vue` (`isCategoryActive`, `radialCategories`, expanded submenu list)
     4. Brand Icon: `components/ui/BrandIcon.vue` (if a custom platform/brand SVG vector is required)
+    5. README Documentation Synchronization: `README.md` (MUST immediately update both English and Indonesian feature catalogs)
 
 * **Uniform Page Layout & Full-Width Fluid Standard:** 
   * All sub-pages, downloader routes, and tools MUST use the standardized full-width container: `class="space-y-6 pb-12 w-full"`.

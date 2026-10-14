@@ -19,6 +19,7 @@ import {
   ArrowRight,
   Folder as FolderOpen,
   X,
+  InfoCircle as Info,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
@@ -446,6 +447,21 @@ const resetAll = () => {
         </div>
 
         <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="handleFileSelect" />
+      </div>
+
+      <!-- AI Engine & Model Notice (Unboxed Minimalist) -->
+      <div class="flex items-start gap-2.5 text-xs px-1">
+        <Info class="w-4 h-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
+        <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
+          <div class="text-xs font-medium text-[var(--text-primary)]">
+            {{ locale === 'id' ? 'Catatan Engine & Model AI' : 'AI Engine & Processing Notice' }}
+          </div>
+          <p class="text-[11px] text-[var(--text-tertiary)]">
+            {{ locale === 'id'
+              ? 'Segmentasi dan isolasi subjek ditenagai oleh Remove.bg Neural Vision Engine untuk menghasilkan tepi potongan yang halus. Resolusi dan kompresi kanvas didukung oleh browser Canvas API.'
+              : 'Subject segmentation and edge isolation are powered by Remove.bg Neural Vision Engine for crisp cutouts. Canvas resolution and filters are processed via browser Canvas API.' }}
+          </p>
+        </div>
       </div>
     </div>
 

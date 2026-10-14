@@ -475,26 +475,26 @@ const resetAll = () => {
       </div>
     </div>
 
-    <!-- Search Quota Widget (Matching trace.moe real UI) -->
+    <!-- Search Quota Bar (Unboxed & Minimalist) -->
     <div
       v-if="dailyQuota !== null && dailyQuotaUsed !== null"
-      class="p-3.5 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2 max-w-xl"
+      class="space-y-1.5 max-w-md pt-1"
     >
-      <div class="flex items-center justify-between text-xs text-[var(--text-primary)] font-normal select-none">
+      <div class="flex items-center justify-between text-xs text-[var(--text-secondary)] font-mono select-none">
         <span>Search quota: {{ dailyQuotaUsed }} / {{ dailyQuota }} used</span>
         <span>{{ Math.max(0, dailyQuota - dailyQuotaUsed) }} remaining</span>
       </div>
 
       <!-- Progress Track & Fill -->
-      <div class="w-full h-2 bg-zinc-200 dark:bg-[#2E2E32] rounded-full overflow-hidden">
+      <div class="w-full h-1.5 bg-zinc-200 dark:bg-[#2E2E32] rounded-full overflow-hidden">
         <div
           class="h-full bg-[#7086f4] rounded-full transition-all duration-300"
           :style="{ width: `${Math.min(100, Math.max(1, (dailyQuotaUsed / dailyQuota) * 100))}%` }"
         ></div>
       </div>
 
-      <div class="text-right text-[11px] text-[var(--text-tertiary)] select-none">
-        Quota will reset in 24 hours
+      <div class="text-right text-[10px] text-[var(--text-tertiary)] font-mono select-none">
+        Quota resets in 24 hours
       </div>
     </div>
 
@@ -507,74 +507,72 @@ const resetAll = () => {
       @change="handleFileSelect"
     />
 
-    <!-- Input Section (Omnibox + Standalone Dropzone + Sample Presets) -->
+    <!-- Input Section (DESIGN.md Section 11 Omnibox + Standalone Dropzone) -->
     <div class="space-y-4">
-      <!-- URL Omnibox + Actions -->
-      <Card class="p-3 sm:p-4">
-        <div class="flex flex-col sm:flex-row gap-2">
-          <div class="relative flex-1">
-            <LinkIcon class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
-            <Input
-              v-model="imageUrlInput"
-              placeholder="Paste anime image URL (e.g. https://.../screenshot.jpg)..."
-              class="pl-10 h-10 text-xs sm:text-sm w-full bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-primary)]"
-              @keydown.enter="handleUrlSearch"
-            />
-          </div>
+      <!-- URL Omnibox (DESIGN.md Section 11 Architecture) -->
+      <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
+        <div class="relative flex-1 w-full flex items-center">
+          <LinkIcon class="absolute left-3.5 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
+          <input
+            v-model="imageUrlInput"
+            type="url"
+            placeholder="https://example.com/screenshot.jpg"
+            class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
+            :disabled="isAnalyzing"
+            @keydown.enter="handleUrlSearch"
+          />
 
-          <div class="flex items-center gap-2">
-            <Button
-              id="btn-search-url"
-              variant="primary"
-              class="h-10 px-4 text-xs font-medium flex items-center gap-1.5"
-              :disabled="isAnalyzing || !imageUrlInput.trim()"
-              @click="handleUrlSearch"
-            >
-              <ScanSearch class="w-4 h-4" />
-              <span>{{ locale === 'id' ? 'Cari Adegan' : 'Search Scene' }}</span>
-            </Button>
-
-            <Button
-              id="btn-paste-image"
-              variant="secondary"
-              class="h-10 px-3.5 text-xs font-medium flex items-center gap-1.5 border border-zinc-200 dark:border-[#2E2E2E]"
-              :disabled="isAnalyzing"
-              @click="handlePasteFromClipboard"
-            >
-              <Clipboard class="w-4 h-4 text-[var(--text-secondary)]" />
-              <span class="hidden sm:inline">Paste</span>
-              <kbd class="hidden md:inline-block px-1 py-0.2 bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] rounded text-[10px] text-[var(--text-tertiary)] font-mono">Ctrl+V</kbd>
-            </Button>
-
-            <Button
-              v-if="previewImageUrl || searchResults.length"
-              variant="ghost"
-              class="h-10 px-2.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              title="Reset"
-              @click="resetAll"
+          <!-- Trailing Micro-Actions -->
+          <div class="absolute right-2.5 flex items-center gap-1">
+            <button
+              v-if="imageUrlInput"
+              type="button"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
+              title="Clear"
+              @click="imageUrlInput = ''"
             >
               <X class="w-4 h-4" />
-            </Button>
+            </button>
+            <button
+              type="button"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
+              title="Paste image or URL (Ctrl+V)"
+              @click="handlePasteFromClipboard"
+            >
+              <Clipboard class="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        <!-- Options -->
-        <div class="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border-card)] text-xs text-[var(--text-secondary)] flex-wrap gap-2">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              v-model="cutBorders"
-              type="checkbox"
-              class="rounded border-zinc-300 dark:border-[#2E2E2E] bg-white dark:bg-[#141416] text-[var(--text-primary)] focus:ring-0 w-3.5 h-3.5 accent-zinc-900 dark:accent-[#2E2E2E]"
-            />
-            <span>{{ locale === 'id' ? 'Auto Cut Black Borders (Rekomendasi untuk screenshot 16:9)' : 'Auto Cut Black Borders' }}</span>
-          </label>
+        <Button
+          id="btn-search-url"
+          variant="primary"
+          size="default"
+          class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
+          :disabled="isAnalyzing || !imageUrlInput.trim()"
+          @click="handleUrlSearch"
+        >
+          <ScanSearch class="w-4 h-4 mr-1.5" />
+          <span>{{ locale === 'id' ? 'Cari Adegan' : 'Search Scene' }}</span>
+        </Button>
+      </div>
 
-          <div class="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)] font-mono">
-            <Sparkles class="w-3.5 h-3.5 text-emerald-400" />
-            <span>Downscaled client-side (~60KB)</span>
-          </div>
+      <!-- Cut Borders Option Bar -->
+      <div class="flex items-center justify-between text-xs text-[var(--text-secondary)] px-1 flex-wrap gap-2">
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            v-model="cutBorders"
+            type="checkbox"
+            class="rounded border-zinc-300 dark:border-[#2E2E2E] bg-white dark:bg-[#141416] text-[var(--text-primary)] focus:ring-0 w-3.5 h-3.5 accent-zinc-900 dark:accent-[#2E2E2E]"
+          />
+          <span>{{ locale === 'id' ? 'Auto Cut Black Borders (Rekomendasi screenshot 16:9)' : 'Auto Cut Black Borders' }}</span>
+        </label>
+
+        <div class="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)] font-mono">
+          <Sparkles class="w-3.5 h-3.5 text-emerald-400" />
+          <span>Downscaled client-side (~60KB)</span>
         </div>
-      </Card>
+      </div>
 
       <!-- Standardized Section 10 Standalone Dropzone (shown when no results yet) -->
       <div
@@ -596,17 +594,15 @@ const resetAll = () => {
           {{ locale === 'id' ? 'Mendukung PNG, JPG, WebP. 100% diproses cepat di browser.' : 'Supports PNG, JPG, WebP. 100% processed in browser.' }}
         </div>
 
-        <!-- Sample Presets -->
-        <div class="mt-6 flex items-center justify-center gap-2 flex-wrap" @click.stop>
-          <span class="text-[11px] text-[var(--text-tertiary)] font-mono uppercase tracking-wider">Test Sample:</span>
+        <div class="mt-4 flex items-center justify-center gap-2" @click.stop>
           <button
-            v-for="sample in samplePresets"
-            :key="sample.url"
-            class="px-2.5 py-1 text-xs bg-zinc-100 hover:bg-zinc-200 dark:bg-[#212121] dark:hover:bg-[#2A2A2E] border border-zinc-200 dark:border-[#2E2E2E] rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1.5"
-            @click="handleSampleClick(sample)"
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-primary)] hover:bg-zinc-50 dark:hover:bg-[#282828] transition-colors cursor-pointer shadow-xs"
+            @click="handlePasteFromClipboard"
           >
-            <Film class="w-3 h-3" />
-            <span>{{ sample.label }}</span>
+            <Clipboard class="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+            <span>{{ locale === 'id' ? 'Tempel Screenshot' : 'Paste Screenshot' }}</span>
+            <kbd class="px-1 py-0.2 bg-zinc-100 dark:bg-black/30 rounded text-[10px] text-[var(--text-tertiary)] font-mono">Ctrl+V</kbd>
           </button>
         </div>
       </div>

@@ -22,6 +22,7 @@ import {
   X,
   Eye,
   Sparks as Sparkles,
+  InfoCircle as Info,
 } from '@iconoir/vue'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-markup'
@@ -30,6 +31,7 @@ import 'prismjs/components/prism-json'
 import 'prismjs/components/prism-markdown'
 
 import { useToast } from '~/composables/useToast'
+import { useI18n } from '~/composables/useI18n'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
@@ -37,6 +39,7 @@ import Input from '~/components/ui/Input.vue'
 import type { ExtractedDesignData, ColorToken } from '~/server/utils/designExtractor'
 
 const toast = useToast()
+const { locale } = useI18n()
 
 const inputUrl = ref('')
 const isLoading = ref(false)
@@ -439,6 +442,21 @@ const renderedMarkdownHtml = computed(() => {
       </Button>
     </div>
 
+    <!-- AI Synthesis Engine & Model Notice (Unboxed Minimalist) -->
+    <div v-if="!extractedData && !isLoading" class="flex items-start gap-2.5 text-xs px-1">
+      <Info class="w-4 h-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
+      <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
+        <div class="text-xs font-medium text-[var(--text-primary)]">
+          {{ locale === 'id' ? 'Catatan Model AI & Ekstraksi' : 'AI Model & Synthesis Notice' }}
+        </div>
+        <p class="text-[11px] text-[var(--text-tertiary)]">
+          {{ locale === 'id'
+            ? 'Ekstraksi token CSS dan palet warna diproses secara deterministik di server. Sintesis arsitektur spesifikasi DESIGN.md ditenagai oleh model Qwen 3.8-27B (via Groq LPUs) dengan fallback otomatis ke parser lokal.'
+            : 'CSS tokens and palettes are parsed deterministically. DESIGN.md architectural synthesis is powered by Qwen 3.8-27B (via Groq LPUs) with automated fallback to local engine.' }}
+        </p>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <Card v-if="isLoading" class="p-8 sm:p-12 text-center bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3">
       <div class="w-10 h-10 mx-auto rounded-full bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
@@ -464,85 +482,8 @@ const renderedMarkdownHtml = computed(() => {
       </div>
     </div>
 
-    <!-- Empty Initial State: 4 Capability Cards (Standardized with Link Bypasser) -->
-    <div v-else-if="!extractedData" class="space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. Color Palette -->
-        <Card :hoverable="false" class="p-4 space-y-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-              <Palette class="w-3.5 h-3.5" />
-            </div>
-            <h3 class="text-xs font-semibold text-[var(--text-primary)]">Token & Palette Extractor</h3>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Extracts HEX, RGB, HSL, and OKLCH color values, clusters semantic roles, and parses CSS variables.
-          </p>
-          <div class="flex flex-wrap gap-1 pt-1">
-            <Badge variant="badge" size="sm">HEX / OKLCH</Badge>
-            <Badge variant="badge" size="sm">CSS Vars</Badge>
-            <Badge variant="badge" size="sm">Roles</Badge>
-          </div>
-        </Card>
-
-        <!-- 2. Typography & Fonts -->
-        <Card :hoverable="false" class="p-4 space-y-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-              <Type class="w-3.5 h-3.5" />
-            </div>
-            <h3 class="text-xs font-semibold text-[var(--text-primary)]">Typography Hierarchy</h3>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Identifies Google Fonts links, @font-face declarations, font weights, font sizes, and line-height scales.
-          </p>
-          <div class="flex flex-wrap gap-1 pt-1">
-            <Badge variant="badge" size="sm">Google Fonts</Badge>
-            <Badge variant="badge" size="sm">Web Fonts</Badge>
-            <Badge variant="badge" size="sm">Font Scales</Badge>
-          </div>
-        </Card>
-
-        <!-- 3. WCAG Contrast Check -->
-        <Card :hoverable="false" class="p-4 space-y-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-              <ShieldCheck class="w-3.5 h-3.5 text-emerald-500" />
-            </div>
-            <h3 class="text-xs font-semibold text-[var(--text-primary)]">WCAG AA Contrast Check</h3>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Calculates relative luminance and strict contrast ratios against the dominant background canvas.
-          </p>
-          <div class="flex flex-wrap gap-1 pt-1">
-            <Badge variant="badge" size="sm">Pass AA (4.5:1)</Badge>
-            <Badge variant="badge" size="sm">AA Large (3.0:1)</Badge>
-            <Badge variant="badge" size="sm">AAA</Badge>
-          </div>
-        </Card>
-
-        <!-- 4. Tech Stack & 1-Click Export -->
-        <Card :hoverable="false" class="p-4 space-y-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-              <Code class="w-3.5 h-3.5" />
-            </div>
-            <h3 class="text-xs font-semibold text-[var(--text-primary)]">Tech Stack & Export</h3>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Detects frameworks and styling, generating ready-to-use DESIGN.md, TECHSTACK.md, and Tailwind themes.
-          </p>
-          <div class="flex flex-wrap gap-1 pt-1">
-            <Badge variant="badge" size="sm">DESIGN.md</Badge>
-            <Badge variant="badge" size="sm">Tailwind v4</Badge>
-            <Badge variant="badge" size="sm">shadcn/ui</Badge>
-          </div>
-        </Card>
-      </div>
-    </div>
-
     <!-- Results Workspace -->
-    <div v-else class="space-y-6">
+    <div v-else-if="extractedData" class="space-y-6">
       <!-- Target Site Summary & Tech Stack Chips -->
       <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

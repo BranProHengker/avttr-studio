@@ -51,26 +51,9 @@ const ui = computed(() => {
       ? 'Pemeriksa rapor keamanan header HTTP, enkripsi HTTPS, dan pencegah serangan siber pada website Anda.'
       : 'Audit HTTP security headers, evaluate HTTPS/TLS posture, and prevent cyber attacks on your website.',
     placeholder: isId
-      ? 'Masukkan domain atau URL (contoh: heybran.my.id atau https://github.com)'
-      : 'Enter domain or URL (e.g. heybran.my.id or https://github.com)',
+      ? 'Masukkan domain atau URL (contoh: example.com atau https://github.com)'
+      : 'Enter domain or URL (e.g. example.com or https://github.com)',
     btnScan: isId ? 'Periksa Web' : 'Audit Site',
-    emptyTitle: isId ? 'Apa Saja yang Diperiksa?' : 'What Is Being Checked?',
-    card1Title: isId ? 'HSTS & Enkripsi HTTPS' : 'HSTS & Transport Security',
-    card1Desc: isId
-      ? 'Memastikan browser selalu terhubung lewat koneksi aman dan kebal dari pembajakan SSL di jaringan Wi-Fi umum.'
-      : 'Forces browsers to always connect via encrypted HTTPS, defending against SSL stripping on public Wi-Fi.',
-    card2Title: isId ? 'Anti-Clickjacking (X-Frame)' : 'Anti-Clickjacking (X-Frame)',
-    card2Desc: isId
-      ? 'Mencegah website Anda disusupkan ke dalam iframe transparan milik hacker untuk memanipulasi klik pengguna.'
-      : 'Prevents unauthorized framing of your site in invisible attacker iframes.',
-    card3Title: isId ? 'Content Security Policy (CSP)' : 'Content Security Policy (CSP)',
-    card3Desc: isId
-      ? 'Menyaring script berbahaya dari luar agar tidak bisa menyusup dan mencuri cookie pengguna di browser.'
-      : 'Whitelists approved script and asset sources to block Cross-Site Scripting (XSS).',
-    card4Title: isId ? 'Kebocoran Info Server' : 'Server Info Disclosure',
-    card4Desc: isId
-      ? 'Mendeteksi apakah server Anda membocorkan versi Apache, Nginx, atau PHP yang bisa dijadikan sasaran eksploitasi.'
-      : 'Detects leaked Apache, Nginx, or PHP versions that expose software vulnerabilities.',
     filterAll: isId ? 'Semua Header' : 'All Headers',
     filterIssues: isId ? 'Perlu Dibenahi' : 'Issues',
     filterPassed: isId ? 'Sudah Aman' : 'Passed',
@@ -324,74 +307,6 @@ const getGradeColorClasses = (grade: string) => {
     >
       <AlertTriangle class="w-4 h-4 shrink-0" />
       <span>{{ error }}</span>
-    </div>
-
-    <!-- Empty State: 4 Capability Bento Cards (DESIGN.md Section 12) -->
-    <div v-if="!result && !loading" class="space-y-4 pt-2">
-      <div class="text-xs font-mono uppercase tracking-wider text-[var(--text-tertiary)]">
-        {{ ui.emptyTitle }}
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card :hoverable="false" class="p-4 space-y-2.5">
-          <div class="w-8 h-8 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-emerald-500">
-            <Lock class="w-4 h-4" />
-          </div>
-          <div class="text-xs font-semibold text-[var(--text-primary)]">
-            {{ ui.card1Title }}
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            {{ ui.card1Desc }}
-          </p>
-          <div class="pt-1">
-            <Badge variant="badge" size="sm">Transport Security</Badge>
-          </div>
-        </Card>
-
-        <Card :hoverable="false" class="p-4 space-y-2.5">
-          <div class="w-8 h-8 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-sky-500">
-            <Layers class="w-4 h-4" />
-          </div>
-          <div class="text-xs font-semibold text-[var(--text-primary)]">
-            {{ ui.card2Title }}
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            {{ ui.card2Desc }}
-          </p>
-          <div class="pt-1">
-            <Badge variant="badge" size="sm">Frame Guard</Badge>
-          </div>
-        </Card>
-
-        <Card :hoverable="false" class="p-4 space-y-2.5">
-          <div class="w-8 h-8 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-amber-500">
-            <ShieldAlert class="w-4 h-4" />
-          </div>
-          <div class="text-xs font-semibold text-[var(--text-primary)]">
-            {{ ui.card3Title }}
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            {{ ui.card3Desc }}
-          </p>
-          <div class="pt-1">
-            <Badge variant="badge" size="sm">Anti-XSS Filter</Badge>
-          </div>
-        </Card>
-
-        <Card :hoverable="false" class="p-4 space-y-2.5">
-          <div class="w-8 h-8 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-purple-500">
-            <Server class="w-4 h-4" />
-          </div>
-          <div class="text-xs font-semibold text-[var(--text-primary)]">
-            {{ ui.card4Title }}
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            {{ ui.card4Desc }}
-          </p>
-          <div class="pt-1">
-            <Badge variant="badge" size="sm">Fingerprint Audit</Badge>
-          </div>
-        </Card>
-      </div>
     </div>
 
     <!-- Results Section -->

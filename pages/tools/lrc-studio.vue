@@ -20,6 +20,7 @@ import {
   CompactDisc as Disc,
   ControlSlider as Sliders,
   CheckCircle as CheckCircle2,
+  InfoCircle,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
@@ -941,17 +942,35 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Language Mismatch Notice -->
+      <!-- Language Notice (Unboxed Minimalist) -->
       <div
         v-if="!isJapaneseSong"
-        class="p-3.5 rounded-[14px] bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3 text-xs"
+        class="flex items-start gap-2.5 text-xs px-1"
       >
-        <div class="flex items-center gap-2.5">
-          <AlertCircle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-          <div class="text-[var(--text-secondary)]">
-            <strong class="text-[var(--text-primary)]">English / Latin Lyrics:</strong>
+        <AlertCircle class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+        <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
+          <div class="text-xs font-medium text-[var(--text-primary)]">English / Latin Lyrics</div>
+          <p class="text-[11px] text-[var(--text-tertiary)]">
             Romaji generation is only available for songs with Japanese Kanji or Kana characters.
+          </p>
+        </div>
+      </div>
+
+      <!-- AI Romaji Engine & Model Notice (Unboxed Minimalist) -->
+      <div
+        v-else-if="isJapaneseSong && !isRomajiConverted"
+        class="flex items-start gap-2.5 text-xs px-1"
+      >
+        <InfoCircle class="w-4 h-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
+        <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
+          <div class="text-xs font-medium text-[var(--text-primary)]">
+            {{ locale === 'id' ? 'Catatan Model AI Transliterasi Romaji' : 'AI Romaji Engine & Model Notice' }}
           </div>
+          <p class="text-[11px] text-[var(--text-tertiary)]">
+            {{ locale === 'id'
+              ? 'Konversi lirik Kanji/Kana ke Romaji ditenagai oleh Google Gemini 2.5 Flash API dengan akurasi furigana konteks tinggi dan pemetaan timestamp baris presisi.'
+              : 'Japanese lyrics transliteration is powered by Google Gemini 2.5 Flash API for context-aware furigana reading and precise line timestamp synchronization.' }}
+          </p>
         </div>
       </div>
 

@@ -383,37 +383,16 @@ All tools requiring website URLs, external links, or single-input queries (Web D
 
 ## 12. Standardized Empty & Initial State Architecture
 
-When a tool is opened and no input has been processed yet, AI agents MUST follow one of these two standardized empty states:
+When a tool is opened and ready for user input, AI agents MUST follow clean, minimalist principles:
 
 ### Pattern A: Tools Operating on Local Files
 * Render the **Standardized Standalone Dashed Dropzone** (`DESIGN.md Section 10`).
 
-### Pattern B: Tools Operating on URLs, Text, or Code
-* Render the **4 Capability Bento Cards Grid**:
-  ```html
-  <div class="space-y-4">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card
-        v-for="feature in features"
-        :key="feature.title"
-        :hoverable="false"
-        class="p-4 space-y-2 bg-[var(--bg-card)] border border-[var(--border-card)]"
-      >
-        <div class="flex items-center gap-2">
-          <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-            <component :is="feature.icon" class="w-3.5 h-3.5" />
-          </div>
-          <h3 class="text-xs font-semibold text-[var(--text-primary)]">{{ feature.title }}</h3>
-        </div>
-        <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">{{ feature.description }}</p>
-        <div class="flex flex-wrap gap-1 pt-1">
-          <Badge v-for="tag in feature.tags" :key="tag" variant="badge" size="sm">{{ tag }}</Badge>
-        </div>
-      </Card>
-    </div>
-  </div>
-  ```
-* **Prohibition:** Strictly forbidden to render a single sad, empty card with a centered question mark or generic `"No data yet"` banner. Use feature capability cards that educate the user on what the tool can do.
+### Pattern B: Tools Operating on URLs, Text, or Queries
+* Render the **Standalone Omnibar** (`DESIGN.md Section 11`).
+* **Clean Unboxed Initial State:** Do NOT inject arbitrary 4-capability bento cards or generic placeholder boxes beneath the Omnibar. The input field itself is the primary call to action.
+* If secondary metadata or status is needed (e.g. AI model attribution, API quota bar, or format notice), display it as a clean unboxed inline notice (`flex items-center gap-2 text-xs text-[var(--text-tertiary)]`).
+* **Strict Prohibition:** Strictly forbidden to render dummy/placeholder cards ("No data yet", "Enter URL to start") or forced bento capability grids on individual utility tools. Let the UI breathe cleanly and calmly.
 
 ---
 
@@ -460,9 +439,9 @@ Every page header must start with left-aligned breadcrumbs strictly mapped to th
 
 ---
 
-## 15. New Tool Onboarding Checklist (The 4 Anchors)
+## 15. New Tool Onboarding Checklist (The 5 Anchors)
 
-When creating or modifying a tool route, AI agents MUST register the tool in all 4 synchronization points:
+When creating or modifying a tool route, AI agents MUST register the tool in all 5 synchronization points:
 
 1. **Search & Command Palette (`composables/useSearch.ts`):** Register ID, title, route, category, description, and keywords.
 2. **Internationalization (`composables/useI18n.ts`):** Add translation entries in both `en` and `id` dictionaries.
@@ -471,6 +450,32 @@ When creating or modifying a tool route, AI agents MUST register the tool in all
    * Add to `radialCategories[category]`.
    * Add to expanded desktop submenu category list.
 4. **Brand Icon (`components/ui/BrandIcon.vue`):** If the tool represents a unique brand/service, add its clean vector SVG.
+5. **README Documentation Synchronization (`README.md`):** Whenever a new tool, downloader, or feature is added, AI agents MUST immediately update both the English and Bahasa Indonesia feature catalogs in `README.md` so public documentation never falls behind.
+
+---
+
+## 16. Anti-Over-Carding & Minimalist Unboxed Doctrine ("Tidak Semua Hal Harus Dibungkus Card")
+
+To prevent visual clutter, cognitive fatigue, and "card-soup" AI-slop layouts, AI agents MUST follow these strict unboxing rules across all components and pages:
+
+### A. Navigation, Buttons & Solitary Icon Links (Zero Card Wrapping)
+* **Single Icon Triggers:** Single icon buttons (GitHub repository link, settings button, theme toggle, mobile search trigger, language switcher) MUST NEVER be wrapped in `<Card>` or ad-hoc card boxes (`bg-[var(--bg-card)] border border-[var(--border-card)] shadow-xs`).
+* **Approved Unboxed Style:** Use minimalist ghost / unboxed styling:
+  `p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] rounded-lg transition-colors cursor-pointer`
+* **Zero Extra Borders:** Do not place borders or card backgrounds around solitary utility icons in sidebars, navbars, or toolbars.
+
+### B. Notice, Disclaimers & AI Engine Attribution (Unboxed Inline Notice)
+* **Notice Format:** Whenever displaying AI provider information (e.g. Gemini 2.5 Flash-Lite, Qwen 3.8-27B, Remove.bg) or usage quotas, it MUST be rendered as a single unboxed flex row:
+  `flex items-center gap-2 text-xs text-[var(--text-tertiary)]`
+* **Strict Ban:** NEVER wrap notices, quota bars, or engine status badges into large container cards or bento grids. Keep them clean, unboxed, and unobtrusive.
+
+### C. Controls, Toolbars & Segmented Switchers
+* **Unboxed Toolbars:** Switchers (e.g. Upload File vs Image URL), mode toggles, and filters sit directly in the layout or on a subtle pill surface (`p-1 bg-zinc-100 dark:bg-[#1E1E20] rounded-xl flex gap-1 border border-zinc-200 dark:border-[#2A2A2D]`).
+* **No Double Nesting:** Do not wrap toolbars or control rows inside another card that sits inside yet another card.
+
+### D. Result Panels & Interactive Previews
+* **Direct Preview:** Image comparison sliders, waveform audio editors, or live previews should render directly in the flow once media is loaded, without requiring intermediate dialog popups or redundant surrounding card borders.
+* **When to Use `<Card>`:** Use `<Card>` ONLY for meaningful content grouping (e.g. Media download result card, settings configuration panel, dashboard category card). Never use `<Card>` as a mindless default container for every UI snippet.
 
 
 

@@ -12,12 +12,11 @@ import {
   MultiplePages as Layers,
   Sparks as Sparkles,
   Globe,
-  ShareAndroid as Share2,
   CheckCircle as CheckCircle2,
   X,
-  Lock,
   InfoCircle as Info,
   SystemRestart as Loader2,
+  ArrowRight,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import type { BypassResult } from '~/server/utils/bypasser'
@@ -144,56 +143,60 @@ const getStatusBadgeVariant = (status: number) => {
       </p>
     </div>
 
-    <!-- Search Omnibar (Standardized with SkillSpector & HeroPasteBar) -->
-    <div class="relative flex items-center w-full">
-      <div class="absolute left-4 pointer-events-none text-[var(--text-secondary)]">
-        <Link2 class="w-5 h-5 text-[var(--text-secondary)]" />
-      </div>
-      <input
-        id="bypass-url-input"
-        v-model="inputUrl"
-        type="url"
-        placeholder="Paste shortlink or redirect URL (e.g. bit.ly, s.id, google.com/url?q=...)..."
-        class="w-full h-12 pl-12 pr-36 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl text-xs sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all font-mono"
-        :disabled="loading"
-        @keydown.enter="handleBypass"
-      />
-      <div class="absolute right-2 flex items-center gap-1.5">
-        <button
-          v-if="inputUrl"
-          type="button"
-          class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
-          title="Clear input"
-          @click="clearInput"
-        >
-          <X class="w-4 h-4" />
-        </button>
-        <Button
-          v-if="!inputUrl"
-          variant="secondary"
-          size="sm"
-          type="button"
+    <!-- Search Omnibar (DESIGN.md Section 11 Architecture) -->
+    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
+      <div class="relative flex-1 w-full flex items-center">
+        <!-- Leading Icon -->
+        <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
+          <Link2 class="w-4 h-4" />
+        </div>
+
+        <input
+          id="bypass-url-input"
+          v-model="inputUrl"
+          type="url"
+          placeholder="https://bit.ly/xyz atau https://s.id/..."
+          class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
           :disabled="loading"
-          class="h-8 px-2.5 text-xs cursor-pointer"
-          @click="pasteFromClipboard"
-        >
-          <Clipboard class="w-3.5 h-3.5 mr-1 text-[var(--text-secondary)]" />
-          Paste
-        </Button>
-        <Button
-          id="bypass-submit-btn"
-          variant="primary"
-          size="sm"
-          type="button"
-          class="h-8 px-3 text-xs font-medium cursor-pointer"
-          :disabled="loading || !inputUrl.trim()"
-          @click="handleBypass"
-        >
-          <Loader2 v-if="loading" class="w-3.5 h-3.5 animate-spin mr-1.5" />
-          <Sparkles v-else class="w-3.5 h-3.5 mr-1.5" />
-          <span>{{ loading ? 'Tracing...' : 'Bypass Link' }}</span>
-        </Button>
+          @keydown.enter="handleBypass"
+        />
+
+        <!-- Trailing Micro-Actions -->
+        <div class="absolute right-2.5 flex items-center gap-1">
+          <button
+            v-if="inputUrl"
+            type="button"
+            class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
+            title="Clear"
+            @click="clearInput"
+          >
+            <X class="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
+            title="Paste"
+            @click="pasteFromClipboard"
+          >
+            <Clipboard class="w-4 h-4" />
+          </button>
+        </div>
       </div>
+
+      <!-- Standalone CTA Action Button -->
+      <Button
+        id="bypass-submit-btn"
+        variant="primary"
+        size="default"
+        type="button"
+        class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
+        :disabled="loading || !inputUrl.trim()"
+        @click="handleBypass"
+      >
+        <Loader2 v-if="loading" class="w-4 h-4 animate-spin mr-1.5" />
+        <Sparkles v-else class="w-4 h-4 mr-1.5" />
+        <span>{{ loading ? 'Tracing...' : 'Bypass Link' }}</span>
+      </Button>
     </div>
 
     <!-- Error Box -->
@@ -378,95 +381,6 @@ const getStatusBadgeVariant = (status: number) => {
           </div>
         </div>
       </Card>
-    </div>
-
-    <!-- 3. Supported Platforms & Capabilities Directory (Bento Grid) -->
-    <div class="space-y-3 pt-4">
-      <div class="space-y-0.5">
-        <h2 class="text-sm font-semibold text-[var(--text-primary)]">
-          Supported Resolvers & Bypass Engines
-        </h2>
-        <p class="text-xs text-[var(--text-secondary)]">
-          Autonomous multi-hop tracing works with all standard redirects, with tailored rules for major networks:
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. Standard Shorteners -->
-        <Card :hoverable="false" class="p-4 space-y-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-              <Globe class="w-3.5 h-3.5" />
-            </div>
-            <h3 class="text-xs font-semibold text-[var(--text-primary)]">Shortlink Expander</h3>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Follows HTTP 301/302 redirects recursively for Bitly, TinyURL, S.id, Cutt.ly, is.gd, and Twitter t.co.
-          </p>
-          <div class="flex flex-wrap gap-1 pt-1">
-            <Badge variant="badge" size="sm">bit.ly</Badge>
-            <Badge variant="badge" size="sm">s.id</Badge>
-            <Badge variant="badge" size="sm">tinyurl</Badge>
-            <Badge variant="badge" size="sm">t.co</Badge>
-          </div>
-        </Card>
-
-        <!-- 2. Social Link Shims -->
-        <Card :hoverable="false" class="p-4 space-y-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-              <Share2 class="w-3.5 h-3.5" />
-            </div>
-            <h3 class="text-xs font-semibold text-[var(--text-primary)]">Gateway & Shim Unmask</h3>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Instantly extracts destination URLs from Google warning redirects, Facebook link shim, Instagram, and Steam.
-          </p>
-          <div class="flex flex-wrap gap-1 pt-1">
-            <Badge variant="badge" size="sm">Google URL</Badge>
-            <Badge variant="badge" size="sm">FB Shim</Badge>
-            <Badge variant="badge" size="sm">Steam</Badge>
-            <Badge variant="badge" size="sm">YouTube</Badge>
-          </div>
-        </Card>
-
-        <!-- 3. Social Unlockers & Adfly -->
-        <Card :hoverable="false" class="p-4 space-y-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-              <Lock class="w-3.5 h-3.5" />
-            </div>
-            <h3 class="text-xs font-semibold text-[var(--text-primary)]">Unlocker Bypass</h3>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Bypasses "Subscribe to Unlock" pages (Sub2Unlock, Boost.ink) and decodes AdFly reverse payload variables.
-          </p>
-          <div class="flex flex-wrap gap-1 pt-1">
-            <Badge variant="badge" size="sm">Sub2Unlock</Badge>
-            <Badge variant="badge" size="sm">Boost.ink</Badge>
-            <Badge variant="badge" size="sm">Adf.ly</Badge>
-          </div>
-        </Card>
-
-        <!-- 4. Telemetry Sanitizer -->
-        <Card :hoverable="false" class="p-4 space-y-2">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-              <ShieldCheck class="w-3.5 h-3.5 text-emerald-500" />
-            </div>
-            <h3 class="text-xs font-semibold text-[var(--text-primary)]">Tracker Stripper</h3>
-          </div>
-          <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Automatically strips UTM parameters, Facebook click IDs, and telemetry tokens to keep your destination clean.
-          </p>
-          <div class="flex flex-wrap gap-1 pt-1">
-            <Badge variant="badge" size="sm">utm_*</Badge>
-            <Badge variant="badge" size="sm">fbclid</Badge>
-            <Badge variant="badge" size="sm">gclid</Badge>
-            <Badge variant="badge" size="sm">igsh</Badge>
-          </div>
-        </Card>
-      </div>
     </div>
   </div>
 </template>
