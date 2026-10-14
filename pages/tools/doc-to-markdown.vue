@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
-  FileText,
+  Page as FileText,
   Upload,
-  Clipboard,
+  PasteClipboard as Clipboard,
   Copy,
   Check,
   Download,
   Eye,
-  Code2,
-  RefreshCw,
-  AlertCircle,
-  Image as ImageIcon,
-  X
-} from 'lucide-vue-next'
+  CodeBrackets as Code2,
+  Refresh as RefreshCw,
+  WarningCircle as AlertCircle,
+  MediaImage as ImageIcon,
+  X,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'

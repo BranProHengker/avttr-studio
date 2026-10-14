@@ -5,15 +5,15 @@ import { PDFDocument } from 'pdf-lib'
 import {
   Upload,
   Download,
-  Trash2,
-  RefreshCw,
-  Sliders,
+  Trash as Trash2,
+  Refresh as RefreshCw,
+  ControlSlider as Sliders,
   Check,
-  FileImage,
+  MediaImage as FileImage,
   ArrowRight,
   Archive,
-  Layers
-} from 'lucide-vue-next'
+  MultiplePages as Layers,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'

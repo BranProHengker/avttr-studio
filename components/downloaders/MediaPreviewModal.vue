@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Play, Pause, RotateCcw, RotateCw, Volume2, VolumeX, Music, FileText, Archive, FileDown } from 'lucide-vue-next'
+import { Play, Pause, Undo as RotateCcw, Redo as RotateCw, SoundHigh as Volume2, SoundOff as VolumeX, MusicNote as Music, Page as FileText, Archive, PageDown as FileDown } from '@iconoir/vue'
 import type { ScraperResult, MediaItem } from '~/types'
 import { useDownloader } from '~/composables/useDownloader'
 import { useClipboard } from '~/composables/useClipboard'

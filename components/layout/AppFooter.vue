@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from '~/composables/useI18n'
 import { useSettings } from '~/composables/useSettings'
-import { Bug, Github } from 'lucide-vue-next'
+import { Bug, Github } from '@iconoir/vue'
 
 const { t } = useI18n()
 const { openSettings } = useSettings()

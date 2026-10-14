@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import {
-  Link2,
-  ExternalLink,
+  Link as Link2,
+  OpenNewWindow as ExternalLink,
   Copy,
-  Clipboard,
+  PasteClipboard as Clipboard,
   Check,
   ShieldCheck,
-  AlertTriangle,
+  WarningTriangle as AlertTriangle,
   Clock,
-  Layers,
-  Sparkles,
+  MultiplePages as Layers,
+  Sparks as Sparkles,
   Globe,
-  Share2,
-  CheckCircle2,
+  ShareAndroid as Share2,
+  CheckCircle as CheckCircle2,
   X,
   Lock,
-  Info,
-  Loader2,
-} from 'lucide-vue-next'
+  InfoCircle as Info,
+  SystemRestart as Loader2,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import type { BypassResult } from '~/server/utils/bypasser'
 import Card from '~/components/ui/Card.vue'

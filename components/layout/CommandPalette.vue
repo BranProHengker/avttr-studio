@@ -5,7 +5,7 @@ import { useSearch } from '~/composables/useSearch'
 import { useI18n } from '~/composables/useI18n'
 import Badge from '~/components/ui/Badge.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
-import { X } from 'lucide-vue-next'
+import { X } from '@iconoir/vue'
 
 interface Props {
   isOpen: boolean

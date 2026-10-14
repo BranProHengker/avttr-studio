@@ -7,20 +7,20 @@ import {
   Check,
   Upload,
   Palette,
-  Sparkles,
-  Layers,
-  Pipette,
-  Maximize2,
-  Minimize2,
+  Sparks as Sparkles,
+  MultiplePages as Layers,
+  ColorPicker as Pipette,
+  Maximize as Maximize2,
+  Compress as Minimize2,
   X,
   Plus,
-  Trash2,
-  RotateCcw,
-  Sliders,
+  Trash as Trash2,
+  Undo as RotateCcw,
+  ControlSlider as Sliders,
   Type,
-  FileCode,
-  Image as ImageIcon
-} from 'lucide-vue-next'
+  PageEdit as FileCode,
+  MediaImage as ImageIcon,
+} from '@iconoir/vue'
 import { toPng, toBlob } from 'html-to-image'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-markup'

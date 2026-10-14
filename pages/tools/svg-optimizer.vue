@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import {
-  FileCode,
+  PageEdit as FileCode,
   Upload,
   Copy,
   Check,
   Download,
-  Trash2,
+  Trash as Trash2,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
-  Sliders,
+  Undo as RotateCcw,
+  ControlSlider as Sliders,
   ArrowRight,
   Eye,
-  FolderOpen,
-  Code
-} from 'lucide-vue-next'
+  Folder as FolderOpen,
+  Code,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'

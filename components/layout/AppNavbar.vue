@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useDark, useToggle } from '@vueuse/core'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
-import { PanelLeft } from 'lucide-vue-next'
+import { SidebarCollapse as PanelLeft } from '@iconoir/vue'
 import Badge from '~/components/ui/Badge.vue'
 
 defineEmits<{

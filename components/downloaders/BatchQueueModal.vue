@@ -2,19 +2,19 @@
 import { ref, computed } from 'vue'
 import {
   Download,
-  RotateCcw,
-  Trash2,
+  Undo as RotateCcw,
+  Trash as Trash2,
   Archive,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
+  CheckCircle as CheckCircle2,
+  WarningCircle as AlertCircle,
+  SystemRestart as Loader2,
   Plus,
-  ExternalLink,
-  Layers,
+  OpenNewWindow as ExternalLink,
+  MultiplePages as Layers,
   X,
   Clock,
-  Sparkles
-} from 'lucide-vue-next'
+  Sparks as Sparkles,
+} from '@iconoir/vue'
 import type { MediaItem } from '~/types'
 import { useBatchDownloader, type BatchQueueItem } from '~/composables/useBatchDownloader'
 import Modal from '~/components/ui/Modal.vue'

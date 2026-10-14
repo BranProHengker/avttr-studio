@@ -9,23 +9,23 @@ import {
   Check,
   Type,
   Code,
-  ExternalLink,
-  RefreshCw,
-  Sliders,
+  OpenNewWindow as ExternalLink,
+  Refresh as RefreshCw,
+  ControlSlider as Sliders,
   Globe,
   Palette,
   Eye,
-  Loader2,
-  Sun,
-  Moon,
-  Info,
-  Sparkles,
+  SystemRestart as Loader2,
+  SunLight as Sun,
+  HalfMoon as Moon,
+  InfoCircle as Info,
+  Sparks as Sparkles,
   X,
-  Columns,
+  Table2Columns as Columns,
   AlignLeft,
   AlignCenter,
-  AlignRight
-} from 'lucide-vue-next'
+  AlignRight,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
 import Card from '~/components/ui/Card.vue'

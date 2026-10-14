@@ -2,36 +2,36 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import JSZip from 'jszip'
 import {
-  Film,
+  CinemaOld as Film,
   Play,
   Pause,
-  RotateCcw,
+  Undo as RotateCcw,
   Download,
-  Scissors,
-  Sliders,
-  FolderOpen,
+  Scissor as Scissors,
+  ControlSlider as Sliders,
+  Folder as FolderOpen,
   X,
-  Volume2,
-  VolumeX,
+  SoundHigh as Volume2,
+  SoundOff as VolumeX,
   Check,
-  Clipboard,
+  PasteClipboard as Clipboard,
   ArrowRight,
   Link as LinkIcon,
   Lock,
-  Unlock,
-  Sparkles,
-  Monitor,
-  RefreshCw,
+  LockSlash as Unlock,
+  Sparks as Sparkles,
+  Tv as Monitor,
+  Refresh as RefreshCw,
   Clock,
   HardDrive,
   Maximize,
-  Minimize,
+  Compress as Minimize,
   Archive,
-  Trash2,
+  Trash as Trash2,
   Plus,
-  AlertCircle,
-  List
-} from 'lucide-vue-next'
+  WarningCircle as AlertCircle,
+  List,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'

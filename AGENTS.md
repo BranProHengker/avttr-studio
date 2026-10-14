@@ -6,7 +6,7 @@
   * **Framework:** Nuxt 3 (Fullstack Vue 3 + Nitro Server Engine) — *Unified Single Repository*
   * **Language:** TypeScript
   * **Styling:** Tailwind CSS v4 + Design Tokens (`DESIGN.md`)
-  * **Icons & Utilities:** `lucide-vue-next`, `@vueuse/core`, `jszip`
+  * **Icons & Utilities:** `@iconoir/vue`, `@vueuse/core`, `jszip`
   * **Engine / Scrapers:** Nitro routes (`/server/api/download/...`), `ofetch`, Cheerio, and Cobalt API integration with smart auto-fallback.
   * **MCP Integration:** `context7` for authoritative library queries and documentation.
 
@@ -241,7 +241,7 @@ export interface ScraperResult {
 * **Anti-AI-Slop Iconography Rules:**
   * **Strict Ban on Emojis/Emoticons in UI:** Absolutely forbidden to use generic emojis (e.g. 🎵, 📸, ▶️, 🎬, 📱, 📄, 🎨, ⚡, 🎧) inside cards, buttons, badges, headers, or sidebars.
   * **Official SVG Brand Logos:** Always use authentic, clean SVG vector brand logos for social platforms.
-  * **Lucide Icons:** Use `lucide-vue-next` for all generic UI icons.
+  * **Iconoir Icons:** Use `@iconoir/vue` (`https://iconoir.com`) for all generic UI icons.
 * Ensure all interactive buttons, cards, and inputs have:
   * Unique and descriptive `id` attributes.
   * Subtle hover states (`150ms` transition).

@@ -1,31 +1,31 @@
 <script setup lang="ts">
 import { ref, shallowRef, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import {
-  Music,
+  MusicNote as Music,
   Play,
   Pause,
   Download,
   Upload,
-  Volume2,
-  VolumeX,
-  FileAudio,
+  SoundHigh as Volume2,
+  SoundOff as VolumeX,
+  MusicDoubleNote as FileAudio,
   Repeat,
-  FolderOpen,
-  FastForward,
+  Folder as FolderOpen,
+  FastArrowRight as FastForward,
   Rewind,
-  Trash2,
-  Undo2,
-  Redo2,
+  Trash as Trash2,
+  Undo as Undo2,
+  Redo as Redo2,
   Plus,
   X,
-  Sparkles,
-  TrendingUp,
-  TrendingDown,
+  Sparks as Sparkles,
+  GraphUp as TrendingUp,
+  GraphDown as TrendingDown,
   Activity,
   ZoomIn,
   ZoomOut,
-  Magnet
-} from 'lucide-vue-next'
+  Magnet,
+} from '@iconoir/vue'
 import { Mp3Encoder } from '@breezystack/lamejs'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'

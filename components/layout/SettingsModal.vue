@@ -9,21 +9,21 @@ import Modal from '~/components/ui/Modal.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 import {
-  Sliders,
+  ControlSlider as Sliders,
   Download,
   HardDrive,
-  Info,
+  InfoCircle as Info,
   Bug,
   Check,
-  ExternalLink,
-  Trash2,
-  RotateCcw,
-  Sun,
-  Moon,
+  OpenNewWindow as ExternalLink,
+  Trash as Trash2,
+  Undo as RotateCcw,
+  SunLight as Sun,
+  HalfMoon as Moon,
   Globe,
   ShieldCheck,
   Github,
-} from 'lucide-vue-next'
+} from '@iconoir/vue'
 
 const { t, locale, toggleLocale } = useI18n()
 const { settings, isSettingsOpen, activeSettingsTab, closeSettings, resetSettings } = useSettings()

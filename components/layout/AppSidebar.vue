@@ -2,29 +2,29 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  ChevronLeft,
-  ChevronRight,
-  Scissors,
-  Image as ImageIcon,
-  RefreshCw,
-  Wand2,
+  NavArrowLeft as ChevronLeft,
+  NavArrowRight as ChevronRight,
+  Scissor as Scissors,
+  MediaImage as ImageIcon,
+  Refresh as RefreshCw,
+  MagicWand as Wand2,
   QrCode,
   Type,
-  FileText,
-  FileCode,
-  Code2,
-  Hash,
-  Smartphone,
-  Pipette,
+  Page as FileText,
+  PageEdit as FileCode,
+  CodeBrackets as Code2,
+  Hashtag as Hash,
+  SmartphoneDevice as Smartphone,
+  ColorPicker as Pipette,
   Globe,
-  Sticker,
-  Music,
-  FolderCheck,
-  Video,
+  Label as Sticker,
+  MusicNote as Music,
+  Folder as FolderCheck,
+  MediaVideo as Video,
   Settings,
   ShieldCheck,
-  ScanSearch,
-} from 'lucide-vue-next'
+  Scanning as ScanSearch,
+} from '@iconoir/vue'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
 import { useSidebar } from '~/composables/useSidebar'

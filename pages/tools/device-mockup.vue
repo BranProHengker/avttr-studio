@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import {
-  Smartphone,
+  SmartphoneDevice as Smartphone,
   Laptop,
   Square,
   Upload,
@@ -9,16 +9,16 @@ import {
   Copy,
   Check,
   Eye,
-  Trash2,
+  Trash as Trash2,
   Plus,
   Palette,
-  Sparkles,
-  Sliders,
-  Image as ImageIcon,
-  Pipette,
-  Layers,
-  RotateCcw
-} from 'lucide-vue-next'
+  Sparks as Sparkles,
+  ControlSlider as Sliders,
+  MediaImage as ImageIcon,
+  ColorPicker as Pipette,
+  MultiplePages as Layers,
+  Undo as RotateCcw,
+} from '@iconoir/vue'
 import { toPng, toBlob } from 'html-to-image'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'

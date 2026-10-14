@@ -3,27 +3,27 @@ import { ref, computed, watch } from 'vue'
 import {
   Download,
   Copy,
-  ExternalLink,
+  OpenNewWindow as ExternalLink,
   Type,
   Code,
   Check,
   Palette,
   Eye,
-  Loader2,
-  Info,
-  Layers,
-  Sparkles,
-  Sun,
-  Moon,
-  RefreshCw,
-  Columns,
-  ArrowLeftRight,
+  SystemRestart as Loader2,
+  InfoCircle as Info,
+  MultiplePages as Layers,
+  Sparks as Sparkles,
+  SunLight as Sun,
+  HalfMoon as Moon,
+  Refresh as RefreshCw,
+  Table2Columns as Columns,
+  DataTransferBoth as ArrowLeftRight,
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Sliders,
-  Shuffle
-} from 'lucide-vue-next'
+  ControlSlider as Sliders,
+  Shuffle,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
 import Modal from '~/components/ui/Modal.vue'

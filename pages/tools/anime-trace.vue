@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
-  ScanSearch,
+  Scanning as ScanSearch,
   Link as LinkIcon,
-  Clipboard,
-  ExternalLink,
-  Film,
+  PasteClipboard as Clipboard,
+  OpenNewWindow as ExternalLink,
+  CinemaOld as Film,
   Clock,
-  Sparkles,
-  RefreshCw,
-  Volume2,
-  VolumeX,
-  Layers,
-  Image as ImageIcon,
-  AlertCircle,
-  X
-} from 'lucide-vue-next'
+  Sparks as Sparkles,
+  Refresh as RefreshCw,
+  SoundHigh as Volume2,
+  SoundOff as VolumeX,
+  MultiplePages as Layers,
+  MediaImage as ImageIcon,
+  WarningCircle as AlertCircle,
+  X,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'

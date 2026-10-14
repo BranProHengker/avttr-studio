@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, X, AlertTriangle, Info } from 'lucide-vue-next'
+import { Check, X, WarningTriangle as AlertTriangle, InfoCircle as Info } from '@iconoir/vue'
 import type { ToastItem } from '~/types'
 
 interface Props {

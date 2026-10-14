@@ -3,21 +3,21 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Globe,
   Upload,
-  Clipboard,
+  PasteClipboard as Clipboard,
   X,
-  ScanSearch,
-  Flame,
-  AlertTriangle,
-  CheckCircle2,
-  Share2,
-  RotateCcw,
-  Sparkles,
-  Receipt,
-  FileCode,
+  Scanning as ScanSearch,
+  FireFlame as Flame,
+  WarningTriangle as AlertTriangle,
+  CheckCircle as CheckCircle2,
+  ShareAndroid as Share2,
+  Undo as RotateCcw,
+  Sparks as Sparkles,
+  Page as Receipt,
+  PageEdit as FileCode,
   ShieldCheck,
-  Zap,
-  Info
-} from 'lucide-vue-next'
+  Flash as Zap,
+  InfoCircle as Info,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import { useClipboard } from '~/composables/useClipboard'

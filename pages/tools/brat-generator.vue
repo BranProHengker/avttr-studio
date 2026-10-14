@@ -6,15 +6,15 @@ import {
   Copy,
   Play,
   Pause,
-  Sliders,
+  ControlSlider as Sliders,
   Palette,
   Check,
-  Film,
-  Image as ImageIcon,
+  CinemaOld as Film,
+  MediaImage as ImageIcon,
   AlignLeft,
   AlignCenter,
-  AlignJustify
-} from 'lucide-vue-next'
+  AlignJustify,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'
 import Card from '~/components/ui/Card.vue'

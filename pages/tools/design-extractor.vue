@@ -6,23 +6,23 @@ import {
   Copy,
   Check,
   Download,
-  Layers,
+  MultiplePages as Layers,
   Palette,
   Type,
   Box,
   Code,
-  AlertCircle,
-  RefreshCw,
-  ExternalLink,
+  WarningCircle as AlertCircle,
+  Refresh as RefreshCw,
+  OpenNewWindow as ExternalLink,
   ShieldCheck,
-  Sliders,
+  ControlSlider as Sliders,
   Cpu,
-  FileText,
-  Clipboard,
+  Page as FileText,
+  PasteClipboard as Clipboard,
   X,
   Eye,
-  Sparkles
-} from 'lucide-vue-next'
+  Sparks as Sparkles,
+} from '@iconoir/vue'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-markup'
 import 'prismjs/components/prism-css'

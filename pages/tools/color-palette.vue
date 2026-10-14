@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Copy, Lock, Unlock, RefreshCw, Check } from 'lucide-vue-next'
+import { Copy, Lock, LockSlash as Unlock, Refresh as RefreshCw, Check } from '@iconoir/vue'
 import { useClipboard } from '~/composables/useClipboard'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'

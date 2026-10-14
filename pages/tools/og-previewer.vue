@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import {
-  Share2,
+  ShareAndroid as Share2,
   Copy,
   Check,
   Upload,
   Globe,
-  FileText,
-  FileCode,
+  Page as FileText,
+  PageEdit as FileCode,
   Palette,
-  Info,
-  ExternalLink,
-  Sparkles,
-  RefreshCw,
-  RotateCcw,
-  Image as ImageIcon,
-  CheckCircle2,
-  AlertCircle,
-  X
-} from 'lucide-vue-next'
+  InfoCircle as Info,
+  OpenNewWindow as ExternalLink,
+  Sparks as Sparkles,
+  Refresh as RefreshCw,
+  Undo as RotateCcw,
+  MediaImage as ImageIcon,
+  CheckCircle as CheckCircle2,
+  WarningCircle as AlertCircle,
+  X,
+} from '@iconoir/vue'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-markup'
 import 'prismjs/components/prism-clike'

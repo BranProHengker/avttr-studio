@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { Copy, Pipette, RefreshCw, Check, Sliders, Sparkles, Hash } from 'lucide-vue-next'
+import { Copy, ColorPicker as Pipette, Refresh as RefreshCw, Check, ControlSlider as Sliders, Sparks as Sparkles, Hashtag as Hash } from '@iconoir/vue'
 import { useClipboard } from '~/composables/useClipboard'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'

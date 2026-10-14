@@ -3,28 +3,28 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import {
   Upload,
   Download,
-  Sparkles,
-  Sliders,
+  Sparks as Sparkles,
+  ControlSlider as Sliders,
   Type,
-  Image as ImageIcon,
-  Layers,
+  MediaImage as ImageIcon,
+  MultiplePages as Layers,
   Copy,
   Check,
-  RotateCw,
-  FlipHorizontal,
-  Wand2,
-  Trash2,
+  Redo as RotateCw,
+  Flip as FlipHorizontal,
+  MagicWand as Wand2,
+  Trash as Trash2,
   Eye,
-  Settings2,
-  Info,
-  RefreshCw,
+  ControlSlider as Settings2,
+  InfoCircle as Info,
+  Refresh as RefreshCw,
   Palette,
-  Maximize2,
+  Maximize as Maximize2,
   Link as LinkIcon,
-  Clipboard,
+  PasteClipboard as Clipboard,
   X,
-  ArrowRight
-} from 'lucide-vue-next'
+  ArrowRight,
+} from '@iconoir/vue'
 import confetti from 'canvas-confetti'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'

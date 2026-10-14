@@ -2,21 +2,21 @@
 import { ref, computed } from 'vue'
 import { PDFDocument, PageSizes, degrees } from 'pdf-lib'
 import {
-  FileText,
+  Page as FileText,
   Upload,
   Download,
-  Trash2,
-  MoveUp,
-  MoveDown,
-  Layers,
-  Scissors,
-  Image as ImageIcon,
+  Trash as Trash2,
+  ArrowUp as MoveUp,
+  ArrowDown as MoveDown,
+  MultiplePages as Layers,
+  Scissor as Scissors,
+  MediaImage as ImageIcon,
   Check,
-  AlertCircle,
-  FileCheck,
-  RefreshCw,
-  Plus
-} from 'lucide-vue-next'
+  WarningCircle as AlertCircle,
+  SubmitDocument as FileCheck,
+  Refresh as RefreshCw,
+  Plus,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'

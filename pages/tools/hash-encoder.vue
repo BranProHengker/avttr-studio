@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Copy, Upload, Check, Hash, FileCode, Link as LinkIcon } from 'lucide-vue-next'
+import { Copy, Upload, Check, Hashtag as Hash, PageEdit as FileCode, Link as LinkIcon } from '@iconoir/vue'
 import { useClipboard } from '~/composables/useClipboard'
 import { useToast } from '~/composables/useToast'
 import Card from '~/components/ui/Card.vue'

@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import {
-  FolderCheck,
+  Folder as FolderCheck,
   ShieldCheck,
   ShieldAlert,
-  AlertTriangle,
+  WarningTriangle as AlertTriangle,
   Download,
   Copy,
   Terminal,
-  RefreshCw,
-  Loader2,
+  Refresh as RefreshCw,
+  SystemRestart as Loader2,
   Archive,
-  FileCode,
+  PageEdit as FileCode,
   Folder,
   Eye,
-  Code2,
-} from 'lucide-vue-next'
+  CodeBrackets as Code2,
+} from '@iconoir/vue'
 import JSZip from 'jszip'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'

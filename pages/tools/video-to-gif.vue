@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
 import {
-  Film,
+  CinemaOld as Film,
   Play,
   Pause,
-  RotateCcw,
+  Undo as RotateCcw,
   Download,
   Upload,
   Copy,
   Check,
-  Clipboard,
+  PasteClipboard as Clipboard,
   ArrowRight,
   Link as LinkIcon,
-  FolderOpen,
-  X
-} from 'lucide-vue-next'
+  Folder as FolderOpen,
+  X,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'

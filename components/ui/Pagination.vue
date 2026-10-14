@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from '@iconoir/vue'
 
 interface Props {
   modelValue?: number

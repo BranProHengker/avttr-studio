@@ -11,6 +11,7 @@
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
     "@distube/ytdl-core": "^4.16.12",
+    "@iconoir/vue": "^7.12.1",
     "@vueuse/core": "^12.8.2",
     "@vueuse/nuxt": "^12.8.2",
     "apify-client": "^2.25.0",
@@ -22,7 +23,6 @@
     "html-to-image": "^1.11.13",
     "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
-    "lucide-vue-next": "^0.475.0",
     "mediabunny": "^1.58.1",
     "mp4-muxer": "^5.2.2",
     "nuxt": "^3.15.4",

@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
-  Video,
-  VideoOff,
+  MediaVideo as Video,
+  VideoCameraOff as VideoOff,
   Play,
   Square,
   Pause,
-  RotateCcw,
+  Undo as RotateCcw,
   Download,
   Plus,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
+  Trash as Trash2,
+  NavArrowUp as ChevronUp,
+  NavArrowDown as ChevronDown,
   ArrowRight,
   ArrowLeft,
-  Settings2,
-  Sparkles,
+  ControlSlider as Settings2,
+  Sparks as Sparkles,
   Clock,
-  FlipHorizontal,
-  CheckCircle2,
-  Type
-} from 'lucide-vue-next'
+  Flip as FlipHorizontal,
+  CheckCircle as CheckCircle2,
+  Type,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'

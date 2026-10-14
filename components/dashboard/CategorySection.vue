@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ToolCategory } from '~/types'
-import { Folder } from 'lucide-vue-next'
+import { Folder } from '@iconoir/vue'
 import ToolCard from './ToolCard.vue'
 
 interface Props {

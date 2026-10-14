@@ -2,21 +2,21 @@
 import { ref, computed } from 'vue'
 import JSZip from 'jszip'
 import {
-  UploadCloud,
-  FileImage,
+  CloudUpload as UploadCloud,
+  MediaImage as FileImage,
   Download,
-  Trash2,
-  Sliders,
-  Sparkles,
-  Layers,
+  Trash as Trash2,
+  ControlSlider as Sliders,
+  Sparks as Sparkles,
+  MultiplePages as Layers,
   ArrowRight,
   Eye,
   Check,
-  RefreshCw,
-  Columns,
-  Maximize2,
-  Plus
-} from 'lucide-vue-next'
+  Refresh as RefreshCw,
+  Table2Columns as Columns,
+  Maximize as Maximize2,
+  Plus,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Card from '~/components/ui/Card.vue'

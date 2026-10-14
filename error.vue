@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import type { NuxtError } from '#app'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft } from '@iconoir/vue'
 
 const LazyCommandPalette = defineAsyncComponent(() => import('~/components/layout/CommandPalette.vue'))
 

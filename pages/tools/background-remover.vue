@@ -3,23 +3,23 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import {
   Upload,
   Download,
-  Trash2,
-  Sparkles,
-  Layers,
-  Image as ImageIcon,
+  Trash as Trash2,
+  Sparks as Sparkles,
+  MultiplePages as Layers,
+  MediaImage as ImageIcon,
   Check,
-  RefreshCw,
+  Refresh as RefreshCw,
   Eye,
-  Sliders,
+  ControlSlider as Sliders,
   Palette,
-  Clipboard,
+  PasteClipboard as Clipboard,
   Link as LinkIcon,
-  Zap,
-  AlertTriangle,
+  Flash as Zap,
+  WarningTriangle as AlertTriangle,
   ArrowRight,
-  FolderOpen,
-  X
-} from 'lucide-vue-next'
+  Folder as FolderOpen,
+  X,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Card from '~/components/ui/Card.vue'

@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 import {
-  Music,
+  MusicNote as Music,
   Search,
   Play,
   Pause,
-  Volume2,
-  VolumeX,
+  SoundHigh as Volume2,
+  SoundOff as VolumeX,
   Copy,
   Check,
   Download,
   Eye,
-  Code2,
-  RefreshCw,
-  Sparkles,
-  AlertCircle,
-  FileAudio,
+  CodeBrackets as Code2,
+  Refresh as RefreshCw,
+  Sparks as Sparkles,
+  WarningCircle as AlertCircle,
+  MusicDoubleNote as FileAudio,
   X,
-  Disc,
-  Sliders,
-  CheckCircle2
-} from 'lucide-vue-next'
+  CompactDisc as Disc,
+  ControlSlider as Sliders,
+  CheckCircle as CheckCircle2,
+} from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
