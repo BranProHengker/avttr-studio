@@ -410,8 +410,8 @@ const renderedHtml = computed(() => {
           </div>
           <p class="text-[11px] text-[var(--text-tertiary)]">
             {{ locale === 'id'
-              ? 'Fitur ini didukung oleh Google Gemini API untuk mengubah dokumen menjadi Markdown. Bila kuota token harian habis, Anda dapat menggunakannya kembali esok hari saat kuota di-reset.'
-              : 'This feature is powered by Google Gemini API to convert documents into Markdown. If the daily token quota is exhausted, you can use it again tomorrow after the daily reset.' }}
+              ? 'Fitur ini didukung oleh Google Gemini 2.5 Flash-Lite API untuk parsing dokumen ke Markdown berkecepatan tinggi. Bila kuota token harian habis, Anda dapat menggunakannya kembali saat kuota di-reset.'
+              : 'This feature is powered by Google Gemini 2.5 Flash-Lite API for ultra-fast document parsing into Markdown. If the daily token quota is exhausted, it will reset automatically.' }}
           </p>
         </div>
       </div>

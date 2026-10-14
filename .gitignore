@@ -36,3 +36,6 @@ pnpm-debug.log*
 Thumbs.db
 .vercel
 .env*
+
+# Video production & promo film
+film/
