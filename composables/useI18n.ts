@@ -366,6 +366,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Web Security & Header Inspector',
         description: 'Audit HTTP security headers, evaluate TLS/HSTS posture, check info disclosure leaks, and get 1-click fix snippets.',
       },
+      'slop-spector': {
+        title: 'SlopSpector',
+        description: 'Forensic detector for AI slop and generator fingerprints. Audits buzzwords, default Shadcn tokens, and roasts websites.',
+      },
     },
   },
   id: {
@@ -619,6 +623,10 @@ const translations: Record<Locale, Translations> = {
       'web-security': {
         title: 'Web Security & Header Inspector',
         description: 'Uji rapor keamanan header HTTP, deteksi kebocoran info server, dan dapatkan panduan perbaikan instan.',
+      },
+      'slop-spector': {
+        title: 'SlopSpector',
+        description: 'Forensik jejak dosa generator AI di balik website. Deteksi buzzwords, token Shadcn bawaan, dan roasting hasil audit.',
       },
     },
   },

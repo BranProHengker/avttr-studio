@@ -23,6 +23,7 @@ import {
   Video,
   Settings,
   ShieldCheck,
+  ScanSearch,
 } from 'lucide-vue-next'
 import { useHistory } from '~/composables/useHistory'
 import { useI18n } from '~/composables/useI18n'
@@ -106,6 +107,7 @@ const isCategoryActive = (category: string) => {
   if (category === 'developer') {
     return [
       '/tools/skillspector',
+      '/tools/slop-spector',
       '/tools/link-bypasser',
       '/tools/design-extractor',
       '/tools/web-security',
@@ -195,6 +197,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
     title: 'Developer & AI',
     items: [
       { path: '/tools/skillspector', label: 'SkillSpector', iconComponent: FolderCheck },
+      { path: '/tools/slop-spector', label: 'SlopSpector', iconComponent: ScanSearch },
       { path: '/tools/link-bypasser', label: 'Link Bypasser', brandName: 'link-bypasser' },
       { path: '/tools/design-extractor', label: 'Design Extractor', brandName: 'design-extractor' },
       { path: '/tools/web-security', label: 'Web Security', iconComponent: ShieldCheck },
@@ -1007,6 +1010,17 @@ const activeRadialData = computed(() => {
                 "
               >
                 SkillSpector
+              </NuxtLink>
+              <NuxtLink
+                to="/tools/slop-spector"
+                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                :class="
+                  isRouteActive('/tools/slop-spector')
+                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                "
+              >
+                SlopSpector
               </NuxtLink>
               <NuxtLink
                 to="/tools/link-bypasser"
