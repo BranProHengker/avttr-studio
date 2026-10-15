@@ -467,6 +467,44 @@ export default defineEventHandler(async (event) => {
     )
   }
 
+  // Chatbot Text Leak (humanizer §20, antislop-copywriting R-36)
+  const chatbotRegex = /\b(?:i hope this helps|hope this helps|certainly!|certainly,|here is an overview|as of my last (?:knowledge )?update|as an ai language model|as a large language model)\b/i
+  const chatbotMatch = findQuoteAround(chatbotRegex)
+  if (chatbotMatch) {
+    add(
+      'copy',
+      'chatbot',
+      isIndo ? 'Potongan Chatbot Tertinggal' : 'Chatbot Output Leak',
+      16,
+      isIndo
+        ? `Teks chatbot tertinggal di halaman: "${chatbotMatch}". Ketahuan copy-paste mentah dari prompt ChatGPT.`
+        : `Chatbot conversational scrap detected: "${chatbotMatch}". Pasted straight from an LLM prompt.`,
+      isIndo
+        ? 'Kalimat basa-basi khas AI chatbot yang lupa dihapus saat memindahkan teks hasil generate ke website.'
+        : 'Conversational filler phrases that occur when LLM chat output is copied wholesale into production code.',
+      [chatbotMatch]
+    )
+  }
+
+  // Signposting Announcements & Fake-Candid Openers (humanizer §28, §33, antislop-copywriting R-36)
+  const signpostRegex = /\b(?:let['’]s dive in|here['’]s what you need to know|without further ado|at its core|the real question is|what really matters is|the heart of the matter|let['’]s be honest|real talk)\b/i
+  const signpostMatch = findQuoteAround(signpostRegex)
+  if (signpostMatch) {
+    add(
+      'copy',
+      'signpost',
+      isIndo ? 'Kalimat Pembuka Klise / Sok Akrab' : 'Signposting & Theatrical Opener',
+      6,
+      isIndo
+        ? `"${signpostMatch}". Kalimat pengantar teaterik yang sering dipakai model AI sebelum poin inti.`
+        : `"${signpostMatch}". A theatrical pause or signpost sentence straight out of an AI prompt.`,
+      isIndo
+        ? 'Frasa jeda teaterik ("Let\'s be honest", "At its core") adalah pengisi kalimat yang sering disuntikkan AI.'
+        : 'Manufactured intimacy phrases and meta-announcements before an ordinary point are classic LLM tells.',
+      [signpostMatch]
+    )
+  }
+
   // =========================================================================
   // 3. LAYOUT, COLOR & ARCHITECTURE TELLS (HTML + VANILLA CSS SCAN)
   // =========================================================================
@@ -700,6 +738,85 @@ export default defineEventHandler(async (event) => {
         : 'Uniform card mosaics flatten content hierarchy into identical repeated tiles.',
       [`${iconCardGrids} card grid section(s)`]
     )
+  }
+
+  // Background Dot Matrix & Blueprint Grids (antislop-ui R-07)
+  const hasDotGridCss =
+    /radial-gradient\([^)]*1px[^)]*transparent/i.test(fullCssAndHtml) ||
+    /linear-gradient\(to\s+right,[^)]*1px[^)]*transparent/i.test(fullCssAndHtml) ||
+    /bg-(?:grid|dot)(?:-[a-z0-9]+)?/i.test(lowerHtml) ||
+    $('[class*="bg-grid"], [class*="bg-dot"], [class*="pattern-grid"]').length > 0
+
+  if (hasDotGridCss) {
+    add(
+      'layout',
+      'dotgrid',
+      isIndo ? 'Background Dot Matrix / Grid Blueprint' : 'Dot Matrix & Blueprint Grid',
+      8,
+      isIndo
+        ? 'Background dot-matrix atau blueprint grid. Trik paling klise biar halaman kosong kelihatan "technical".'
+        : 'Dot matrix or blueprint grid background. The default costume to make empty space look technical.',
+      isIndo
+        ? 'Pola titik-titik berulang atau grid tipis di background adalah seragam bawaan template AI (Aceternity UI, v0).'
+        : 'Repeating dot patterns and blueprint grids are the default AI method to add fake technical texture.',
+      ['radial-gradient(dot-grid 1px) or .bg-grid']
+    )
+  }
+
+  // Fake Terminal Window / Traffic Light Dots (antislop-ui R-06, C-5)
+  const hasTerminalDots =
+    /(?:#ff5f56.*#ffbd2e.*#27c93f|#ff5f56.*#27c93f)/i.test(fullCssAndHtml) ||
+    $('[class*="terminal-dots"], [class*="window-dots"], [class*="mac-dots"]').length > 0 ||
+    $('.flex, .inline-flex').filter((_, el) => {
+      const children = $(el).children('[class*="rounded-full"]')
+      if (children.length !== 3) return false
+      const text = children.map((_, c) => $(c).attr('class') || '').get().join(' ')
+      return /red/i.test(text) && /yellow|amber/i.test(text) && /green|emerald/i.test(text)
+    }).length > 0
+
+  if (hasTerminalDots) {
+    add(
+      'layout',
+      'terminal',
+      isIndo ? 'Jendela Terminal Mac Palsu' : 'Fake Terminal Window',
+      8,
+      isIndo
+        ? 'Mockup jendela terminal Mac dengan titik merah-kuning-hijau. Kostum wajib biar dikira dev tool.'
+        : 'A mock Mac terminal with red, yellow, and green dots. The universal costume for pretending to be a CLI tool.',
+      isIndo
+        ? 'Jendela terminal dekoratif dengan perintah shell statis adalah gimmick visual generik landing page AI.'
+        : 'A styled terminal window with traffic-light dots is generic costume decoration for developer landing pages.',
+      ['terminal-dots: red, yellow, green window controls']
+    )
+  }
+
+  // "How It Works" Always 3 Steps (antislop-ui R-05)
+  const stepSection = $('section, div').filter((_, el) => {
+    const heading = $(el).find('h2, h3').first().text().toLowerCase()
+    return /how it works|our process|cara kerja|3 easy steps|simple steps|how to start/i.test(heading)
+  })
+
+  if (stepSection.length > 0) {
+    const stepCards = stepSection.find('[class*="step"], [class*="card"], li, [class*="col"]').filter((_, el) => {
+      const text = $(el).text()
+      return /\b(step\s*1|step\s*2|step\s*3|01|02|03)\b/i.test(text) || $(el).find('[class*="rounded-full"]').filter((_, c) => /^[123]$/.test($(c).text().trim())).length > 0
+    })
+
+    if (stepCards.length === 3) {
+      add(
+        'layout',
+        'threesteps',
+        isIndo ? 'Alur "How It Works" Wajib 3 Langkah' : 'Mandatory 3-Step Workflow',
+        6,
+        isIndo
+          ? 'Proses kerja dipaksa persis 3 langkah berjejer (1, 2, 3). Rumus sakral template sejuta umat.'
+          : 'Process forced into exactly 3 round-step icons (1, 2, 3). The template’s sacred workflow geometry.',
+        isIndo
+          ? 'Hampir semua generator AI memaksakan alur kerja produk ke format 3 langkah bulat yang seragam.'
+          : 'Generators routinely force every process into an identical 3-step numbered sequence.',
+        ['3 steps: 01, 02, 03']
+      )
+    }
   }
 
 
@@ -1023,6 +1140,57 @@ export default defineEventHandler(async (event) => {
         ? 'Panah panah kecil dekoratif di setiap tombol adalah kebiasaan kaku template UI modern.'
         : 'Small arrows placed on buttons as pure decoration become visual noise instead of real directional cues.',
       [`${buttonsWithArrows} buttons with arrows`]
+    )
+  }
+
+  // "Most Popular" Middle Pricing Tier Badge (antislop-ui R-31, R-05)
+  const pricingContainers = $('[class*="pricing"], [id*="pricing"]').filter((_, el) => {
+    return $(el).find('[class*="card"], [class*="tier"], [class*="plan"]').length >= 3
+  })
+
+  if (pricingContainers.length > 0) {
+    const plans = pricingContainers.first().find('[class*="card"], [class*="tier"], [class*="plan"]')
+    if (plans.length === 3) {
+      const middlePlan = $(plans[1])
+      const middleText = middlePlan.text().toLowerCase()
+      const middleClass = middlePlan.attr('class') || ''
+      if (
+        /most popular|best value|recommended|paling populer|populer/i.test(middleText) ||
+        /scale-105|border-primary|border-indigo|ring-2/i.test(middleClass)
+      ) {
+        nit(
+          'popularpricing',
+          isIndo ? 'Kartu Pricing "Most Popular" di Tengah' : 'Middle Tier "Most Popular"',
+          4,
+          isIndo
+            ? 'Paket tengah otomatis dilabeli "Most Popular". Pola psikologi marketing bawaan template.'
+            : 'Middle pricing tier automatically stamped “Most Popular”. The default template upsell trick.',
+          isIndo
+            ? 'Menonjolkan tier tengah dengan badge "Most Popular" adalah trik bawaan template pricing 3 kolom.'
+            : 'Always highlighting the middle pricing card in a 3-tier grid is an unconsidered template default.',
+          ['Middle tier: "Most Popular" / scale-105']
+        )
+      }
+    }
+  }
+
+  // Generic AI Feature Glyphs (antislop-ui R-04)
+  const sparkleGlyphsCount =
+    (html.match(/lucide-(?:sparkles?|wand(?:-2)?|bot|brain|zap)\b/gi) || []).length +
+    (html.match(/(?:Sparkles|Wand2|Bot|Brain)\s*from\s*['"]@iconoir/gi) || []).length
+
+  if (sparkleGlyphsCount >= 3) {
+    nit(
+      'sparkles',
+      isIndo ? 'Taburan Ikon Bintang Ajaib (Sparkles)' : 'Sparkles & Magic Wand Overdose',
+      4,
+      isIndo
+        ? `${sparkleGlyphsCount} icon bintang ajaib / wand. Shorthand visual kalau fiturnya cuma manggil LLM.`
+        : `${sparkleGlyphsCount} sparkle & magic wand glyphs. The visual shorthand for "we wrapped an LLM call".`,
+      isIndo
+        ? 'Ikon bintang ajaib / wand adalah default generik yang dipakai generator AI untuk melabeli fitur apa pun.'
+        : 'Sparkle and wand glyphs are the generic AI default icon when a builder has no specific visual metaphor.',
+      [`${sparkleGlyphsCount} sparkle / wand glyphs`]
     )
   }
 
