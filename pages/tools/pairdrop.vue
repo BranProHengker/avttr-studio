@@ -13,7 +13,7 @@ import {
   Check,
   Send,
   Download,
-  X,
+  Xmark as X,
   PageUp as FileUp,
   Page as FileText,
   WarningCircle as AlertCircle,

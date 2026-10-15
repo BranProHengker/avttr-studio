@@ -16,7 +16,7 @@ import {
   Eye,
   CodeBrackets as Code2,
   PasteClipboard as Clipboard,
-  X,
+  Xmark as X,
 } from '@iconoir/vue'
 import JSZip from 'jszip'
 import Button from '~/components/ui/Button.vue'

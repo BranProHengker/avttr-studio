@@ -22,7 +22,7 @@ import {
   Maximize as Maximize2,
   Link as LinkIcon,
   PasteClipboard as Clipboard,
-  X,
+  Xmark as X,
   ArrowRight,
 } from '@iconoir/vue'
 import confetti from 'canvas-confetti'

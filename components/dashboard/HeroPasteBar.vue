@@ -4,7 +4,7 @@ import { detectPlatform } from '~/server/utils/sanitizer'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
-import { Flash as Zap, MultiplePages as Layers, Trash as Trash2, PasteClipboard as Clipboard, ArrowRight, X } from '@iconoir/vue'
+import { Flash as Zap, MultiplePages as Layers, Trash as Trash2, PasteClipboard as Clipboard, ArrowRight, Xmark as X } from '@iconoir/vue'
 
 interface Props {
   modelValue: string

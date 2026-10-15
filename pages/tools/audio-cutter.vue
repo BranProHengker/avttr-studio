@@ -17,7 +17,7 @@ import {
   Undo as Undo2,
   Redo as Redo2,
   Plus,
-  X,
+  Xmark as X,
   Sparks as Sparkles,
   GraphUp as TrendingUp,
   GraphDown as TrendingDown,

@@ -4,7 +4,7 @@ import {
   Globe,
   Upload,
   PasteClipboard as Clipboard,
-  X,
+  Xmark as X,
   Scanning as ScanSearch,
   FireFlame as Flame,
   WarningTriangle as AlertTriangle,
@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Flash as Zap,
   InfoCircle as Info,
+  MediaImage as ImageIcon,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
@@ -84,6 +85,29 @@ const inspection = ref<InspectionResult | null>(null)
 const roastData = ref<RoastResult | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const previewImage = ref<string | null>(null)
+const previewFilename = ref<string>('')
+const previewFileSize = ref<string>('')
+
+// Format bytes helper
+const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
+// Clear screenshot state
+const clearScreenshot = () => {
+  previewImage.value = null
+  previewFilename.value = ''
+  previewFileSize.value = ''
+  inspection.value = null
+  roastData.value = null
+  scanLogs.value = []
+  isAnalyzing.value = false
+  if (fileInputRef.value) fileInputRef.value.value = ''
+}
 
 // Paste helper
 const handlePaste = async () => {
@@ -104,9 +128,10 @@ const handlePaste = async () => {
   }
 }
 
-// Clear URL
+// Clear URL & reset states
 const handleClear = () => {
   inputUrl.value = ''
+  clearScreenshot()
 }
 
 // Log streaming helper
@@ -210,10 +235,20 @@ const processScreenshot = (file: File) => {
     return
   }
 
+  previewFilename.value = file.name
+  previewFileSize.value = formatBytes(file.size)
+
   const reader = new FileReader()
   reader.onload = (e) => {
     previewImage.value = e.target?.result as string
     analyzeImagePixels(previewImage.value, file.name)
+  }
+  reader.onerror = () => {
+    isAnalyzing.value = false
+    toast.error(
+      locale.value === 'id' ? 'Gagal Membaca File' : 'File Read Error',
+      locale.value === 'id' ? 'Tidak dapat membaca file screenshot yang dipilih.' : 'Unable to read the selected screenshot file.'
+    )
   }
   reader.readAsDataURL(file)
 }
@@ -297,112 +332,136 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
   addLog(locale.value === 'id' ? `Memuat screenshot: ${filename}` : `Loading screenshot: ${filename}`)
   const img = new Image()
   img.onload = () => {
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    canvas.width = 200
-    canvas.height = 120
-    ctx.drawImage(img, 0, 0, 200, 120)
-
-    const imageData = ctx.getImageData(0, 0, 200, 120).data
-    let darkPixels = 0
-    let violetPixels = 0
-    let limePixels = 0
-    const totalPixels = 200 * 120
-
-    for (let i = 0; i < imageData.length; i += 4) {
-      const r = imageData[i] / 255
-      const g = imageData[i + 1] / 255
-      const b = imageData[i + 2] / 255
-
-      const max = Math.max(r, g, b)
-      const min = Math.min(r, g, b)
-      const l = (max + min) / 2
-
-      if (l < 0.16) darkPixels++
-
-      let h = 0
-      const d = max - min
-      if (d > 0) {
-        if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60
-        else if (max === g) h = ((b - r) / d + 2) * 60
-        else h = ((r - g) / d + 4) * 60
+    try {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        isAnalyzing.value = false
+        toast.error(
+          locale.value === 'id' ? 'Canvas Tidak Didukung' : 'Canvas Not Supported',
+          locale.value === 'id' ? 'Gagal menginisialisasi 2D Canvas context di browser Anda.' : 'Failed to initialize 2D Canvas context in your browser.'
+        )
+        return
       }
 
-      if (h >= 240 && h <= 290 && l > 0.2 && l < 0.8) violetPixels++
-      if (h >= 75 && h <= 110 && l > 0.3) limePixels++
-    }
+      canvas.width = 200
+      canvas.height = 120
+      ctx.drawImage(img, 0, 0, 200, 120)
 
-    const darkRatio = darkPixels / totalPixels
-    const violetRatio = violetPixels / totalPixels
-    const limeRatio = limePixels / totalPixels
+      const imageData = ctx.getImageData(0, 0, 200, 120).data
+      let darkPixels = 0
+      let violetPixels = 0
+      let limePixels = 0
+      const totalPixels = 200 * 120
 
-    const mockFindings: FindingItem[] = []
-    let scoreAcc = 10
-    const isIndo = locale.value === 'id'
+      for (let i = 0; i < imageData.length; i += 4) {
+        const r = imageData[i] / 255
+        const g = imageData[i + 1] / 255
+        const b = imageData[i + 2] / 255
 
-    if (darkRatio > 0.45) {
-      scoreAcc += 20
-      mockFindings.push({
-        cat: 'visual',
-        key: 'dark',
-        label: isIndo ? 'Dark Mode Pekat Dominan' : 'Predominant Near-Black Background',
-        pts: 14,
-        roast: isIndo ? 'Latar gelap total khas startup AI generasi 2024.' : 'Near-black backdrop. The standard uniform of seed-funded AI startups.',
-        why: isIndo ? 'Area visual didominasi latar hitam pekat tanpa variasi elevasi.' : 'The above-the-fold canvas is overwhelmingly near-black with little tonal depth.',
-        quotes: [`${Math.round(darkRatio * 100)}% ${isIndo ? 'area gelap' : 'dark area'}`]
-      })
-    }
+        const max = Math.max(r, g, b)
+        const min = Math.min(r, g, b)
+        const l = (max + min) / 2
 
-    if (violetRatio > 0.05) {
-      scoreAcc += 25
-      mockFindings.push({
-        cat: 'visual',
-        key: 'violet',
-        label: isIndo ? 'Aksen Violet / Indigo AI' : 'Violet / Indigo AI Accents',
-        pts: 18,
-        roast: isIndo ? 'Warna ungu lagi. Warna seragam wajib template seed-round.' : 'Purple again. The official color palette of default AI templates.',
-        why: isIndo ? 'Palet warna aksen ungu/indigo sangat dominan di atas lipatan.' : 'Indigo and violet dominate the visual hierarchy above the fold.',
-        quotes: [`${Math.round(violetRatio * 100)}% ${isIndo ? 'piksel ungu' : 'violet pixels'}`]
-      })
-    }
+        if (l < 0.16) darkPixels++
 
-    if (limeRatio > 0.02) {
-      scoreAcc += 20
-      mockFindings.push({
-        cat: 'visual',
-        key: 'lime',
-        label: isIndo ? 'Neon Acid Lime Highlight' : 'Acid Lime Highlighter Accents',
-        pts: 15,
-        roast: isIndo ? 'Tombol hijau neon stabilo bawaan generator.' : 'Acid lime buttons. The favorite highlighter of modern AI templates.',
-        why: isIndo ? 'Warna tombol lime kontras tinggi khas template AI modern.' : 'High-contrast neon lime pills placed over dark backdrops.',
-        quotes: [`${Math.round(limeRatio * 100)}% ${isIndo ? 'piksel hijau lime' : 'lime pixels'}`]
-      })
-    }
+        let h = 0
+        const d = max - min
+        if (d > 0) {
+          if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60
+          else if (max === g) h = ((b - r) / d + 2) * 60
+          else h = ((r - g) / d + 4) * 60
+        }
 
-    const mockResult: InspectionResult = {
-      host: filename.replace(/\.[^.]+$/, ''),
-      url: 'Uploaded Screenshot',
-      score: Math.min(95, scoreAcc),
-      verdictId: scoreAcc > 45 ? 'ai-residue' : 'mostly-human',
-      verdictLabel: scoreAcc > 45
-        ? (isIndo ? 'Aroma AI Tercium Kuat' : 'Strong AI Vibe Detected')
-        : (isIndo ? 'Tampilan Standar' : 'Mostly Clean'),
-      findings: mockFindings,
-      credits: [],
-      stats: {
-        words: 0,
-        headingsCount: 0,
-        buzzCount: 0,
-        emDashes: 0
+        if (h >= 240 && h <= 290 && l > 0.2 && l < 0.8) violetPixels++
+        if (h >= 75 && h <= 110 && l > 0.3) limePixels++
       }
-    }
 
-    inspection.value = mockResult
-    isAnalyzing.value = false
-    triggerRoast(mockResult)
+      const darkRatio = darkPixels / totalPixels
+      const violetRatio = violetPixels / totalPixels
+      const limeRatio = limePixels / totalPixels
+
+      const mockFindings: FindingItem[] = []
+      let scoreAcc = 10
+      const isIndo = locale.value === 'id'
+
+      if (darkRatio > 0.45) {
+        scoreAcc += 20
+        mockFindings.push({
+          cat: 'visual',
+          key: 'dark',
+          label: isIndo ? 'Dark Mode Pekat Dominan' : 'Predominant Near-Black Background',
+          pts: 14,
+          roast: isIndo ? 'Latar gelap total khas startup AI generasi 2024.' : 'Near-black backdrop. The standard uniform of seed-funded AI startups.',
+          why: isIndo ? 'Area visual didominasi latar hitam pekat tanpa variasi elevasi.' : 'The above-the-fold canvas is overwhelmingly near-black with little tonal depth.',
+          quotes: [`${Math.round(darkRatio * 100)}% ${isIndo ? 'area gelap' : 'dark area'}`]
+        })
+      }
+
+      if (violetRatio > 0.05) {
+        scoreAcc += 25
+        mockFindings.push({
+          cat: 'visual',
+          key: 'violet',
+          label: isIndo ? 'Aksen Violet / Indigo AI' : 'Violet / Indigo AI Accents',
+          pts: 18,
+          roast: isIndo ? 'Warna ungu lagi. Warna seragam wajib template seed-round.' : 'Purple again. The official color palette of default AI templates.',
+          why: isIndo ? 'Palet warna aksen ungu/indigo sangat dominan di atas lipatan.' : 'Indigo and violet dominate the visual hierarchy above the fold.',
+          quotes: [`${Math.round(violetRatio * 100)}% ${isIndo ? 'piksel ungu' : 'violet pixels'}`]
+        })
+      }
+
+      if (limeRatio > 0.02) {
+        scoreAcc += 20
+        mockFindings.push({
+          cat: 'visual',
+          key: 'lime',
+          label: isIndo ? 'Neon Acid Lime Highlight' : 'Acid Lime Highlighter Accents',
+          pts: 15,
+          roast: isIndo ? 'Tombol hijau neon stabilo bawaan generator.' : 'Acid lime buttons. The favorite highlighter of modern AI templates.',
+          why: isIndo ? 'Warna tombol lime kontras tinggi khas template AI modern.' : 'High-contrast neon lime pills placed over dark backdrops.',
+          quotes: [`${Math.round(limeRatio * 100)}% ${isIndo ? 'piksel hijau lime' : 'lime pixels'}`]
+        })
+      }
+
+      const mockResult: InspectionResult = {
+        host: filename.replace(/\.[^.]+$/, ''),
+        url: 'Uploaded Screenshot',
+        score: Math.min(95, scoreAcc),
+        verdictId: scoreAcc > 45 ? 'ai-residue' : 'mostly-human',
+        verdictLabel: scoreAcc > 45
+          ? (isIndo ? 'Aroma AI Tercium Kuat' : 'Strong AI Vibe Detected')
+          : (isIndo ? 'Tampilan Standar' : 'Mostly Clean'),
+        findings: mockFindings,
+        credits: [],
+        stats: {
+          words: 0,
+          headingsCount: 0,
+          buzzCount: 0,
+          emDashes: 0
+        }
+      }
+
+      inspection.value = mockResult
+      isAnalyzing.value = false
+      triggerRoast(mockResult)
+    } catch (err: any) {
+      isAnalyzing.value = false
+      toast.error(
+        locale.value === 'id' ? 'Gagal Menganalisa Gambar' : 'Image Analysis Failed',
+        err?.message || (locale.value === 'id' ? 'Terjadi kesalahan saat membaca piksel gambar.' : 'Error while reading image pixels.')
+      )
+    }
   }
+
+  img.onerror = () => {
+    isAnalyzing.value = false
+    toast.error(
+      locale.value === 'id' ? 'Gambar Gagal Dimuat' : 'Image Load Failed',
+      locale.value === 'id' ? 'Format gambar rusak atau tidak dapat di-decode oleh browser.' : 'Image format is corrupted or cannot be decoded by browser.'
+    )
+  }
+
   img.src = imgSrc
 }
 
@@ -549,47 +608,118 @@ const categoryBadgeClass = (cat: string) => {
       </div>
     </div>
 
-    <!-- Screenshot Dropzone (DESIGN.md Section 10 Architecture) -->
-    <div
-      v-else
-      class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-12 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
-      @click="fileInputRef?.click()"
-      @dragover.prevent
-      @drop.prevent="onDropFile"
-    >
-      <input
-        ref="fileInputRef"
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        class="hidden"
-        @change="onFileSelected"
-      />
-      <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs mb-3">
-        <Upload class="w-6 h-6 text-zinc-500" />
-      </div>
-      <div class="text-sm font-semibold text-[var(--text-primary)]">
-        {{ locale === 'id' ? 'Drop screenshot website di sini atau klik untuk browse' : 'Drop website screenshot here or click to browse' }}
-      </div>
-      <p class="text-xs text-[var(--text-secondary)] mt-1">
-        {{ locale === 'id' ? 'Mendukung PNG, JPG, WebP. 100% diproses di browser melalui analisis piksel Canvas.' : 'Supports PNG, JPG, WebP. 100% client-side Canvas pixel analysis.' }}
-      </p>
+    <!-- Hidden File Input for Screenshot Mode -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept="image/png,image/jpeg,image/webp"
+      class="hidden"
+      @change="onFileSelected"
+    />
 
-      <div class="flex items-center justify-center gap-2 pt-4">
-        <Button
-          id="btn-paste-screenshot"
-          variant="secondary"
-          size="sm"
-          class="rounded-lg text-xs cursor-pointer shadow-xs"
-          @click.stop="handlePasteFromClipboard"
-        >
-          <Clipboard class="w-3.5 h-3.5 mr-1.5" />
-          {{ locale === 'id' ? 'Tempel dari Clipboard (Ctrl+V)' : 'Paste from Clipboard (Ctrl+V)' }}
-        </Button>
+    <!-- Screenshot Mode Container -->
+    <div v-else class="w-full">
+      <!-- Active Screenshot Preview Card -->
+      <Card v-if="previewImage" :hoverable="false" class="p-4 sm:p-5 space-y-4">
+        <!-- Preview Header Bar: File Info + Change / Remove Actions -->
+        <div class="flex items-center justify-between gap-3 pb-3 border-b border-[var(--border-subtle)]">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-[#1E1E20] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center shrink-0">
+              <ImageIcon class="w-4 h-4 text-[var(--text-secondary)]" />
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[200px] sm:max-w-xs">
+                {{ previewFilename || 'screenshot.png' }}
+              </div>
+              <div class="text-[11px] font-mono text-[var(--text-tertiary)]">
+                {{ previewFileSize || 'Image' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <Button
+              id="btn-change-screenshot"
+              variant="secondary"
+              size="sm"
+              class="rounded-lg text-xs cursor-pointer"
+              :disabled="isAnalyzing"
+              @click="fileInputRef?.click()"
+            >
+              <Upload class="w-3.5 h-3.5 mr-1" />
+              {{ locale === 'id' ? 'Ganti' : 'Change' }}
+            </Button>
+            <Button
+              id="btn-remove-screenshot"
+              variant="ghost"
+              size="sm"
+              class="rounded-lg text-xs cursor-pointer text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+              :disabled="isAnalyzing"
+              @click="clearScreenshot"
+            >
+              <X class="w-3.5 h-3.5 mr-1" />
+              {{ locale === 'id' ? 'Hapus' : 'Remove' }}
+            </Button>
+          </div>
+        </div>
+
+        <!-- Image Frame & Radar Laser Scan Overlay when analyzing -->
+        <div class="relative rounded-xl overflow-hidden bg-zinc-950/60 border border-zinc-800/80 flex items-center justify-center p-3 min-h-[220px]">
+          <img
+            :src="previewImage"
+            alt="Uploaded screenshot preview"
+            class="max-h-80 w-auto object-contain rounded-lg shadow-md"
+          />
+
+          <!-- Scanning Overlay Animation -->
+          <div
+            v-if="isAnalyzing"
+            class="absolute inset-0 bg-gradient-to-b from-rose-500/10 via-transparent to-rose-500/10 pointer-events-none flex flex-col justify-between"
+          >
+            <div class="w-full h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_rgba(244,63,94,0.8)] animate-pulse" />
+            <div class="w-full text-center py-2 bg-black/60 backdrop-blur-xs text-[11px] font-mono text-rose-400 font-semibold tracking-wider uppercase">
+              {{ locale === 'id' ? 'Memindai Spektrum Piksel AI...' : 'Scanning AI Pixel Spectrum...' }}
+            </div>
+            <div class="w-full h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_rgba(244,63,94,0.8)] animate-pulse" />
+          </div>
+        </div>
+      </Card>
+
+      <!-- Screenshot Dropzone (DESIGN.md Section 10 Architecture) -->
+      <div
+        v-else
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-12 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
+        @click="fileInputRef?.click()"
+        @dragover.prevent
+        @drop.prevent="onDropFile"
+      >
+        <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs mb-3">
+          <Upload class="w-6 h-6 text-zinc-500" />
+        </div>
+        <div class="text-sm font-semibold text-[var(--text-primary)]">
+          {{ locale === 'id' ? 'Drop screenshot website di sini atau klik untuk browse' : 'Drop website screenshot here or click to browse' }}
+        </div>
+        <p class="text-xs text-[var(--text-secondary)] mt-1">
+          {{ locale === 'id' ? 'Mendukung PNG, JPG, WebP. 100% diproses di browser melalui analisis piksel Canvas.' : 'Supports PNG, JPG, WebP. 100% client-side Canvas pixel analysis.' }}
+        </p>
+
+        <div class="flex items-center justify-center gap-2 pt-4">
+          <Button
+            id="btn-paste-screenshot"
+            variant="secondary"
+            size="sm"
+            class="rounded-lg text-xs cursor-pointer shadow-xs"
+            @click.stop="handlePasteFromClipboard"
+          >
+            <Clipboard class="w-3.5 h-3.5 mr-1.5" />
+            {{ locale === 'id' ? 'Tempel dari Clipboard (Ctrl+V)' : 'Paste from Clipboard (Ctrl+V)' }}
+          </Button>
+        </div>
       </div>
     </div>
 
     <!-- AI Roaster Engine & Model Notice (Unboxed Minimalist) -->
-    <div v-if="!inspection" class="flex items-start gap-2.5 text-xs px-1">
+    <div v-if="!inspection && !isAnalyzing" class="flex items-start gap-2.5 text-xs px-1">
       <Info class="w-4 h-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
       <div class="space-y-0.5 text-[var(--text-secondary)] leading-relaxed">
         <div class="text-xs font-medium text-[var(--text-primary)]">
@@ -621,8 +751,120 @@ const categoryBadgeClass = (cat: string) => {
       </div>
     </div>
 
+    <!-- Skeleton Loading State (Bento Grid) -->
+    <div v-if="isAnalyzing" class="space-y-6 pt-2 animate-pulse" aria-busy="true">
+      <!-- Top Bento Overview Skeleton -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Slop Score Card Skeleton (5 Cols) -->
+        <Card :hoverable="false" class="lg:col-span-5 p-6 flex flex-col justify-between space-y-6 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]">
+          <div class="space-y-3">
+            <div class="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
+            <div class="flex items-baseline gap-3">
+              <div class="h-14 w-32 rounded-xl bg-zinc-300/70 dark:bg-zinc-800" />
+              <div class="h-4 w-16 rounded bg-zinc-200 dark:bg-zinc-800/80" />
+            </div>
+            <div class="h-4 w-44 rounded bg-zinc-200 dark:bg-zinc-800/70 pt-1" />
+          </div>
+
+          <!-- Meter Bar Skeleton -->
+          <div class="space-y-2">
+            <div class="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800" />
+            <div class="flex justify-between">
+              <div class="h-2.5 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
+              <div class="h-2.5 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
+            </div>
+          </div>
+
+          <!-- Metadata Skeleton -->
+          <div class="pt-3 border-t border-[var(--border-subtle)] flex justify-between">
+            <div class="h-3 w-28 rounded bg-zinc-200 dark:bg-zinc-800/60" />
+            <div class="h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
+          </div>
+        </Card>
+
+        <!-- AI Roaster Card Skeleton (7 Cols) -->
+        <Card :hoverable="false" class="lg:col-span-7 p-6 space-y-5 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded bg-rose-500/30" />
+              <div class="h-3 w-32 rounded bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+            <div class="h-4 w-20 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+          </div>
+
+          <!-- Roasting Rows Skeleton -->
+          <div class="space-y-3.5">
+            <div v-for="i in 3" :key="i" class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-md bg-zinc-200 dark:bg-zinc-800 shrink-0" />
+              <div class="w-full space-y-1.5">
+                <div class="h-4 w-4/5 rounded bg-zinc-200 dark:bg-zinc-800" />
+                <div class="h-3 w-2/5 rounded bg-zinc-200 dark:bg-zinc-800/60" />
+              </div>
+            </div>
+
+            <!-- Fix Recommendation Skeleton -->
+            <div class="pt-3 border-t border-[var(--border-subtle)] space-y-1.5">
+              <div class="h-3 w-40 rounded bg-emerald-500/30" />
+              <div class="h-3.5 w-5/6 rounded bg-zinc-200 dark:bg-zinc-800/60" />
+            </div>
+          </div>
+
+          <!-- Buttons Skeleton -->
+          <div class="flex gap-2 pt-2">
+            <div class="h-8 w-24 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
+            <div class="h-8 w-28 rounded-lg bg-zinc-200 dark:bg-zinc-800/60" />
+          </div>
+        </Card>
+      </div>
+
+      <!-- Findings Skeleton Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Receipt Skeleton (4 Cols) -->
+        <Card :hoverable="false" class="lg:col-span-4 p-5 space-y-4 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]">
+          <div class="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+            <div class="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
+            <div class="h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
+          </div>
+          <div class="space-y-2.5">
+            <div v-for="j in 4" :key="j" class="flex justify-between">
+              <div class="h-3 w-3/5 rounded bg-zinc-200 dark:bg-zinc-800/70" />
+              <div class="h-3 w-10 rounded bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+          </div>
+          <div class="pt-3 border-t border-dashed border-zinc-700 flex justify-between">
+            <div class="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
+            <div class="h-5 w-12 rounded bg-zinc-200 dark:bg-zinc-800" />
+          </div>
+        </Card>
+
+        <!-- Findings Cards Skeleton (8 Cols) -->
+        <div class="lg:col-span-8 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="h-3 w-40 rounded bg-zinc-200 dark:bg-zinc-800" />
+            <div class="h-3 w-32 rounded bg-zinc-200 dark:bg-zinc-800/60" />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Card
+              v-for="k in 4"
+              :key="k"
+              :hoverable="false"
+              class="p-4 space-y-2.5 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]"
+            >
+              <div class="flex items-center justify-between">
+                <div class="h-4 w-16 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                <div class="h-3 w-12 rounded bg-rose-500/20" />
+              </div>
+              <div class="h-4 w-4/5 rounded bg-zinc-200 dark:bg-zinc-800" />
+              <div class="h-10 rounded bg-black/30 border border-white/5" />
+              <div class="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-800/50" />
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Results Section -->
-    <div v-if="inspection" class="space-y-6 pt-2">
+    <div v-else-if="inspection" class="space-y-6 pt-2">
       <!-- Top Bento Overview: Score & Roasting Verdict -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <!-- Slop Score Card (5 Cols) -->

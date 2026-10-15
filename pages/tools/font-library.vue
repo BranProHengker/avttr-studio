@@ -20,7 +20,7 @@ import {
   HalfMoon as Moon,
   InfoCircle as Info,
   Sparks as Sparkles,
-  X,
+  Xmark as X,
   Table2Columns as Columns,
   AlignLeft,
   AlignCenter,

@@ -12,7 +12,7 @@ import {
   Refresh as RefreshCw,
   WarningCircle as AlertCircle,
   MediaImage as ImageIcon,
-  X,
+  Xmark as X,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'

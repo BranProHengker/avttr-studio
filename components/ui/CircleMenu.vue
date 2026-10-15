@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Menu, X } from '@iconoir/vue'
+import { Menu, Xmark as X } from '@iconoir/vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
 
 export interface CircleMenuItem {

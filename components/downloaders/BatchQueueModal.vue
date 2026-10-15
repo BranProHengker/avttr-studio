@@ -11,7 +11,7 @@ import {
   Plus,
   OpenNewWindow as ExternalLink,
   MultiplePages as Layers,
-  X,
+  Xmark as X,
   Clock,
   Sparks as Sparkles,
 } from '@iconoir/vue'

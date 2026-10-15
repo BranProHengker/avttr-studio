@@ -17,7 +17,7 @@ import {
   MediaImage as ImageIcon,
   CheckCircle as CheckCircle2,
   WarningCircle as AlertCircle,
-  X,
+  Xmark as X,
 } from '@iconoir/vue'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-markup'

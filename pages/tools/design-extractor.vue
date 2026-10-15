@@ -19,7 +19,7 @@ import {
   Cpu,
   Page as FileText,
   PasteClipboard as Clipboard,
-  X,
+  Xmark as X,
   Eye,
   Sparks as Sparkles,
   InfoCircle as Info,

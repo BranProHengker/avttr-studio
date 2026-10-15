@@ -10,7 +10,7 @@ import {
   Scissor as Scissors,
   ControlSlider as Sliders,
   Folder as FolderOpen,
-  X,
+  Xmark as X,
   SoundHigh as Volume2,
   SoundOff as VolumeX,
   Check,

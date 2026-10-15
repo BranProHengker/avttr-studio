@@ -18,7 +18,7 @@ import {
   WarningTriangle as AlertTriangle,
   ArrowRight,
   Folder as FolderOpen,
-  X,
+  Xmark as X,
   InfoCircle as Info,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'

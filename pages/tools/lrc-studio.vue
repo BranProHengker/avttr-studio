@@ -16,7 +16,7 @@ import {
   Sparks as Sparkles,
   WarningCircle as AlertCircle,
   MusicDoubleNote as FileAudio,
-  X,
+  Xmark as X,
   CompactDisc as Disc,
   ControlSlider as Sliders,
   CheckCircle as CheckCircle2,

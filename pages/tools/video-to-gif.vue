@@ -13,7 +13,7 @@ import {
   ArrowRight,
   Link as LinkIcon,
   Folder as FolderOpen,
-  X,
+  Xmark as X,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'

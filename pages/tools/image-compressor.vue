@@ -18,7 +18,7 @@ import {
   Plus,
   PasteClipboard as Clipboard,
   Globe,
-  X,
+  Xmark as X,
   Upload,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'

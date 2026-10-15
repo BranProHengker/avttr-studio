@@ -14,7 +14,7 @@ import {
   MultiplePages as Layers,
   MediaImage as ImageIcon,
   WarningCircle as AlertCircle,
-  X,
+  Xmark as X,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'

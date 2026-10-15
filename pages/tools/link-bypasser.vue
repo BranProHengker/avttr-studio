@@ -13,7 +13,7 @@ import {
   Sparks as Sparkles,
   Globe,
   CheckCircle as CheckCircle2,
-  X,
+  Xmark as X,
   InfoCircle as Info,
   SystemRestart as Loader2,
   ArrowRight,

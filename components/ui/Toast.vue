@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, X, WarningTriangle as AlertTriangle, InfoCircle as Info } from '@iconoir/vue'
+import { Check, Xmark as X, WarningTriangle as AlertTriangle, InfoCircle as Info } from '@iconoir/vue'
 import type { ToastItem } from '~/types'
 
 interface Props {

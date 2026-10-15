@@ -12,7 +12,7 @@ import {
   ColorPicker as Pipette,
   Maximize as Maximize2,
   Compress as Minimize2,
-  X,
+  Xmark as X,
   Plus,
   Trash as Trash2,
   Undo as RotateCcw,

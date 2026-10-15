@@ -24,7 +24,7 @@ import {
   Antenna as Radio,
   Activity,
   Compass,
-  X,
+  Xmark as X,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useClipboard } from '~/composables/useClipboard'

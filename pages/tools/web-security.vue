@@ -10,7 +10,7 @@ import {
   Copy,
   PasteClipboard as Clipboard,
   Check,
-  X,
+  Xmark as X,
   WarningTriangle as AlertTriangle,
   InfoCircle as Info,
   Clock,

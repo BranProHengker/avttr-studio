@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X } from '@iconoir/vue'
+import { Xmark as X } from '@iconoir/vue'
 import { useHistory } from '~/composables/useHistory'
 import { useClipboard } from '~/composables/useClipboard'
 import { useI18n } from '~/composables/useI18n'
