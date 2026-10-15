@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import dns from 'node:dns/promises'
-import { isPrivateHost } from '~/server/utils/bypasser'
+import { isPrivateHost } from '~/server/utils/security'
 import { evaluateSecurityHeaders, type SecurityAuditResult } from '~/server/utils/securityAudit'
 
 interface RequestPayload {

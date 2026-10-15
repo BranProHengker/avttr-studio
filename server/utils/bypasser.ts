@@ -45,37 +45,6 @@ const TRACKING_PARAMS = [
   '_hsmi',
 ]
 
-// SSRF prevention: reject private/local IP ranges and internal hostnames
-export function isPrivateHost(hostname: string): boolean {
-  const host = hostname.toLowerCase().trim()
-  if (
-    host === 'localhost' ||
-    host.endsWith('.local') ||
-    host.endsWith('.internal') ||
-    host === '127.0.0.1' ||
-    host === '::1' ||
-    host === '0.0.0.0'
-  ) {
-    return true
-  }
-
-  // IPv4 regex check for private subnets: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16
-  const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
-  const match = host.match(ipv4Regex)
-  if (match) {
-    const oct1 = parseInt(match[1], 10)
-    const oct2 = parseInt(match[2], 10)
-
-    if (oct1 === 10) return true
-    if (oct1 === 127) return true
-    if (oct1 === 169 && oct2 === 254) return true
-    if (oct1 === 192 && oct2 === 168) return true
-    if (oct1 === 172 && oct2 >= 16 && oct2 <= 31) return true
-  }
-
-  return false
-}
-
 // Clean tracking params and return cleaned URL + removed keys
 export function stripTrackingParams(rawUrl: string): { cleanedUrl: string; removedParams: string[] } {
   try {

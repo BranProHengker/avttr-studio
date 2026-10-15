@@ -6,7 +6,9 @@ Live website: [studio.avttr.my.id](https://studio.avttr.my.id)
 
 Avttr Studio is a personal web workspace built with Nuxt 3 that pairs ad-free multi-platform media downloaders with client-side utilities for design, audio, and development work.
 
-Most public web downloaders and utilities are weighed down by redirect ads, pop-ups, captchas, and trackers. Avttr Studio runs with zero ads and zero tracking. Most file processing tools run 100% inside your browser, so your files stay on your machine.
+The project exists for a straightforward reason: to make everyday digital tasks easier. Many open-source repositories and utility libraries on GitHub are genuinely useful, but having to run `git clone`, configure runtimes, and install local packages just for a quick one-off task is tedious.
+
+Every utility here is completely free to use, requires no account or login, and comes with zero ads or tracking pop-ups. Data safety is built in by design: almost all file processing tasks (image compression, PDF editing, audio trimming, data hashing) run 100% locally inside your browser, meaning your files are never uploaded to or stored on any server.
 
 ---
 
@@ -186,7 +188,9 @@ Situs web langsung: [studio.avttr.my.id](https://studio.avttr.my.id)
 
 Avttr Studio adalah web workspace personal berbasis Nuxt 3 yang menggabungkan multi-platform media downloader tanpa iklan dengan puluhan utility client-side untuk kebutuhan desain, audio, dan developer.
 
-Proyek ini dibangun untuk mengatasi masalah umum di web tool publik: pop-up iklan agresif, rantai redirect mencurigakan, captcha berulang, dan pelacakan privasi. Sebagian besar tool pemrosesan berkas di sini berjalan 100% di browser pengguna tanpa mengirim data ke server.
+Proyek ini dibuat untuk satu alasan sederhana: mempermudah rutinitas digital sehari-hari. Banyak library dan repositori open-source keren di GitHub yang sebenarnya sangat berguna, tetapi merepotkan kalau harus melakukan `git clone`, konfigurasi runtime, dan instalasi dependensi lokal hanya untuk menyelesaikan tugas kecil.
+
+Semua tool di sini bisa diakses gratis, tanpa perlu membuat akun atau login, dan tanpa gangguan iklan atau pop-up. Yang terpenting, privasi data aman: hampir seluruh pemrosesan berkas (kompresi gambar, manipulasi PDF, audio cutting, ekstraksi data) berjalan 100% lokal di browser pengguna tanpa pernah dikirim atau disimpan di server mana pun.
 
 ---
 

@@ -608,17 +608,17 @@ const categoryBadgeClass = (cat: string) => {
       </div>
     </div>
 
-    <!-- Hidden File Input for Screenshot Mode -->
-    <input
-      ref="fileInputRef"
-      type="file"
-      accept="image/png,image/jpeg,image/webp"
-      class="hidden"
-      @change="onFileSelected"
-    />
-
     <!-- Screenshot Mode Container -->
     <div v-else class="w-full">
+      <!-- Hidden File Input for Screenshot Mode -->
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        class="hidden"
+        @change="onFileSelected"
+      />
+
       <!-- Active Screenshot Preview Card -->
       <Card v-if="previewImage" :hoverable="false" class="p-4 sm:p-5 space-y-4">
         <!-- Preview Header Bar: File Info + Change / Remove Actions -->
