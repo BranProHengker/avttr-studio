@@ -1,4 +1,5 @@
 import { defineEventHandler, readBody, createError } from 'h3'
+import { ofetch } from 'ofetch'
 
 interface RoastRequest {
   siteName: string
@@ -21,13 +22,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Site name is required' })
   }
 
-  const primaryKey = process.env.GEMINI_API_KEY
-  const backupKey = process.env.GEMINI_API_KEY_BACKUP
+  const groqKey = process.env.GROQ_API_KEY || (useRuntimeConfig().groqApiKey as string) || ''
+  const primaryGeminiKey = process.env.GEMINI_API_KEY || ''
+  const backupGeminiKey = process.env.GEMINI_API_KEY_BACKUP || ''
 
-  if (!primaryKey && !backupKey) {
+  if (!groqKey && !primaryGeminiKey && !backupGeminiKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Gemini API key is not configured on server'
+      statusMessage: 'AI API keys (GROQ_API_KEY or GEMINI_API_KEY) are not configured on server'
     })
   }
 
@@ -45,7 +47,16 @@ Aturan:
    - evidence: kutipan bukti singkat atau nama pola (maksimal 10 kata).
 5. fix: 1 kalimat saran perbaikan paling praktis dan berdampak besar (maksimal 20 kata).
 6. DILARANG menggunakan emoji, dilarang em-dash, dilarang hashtag. Sindir websitenya, bukan orangnya.
-Output WAJIB berupa JSON murni tanpa markdown wrapper.`
+Output WAJIB berupa JSON murni tanpa markdown wrapper:
+{
+  "verdict": "string",
+  "roasts": [
+    { "line": "string", "evidence": "string" },
+    { "line": "string", "evidence": "string" },
+    { "line": "string", "evidence": "string" }
+  ],
+  "fix": "string"
+}`
     : `You are "SlopSpector", a deadpan critic that roasts websites for looking AI generated ("AI slop").
 House voice: lowercase, dry, specific, like a friend who designs for a living. Short sentences. Funny because it is accurate.
 Rules:
@@ -57,7 +68,16 @@ Rules:
    - evidence: exact short quote or pattern, at most 10 words.
 5. fix: one practical sentence, at most 20 words, the single change that would help most.
 6. No emoji, no em dashes, no hashtags. Punch at the website, never at people.
-Output MUST be strict JSON only.`
+Output MUST be strict JSON matching this schema:
+{
+  "verdict": "string",
+  "roasts": [
+    { "line": "string", "evidence": "string" },
+    { "line": "string", "evidence": "string" },
+    { "line": "string", "evidence": "string" }
+  ],
+  "fix": "string"
+}`
 
   const promptEvidence = {
     website: siteName,
@@ -70,108 +90,132 @@ Output MUST be strict JSON only.`
     }))
   }
 
-  const requestPayload = {
-    contents: [
-      {
-        parts: [
-          {
-            text: isIndo
-              ? `Tulis roasting untuk website ini berdasarkan bukti temuan berikut:\n\n${JSON.stringify(promptEvidence, null, 2)}`
-              : `Write a deadpan roast for this website based on the following audit evidence. All text fields (verdict, roasts, fix) MUST be strictly in English:\n\n${JSON.stringify(promptEvidence, null, 2)}`
+  const userPrompt = isIndo
+    ? `Tulis roasting untuk website ini berdasarkan bukti temuan berikut:\n\n${JSON.stringify(promptEvidence, null, 2)}`
+    : `Write a deadpan roast for this website based on the following audit evidence. All text fields (verdict, roasts, fix) MUST be strictly in English:\n\n${JSON.stringify(promptEvidence, null, 2)}`
+
+  let usedModel = 'qwen/qwen3.8-27b (Groq)'
+  let parsedResult: any = null
+
+  // 1. Primary Engine: Qwen 3.8-27B via Groq LPUs
+  if (groqKey) {
+    try {
+      const groqRes = await ofetch<any>('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: {
+          model: 'qwen/qwen3.8-27b',
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_completion_tokens: 1024,
+          response_format: { type: 'json_object' }
+        },
+        timeout: 15000
+      })
+
+      const content = groqRes?.choices?.[0]?.message?.content
+      if (content) {
+        parsedResult = JSON.parse(content)
+        usedModel = 'qwen/qwen3.8-27b (Groq)'
+      }
+    } catch (err: any) {
+      console.warn('[SlopSpector] Groq Qwen error, falling back to Gemini:', err?.message || err)
+    }
+  }
+
+  // 2. Secondary Fallback Engine: Google Gemini
+  if (!parsedResult && (primaryGeminiKey || backupGeminiKey)) {
+    const callGemini = async (apiKey: string, model: string = 'gemini-2.5-flash-lite') => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+      return await ofetch<any>(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          contents: [
+            {
+              parts: [{ text: userPrompt }]
+            }
+          ],
+          systemInstruction: {
+            parts: [{ text: systemInstruction }]
+          },
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+            responseMimeType: 'application/json'
           }
-        ]
-      }
-    ],
-    systemInstruction: {
-      parts: [{ text: systemInstruction }]
-    },
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 1024,
-      responseMimeType: 'application/json'
+        },
+        timeout: 20000
+      })
     }
-  }
 
-  const callGemini = async (apiKey: string, model: string = 'gemini-2.5-flash-lite') => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-    return await $fetch<any>(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: requestPayload,
-      timeout: 30000
-    })
-  }
-
-  let responseData: any
-  let usedModel = 'gemini-2.5-flash-lite'
-
-  const tryCall = async (key: string) => {
-    try {
-      return await callGemini(key, 'gemini-2.5-flash-lite')
-    } catch {
-      usedModel = 'gemini-2.5-flash'
-      return await callGemini(key, 'gemini-2.5-flash')
-    }
-  }
-
-  if (primaryKey) {
-    try {
-      responseData = await tryCall(primaryKey)
-    } catch {
-      if (backupKey) {
-        try {
-          responseData = await tryCall(backupKey)
-        } catch {}
+    const tryGemini = async (key: string) => {
+      try {
+        usedModel = 'gemini-2.5-flash-lite'
+        return await callGemini(key, 'gemini-2.5-flash-lite')
+      } catch {
+        usedModel = 'gemini-2.5-flash'
+        return await callGemini(key, 'gemini-2.5-flash')
       }
     }
-  } else if (backupKey) {
-    try {
-      responseData = await tryCall(backupKey)
-    } catch {}
+
+    let geminiRes: any = null
+    if (primaryGeminiKey) {
+      try {
+        geminiRes = await tryGemini(primaryGeminiKey)
+      } catch {
+        if (backupGeminiKey) {
+          try {
+            geminiRes = await tryGemini(backupGeminiKey)
+          } catch {}
+        }
+      }
+    } else if (backupGeminiKey) {
+      try {
+        geminiRes = await tryGemini(backupGeminiKey)
+      } catch {}
+    }
+
+    if (geminiRes) {
+      try {
+        const textOut = geminiRes?.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+        const cleanJson = textOut.replace(/^```(?:json)?\s*|\s*```$/g, '').trim()
+        parsedResult = JSON.parse(cleanJson)
+      } catch {}
+    }
   }
 
   const defaultFix = isIndo
     ? 'Ganti kata-kata klise dengan bukti produk nyata dan ubah font default template lu.'
     : 'Swap out marketing filler with concrete product facts and custom typography.'
 
-  if (!responseData) {
-    // Graceful offline fallback roast if API quota exhausted
+  if (parsedResult) {
     return {
       success: true,
-      model: 'deterministic-fallback',
-      verdict: isIndo
-        ? (score > 60 ? 'kebanyakan prompt dikit mikir' : 'masih ada aroma template')
-        : (score > 60 ? 'bro just prompted and prayed' : 'prompt residue detected'),
-      roasts: findings.slice(0, 3).map((f) => ({
-        line: f.label,
-        evidence: f.quotes[0] || f.label
-      })),
-      fix: defaultFix
+      model: usedModel,
+      verdict: parsedResult.verdict || verdictLabel,
+      roasts: Array.isArray(parsedResult.roasts) ? parsedResult.roasts.slice(0, 3) : [],
+      fix: parsedResult.fix || defaultFix
     }
   }
 
-  try {
-    const textOut = responseData?.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
-    const cleanJson = textOut.replace(/^```(?:json)?\s*|\s*```$/g, '').trim()
-    const parsed = JSON.parse(cleanJson)
-
-    return {
-      success: true,
-      model: usedModel,
-      verdict: parsed.verdict || verdictLabel,
-      roasts: Array.isArray(parsed.roasts) ? parsed.roasts.slice(0, 3) : [],
-      fix: parsed.fix || defaultFix
-    }
-  } catch {
-    return {
-      success: true,
-      model: usedModel,
-      verdict: verdictLabel,
-      roasts: findings.slice(0, 3).map((f) => ({
-        line: f.label,
-        evidence: f.quotes[0] || f.label
-      })),
-      fix: defaultFix
-    }
+  // 3. Graceful deterministic fallback
+  return {
+    success: true,
+    model: 'deterministic-fallback',
+    verdict: isIndo
+      ? (score > 60 ? 'kebanyakan prompt dikit mikir' : 'masih ada aroma template')
+      : (score > 60 ? 'bro just prompted and prayed' : 'prompt residue detected'),
+    roasts: findings.slice(0, 3).map((f) => ({
+      line: f.label,
+      evidence: f.quotes[0] || f.label
+    })),
+    fix: defaultFix
   }
 })

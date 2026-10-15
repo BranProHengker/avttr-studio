@@ -167,7 +167,7 @@ const runInspection = async () => {
   }
 }
 
-// Trigger AI Roasting via Gemini Flash-Lite
+// Trigger AI Roasting via Qwen 3.8-27B (Groq) with Gemini fallback
 const triggerRoast = async (insp: InspectionResult) => {
   isRoasting.value = true
   try {
@@ -597,8 +597,8 @@ const categoryBadgeClass = (cat: string) => {
         </div>
         <p class="text-[11px] text-[var(--text-tertiary)]">
           {{ locale === 'id'
-            ? 'Deteksi heuristik dan pemindaian AST berjalan deterministik di server & Canvas. Fitur vonis roasting ditenagai oleh Google Gemini 2.5 Flash-Lite API (dengan fallback Gemini 2.5 Flash).'
-            : 'Heuristic AST and Canvas pixel scans run deterministically. Roasting verdicts are generated via Google Gemini 2.5 Flash-Lite API (with automated Gemini 2.5 Flash fallback).' }}
+            ? 'Deteksi heuristik dan pemindaian AST berjalan deterministik di server & Canvas. Fitur vonis roasting ditenagai oleh model Qwen 3.8-27B (via Groq LPUs) dengan fallback otomatis ke Google Gemini.'
+            : 'Heuristic AST and Canvas pixel scans run deterministically. Roasting verdicts are generated via Qwen 3.8-27B (via Groq LPUs) with automated Google Gemini fallback.' }}
         </p>
       </div>
     </div>
