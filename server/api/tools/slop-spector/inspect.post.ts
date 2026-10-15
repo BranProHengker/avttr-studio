@@ -832,26 +832,6 @@ export default defineEventHandler(async (event) => {
 
 
 
-  // Dark/Light Theme Toggle
-  const hasThemeToggle = $('button, [role="switch"]').filter((_, el) => {
-    const combined = ($(el).attr('aria-label') || '') + ' ' + ($(el).attr('title') || '') + ' ' + $(el).text()
-    return /theme|dark|light mode/i.test(combined)
-  }).length > 0
-
-  if (hasThemeToggle) {
-    nit(
-      'toggle',
-      isIndo ? 'Tombol Dark Mode Toggle' : 'Theme Toggle',
-      3,
-      isIndo
-        ? 'Tombol ganti dark mode. Salaman rahasia komunitas developer portfolio.'
-        : 'A dark mode toggle. The developer portfolio’s secret handshake.',
-      isIndo
-        ? 'Semua web portofolio dev punya ini. Tapi nggak ada pengunjung yang ngeklik dua kali.'
-        : 'Every developer site has one. Nobody has ever pressed it twice.',
-      ['Dark/Light theme switch button']
-    )
-  }
 
   // GitHub Contribution Graph Wall
   if (/\bcontributions?\b/i.test(rawText) || $('[class*="contribution"], [id*="contribution"]').length > 0) {
