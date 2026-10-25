@@ -219,28 +219,36 @@ Craft the viral clips around these retention peaks. Output strict JSON.`
 
   // -------------------------------------------------------------
   // STAGE 3: Secondary Fallback Engine: Google Gemini 2.5 Flash
-  // Safe timeout: 8000ms to guarantee no serverless 502/timeout
+  // Safe timeout: 4000ms to guarantee no serverless 502/timeout
   // -------------------------------------------------------------
   if (!generatedClips.length && (geminiKey || geminiBackupKey)) {
     const tryGemini = async (key: string) => {
       try {
-        const res = await ofetch<any>('https://generativelanguage.googleapis.com/v1beta/interactions', {
-          method: 'POST',
-          headers: {
-            'x-goog-api-key': key,
-            'Content-Type': 'application/json'
-          },
-          body: {
-            model: 'gemini-2.5-flash',
-            input: [
-              { type: 'text', text: `${systemInstruction}\n\n${userPrompt}` }
-            ]
-          },
-          timeout: 8000
-        })
+        const res = await ofetch<any>(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: {
+              contents: [
+                {
+                  parts: [
+                    { text: `${systemInstruction}\n\n${userPrompt}` }
+                  ]
+                }
+              ],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.6
+              }
+            },
+            timeout: 4000
+          }
+        )
 
-        const modelStep = res?.steps?.find((s: any) => s.type === 'model_output')
-        const text = modelStep?.content?.[0]?.text
+        const text = res?.candidates?.[0]?.content?.parts?.[0]?.text
         if (text) {
           const cleaned = text.replace(/```json\s*|\s*```/g, '').trim()
           const parsed = JSON.parse(cleaned)
@@ -336,10 +344,18 @@ Craft the viral clips around these retention peaks. Output strict JSON.`
   let directStreamUrl = ''
   try {
     const ytAndroid = await getAndroidInnertube()
-    const basic = await ytAndroid.getBasicInfo(videoId)
-    const prog =
+    let basic = await ytAndroid.getBasicInfo(videoId).catch(() => null)
+    let prog =
       basic?.streaming_data?.formats?.find((f: any) => f.has_video && f.has_audio && f.url) ||
       basic?.streaming_data?.formats?.[0]
+    if (!prog?.url) {
+      const { Innertube, ClientType } = await import('youtubei.js')
+      const ytIos = await Innertube.create({ client_type: ClientType.IOS })
+      basic = await ytIos.getBasicInfo(videoId).catch(() => null)
+      prog =
+        basic?.streaming_data?.formats?.find((f: any) => f.has_video && f.has_audio && f.url) ||
+        basic?.streaming_data?.formats?.[0]
+    }
     if (prog?.url) {
       directStreamUrl = prog.url
     }

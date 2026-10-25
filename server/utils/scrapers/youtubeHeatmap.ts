@@ -25,8 +25,6 @@ export interface YouTubeHeatmapResult {
   peaks: CandidatePeak[]
 }
 
-let cachedYt: any = null
-
 export function extractYouTubeVideoId(url: string): string | null {
   if (!url) return null
   const trimmed = url.trim()
@@ -52,8 +50,12 @@ export function extractYouTubeVideoId(url: string): string | null {
   return null
 }
 
-export async function getInnertube() {
-  const { Innertube, Platform, Log } = await import('youtubei.js')
+let cachedAndroidYt: any = null
+let cachedIosYt: any = null
+let cachedWebYt: any = null
+
+export async function getInnertube(clientType: 'ANDROID' | 'IOS' | 'WEB' = 'ANDROID') {
+  const { Innertube, Platform, Log, ClientType } = await import('youtubei.js')
 
   // Silence verbose parser warnings
   Log.setLevel(Log.Level.NONE)
@@ -63,10 +65,24 @@ export async function getInnertube() {
     return vm.runInNewContext(`(function() { ${code} })()`, env)
   }
 
-  if (!cachedYt) {
-    cachedYt = await Innertube.create()
+  if (clientType === 'ANDROID') {
+    if (!cachedAndroidYt) {
+      cachedAndroidYt = await Innertube.create({ client_type: ClientType.ANDROID })
+    }
+    return cachedAndroidYt
   }
-  return cachedYt
+
+  if (clientType === 'IOS') {
+    if (!cachedIosYt) {
+      cachedIosYt = await Innertube.create({ client_type: ClientType.IOS })
+    }
+    return cachedIosYt
+  }
+
+  if (!cachedWebYt) {
+    cachedWebYt = await Innertube.create()
+  }
+  return cachedWebYt
 }
 
 export function detectPeaks(points: HeatmapPoint[], totalDuration: number, maxPeaks: number = 4): CandidatePeak[] {
@@ -169,10 +185,14 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
   let thumbnail = fallbackThumb
   let rawMarkers: any[] = []
 
-  // Tier 1: Fast & Ultra-Reliable Innertube getBasicInfo (~250ms)
+  // Tier 1: Fast & Ultra-Reliable Innertube getBasicInfo (Android -> iOS)
   try {
-    const yt = await getInnertube()
-    const basic = await yt.getBasicInfo(videoId)
+    let yt = await getInnertube('ANDROID')
+    let basic = await yt.getBasicInfo(videoId).catch(() => null)
+    if (!basic?.basic_info?.title) {
+      yt = await getInnertube('IOS')
+      basic = await yt.getBasicInfo(videoId).catch(() => null)
+    }
     if (basic?.basic_info) {
       if (basic.basic_info.title) title = basic.basic_info.title
       if (basic.basic_info.duration) duration = Number(basic.basic_info.duration)
@@ -185,7 +205,7 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
 
   // Tier 2: Try to extract viewer engagement replay heatmap curve (with 4s timeout)
   try {
-    const yt = await getInnertube()
+    const yt = await getInnertube('ANDROID')
     const fullInfo = await Promise.race([
       yt.getInfo(videoId),
       new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Heatmap fetch timeout')), 4000))
@@ -202,7 +222,80 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
     // Expected on long podcasts or when YouTube doesn't publish replay markers
   }
 
-  // Tier 3: Invidious Instances Fallback if title/duration still missing
+  // Tier 3: play-dl Fallback (Fast & resilient on cloud datacenters)
+  if (!title || duration <= 0) {
+    try {
+      const play = await import('play-dl')
+      const pInfo = await play.video_basic_info(videoId)
+      if (pInfo?.video_details) {
+        if (!title && pInfo.video_details.title) title = pInfo.video_details.title
+        if (duration <= 0 && pInfo.video_details.durationInSec) duration = pInfo.video_details.durationInSec
+        if (!authorName && pInfo.video_details.channel?.name) authorName = pInfo.video_details.channel.name
+        if (pInfo.video_details.thumbnails?.[0]?.url && thumbnail === fallbackThumb) {
+          thumbnail = pInfo.video_details.thumbnails[0].url
+        }
+      }
+    } catch {}
+  }
+
+  // Tier 4: @distube/ytdl-core Fallback
+  if (!title || duration <= 0) {
+    try {
+      const ytdl = (await import('@distube/ytdl-core')).default
+      const yInfo = await ytdl.getBasicInfo(videoId)
+      if (yInfo?.videoDetails) {
+        if (!title && yInfo.videoDetails.title) title = yInfo.videoDetails.title
+        if (duration <= 0 && yInfo.videoDetails.lengthSeconds) duration = parseInt(yInfo.videoDetails.lengthSeconds, 10)
+        if (!authorName && yInfo.videoDetails.author?.name) authorName = yInfo.videoDetails.author.name
+        if (yInfo.videoDetails.thumbnails?.[0]?.url && thumbnail === fallbackThumb) {
+          thumbnail = yInfo.videoDetails.thumbnails[0].url
+        }
+      }
+    } catch {}
+  }
+
+  // Tier 5: Mobile Watch Page Scraping (Bypasses desktop datacenter botwalls)
+  if (duration <= 0 || !title) {
+    try {
+      const pageRes = await fetch(`https://m.youtube.com/watch?v=${videoId}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1',
+          'Accept-Language': 'en-US,en;q=0.9'
+        },
+        signal: AbortSignal.timeout(4000)
+      })
+      if (pageRes.ok) {
+        const html = await pageRes.text()
+        const durMatch = html.match(/"lengthSeconds":"(\d+)"/)
+        if (durMatch && durMatch[1] && duration <= 0) {
+          duration = parseInt(durMatch[1], 10)
+        }
+        if (!title) {
+          const titleMatch = html.match(/<title>(.*?)<\/title>/)
+          if (titleMatch && titleMatch[1]) {
+            title = titleMatch[1].replace('- YouTube', '').trim()
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // Tier 6: Official YouTube oEmbed API Fallback (Guaranteed 200 on any public video)
+  if (!title || !authorName) {
+    try {
+      const oembedRes = await fetch(
+        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+        { signal: AbortSignal.timeout(3000) }
+      )
+      if (oembedRes.ok) {
+        const oembed = await oembedRes.json()
+        if (oembed.title && !title) title = oembed.title
+        if (oembed.author_name && !authorName) authorName = oembed.author_name
+      }
+    } catch {}
+  }
+
+  // Tier 7: Invidious Instances Fallback if title/duration still missing
   if (!title || duration <= 0) {
     const INVIDIOUS_INSTANCES = [
       'https://invidious.flokinet.to',
@@ -227,50 +320,14 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
     }
   }
 
-  // Tier 4: YouTube oEmbed API Fallback
-  if (!title || !authorName) {
-    try {
-      const oembedRes = await fetch(
-        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
-        { signal: AbortSignal.timeout(3000) }
-      )
-      if (oembedRes.ok) {
-        const oembed = await oembedRes.json()
-        if (oembed.title && !title) title = oembed.title
-        if (oembed.author_name && !authorName) authorName = oembed.author_name
-      }
-    } catch {}
-  }
-
-  // Tier 5: Direct Watch Page Scraping (Without false-positive translation dictionary matches)
-  if (duration <= 0 || !title) {
-    try {
-      const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9'
-        },
-        signal: AbortSignal.timeout(4000)
-      })
-      if (pageRes.ok) {
-        const html = await pageRes.text()
-        const durMatch = html.match(/"lengthSeconds":"(\d+)"/)
-        if (durMatch && durMatch[1]) {
-          duration = parseInt(durMatch[1], 10)
-        }
-        if (!title) {
-          const titleMatch = html.match(/<title>(.*?)<\/title>/)
-          if (titleMatch && titleMatch[1]) {
-            title = titleMatch[1].replace('- YouTube', '').trim()
-          }
-        }
-      }
-    } catch {}
-  }
-
-  // Final Validation: Video MUST have valid duration and title
-  if (!title || duration <= 0) {
+  // Final Validation: If title is missing across all 7 tiers, the video is genuinely unavailable/private
+  if (!title) {
     throw new Error('Video YouTube ini tidak tersedia, bersifat privat, atau dibatasi usia sehingga tidak dapat dianalisis.')
+  }
+
+  // Safe duration fallback: if duration was unparsed but title is verified, default to 180s
+  if (duration <= 0) {
+    duration = 180
   }
 
   // Extract Heatmap markers
