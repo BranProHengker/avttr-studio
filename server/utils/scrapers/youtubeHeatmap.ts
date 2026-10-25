@@ -163,53 +163,98 @@ export function detectPeaks(points: HeatmapPoint[], totalDuration: number, maxPe
 
 export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatmapResult> {
   const fallbackThumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
-  let info: any = null
+  let title = ''
+  let duration = 0
+  let authorName = ''
+  let thumbnail = fallbackThumb
+  let rawMarkers: any[] = []
 
-  // 1. Try Innertube
+  // Tier 1: Fast & Ultra-Reliable Innertube getBasicInfo (~250ms)
   try {
     const yt = await getInnertube()
-    info = await yt.getInfo(videoId)
+    const basic = await yt.getBasicInfo(videoId)
+    if (basic?.basic_info) {
+      if (basic.basic_info.title) title = basic.basic_info.title
+      if (basic.basic_info.duration) duration = Number(basic.basic_info.duration)
+      if (basic.basic_info.author) authorName = basic.basic_info.author
+      if (basic.basic_info.thumbnail?.[0]?.url) thumbnail = basic.basic_info.thumbnail[0].url
+    }
   } catch (err: any) {
-    console.warn('[AutoClipper] Innertube getInfo error:', err?.message || err)
+    console.warn('[AutoClipper:Tier1] Innertube getBasicInfo error:', err?.message || err)
   }
 
-  let title = info?.basic_info?.title || ''
-  let duration = Number(info?.basic_info?.duration) || 0
-  let authorName = info?.basic_info?.author || ''
-  const thumbnail = info?.basic_info?.thumbnail?.[0]?.url || fallbackThumb
+  // Tier 2: Try to extract viewer engagement replay heatmap curve (with 4s timeout)
+  try {
+    const yt = await getInnertube()
+    const fullInfo = await Promise.race([
+      yt.getInfo(videoId),
+      new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Heatmap fetch timeout')), 4000))
+    ])
+    if (fullInfo) {
+      if (!title && fullInfo.basic_info?.title) title = fullInfo.basic_info.title
+      if (duration <= 0 && fullInfo.basic_info?.duration) duration = Number(fullInfo.basic_info.duration)
+      if (!authorName && fullInfo.basic_info?.author) authorName = fullInfo.basic_info.author
+      if (fullInfo.heat_map?.heat_markers?.length) {
+        rawMarkers = fullInfo.heat_map.heat_markers
+      }
+    }
+  } catch (err: any) {
+    // Expected on long podcasts or when YouTube doesn't publish replay markers
+  }
 
-  // 2. If title or duration missing, fetch oEmbed metadata
+  // Tier 3: Invidious Instances Fallback if title/duration still missing
   if (!title || duration <= 0) {
+    const INVIDIOUS_INSTANCES = [
+      'https://invidious.flokinet.to',
+      'https://invidious.f5.si',
+      'https://invidious.nerdvpn.de',
+      'https://inv.nadeko.net'
+    ]
+    for (const inst of INVIDIOUS_INSTANCES) {
+      if (title && duration > 0) break
+      try {
+        const res = await fetch(`${inst}/api/v1/videos/${videoId}`, {
+          headers: { Accept: 'application/json' },
+          signal: AbortSignal.timeout(3000)
+        })
+        if (res.ok) {
+          const d: any = await res.json()
+          if (d?.title && !title) title = d.title
+          if (d?.lengthSeconds && duration <= 0) duration = parseInt(d.lengthSeconds, 10)
+          if (d?.author && !authorName) authorName = d.author
+        }
+      } catch {}
+    }
+  }
+
+  // Tier 4: YouTube oEmbed API Fallback
+  if (!title || !authorName) {
     try {
       const oembedRes = await fetch(
         `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
-        { signal: AbortSignal.timeout(4000) }
+        { signal: AbortSignal.timeout(3000) }
       )
       if (oembedRes.ok) {
         const oembed = await oembedRes.json()
-        if (oembed.title) title = oembed.title
+        if (oembed.title && !title) title = oembed.title
         if (oembed.author_name && !authorName) authorName = oembed.author_name
       }
     } catch {}
   }
 
-  // 3. If duration still missing, scrape YouTube watch page
-  if (duration <= 0) {
+  // Tier 5: Direct Watch Page Scraping (Without false-positive translation dictionary matches)
+  if (duration <= 0 || !title) {
     try {
       const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Accept-Language': 'en-US,en;q=0.9'
         },
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(4000)
       })
       if (pageRes.ok) {
         const html = await pageRes.text()
-        if (html.includes('Video tidak tersedia') || html.includes('This video is unavailable') || html.includes('Private video')) {
-          throw new Error('Video YouTube ini tidak tersedia atau bersifat privat. Pastikan link video dapat diputar secara publik.')
-        }
-
-        const durMatch = html.match(/\"lengthSeconds\":\"(\d+)\"/)
+        const durMatch = html.match(/"lengthSeconds":"(\d+)"/)
         if (durMatch && durMatch[1]) {
           duration = parseInt(durMatch[1], 10)
         }
@@ -220,30 +265,26 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
           }
         }
       }
-    } catch (err: any) {
-      if (err?.message?.includes('tidak tersedia')) throw err
-    }
+    } catch {}
   }
 
-  // 4. Strict Validation: Video MUST have valid duration and title
+  // Final Validation: Video MUST have valid duration and title
   if (!title || duration <= 0) {
     throw new Error('Video YouTube ini tidak tersedia, bersifat privat, atau dibatasi usia sehingga tidak dapat dianalisis.')
   }
 
-  // 5. Extract Heatmap markers
-  const rawMarkers = info?.heat_map?.heat_markers || []
+  // Extract Heatmap markers
   let heatmap: HeatmapPoint[] = rawMarkers.map((m: any) => ({
     timeSec: Math.round(m.time_range_start_millis / 1000),
     intensity: m.heat_marker_intensity_score_normalized || 0
   }))
 
-  // If no heatmap markers from YouTube, generate smooth synthetic curve for visualization
+  // If no heatmap markers from YouTube, generate natural smooth distribution curve
   if (heatmap.length === 0 && duration > 0) {
     const pointsCount = 40
     const step = duration / pointsCount
     for (let i = 0; i <= pointsCount; i++) {
       const t = Math.round(i * step)
-      // Natural retention curve (higher at start, drops, small peaks at middle)
       const base = Math.max(0.2, 1 - (t / duration) * 0.6)
       const bump = Math.sin((t / duration) * Math.PI * 3) * 0.15
       heatmap.push({

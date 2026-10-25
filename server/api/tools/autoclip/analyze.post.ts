@@ -1,4 +1,3 @@
-import { defineEventHandler, readBody, createError } from 'h3'
 import { ofetch } from 'ofetch'
 import { extractYouTubeVideoId, fetchYouTubeHeatmap, type CandidatePeak } from '~/server/utils/scrapers/youtubeHeatmap'
 import { validateSafeUrl, checkRateLimit } from '~/server/utils/security'
