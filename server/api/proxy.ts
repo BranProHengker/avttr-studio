@@ -96,6 +96,10 @@ export default defineEventHandler(async (event) => {
 
     // 2. If audioUrl is present, mux video + audio streams on-the-fly via ffmpeg (for YouTube 1080p+ Full HD)
     const audioUrl = typeof query.audioUrl === 'string' ? query.audioUrl : ''
+    const startSec = query.start != null && query.start !== '' ? Number(query.start) : (query.ss != null && query.ss !== '' ? Number(query.ss) : NaN)
+    const endSec = query.end != null && query.end !== '' ? Number(query.end) : (query.to != null && query.to !== '' ? Number(query.to) : NaN)
+    const hasTrim = !isNaN(startSec) && startSec >= 0 && !isNaN(endSec) && endSec > startSec
+
     if (audioUrl) {
       const safeAudioCheck = validateSafeUrl(audioUrl)
       if (!safeAudioCheck.valid || !safeAudioCheck.url) {
@@ -119,9 +123,14 @@ export default defineEventHandler(async (event) => {
       setResponseStatus(event, 200)
       setResponseHeaders(event, videoHeaders)
 
+      const durationSec = hasTrim ? Math.max(1, endSec - startSec) : 0
       const ffmpegArgs = [
         '-nostdin', '-hide_banner', '-loglevel', 'error',
       ]
+
+      if (hasTrim) {
+        ffmpegArgs.push('-ss', startSec.toString())
+      }
 
       if (hostname.includes('googlevideo.com')) {
         ffmpegArgs.push('-user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
@@ -131,17 +140,74 @@ export default defineEventHandler(async (event) => {
 
       ffmpegArgs.push('-i', targetUrl)
 
+      if (hasTrim) {
+        ffmpegArgs.push('-ss', startSec.toString())
+      }
+
       if (safeAudioCheck.url.hostname.includes('googlevideo.com')) {
         ffmpegArgs.push('-user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
       } else if (referer) {
         ffmpegArgs.push('-referer', referer)
       }
 
+      ffmpegArgs.push('-i', audioUrl)
+
+      if (hasTrim && durationSec > 0) {
+        ffmpegArgs.push('-t', durationSec.toString())
+      }
+
       ffmpegArgs.push(
-        '-i', audioUrl,
         '-c:v', 'copy',
         '-c:a', 'aac',
         '-b:a', '192k',
+        '-movflags', 'frag_keyframe+empty_moov',
+        '-f', 'mp4',
+        'pipe:1'
+      )
+
+      const ffmpeg = spawn('ffmpeg', ffmpegArgs)
+
+      event.node.req.on('close', () => {
+        try {
+          ffmpeg.kill('SIGKILL')
+        } catch {}
+      })
+
+      return sendStream(event, ffmpeg.stdout)
+    }
+
+    // 2b. If trimming is requested for a single video stream (without separate audioUrl)
+    if (hasTrim) {
+      const cleanAsciiFilename = filename.replace(/[^\w\s.-]/gi, '_')
+      const videoHeaders: Record<string, string> = {
+        'Content-Type': 'video/mp4',
+        'Accept-Ranges': 'none',
+        'Access-Control-Allow-Origin': '*',
+      }
+
+      if (isDownload) {
+        videoHeaders['Content-Disposition'] = `attachment; filename="${cleanAsciiFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+      }
+
+      setResponseStatus(event, 200)
+      setResponseHeaders(event, videoHeaders)
+
+      const durationSec = Math.max(1, endSec - startSec)
+      const ffmpegArgs = [
+        '-nostdin', '-hide_banner', '-loglevel', 'error',
+        '-ss', startSec.toString(),
+      ]
+
+      if (hostname.includes('googlevideo.com')) {
+        ffmpegArgs.push('-user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+      } else if (referer) {
+        ffmpegArgs.push('-referer', referer)
+      }
+
+      ffmpegArgs.push(
+        '-i', targetUrl,
+        '-t', durationSec.toString(),
+        '-c', 'copy',
         '-movflags', 'frag_keyframe+empty_moov',
         '-f', 'mp4',
         'pipe:1'

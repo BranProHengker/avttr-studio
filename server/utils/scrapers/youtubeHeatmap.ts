@@ -52,17 +52,15 @@ export function extractYouTubeVideoId(url: string): string | null {
   return null
 }
 
-async function getInnertube() {
+export async function getInnertube() {
   const { Innertube, Platform, Log } = await import('youtubei.js')
 
   // Silence verbose parser warnings
   Log.setLevel(Log.Level.NONE)
 
-  if (!Platform.shim.eval) {
-    Platform.shim.eval = (data: any, env: any) => {
-      const code = typeof data === 'string' ? data : (data?.output || '')
-      return vm.runInNewContext(`(function() {\n${code}\n})()`, env)
-    }
+  Platform.shim.eval = (data: any, env: any) => {
+    const code = typeof data === 'string' ? data : (data?.output || '')
+    return vm.runInNewContext(`(function() { ${code} })()`, env)
   }
 
   if (!cachedYt) {
