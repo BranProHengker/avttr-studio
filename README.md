@@ -43,6 +43,7 @@ Every tool in this section runs entirely in the browser using WebAssembly, the C
 - **QR Code Generator**: create custom QR codes with color controls, error correction levels, logo placement, and SVG/PNG export.
 - **Brat Text Generator**: generate Charli XCX Brat album style text with blur effects and word-by-word animated GIF export.
 - **PDF Studio**: merge PDFs, split or extract pages, and convert photos to PDF documents in the browser via pdf-lib.
+- **AutoClipper**: auto-detect YouTube audience replay heatmap peaks, smart-crop to vertical 9:16 (Smart Blur, Gamer Facecam Stack, Manual Pan), and generate clip hooks with AI.
 - **Video to GIF & Video Resizer**: trim clip length, adjust resolution, configure FPS, and convert videos to GIF directly in the browser.
 - **Teleprompter Video Studio**: webcam recorder with floating cue cards, adjustable pace timers, and keyboard hotkeys.
 
@@ -225,6 +226,7 @@ Semua tool di kategori ini diproses langsung di browser menggunakan WebAssembly,
 - **QR Code Generator**: buat kode QR kustom dengan pengaturan warna, tingkat koreksi error, penempatan logo, dan ekspor format SVG/PNG.
 - **Brat Text Generator**: generator teks bergaya album Brat dari Charli XCX dengan efek blur dan ekspor animasi GIF kata demi kata.
 - **PDF Studio**: gabung beberapa PDF, pisah atau ekstrak halaman, dan ubah foto ke dokumen PDF secara lokal via pdf-lib.
+- **AutoClipper**: deteksi puncak kurva replay heatmap penonton YouTube, framing cerdas vertikal 9:16 (Smart Blur, Gamer Facecam Stack, Manual Pan), dan generate hook klip dengan AI.
 - **Video to GIF & Video Resizer**: potong durasi klip video, atur resolusi, ubah FPS, dan konversi ke animasi GIF langsung di browser.
 - **Teleprompter Video Studio**: perekam webcam dengan kartu contekan melayang, pengatur tempo, dan pintasan keyboard untuk latihan presentasi.
 

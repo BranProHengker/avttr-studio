@@ -262,6 +262,10 @@ const translations: Record<Locale, Translations> = {
         title: 'TeraBox Downloader',
         description: 'Fast direct download links for TeraBox cloud files and shared videos.',
       },
+      'auto-clipper': {
+        title: 'AutoClipper',
+        description: 'Auto-detect YouTube replay heatmap peaks and extract vertical 9:16 Shorts/TikTok clips with AI.',
+      },
       'video-to-gif': {
         title: 'Video to GIF',
         description: 'Convert MP4, WebM, and MOV video clips into crisp animated GIFs with trimming, FPS, and speed controls.',
@@ -519,6 +523,10 @@ const translations: Record<Locale, Translations> = {
       terabox: {
         title: 'TeraBox Downloader',
         description: 'Link download langsung cepat untuk file cloud dan video TeraBox.',
+      },
+      'auto-clipper': {
+        title: 'AutoClipper',
+        description: 'Deteksi puncak replay heatmap YouTube & potong klip vertikal 9:16 Shorts/TikTok dengan AI.',
       },
       'video-to-gif': {
         title: 'Video to GIF',
