@@ -1,15 +1,6 @@
 import { Readable } from 'node:stream'
 import { spawn } from 'node:child_process'
-
-let cachedAndroidYt: any = null
-
-async function getAndroidInnertube() {
-  if (!cachedAndroidYt) {
-    const { Innertube, ClientType } = await import('youtubei.js')
-    cachedAndroidYt = await Innertube.create({ client_type: ClientType.ANDROID })
-  }
-  return cachedAndroidYt
-}
+import { getInnertube } from '~/server/utils/scrapers/youtubeHeatmap'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -29,8 +20,12 @@ export default defineEventHandler(async (event) => {
   const hasTrim = !isNaN(startSec) && startSec >= 0 && !isNaN(endSec) && endSec > startSec
 
   try {
-    const yt = await getAndroidInnertube()
-    const info = await yt.getBasicInfo(videoId)
+    const yt = await getInnertube('ANDROID')
+    let info = await yt.getBasicInfo(videoId).catch(() => null)
+    if (!info?.streaming_data) {
+      const ytIos = await getInnertube('IOS')
+      info = await ytIos.getBasicInfo(videoId).catch(() => null)
+    }
 
     if (!info?.streaming_data) {
       throw new Error('Streaming data video tidak tersedia.')
@@ -83,6 +78,15 @@ export default defineEventHandler(async (event) => {
         '-f', 'mp4',
         'pipe:1'
       ])
+
+      ffmpeg.on('error', (err) => {
+        console.warn('[AutoClipper Stream] FFmpeg unavailable on serverless runtime, falling back:', err?.message)
+        try {
+          if (!event.node.res.headersSent) {
+            sendRedirect(event, directUrl)
+          }
+        } catch {}
+      })
 
       event.node.req.on('close', () => {
         try {

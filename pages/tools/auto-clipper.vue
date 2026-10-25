@@ -95,7 +95,18 @@ const isMuted = ref(false)
 const currentTime = ref(0)
 const isVideoReady = ref(false)
 const videoLoadError = ref(false)
+const playerMode = ref<'native' | 'embed'>('native')
 let isScrubbing = false
+
+function togglePlayerMode() {
+  if (playerMode.value === 'native') {
+    playerMode.value = 'embed'
+    isPlaying.value = true
+  } else {
+    playerMode.value = 'native'
+    videoLoadError.value = false
+  }
+}
 
 const activeClip = computed<AutoClipItem | null>(() => {
   if (!resultData.value?.clips?.length) return null
@@ -154,6 +165,10 @@ const clipProgressPercent = computed(() => {
 
 // Native Video Player Controls
 function togglePlay() {
+  if (playerMode.value === 'embed' || videoLoadError.value) {
+    isPlaying.value = !isPlaying.value
+    return
+  }
   if (!videoElementRef.value) return
   if (isPlaying.value) {
     videoElementRef.value.pause()
@@ -210,8 +225,9 @@ function onVideoTimeUpdate() {
 }
 
 function onVideoError() {
-  console.warn('[AutoClipper Player] Native stream playback issue.')
+  console.warn('[AutoClipper Player] Native stream playback issue, fallback to embedded player.')
   videoLoadError.value = true
+  playerMode.value = 'embed'
 }
 
 // Scrubber interaction
@@ -1194,6 +1210,20 @@ ${resultData.value.clips.map((c, i) => `${i + 1}. [${c.viralScore}/100] ${c.hook
               </div>
             </div>
 
+            <!-- Stream Player Mode Toggle -->
+            <div class="flex items-center justify-between text-[11px] text-[var(--text-tertiary)] px-1">
+              <span class="font-mono">
+                {{ playerMode === 'native' && !videoLoadError ? 'Stream: Native MP4 Player' : 'Stream: Direct Video Preview' }}
+              </span>
+              <button
+                type="button"
+                @click="togglePlayerMode"
+                class="font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline cursor-pointer"
+              >
+                {{ playerMode === 'native' && !videoLoadError ? 'Mode Cadangan' : 'Mode Native' }}
+              </button>
+            </div>
+
             <!-- OUR OWN NATIVE 9:16 VIDEO PLAYER STAGE (Zero YouTube Iframe UI) -->
             <div class="relative w-full max-w-[300px] mx-auto aspect-[9/16] rounded-2xl overflow-hidden bg-black shadow-2xl border-2 border-zinc-800 select-none group flex flex-col justify-between">
               
@@ -1202,7 +1232,7 @@ ${resultData.value.clips.map((c, i) => `${i + 1}. [${c.viralScore}/100] ${c.hook
                 <!-- Smart Blur Mode: Dynamic Blurred Background Video -->
                 <div v-if="framingMode === 'blur_padded'" class="absolute inset-0 overflow-hidden pointer-events-none">
                   <video
-                    v-if="!videoLoadError"
+                    v-if="!videoLoadError && playerMode === 'native'"
                     :src="videoStreamUrl"
                     class="w-full h-full object-cover scale-150 blur-xl opacity-50"
                     muted
@@ -1220,6 +1250,7 @@ ${resultData.value.clips.map((c, i) => `${i + 1}. [${c.viralScore}/100] ${c.hook
 
                 <!-- Primary Native HTML5 Video Element -->
                 <div
+                  v-if="playerMode === 'native' && !videoLoadError"
                   class="w-full h-full flex items-center justify-center relative overflow-hidden"
                   :class="{
                     'p-2': framingMode === 'blur_padded'
@@ -1246,6 +1277,20 @@ ${resultData.value.clips.map((c, i) => `${i + 1}. [${c.viralScore}/100] ${c.hook
                     @play="isPlaying = true"
                     @pause="isPlaying = false"
                   />
+                </div>
+
+                <!-- Fallback Direct Player when stream unavailable or error -->
+                <div
+                  v-else
+                  class="w-full h-full flex items-center justify-center relative overflow-hidden bg-black"
+                >
+                  <iframe
+                    :key="`yt_${activeClip.id}_${activeClip.startTime}`"
+                    :src="`https://www.youtube-nocookie.com/embed/${resultData.videoId}?start=${Math.round(activeClip.startTime)}&end=${Math.round(activeClip.endTime)}&autoplay=1&controls=0&modestbranding=1&rel=0&playsinline=1`"
+                    class="w-[340%] h-full max-w-none pointer-events-none scale-125"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  ></iframe>
                 </div>
 
                 <!-- Play / Pause Overlay Icon when paused -->

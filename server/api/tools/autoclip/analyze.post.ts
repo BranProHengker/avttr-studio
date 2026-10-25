@@ -24,15 +24,6 @@ function formatSec(seconds: number): string {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-let cachedAndroidYt: any = null
-async function getAndroidInnertube() {
-  if (!cachedAndroidYt) {
-    const { Innertube, ClientType } = await import('youtubei.js')
-    cachedAndroidYt = await Innertube.create({ client_type: ClientType.ANDROID })
-  }
-  return cachedAndroidYt
-}
-
 export default defineEventHandler(async (event) => {
   // 1. IP Rate Limiting (20 requests/minute per client IP)
   const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
@@ -86,7 +77,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { title, duration, author, thumbnail, heatmap, peaks } = heatmapData
+  const { title, duration, author, thumbnail, heatmap, peaks, streamUrl: resolvedStreamUrl } = heatmapData
 
   if (!title || duration <= 0) {
     throw createError({
@@ -341,27 +332,7 @@ Craft the viral clips around these retention peaks. Output strict JSON.`
   })
 
   // Resolve direct progressive stream URL for custom HTML5 player & trimming
-  let directStreamUrl = ''
-  try {
-    const ytAndroid = await getAndroidInnertube()
-    let basic = await ytAndroid.getBasicInfo(videoId).catch(() => null)
-    let prog =
-      basic?.streaming_data?.formats?.find((f: any) => f.has_video && f.has_audio && f.url) ||
-      basic?.streaming_data?.formats?.[0]
-    if (!prog?.url) {
-      const { Innertube, ClientType } = await import('youtubei.js')
-      const ytIos = await Innertube.create({ client_type: ClientType.IOS })
-      basic = await ytIos.getBasicInfo(videoId).catch(() => null)
-      prog =
-        basic?.streaming_data?.formats?.find((f: any) => f.has_video && f.has_audio && f.url) ||
-        basic?.streaming_data?.formats?.[0]
-    }
-    if (prog?.url) {
-      directStreamUrl = prog.url
-    }
-  } catch (e: any) {
-    console.warn('[AutoClipper] Could not resolve progressive stream URL:', e?.message || e)
-  }
+  const directStreamUrl = resolvedStreamUrl || ''
 
   return {
     success: true,

@@ -23,6 +23,7 @@ export interface YouTubeHeatmapResult {
   thumbnail: string
   heatmap: HeatmapPoint[]
   peaks: CandidatePeak[]
+  streamUrl?: string
 }
 
 export function extractYouTubeVideoId(url: string): string | null {
@@ -183,6 +184,7 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
   let duration = 0
   let authorName = ''
   let thumbnail = fallbackThumb
+  let streamUrl = ''
   let rawMarkers: any[] = []
 
   // Tier 1: Fast & Ultra-Reliable Innertube getBasicInfo (Android -> iOS)
@@ -198,6 +200,12 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
       if (basic.basic_info.duration) duration = Number(basic.basic_info.duration)
       if (basic.basic_info.author) authorName = basic.basic_info.author
       if (basic.basic_info.thumbnail?.[0]?.url) thumbnail = basic.basic_info.thumbnail[0].url
+    }
+    const prog =
+      basic?.streaming_data?.formats?.find((f: any) => f.has_video && f.has_audio && f.url) ||
+      basic?.streaming_data?.formats?.[0]
+    if (prog?.url) {
+      streamUrl = prog.url
     }
   } catch (err: any) {
     console.warn('[AutoClipper:Tier1] Innertube getBasicInfo error:', err?.message || err)
@@ -315,6 +323,10 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
           if (d?.title && !title) title = d.title
           if (d?.lengthSeconds && duration <= 0) duration = parseInt(d.lengthSeconds, 10)
           if (d?.author && !authorName) authorName = d.author
+          if (!streamUrl && Array.isArray(d?.formatStreams)) {
+            const fProg = d.formatStreams.find((f: any) => f.url && f.container === 'mp4') || d.formatStreams[0]
+            if (fProg?.url) streamUrl = fProg.url
+          }
         }
       } catch {}
     }
@@ -360,6 +372,7 @@ export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatm
     author: authorName ? { name: authorName } : undefined,
     thumbnail,
     heatmap,
-    peaks
+    peaks,
+    streamUrl
   }
 }
