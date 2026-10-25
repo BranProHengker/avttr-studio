@@ -114,7 +114,10 @@ export default defineEventHandler(async (event) => {
 Analyze this video at these specific viewer retention peaks:
 ${JSON.stringify(peaksInfo, null, 2)}
 
-For each peak, inspect what happens in the video and audio. Return strict JSON:
+For each peak, inspect what happens in the video and audio.
+visualType must be one of: "facecam_gameplay" (webcam gamer corner present), "talking_head" (podcast/interview/speech), or "action_scene" (widescreen b-roll/movement).
+
+Output strict JSON only:
 {
   "scenes": [
     {
@@ -126,8 +129,7 @@ For each peak, inspect what happens in the video and audio. Return strict JSON:
       "spokenKeyQuotes": ["Important spoken sentence or lyric 1", "Sentence 2"]
     }
   ]
-}
-visualType must be one of: "facecam_gameplay" (webcam gamer corner present), "talking_head" (podcast/interview/speech), or "action_scene" (widescreen b-roll/movement).`
+}`
 
   const callGeminiInspector = async (key: string) => {
     try {
@@ -142,8 +144,7 @@ visualType must be one of: "facecam_gameplay" (webcam gamer corner present), "ta
           input: [
             { type: 'text', text: geminiInspectionPrompt },
             { type: 'video', uri: canonicalUrl }
-          ],
-          response_format: { type: 'json_object' }
+          ]
         },
         timeout: 25000
       })
@@ -331,7 +332,13 @@ Output strict JSON:
     let start = Math.max(0, Math.floor(Number(c.startTime) || 0))
     let end = Math.min(duration, Math.ceil(Number(c.endTime) || start + 45))
     if (end <= start) end = Math.min(duration, start + 30)
-    const clipDuration = end - start
+    if (end - start < 15 && duration >= 30) {
+      end = Math.min(duration, start + 30)
+      if (end - start < 15) {
+        start = Math.max(0, end - 30)
+      }
+    }
+    const clipDuration = Math.max(1, end - start)
 
     // Clean any unwanted emojis or markdown
     const hookClean = (c.hook || `Highlight #${idx + 1}`)

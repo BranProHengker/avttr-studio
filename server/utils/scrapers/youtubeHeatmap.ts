@@ -72,27 +72,33 @@ async function getInnertube() {
 }
 
 export function detectPeaks(points: HeatmapPoint[], totalDuration: number, maxPeaks: number = 4): CandidatePeak[] {
+  if (totalDuration <= 0) {
+    return []
+  }
+
+  const clipLengthSec = Math.min(45, Math.max(25, Math.floor(totalDuration / 4)))
+
   if (!points || points.length === 0) {
-    // Fallback: Segment video into 3-4 evenly spaced clips
-    const fallbackDuration = Math.min(45, Math.max(20, Math.floor(totalDuration / 4)))
+    // If no heatmap markers exist (new video / low views): segment video evenly
     const step = Math.floor(totalDuration / (maxPeaks + 1))
     const peaks: CandidatePeak[] = []
     for (let i = 1; i <= maxPeaks; i++) {
       const center = step * i
+      const start = Math.max(0, center - Math.floor(clipLengthSec / 2))
+      const end = Math.min(totalDuration, start + clipLengthSec)
       peaks.push({
         peakSec: center,
-        intensity: 0.8,
-        suggestedStartSec: Math.max(0, center - Math.floor(fallbackDuration / 2)),
-        suggestedEndSec: Math.min(totalDuration, center + Math.ceil(fallbackDuration / 2))
+        intensity: 0.75,
+        suggestedStartSec: Math.round(start),
+        suggestedEndSec: Math.round(end)
       })
     }
     return peaks
   }
 
-  // 1. Identify local maxima
+  // 1. Identify local maxima from heatmap
   const rawPeaks: HeatmapPoint[] = []
   
-  // Include initial hook if intensity is high
   if (points[0] && points[0].intensity >= 0.35) {
     rawPeaks.push({ timeSec: points[0].timeSec, intensity: points[0].intensity })
   }
@@ -102,7 +108,7 @@ export function detectPeaks(points: HeatmapPoint[], totalDuration: number, maxPe
     const curr = points[i].intensity
     const next = points[i + 1].intensity
 
-    if (curr > prev && curr > next && curr >= 0.2) {
+    if (curr > prev && curr > next && curr >= 0.15) {
       rawPeaks.push(points[i])
     }
   }
@@ -110,19 +116,17 @@ export function detectPeaks(points: HeatmapPoint[], totalDuration: number, maxPe
   // Sort peaks by intensity descending
   rawPeaks.sort((a, b) => b.intensity - a.intensity)
 
-  // 2. Filter peaks that are too close to each other (min 35 seconds gap)
+  // 2. Filter peaks that are too close (min 30 seconds gap)
   const selectedPeaks: CandidatePeak[] = []
-  const minGapSec = 35
-  const clipLengthSec = 45
+  const minGapSec = 30
 
   for (const p of rawPeaks) {
     const tooClose = selectedPeaks.some(sp => Math.abs(sp.peakSec - p.timeSec) < minGapSec)
     if (!tooClose) {
-      // Calculate start and end centered around peak, biased towards buildup (15s before, 30s after)
-      let start = Math.max(0, p.timeSec - 15)
+      let start = Math.max(0, p.timeSec - 12)
       let end = Math.min(totalDuration, start + clipLengthSec)
-      if (end - start < 30 && totalDuration >= 30) {
-        start = Math.max(0, end - 30)
+      if (end - start < 20 && totalDuration >= 20) {
+        start = Math.max(0, end - 20)
       }
 
       selectedPeaks.push({
@@ -136,13 +140,13 @@ export function detectPeaks(points: HeatmapPoint[], totalDuration: number, maxPe
     }
   }
 
-  // If we couldn't find enough local maxima, fill with highest remaining points
+  // If fewer than requested, fill with highest remaining points or timeline steps
   if (selectedPeaks.length < Math.min(3, maxPeaks)) {
     const sortedPoints = [...points].sort((a, b) => b.intensity - a.intensity)
     for (const p of sortedPoints) {
       const tooClose = selectedPeaks.some(sp => Math.abs(sp.peakSec - p.timeSec) < minGapSec)
       if (!tooClose) {
-        const start = Math.max(0, p.timeSec - 15)
+        const start = Math.max(0, p.timeSec - 12)
         const end = Math.min(totalDuration, start + clipLengthSec)
         selectedPeaks.push({
           peakSec: p.timeSec,
@@ -155,25 +159,101 @@ export function detectPeaks(points: HeatmapPoint[], totalDuration: number, maxPe
     }
   }
 
-  // Sort chronologically by start time for natural flow
   selectedPeaks.sort((a, b) => a.suggestedStartSec - b.suggestedStartSec)
   return selectedPeaks
 }
 
 export async function fetchYouTubeHeatmap(videoId: string): Promise<YouTubeHeatmapResult> {
-  const yt = await getInnertube()
-  const info = await yt.getInfo(videoId)
+  const fallbackThumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+  let info: any = null
 
-  const title = info.basic_info?.title || 'YouTube Video'
-  const duration = info.basic_info?.duration || 0
-  const authorName = info.basic_info?.author || ''
-  const thumbnail = info.basic_info?.thumbnail?.[0]?.url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+  // 1. Try Innertube
+  try {
+    const yt = await getInnertube()
+    info = await yt.getInfo(videoId)
+  } catch (err: any) {
+    console.warn('[AutoClipper] Innertube getInfo error:', err?.message || err)
+  }
 
-  const rawMarkers = info.heat_map?.heat_markers || []
-  const heatmap: HeatmapPoint[] = rawMarkers.map((m: any) => ({
+  let title = info?.basic_info?.title || ''
+  let duration = Number(info?.basic_info?.duration) || 0
+  let authorName = info?.basic_info?.author || ''
+  const thumbnail = info?.basic_info?.thumbnail?.[0]?.url || fallbackThumb
+
+  // 2. If title or duration missing, fetch oEmbed metadata
+  if (!title || duration <= 0) {
+    try {
+      const oembedRes = await fetch(
+        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+        { signal: AbortSignal.timeout(4000) }
+      )
+      if (oembedRes.ok) {
+        const oembed = await oembedRes.json()
+        if (oembed.title) title = oembed.title
+        if (oembed.author_name && !authorName) authorName = oembed.author_name
+      }
+    } catch {}
+  }
+
+  // 3. If duration still missing, scrape YouTube watch page
+  if (duration <= 0) {
+    try {
+      const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9'
+        },
+        signal: AbortSignal.timeout(5000)
+      })
+      if (pageRes.ok) {
+        const html = await pageRes.text()
+        if (html.includes('Video tidak tersedia') || html.includes('This video is unavailable') || html.includes('Private video')) {
+          throw new Error('Video YouTube ini tidak tersedia atau bersifat privat. Pastikan link video dapat diputar secara publik.')
+        }
+
+        const durMatch = html.match(/\"lengthSeconds\":\"(\d+)\"/)
+        if (durMatch && durMatch[1]) {
+          duration = parseInt(durMatch[1], 10)
+        }
+        if (!title) {
+          const titleMatch = html.match(/<title>(.*?)<\/title>/)
+          if (titleMatch && titleMatch[1]) {
+            title = titleMatch[1].replace('- YouTube', '').trim()
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err?.message?.includes('tidak tersedia')) throw err
+    }
+  }
+
+  // 4. Strict Validation: Video MUST have valid duration and title
+  if (!title || duration <= 0) {
+    throw new Error('Video YouTube ini tidak tersedia, bersifat privat, atau dibatasi usia sehingga tidak dapat dianalisis.')
+  }
+
+  // 5. Extract Heatmap markers
+  const rawMarkers = info?.heat_map?.heat_markers || []
+  let heatmap: HeatmapPoint[] = rawMarkers.map((m: any) => ({
     timeSec: Math.round(m.time_range_start_millis / 1000),
     intensity: m.heat_marker_intensity_score_normalized || 0
   }))
+
+  // If no heatmap markers from YouTube, generate smooth synthetic curve for visualization
+  if (heatmap.length === 0 && duration > 0) {
+    const pointsCount = 40
+    const step = duration / pointsCount
+    for (let i = 0; i <= pointsCount; i++) {
+      const t = Math.round(i * step)
+      // Natural retention curve (higher at start, drops, small peaks at middle)
+      const base = Math.max(0.2, 1 - (t / duration) * 0.6)
+      const bump = Math.sin((t / duration) * Math.PI * 3) * 0.15
+      heatmap.push({
+        timeSec: t,
+        intensity: Math.min(1, Math.max(0.1, base + bump))
+      })
+    }
+  }
 
   const peaks = detectPeaks(heatmap, duration, 4)
 

@@ -327,29 +327,16 @@ ${resultData.value.clips.map((c, i) => `${i + 1}. [${c.viralScore}/100] ${c.hook
     </nav>
 
     <!-- Header Section (DESIGN.md Section 14) -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-          AutoClipper
-        </h1>
-        <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-          {{ locale === 'id'
-            ? 'Deteksi otomatis sorotan viral dari YouTube Replay Heatmap & ubah ke format vertikal 9:16 Shorts/TikTok dengan AI.'
-            : 'Automatically extract viral highlights from YouTube Replay Heatmaps & convert to vertical 9:16 Shorts/TikTok with AI.'
-          }}
-        </p>
-      </div>
-
-      <!-- Action badges / engine status -->
-      <div class="flex items-center gap-2">
-        <Badge variant="badge" class="font-mono text-[11px] px-2.5 py-1">
-          <Sparkles class="w-3.5 h-3.5 mr-1 text-amber-500" />
-          Heatmap + Gemini 2.5
-        </Badge>
-        <Badge variant="outline" class="font-mono text-[11px] px-2.5 py-1 text-[var(--text-tertiary)]">
-          9:16 Smart Framing
-        </Badge>
-      </div>
+    <div class="space-y-1">
+      <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+        AutoClipper
+      </h1>
+      <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+        {{ locale === 'id'
+          ? 'Deteksi otomatis sorotan viral dari YouTube Replay Heatmap & ubah ke format vertikal 9:16 Shorts/TikTok dengan AI.'
+          : 'Automatically extract viral highlights from YouTube Replay Heatmaps & convert to vertical 9:16 Shorts/TikTok with AI.'
+        }}
+      </p>
     </div>
 
     <!-- Notice Row (Unboxed, DESIGN.md Section 16) -->
