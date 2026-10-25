@@ -19,6 +19,15 @@ export interface AutoClipItem {
   }>
 }
 
+interface SceneInspection {
+  peakSec: number
+  exactStartSec: number
+  exactEndSec: number
+  visualType: 'facecam_gameplay' | 'talking_head' | 'action_scene'
+  sceneSummary: string
+  spokenKeyQuotes?: string[]
+}
+
 function formatSec(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = Math.floor(seconds % 60)
@@ -26,7 +35,7 @@ function formatSec(seconds: number): string {
 }
 
 export default defineEventHandler(async (event) => {
-  // 1. Rate limiting (20 requests/minute per client IP)
+  // 1. IP Rate Limiting (20 requests/minute per client IP)
   const clientIp = getRequestIP(event, { xForwardedFor: true }) || 'unknown'
   const rate = checkRateLimit(`autoclip:${clientIp}`, 20, 60)
   if (!rate.allowed) {
@@ -64,12 +73,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 2. Fetch Video Details & Engagement Heatmap
+  // -------------------------------------------------------------
+  // STAGE 1: Audience Engagement Heatmap (Retention Peaks Math)
+  // -------------------------------------------------------------
   let heatmapData
   try {
     heatmapData = await fetchYouTubeHeatmap(videoId)
   } catch (err: any) {
-    console.error('[AutoClipper] Error fetching YouTube heatmap:', err?.message || err)
+    console.error('[AutoClipper:Stage1] Error fetching heatmap:', err?.message || err)
     throw createError({
       statusCode: 502,
       statusMessage: `Gagal memuat data video YouTube: ${err?.message || 'Video dibatasi atau tidak dapat diakses'}`
@@ -79,90 +90,46 @@ export default defineEventHandler(async (event) => {
   const { title, duration, author, thumbnail, heatmap, peaks } = heatmapData
   const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`
 
-  // 3. AI Refinement Engine
   const geminiKey = process.env.GEMINI_API_KEY || ''
   const geminiBackupKey = process.env.GEMINI_API_KEY_BACKUP || ''
   const groqKey = process.env.GROQ_API_KEY || ''
 
-  const peaksEvidence = peaks.map((p, idx) => ({
-    clipNumber: idx + 1,
-    detectedPeakAt: formatSec(p.peakSec),
-    peakIntensityScore: `${Math.round(p.intensity * 100)}%`,
-    suggestedWindow: `${formatSec(p.suggestedStartSec)} - ${formatSec(p.suggestedEndSec)}`
+  const peaksInfo = peaks.map((p, idx) => ({
+    id: idx + 1,
+    peakAt: formatSec(p.peakSec),
+    peakSec: p.peakSec,
+    suggestedStartSec: p.suggestedStartSec,
+    suggestedEndSec: p.suggestedEndSec,
+    intensity: `${Math.round(p.intensity * 100)}%`
   }))
 
-  const systemInstruction = isIndo
-    ? `Kamu adalah AI Video Editor profesional spesialis Shorts, Reels, dan TikTok.
-Tugasmu adalah menganalisis momen viral berdasarkan Engagement Heatmap (kurva bagian yang paling sering diputar ulang oleh penonton YouTube).
-Aturan:
-1. Hasilkan tepat ${peaks.length || 3} klip vertikal berdurasi 30-55 detik.
-2. Setiap klip harus punya:
-   - hook: judul hook tajam khas medsos (maks 8 kata, huruf kapital di awal, punchy, DILARANG EMOJI).
-   - summary: 1 kalimat deskripsi inti adegan (maks 15 kata).
-   - viralScore: angka integer antara 85 sampai 99 berdasarkan daya tarik momen.
-   - startTime: waktu mulai dalam detik (integer).
-   - endTime: waktu selesai dalam detik (integer).
-   - framing: 'blur_padded' (default untuk podcast/wawancara), 'facecam_gameplay' (jika ada webcam game), atau 'pan_center' (jika aksi di tengah).
-   - subtitles: 2 sampai 4 baris teks ucapan/momen penting dengan timestamp start dan end.
-3. Output WAJIB berupa JSON murni tanpa markdown wrapper:
+  let inspectedScenes: SceneInspection[] = []
+  let stage2Engine = 'skipped'
+
+  // -------------------------------------------------------------
+  // STAGE 2: Video & Audio Context Inspector (Google Gemini)
+  // Role: "Eyes & Ears" (Inspect scenes at audience peaks, boundary alignment)
+  // -------------------------------------------------------------
+  const geminiInspectionPrompt = `You are a precision video scene inspector.
+Analyze this video at these specific viewer retention peaks:
+${JSON.stringify(peaksInfo, null, 2)}
+
+For each peak, inspect what happens in the video and audio. Return strict JSON:
 {
-  "clips": [
+  "scenes": [
     {
-      "id": "clip_1",
-      "hook": "Judul Hook Menarik",
-      "summary": "Ringkasan adegan di klip ini",
-      "viralScore": 94,
-      "startTime": 12,
-      "endTime": 48,
-      "framing": "blur_padded",
-      "subtitles": [
-        { "start": 12, "end": 18, "text": "Kalimat penting pembuka" }
-      ]
+      "peakSec": 45,
+      "exactStartSec": 35,
+      "exactEndSec": 75,
+      "visualType": "talking_head",
+      "sceneSummary": "Factual 1-sentence description of what happens or what is discussed.",
+      "spokenKeyQuotes": ["Important spoken sentence or lyric 1", "Sentence 2"]
     }
   ]
-}`
-    : `You are a professional AI Video Editor specializing in viral Shorts, Reels, and TikTok clips.
-Your task is to identify and refine viral clip candidates based on YouTube's Engagement Heatmap ('Most Replayed' audience peaks).
-Rules:
-1. Produce exactly ${peaks.length || 3} vertical clips (30-55 seconds each).
-2. For each clip include:
-   - hook: punchy social media headline (max 8 words, NO EMOJIS).
-   - summary: 1 clear sentence describing what happens (max 15 words).
-   - viralScore: integer between 85 and 99.
-   - startTime: integer seconds.
-   - endTime: integer seconds.
-   - framing: 'blur_padded' | 'facecam_gameplay' | 'pan_center'.
-   - subtitles: 2 to 4 timed caption lines.
-3. Output MUST be strict JSON:
-{
-  "clips": [
-    {
-      "id": "clip_1",
-      "hook": "Catchy Hook Headline",
-      "summary": "Description of the highlight",
-      "viralScore": 95,
-      "startTime": 12,
-      "endTime": 48,
-      "framing": "blur_padded",
-      "subtitles": [
-        { "start": 12, "end": 18, "text": "Key spoken phrase" }
-      ]
-    }
-  ]
-}`
+}
+visualType must be one of: "facecam_gameplay" (webcam gamer corner present), "talking_head" (podcast/interview/speech), or "action_scene" (widescreen b-roll/movement).`
 
-  const userPrompt = `Video Title: "${title}"
-Total Duration: ${formatSec(duration)} (${duration}s)
-YouTube Viewer Replay Heatmap Peaks:
-${JSON.stringify(peaksEvidence, null, 2)}
-
-Refine each peak into a viral vertical clip.`
-
-  let generatedClips: AutoClipItem[] = []
-  let usedEngine = 'algorithmic'
-
-  // Strategy 1: Google Gemini Interactions API (natively inspects video & audio)
-  const tryGemini = async (key: string) => {
+  const callGeminiInspector = async (key: string) => {
     try {
       const res = await ofetch<any>('https://generativelanguage.googleapis.com/v1beta/interactions', {
         method: 'POST',
@@ -173,7 +140,7 @@ Refine each peak into a viral vertical clip.`
         body: {
           model: 'gemini-2.5-flash',
           input: [
-            { type: 'text', text: `${systemInstruction}\n\n${userPrompt}` },
+            { type: 'text', text: geminiInspectionPrompt },
             { type: 'video', uri: canonicalUrl }
           ],
           response_format: { type: 'json_object' }
@@ -186,27 +153,111 @@ Refine each peak into a viral vertical clip.`
       if (text) {
         const cleaned = text.replace(/```json\s*|\s*```/g, '').trim()
         const parsed = JSON.parse(cleaned)
-        if (Array.isArray(parsed.clips) && parsed.clips.length > 0) {
-          generatedClips = parsed.clips
-          usedEngine = 'gemini-2.5-flash'
+        if (Array.isArray(parsed.scenes) && parsed.scenes.length > 0) {
+          inspectedScenes = parsed.scenes
+          stage2Engine = 'gemini-2.5-flash (Visual & Audio Inspector)'
           return true
         }
       }
     } catch (err: any) {
-      console.warn('[AutoClipper] Gemini Interactions API error:', err?.message || err)
+      console.warn('[AutoClipper:Stage2] Gemini inspection error:', err?.message || err)
     }
     return false
   }
 
   if (geminiKey) {
-    await tryGemini(geminiKey)
+    await callGeminiInspector(geminiKey)
   }
-  if (!generatedClips.length && geminiBackupKey) {
-    await tryGemini(geminiBackupKey)
+  if (!inspectedScenes.length && geminiBackupKey) {
+    await callGeminiInspector(geminiBackupKey)
   }
 
-  // Strategy 2: Groq Qwen Fallback
-  if (!generatedClips.length && groqKey) {
+  // Fallback for Stage 2 if Gemini was unavailable: construct baseline scene contexts from Heatmap
+  if (!inspectedScenes.length) {
+    stage2Engine = 'heatmap-heuristic (Baseline Inspector)'
+    inspectedScenes = peaks.map((p) => ({
+      peakSec: p.peakSec,
+      exactStartSec: p.suggestedStartSec,
+      exactEndSec: p.suggestedEndSec,
+      visualType: 'talking_head',
+      sceneSummary: `Audience retention peak around ${formatSec(p.peakSec)} in "${title}".`,
+      spokenKeyQuotes: [title]
+    }))
+  }
+
+  // -------------------------------------------------------------
+  // STAGE 3: Viral Copywriter & Subtitle Crafter (Groq Qwen LPU)
+  // Role: "Social Media Editor & Copywriter" (Craft punchy hooks, virality score, SRT cues)
+  // -------------------------------------------------------------
+  let generatedClips: AutoClipItem[] = []
+  let stage3Engine = 'fallback'
+
+  const copywriterPrompt = isIndo
+    ? `Kamu adalah editor medsos & copywriter viral kelas dunia untuk TikTok, Reels, dan Shorts.
+Berdasarkan hasil inspeksi adegan video berikut:
+Judul Video: "${title}"
+Durasi Total: ${formatSec(duration)}
+Hasil Inspeksi Adegan:
+${JSON.stringify(inspectedScenes, null, 2)}
+
+Buat ${inspectedScenes.length} klip vertikal 9:16 yang siap viral.
+Aturan:
+1. hook: judul hook tajam khas medsos (maks 8 kata, huruf kapital di awal, DILARANG EMOJI).
+2. summary: 1 kalimat penjelasan isi klip (maks 15 kata).
+3. viralScore: angka integer 85-99 berdasarkan daya tarik.
+4. framing: jika visualType "facecam_gameplay" gunakan "facecam_gameplay", jika "action_scene" gunakan "pan_center", selain itu gunakan "blur_padded".
+5. subtitles: 2-3 baris kutipan ucapan dengan timestamp start dan end.
+Output WAJIB berupa JSON murni:
+{
+  "clips": [
+    {
+      "id": "clip_1",
+      "hook": "Judul Hook Menarik",
+      "summary": "Ringkasan adegan di klip ini",
+      "viralScore": 96,
+      "startTime": 30,
+      "endTime": 75,
+      "framing": "blur_padded",
+      "subtitles": [
+        { "start": 30, "end": 45, "text": "Kutipan ucapan utama" }
+      ]
+    }
+  ]
+}`
+    : `You are a world-class social media viral copywriter for TikTok, Reels, and YouTube Shorts.
+Based on the following inspected scene data:
+Video Title: "${title}"
+Total Duration: ${formatSec(duration)}
+Inspected Scene Data:
+${JSON.stringify(inspectedScenes, null, 2)}
+
+Create ${inspectedScenes.length} vertical 9:16 viral clip packages.
+Rules:
+1. hook: punchy social media headline (max 8 words, capitalize first letter, NO EMOJIS).
+2. summary: 1 clear sentence describing what happens (max 15 words).
+3. viralScore: integer 85-99 based on virality.
+4. framing: if visualType is "facecam_gameplay" use "facecam_gameplay", if "action_scene" use "pan_center", otherwise "blur_padded".
+5. subtitles: 2-3 timed subtitle lines with start and end seconds.
+Output strict JSON:
+{
+  "clips": [
+    {
+      "id": "clip_1",
+      "hook": "Catchy Hook Title",
+      "summary": "Scene highlight summary",
+      "viralScore": 96,
+      "startTime": 30,
+      "endTime": 75,
+      "framing": "blur_padded",
+      "subtitles": [
+        { "start": 30, "end": 45, "text": "Key spoken phrase" }
+      ]
+    }
+  ]
+}`
+
+  // Call Groq Qwen (Stage 3 Primary Copywriter)
+  if (groqKey) {
     try {
       const groqRes = await ofetch<any>('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -217,14 +268,14 @@ Refine each peak into a viral vertical clip.`
         body: {
           model: 'qwen/qwen3.8-27b',
           messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: userPrompt }
+            { role: 'system', content: 'You are an expert viral video copywriter. Output strict JSON only.' },
+            { role: 'user', content: copywriterPrompt }
           ],
           temperature: 0.6,
           max_completion_tokens: 1500,
           response_format: { type: 'json_object' }
         },
-        timeout: 15000
+        timeout: 12000
       })
 
       const text = groqRes?.choices?.[0]?.message?.content
@@ -233,64 +284,77 @@ Refine each peak into a viral vertical clip.`
         const parsed = JSON.parse(cleaned)
         if (Array.isArray(parsed.clips) && parsed.clips.length > 0) {
           generatedClips = parsed.clips
-          usedEngine = 'qwen/qwen3.8-27b (Groq)'
+          stage3Engine = 'qwen/qwen3.8-27b (Groq LPUs)'
         }
       }
     } catch (err: any) {
-      console.warn('[AutoClipper] Groq fallback error:', err?.message || err)
+      console.warn('[AutoClipper:Stage3] Groq copywriter error:', err?.message || err)
     }
   }
 
-  // Strategy 3: Algorithmic Fallback from Real Heatmap Peaks
+  // Fallback for Stage 3: Direct construction from Stage 2 Scene Inspection
   if (!generatedClips.length) {
-    usedEngine = 'heatmap-heuristic'
-    generatedClips = peaks.map((p, idx) => {
+    stage3Engine = 'heuristic-formatter'
+    generatedClips = inspectedScenes.map((scene, idx) => {
+      const start = Math.max(0, scene.exactStartSec)
+      const end = Math.min(duration, scene.exactEndSec)
       const hookTitle = isIndo
-        ? `Sorotan Viral #${idx + 1} (${formatSec(p.peakSec)})`
-        : `Viral Highlight #${idx + 1} (${formatSec(p.peakSec)})`
-      const summaryText = isIndo
-        ? `Puncak interaksi penonton terbanyak pada menit ${formatSec(p.peakSec)}.`
-        : `Highest viewer rewind peak detected around ${formatSec(p.peakSec)}.`
+        ? `Sorotan Viral #${idx + 1} (${formatSec(scene.peakSec)})`
+        : `Viral Highlight #${idx + 1} (${formatSec(scene.peakSec)})`
 
       return {
         id: `clip_${idx + 1}`,
         hook: hookTitle,
-        summary: summaryText,
-        viralScore: Math.min(98, Math.max(85, Math.round(85 + p.intensity * 13))),
-        startTime: p.suggestedStartSec,
-        endTime: p.suggestedEndSec,
-        duration: p.suggestedEndSec - p.suggestedStartSec,
-        framing: 'blur_padded' as const,
-        subtitles: [
-          {
-            start: p.suggestedStartSec,
-            end: p.suggestedEndSec,
-            text: title
-          }
-        ]
+        summary: scene.sceneSummary,
+        viralScore: Math.min(98, Math.max(86, 90 + idx)),
+        startTime: start,
+        endTime: end,
+        duration: end - start,
+        framing: scene.visualType === 'facecam_gameplay'
+          ? 'facecam_gameplay'
+          : scene.visualType === 'action_scene'
+            ? 'pan_center'
+            : 'blur_padded',
+        subtitles: (scene.spokenKeyQuotes || [title]).map(q => ({
+          start,
+          end,
+          text: q
+        }))
       }
     })
   }
 
-  // Sanitize clip timestamps to guarantee valid bounds
+  // -------------------------------------------------------------
+  // STAGE 4: Boundary Sanitization & Quality Verification
+  // -------------------------------------------------------------
   const validatedClips: AutoClipItem[] = generatedClips.map((c, idx) => {
     let start = Math.max(0, Math.floor(Number(c.startTime) || 0))
     let end = Math.min(duration, Math.ceil(Number(c.endTime) || start + 45))
     if (end <= start) end = Math.min(duration, start + 30)
     const clipDuration = end - start
 
+    // Clean any unwanted emojis or markdown
+    const hookClean = (c.hook || `Highlight #${idx + 1}`)
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '')
+      .replace(/[*_~`]/g, '')
+      .trim()
+
     return {
       id: c.id || `clip_${idx + 1}`,
-      hook: (c.hook || `Highlight #${idx + 1}`).replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim(),
+      hook: hookClean || `Highlight #${idx + 1}`,
       summary: c.summary || `Scene highlight from ${formatSec(start)} to ${formatSec(end)}`,
       viralScore: Math.min(99, Math.max(80, Math.round(Number(c.viralScore) || 90))),
       startTime: start,
       endTime: end,
       duration: clipDuration,
       framing: ['blur_padded', 'facecam_gameplay', 'pan_center'].includes(c.framing) ? c.framing : 'blur_padded',
-      subtitles: Array.isArray(c.subtitles) ? c.subtitles : []
+      subtitles: Array.isArray(c.subtitles) && c.subtitles.length > 0
+        ? c.subtitles
+        : [{ start, end, text: hookClean }]
     }
   })
+
+  const orchestratedEngineLabel = `${stage2Engine} + ${stage3Engine}`
 
   return {
     success: true,
@@ -301,6 +365,6 @@ Refine each peak into a viral vertical clip.`
     thumbnail,
     heatmap,
     clips: validatedClips,
-    engine: usedEngine
+    engine: orchestratedEngineLabel
   }
 })
