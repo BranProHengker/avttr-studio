@@ -100,7 +100,6 @@ const isCategoryActive = (category: string) => {
       '/tools/brat-generator',
       '/tools/pdf-tools',
       '/tools/doc-to-markdown',
-      '/tools/auto-clipper',
       '/tools/video-to-gif',
       '/tools/video-resizer',
       '/tools/teleprompter',
@@ -190,7 +189,6 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/tools/brat-generator', label: 'Brat Generator', iconComponent: Type },
       { path: '/tools/pdf-tools', label: 'PDF Studio', iconComponent: FileText },
       { path: '/tools/doc-to-markdown', label: 'Doc to Markdown', brandName: 'doc-to-markdown' },
-      { path: '/tools/auto-clipper', label: 'AutoClipper', brandName: 'auto-clipper' },
       { path: '/tools/video-to-gif', label: 'Video to GIF', brandName: 'video-to-gif' },
       { path: '/tools/video-resizer', label: 'Video Resizer & Trimmer', iconComponent: Video },
       { path: '/tools/teleprompter', label: 'Teleprompter Studio', brandName: 'teleprompter' },
@@ -938,17 +936,6 @@ const activeRadialData = computed(() => {
                 "
               >
                 Audio Extractor & Trimmer
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/auto-clipper"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/auto-clipper')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                AutoClipper
               </NuxtLink>
               <NuxtLink
                 to="/tools/video-to-gif"

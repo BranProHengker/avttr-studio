@@ -125,24 +125,6 @@ const normalized = computed(() => props.name.toLowerCase())
       <path d="M15 12h2.5"/>
     </svg>
 
-    <!-- AutoClipper Vector -->
-    <svg
-      v-else-if="normalized === 'auto-clipper' || normalized === 'autoclip'"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      class="w-full h-full text-amber-500"
-    >
-      <rect x="5" y="2" width="14" height="20" rx="3" />
-      <circle cx="9" cy="14" r="2" />
-      <circle cx="9" cy="8" r="2" />
-      <path d="m11 9 4 3-4 3" />
-      <path d="M15 5h.01" />
-    </svg>
-
     <!-- Video Resizer & Trimmer Vector -->
     <svg
       v-else-if="normalized === 'video-resizer' || normalized === 'video-compressor'"
