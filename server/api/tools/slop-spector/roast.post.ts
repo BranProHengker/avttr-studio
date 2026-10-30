@@ -22,11 +22,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Site name is required' })
   }
 
-  const groqKey = process.env.GROQ_API_KEY || (useRuntimeConfig().groqApiKey as string) || ''
+  const primaryGroqKey = process.env.GROQ_API_KEY || (useRuntimeConfig().groqApiKey as string) || ''
+  const backupGroqKey = process.env.GROQ_API_KEY_BACKUP || (useRuntimeConfig().groqApiKeyBackup as string) || ''
   const primaryGeminiKey = process.env.GEMINI_API_KEY || ''
   const backupGeminiKey = process.env.GEMINI_API_KEY_BACKUP || ''
 
-  if (!groqKey && !primaryGeminiKey && !backupGeminiKey) {
+  if (!primaryGroqKey && !backupGroqKey && !primaryGeminiKey && !backupGeminiKey) {
     throw createError({
       statusCode: 500,
       statusMessage: 'AI API keys (GROQ_API_KEY or GEMINI_API_KEY) are not configured on server'
@@ -99,35 +100,49 @@ Output MUST be strict JSON matching this schema:
   let usedModel = 'qwen/qwen3.8-27b (Groq)'
   let parsedResult: any = null
 
-  // 1. Primary Engine: Qwen 3.8-27B via Groq LPUs
-  if (groqKey) {
-    try {
-      const groqRes = await ofetch<any>('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${groqKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: {
-          model: 'qwen/qwen3.8-27b',
-          messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: userPrompt }
-          ],
-          temperature: 0.7,
-          max_completion_tokens: 1024,
-          response_format: { type: 'json_object' }
-        },
-        timeout: 15000
-      })
+  const callGroq = async (apiKey: string) => {
+    const groqRes = await ofetch<any>('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: {
+        model: 'qwen/qwen3.8-27b',
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_completion_tokens: 1024,
+        response_format: { type: 'json_object' }
+      },
+      timeout: 15000
+    })
 
-      const content = groqRes?.choices?.[0]?.message?.content
-      if (content) {
-        parsedResult = JSON.parse(content)
-        usedModel = 'qwen/qwen3.8-27b (Groq)'
-      }
+    const content = groqRes?.choices?.[0]?.message?.content
+    if (content) {
+      return JSON.parse(content)
+    }
+    return null
+  }
+
+  // 1. Primary Engine: Qwen 3.8-27B via Groq LPUs (with auto-fallback to backup Groq key)
+  if (primaryGroqKey) {
+    try {
+      parsedResult = await callGroq(primaryGroqKey)
+      if (parsedResult) usedModel = 'qwen/qwen3.8-27b (Groq Primary)'
     } catch (err: any) {
-      console.warn('[SlopSpector] Groq Qwen error, falling back to Gemini:', err?.message || err)
+      console.warn('[SlopSpector] Groq primary key failed, attempting backup key:', err?.message || err)
+    }
+  }
+
+  if (!parsedResult && backupGroqKey) {
+    try {
+      parsedResult = await callGroq(backupGroqKey)
+      if (parsedResult) usedModel = 'qwen/qwen3.8-27b (Groq Backup)'
+    } catch (err: any) {
+      console.warn('[SlopSpector] Groq backup key failed, falling back to Gemini:', err?.message || err)
     }
   }
 

@@ -23,6 +23,8 @@ import type { BypassResult } from '~/server/utils/bypasser'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
+import MinimalLoader from '~/components/ui/MinimalLoader.vue'
 
 const toast = useToast()
 
@@ -53,7 +55,8 @@ const pasteFromClipboard = async () => {
   }
 }
 
-const handleBypass = async () => {
+const handleBypass = async (overrideUrl?: string) => {
+  if (overrideUrl) inputUrl.value = overrideUrl
   const raw = inputUrl.value.trim()
   if (!raw) {
     error.value = 'Please enter a valid URL to bypass.'
@@ -143,61 +146,29 @@ const getStatusBadgeVariant = (status: number) => {
       </p>
     </div>
 
-    <!-- Search Omnibar (DESIGN.md Section 11 Architecture) -->
-    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-      <div class="relative flex-1 w-full flex items-center">
-        <!-- Leading Icon -->
-        <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
-          <Link2 class="w-4 h-4" />
-        </div>
+    <!-- Search Omnibar with URL History Popover -->
+    <UrlOmnibar
+      id="bypass-url-input"
+      v-model="inputUrl"
+      :loading="loading"
+      storage-key="avttr_link_bypasser_history"
+      placeholder="https://bit.ly/xyz atau https://s.id/..."
+      :submit-text="loading ? 'Tracing...' : 'Bypass Link'"
+      :submit-icon="Sparkles"
+      @submit="handleBypass"
+      @clear="clearInput"
+    >
+      <template #leading>
+        <Link2 class="w-4 h-4" />
+      </template>
+    </UrlOmnibar>
 
-        <input
-          id="bypass-url-input"
-          v-model="inputUrl"
-          type="url"
-          placeholder="https://bit.ly/xyz atau https://s.id/..."
-          class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
-          :disabled="loading"
-          @keydown.enter="handleBypass"
-        />
-
-        <!-- Trailing Micro-Actions -->
-        <div class="absolute right-2.5 flex items-center gap-1">
-          <button
-            v-if="inputUrl"
-            type="button"
-            class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
-            title="Clear"
-            @click="clearInput"
-          >
-            <X class="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
-            title="Paste"
-            @click="pasteFromClipboard"
-          >
-            <Clipboard class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Standalone CTA Action Button -->
-      <Button
-        id="bypass-submit-btn"
-        variant="primary"
-        size="default"
-        type="button"
-        class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
-        :disabled="loading || !inputUrl.trim()"
-        @click="handleBypass"
-      >
-        <Loader2 v-if="loading" class="w-4 h-4 animate-spin mr-1.5" />
-        <Sparkles v-else class="w-4 h-4 mr-1.5" />
-        <span>{{ loading ? 'Tracing...' : 'Bypass Link' }}</span>
-      </Button>
-    </div>
+    <!-- Minimalist Unboxed Loading State -->
+    <MinimalLoader
+      v-if="loading"
+      text="Tracing Redirect Hops..."
+      subtext="Resolving shortlinks, stripping tracking queries, and querying destination servers..."
+    />
 
     <!-- Error Box -->
     <div

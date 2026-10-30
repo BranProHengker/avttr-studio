@@ -1230,7 +1230,7 @@ function generateShadcnCss(dominantBg: ColorToken, dominantFg: ColorToken, accen
   return `:root {\n  --background: ${lightBg};\n  --foreground: ${lightFg};\n  --card: ${lightCard};\n  --card-foreground: ${lightFg};\n  --primary: ${accent.hex};\n  --primary-foreground: #ffffff;\n  --border: #e5e5e5;\n  --radius: 0.5rem;\n}\n\n.dark {\n  --background: ${darkBg};\n  --foreground: ${darkFg};\n  --card: #18181b;\n  --card-foreground: ${darkFg};\n  --primary: ${accent.hex};\n  --primary-foreground: #18181b;\n  --border: #27272a;\n  --radius: 0.5rem;\n}`
 }
 
-export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string = ''): Promise<ExtractedDesignData> {
+export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string = '', groqApiKeyBackup: string = ''): Promise<ExtractedDesignData> {
   let parsedUrl: URL
   try {
     let clean = targetUrl.trim()
@@ -1512,6 +1512,24 @@ export async function extractDesignFromUrl(targetUrl: string, groqApiKey: string
   let qwenData: GroqSynthesisResult | null = null
   if (groqApiKey) {
     const { result, error } = await synthesizeWithQwen(hostname, targetUrl, semanticRoles, fontsList, radii, groqApiKey)
+    if (result) {
+      qwenData = result
+      aiUsed = true
+    } else if (groqApiKeyBackup) {
+      const backupRes = await synthesizeWithQwen(hostname, targetUrl, semanticRoles, fontsList, radii, groqApiKeyBackup)
+      if (backupRes.result) {
+        qwenData = backupRes.result
+        aiUsed = true
+      } else {
+        aiFallback = true
+        aiError = backupRes.error || error
+      }
+    } else {
+      aiFallback = true
+      aiError = error
+    }
+  } else if (groqApiKeyBackup) {
+    const { result, error } = await synthesizeWithQwen(hostname, targetUrl, semanticRoles, fontsList, radii, groqApiKeyBackup)
     if (result) {
       qwenData = result
       aiUsed = true

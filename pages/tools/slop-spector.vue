@@ -22,6 +22,8 @@ import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 import Card from '~/components/ui/Card.vue'
 import LoadingBreadcrumb from '~/components/ui/LoadingBreadcrumb.vue'
+import MinimalLoader from '~/components/ui/MinimalLoader.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
 
 const toast = useToast()
 const { locale } = useI18n()
@@ -250,7 +252,11 @@ const scoreLevel = computed(() => {
 })
 
 // Core URL Inspection Handler
-const runInspection = async () => {
+const runInspection = async (overrideUrl?: string) => {
+  if (overrideUrl) {
+    inputUrl.value = overrideUrl
+  }
+
   if (!inputUrl.value.trim()) {
     toast.error(
       locale.value === 'id' ? 'URL Kosong' : 'Empty URL',
@@ -642,57 +648,19 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
       </button>
     </div>
 
-    <!-- URL Omnibox (DESIGN.md Section 11 Architecture - Clean & Focused) -->
+    <!-- URL Omnibox (Reusable UrlOmnibar Component) -->
     <div v-if="activeMode === 'url'" class="w-full">
-      <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-        <div class="relative flex-1 w-full flex items-center">
-          <Globe class="absolute left-3.5 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
-          <input
-            id="slop-url-input"
-            v-model="inputUrl"
-            type="url"
-            :placeholder="locale === 'id' ? 'https://example.com atau startup.ai' : 'https://example.com or startup.ai'"
-            class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
-            :disabled="isAnalyzing"
-            @keydown.enter="runInspection"
-          />
-          <div class="absolute right-2.5 flex items-center gap-1">
-            <button
-              v-if="inputUrl"
-              id="btn-clear-url"
-              type="button"
-              class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-md transition-colors cursor-pointer"
-              title="Clear"
-              @click="handleClear"
-            >
-              <X class="w-4 h-4" />
-            </button>
-            <button
-              v-else
-              id="btn-paste-url"
-              type="button"
-              class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-md transition-colors cursor-pointer"
-              title="Paste from clipboard"
-              @click="handlePaste"
-            >
-              <Clipboard class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <Button
-          id="btn-submit-slop"
-          variant="primary"
-          size="default"
-          class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
-          :loading="isAnalyzing"
-          :disabled="isAnalyzing || !inputUrl.trim()"
-          @click="runInspection"
-        >
-          <ScanSearch class="w-4 h-4 mr-2" />
-          {{ locale === 'id' ? 'Audit AI Slop' : 'Inspect Slop' }}
-        </Button>
-      </div>
+      <UrlOmnibar
+        id="slop-url-input"
+        v-model="inputUrl"
+        :loading="isAnalyzing"
+        storage-key="avttr_slop_url_history"
+        :placeholder="locale === 'id' ? 'https://example.com atau startup.ai' : 'https://example.com or startup.ai'"
+        :submit-text="locale === 'id' ? 'Audit AI Slop' : 'Inspect Slop'"
+        :submit-icon="ScanSearch"
+        @submit="runInspection"
+        @clear="clearScreenshot"
+      />
     </div>
 
     <!-- Screenshot Mode Container -->
@@ -820,32 +788,11 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
       </div>
     </div>
 
-    <!-- Active Scanning Status Bar (Features LoadingBreadcrumb Animation) -->
-    <Card
+    <!-- Minimalist Unboxed Loading State (Foto 2) -->
+    <MinimalLoader
       v-if="isAnalyzing"
-      :hoverable="false"
-      class="p-5 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4 transition-all"
-    >
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-xs">
-        <LoadingBreadcrumb
-          :text="currentLogText"
-          :size="20"
-          :stroke-width="2.2"
-        />
-        <span class="font-mono text-[11px] text-[var(--text-tertiary)] truncate max-w-[240px]">
-          {{ inputUrl || previewFilename || 'Target' }}
-        </span>
-      </div>
-
-      <div class="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden relative">
-        <div class="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full animate-indeterminate" />
-      </div>
-
-      <div class="flex items-center justify-between text-xs font-mono text-[var(--text-secondary)]">
-        <span class="truncate">{{ locale === 'id' ? 'Memindai DOM AST, CSS tokens, & jejak AI builder' : 'Probing DOM AST, CSS tokens, & builder fingerprints' }}</span>
-        <span class="text-[10px] text-[var(--text-tertiary)] shrink-0 ml-2">PROBING ACTIVE</span>
-      </div>
-    </Card>
+      :text="currentLogText"
+    />
 
     <!-- Completed Inspection: Website Hero Section Viewport Card (Replacing plain text line) -->
     <Card
@@ -930,57 +877,6 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
         </div>
       </div>
     </Card>
-
-    <!-- Skeleton Loading State (Bento Grid) -->
-    <div v-if="isAnalyzing" class="space-y-6 pt-2 animate-pulse" aria-busy="true">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <Card :hoverable="false" class="lg:col-span-5 p-6 flex flex-col justify-between space-y-6 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]">
-          <div class="space-y-3">
-            <div class="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
-            <div class="flex items-baseline gap-3">
-              <div class="h-14 w-32 rounded-xl bg-zinc-300/70 dark:bg-zinc-800" />
-              <div class="h-4 w-16 rounded bg-zinc-200 dark:bg-zinc-800/80" />
-            </div>
-            <div class="h-4 w-44 rounded bg-zinc-200 dark:bg-zinc-800/70 pt-1" />
-          </div>
-
-          <div class="space-y-2">
-            <div class="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800" />
-            <div class="flex justify-between">
-              <div class="h-2.5 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
-              <div class="h-2.5 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
-            </div>
-          </div>
-
-          <div class="pt-3 border-t border-[var(--border-subtle)] flex justify-between">
-            <div class="h-3 w-28 rounded bg-zinc-200 dark:bg-zinc-800/60" />
-            <div class="h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
-          </div>
-        </Card>
-
-        <Card :hoverable="false" class="lg:col-span-7 p-6 space-y-5 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]">
-          <div class="flex items-center justify-between">
-            <div class="h-4 w-36 rounded bg-zinc-200 dark:bg-zinc-800" />
-            <div class="h-4 w-20 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-          </div>
-
-          <div class="space-y-3.5">
-            <div v-for="i in 3" :key="i" class="flex items-start gap-3">
-              <div class="w-5 h-5 rounded-md bg-zinc-200 dark:bg-zinc-800 shrink-0" />
-              <div class="w-full space-y-1.5">
-                <div class="h-4 w-4/5 rounded bg-zinc-200 dark:bg-zinc-800" />
-                <div class="h-3 w-2/5 rounded bg-zinc-200 dark:bg-zinc-800/60" />
-              </div>
-            </div>
-
-            <div class="pt-3 border-t border-[var(--border-subtle)] space-y-1.5">
-              <div class="h-3 w-32 rounded bg-zinc-200 dark:bg-zinc-800" />
-              <div class="h-3.5 w-5/6 rounded bg-zinc-200 dark:bg-zinc-800/60" />
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
 
     <!-- Results Section -->
     <div v-else-if="inspection" class="space-y-6 pt-2">

@@ -21,6 +21,8 @@ import {
 import JSZip from 'jszip'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
+import MinimalLoader from '~/components/ui/MinimalLoader.vue'
 import { useToast } from '~/composables/useToast'
 import { useSkillAuditor, type SkillAuditReport, type SecurityFinding } from '~/composables/useSkillAuditor'
 
@@ -298,7 +300,8 @@ const clearInput = () => {
   inputQuery.value = ''
 }
 
-const handleInspect = async () => {
+const handleInspect = async (overrideQuery?: string) => {
+  if (overrideQuery) inputQuery.value = overrideQuery
   const query = inputQuery.value.trim()
   if (!query) return
 
@@ -610,61 +613,33 @@ const resetScanner = () => {
       </p>
     </div>
 
-    <!-- Search Omnibar (DESIGN.md Section 11 Architecture) -->
-    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-      <div class="relative flex-1 w-full flex items-center">
-        <!-- Leading Icon -->
-        <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
-          <FolderCheck class="w-4 h-4" />
-        </div>
+    <!-- Search Omnibar with History Popover -->
+    <UrlOmnibar
+      id="skillspector-input"
+      v-model="inputQuery"
+      :loading="isLoading"
+      storage-key="avttr_skillspector_history"
+      placeholder="https://github.com/owner/repo atau npx skills add..."
+      :submit-text="isLoading ? 'Inspecting...' : 'Inspect Skill'"
+      :submit-icon="FolderCheck"
+      @submit="handleInspect"
+      @clear="clearInput"
+    >
+      <template #leading>
+        <FolderCheck class="w-4 h-4" />
+      </template>
+    </UrlOmnibar>
 
-        <input
-          v-model="inputQuery"
-          type="text"
-          placeholder="https://github.com/owner/repo atau npx skills add..."
-          class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
-          :disabled="isLoading"
-          @keydown.enter="handleInspect"
-        />
-
-        <!-- Trailing Micro-Actions -->
-        <div class="absolute right-2.5 flex items-center gap-1">
-          <button
-            v-if="inputQuery"
-            type="button"
-            class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
-            title="Clear"
-            @click="clearInput"
-          >
-            <X class="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
-            title="Paste"
-            @click="handlePaste"
-          >
-            <Clipboard class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Standalone CTA Action Button -->
-      <Button
-        variant="primary"
-        size="default"
-        class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
-        :disabled="isLoading || !inputQuery.trim()"
-        @click="handleInspect"
-      >
-        <Loader2 v-if="isLoading" class="w-4 h-4 animate-spin mr-1.5" />
-        <span>{{ isLoading ? 'Inspecting...' : 'Inspect Skill' }}</span>
-      </Button>
-    </div>
+    <!-- Minimalist Unboxed Loading State -->
+    <MinimalLoader
+      v-if="isLoading"
+      text="Inspecting Skill AST & Patterns..."
+      subtext="Analyzing prompt injections, secret leaks, and execution vulnerabilities..."
+    />
 
     <!-- Recursive Folder Dropzone -->
     <div
-      v-if="!report"
+      v-if="!report && !isLoading"
       class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-all group"
       :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white/50 dark:bg-[#1a1a1c]' : ''"
       @dragover.prevent="isDragging = true"

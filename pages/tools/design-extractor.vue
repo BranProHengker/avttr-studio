@@ -36,6 +36,8 @@ import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 import Input from '~/components/ui/Input.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
+import MinimalLoader from '~/components/ui/MinimalLoader.vue'
 import type { ExtractedDesignData, ColorToken } from '~/server/utils/designExtractor'
 
 const toast = useToast()
@@ -66,7 +68,8 @@ const handlePaste = async () => {
   }
 }
 
-const handleExtract = async () => {
+const handleExtract = async (overrideUrl?: string) => {
+  if (overrideUrl) inputUrl.value = overrideUrl
   const target = inputUrl.value.trim()
   if (!target) {
     toast.warning('URL Required', 'Please enter a website URL.')
@@ -390,57 +393,18 @@ const renderedMarkdownHtml = computed(() => {
       </div>
     </div>
 
-    <!-- Standardized Omnibar (HeroPasteBar Standard) -->
-    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-      <div class="relative w-full flex-1 flex items-center">
-        <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
-          <Globe class="w-4 h-4" />
-        </div>
-        <input
-          id="design-url-input"
-          v-model="inputUrl"
-          type="url"
-          placeholder="https://example.com or paste any website URL..."
-          class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
-          :disabled="isLoading"
-          @keydown.enter="handleExtract"
-        />
-        <div class="absolute right-2.5 flex items-center gap-1">
-          <button
-            v-if="inputUrl"
-            type="button"
-            title="Clear input"
-            aria-label="Clear input"
-            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
-            @click="inputUrl = ''"
-          >
-            <X class="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            title="Paste from clipboard"
-            aria-label="Paste from clipboard"
-            class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
-            @click="handlePaste"
-          >
-            <Clipboard class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <Button
-        id="btn-extract-tokens"
-        variant="primary"
-        size="default"
-        class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
-        :loading="isLoading"
-        :disabled="isLoading || !inputUrl.trim()"
-        @click="handleExtract"
-      >
-        <Search v-if="!isLoading" class="w-4 h-4 mr-1.5" />
-        <span>{{ isLoading ? 'Extracting...' : 'Extract Tokens' }}</span>
-      </Button>
-    </div>
+    <!-- Standardized Omnibar with URL History Popover -->
+    <UrlOmnibar
+      id="design-url-input"
+      v-model="inputUrl"
+      :loading="isLoading"
+      storage-key="avttr_design_extractor_history"
+      placeholder="https://example.com or paste any website URL..."
+      :submit-text="isLoading ? 'Extracting...' : 'Extract Tokens'"
+      :submit-icon="Search"
+      @submit="handleExtract"
+      @clear="extractedData = null"
+    />
 
     <!-- AI Synthesis Engine & Model Notice (Unboxed Minimalist) -->
     <div v-if="!extractedData && !isLoading" class="flex items-start gap-2.5 text-xs px-1">
@@ -457,18 +421,12 @@ const renderedMarkdownHtml = computed(() => {
       </div>
     </div>
 
-    <!-- Loading State -->
-    <Card v-if="isLoading" class="p-8 sm:p-12 text-center bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3">
-      <div class="w-10 h-10 mx-auto rounded-full bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
-        <RefreshCw class="w-5 h-5 animate-spin" />
-      </div>
-      <h3 class="text-sm font-semibold text-[var(--text-primary)]">
-        Extracting design tokens and styles
-      </h3>
-      <p class="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
-        Fetching HTML, parsing inline and external stylesheets, measuring relative luminance, and matching framework signatures.
-      </p>
-    </Card>
+    <!-- Minimalist Unboxed Loading State -->
+    <MinimalLoader
+      v-if="isLoading"
+      :text="locale === 'id' ? 'Mengekstrak Desain & Token...' : 'Synthesizing Web Design Tokens...'"
+      :subtext="locale === 'id' ? 'Mengunduh stylesheet, menghitung rasio kontras WCAG, dan memetakan palet DESIGN.md...' : 'Fetching stylesheets, calculating WCAG contrast ratios, and structuring DESIGN.md palette...'"
+    />
 
     <!-- Error State -->
     <div

@@ -34,9 +34,10 @@ export default defineEventHandler(async (event): Promise<ApiResponse> => {
 
   const config = useRuntimeConfig()
   const groqApiKey = (config.groqApiKey as string) || ''
+  const groqApiKeyBackup = (config.groqApiKeyBackup as string) || ''
 
   try {
-    const data = await extractDesignFromUrl(rawUrl, groqApiKey)
+    const data = await extractDesignFromUrl(rawUrl, groqApiKey, groqApiKeyBackup)
     return {
       success: true,
       data,

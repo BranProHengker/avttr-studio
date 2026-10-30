@@ -22,6 +22,8 @@ import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 import Card from '~/components/ui/Card.vue'
 import Input from '~/components/ui/Input.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
+import MinimalLoader from '~/components/ui/MinimalLoader.vue'
 import type { TraceMoeResponse, TraceMoeResult, AniListInfo, TraceMoeMeResponse } from '~/types/anime'
 
 const toast = useToast()
@@ -361,7 +363,8 @@ const loadLocalFile = (file: File) => {
   runSearch(file)
 }
 
-const handleUrlSearch = () => {
+const handleUrlSearch = (overrideUrl?: string) => {
+  if (overrideUrl) imageUrlInput.value = overrideUrl
   const trimmed = imageUrlInput.value.trim()
   if (!trimmed) {
     toast.warning('URL Required', 'Please enter a direct image URL.')
@@ -509,53 +512,22 @@ const resetAll = () => {
 
     <!-- Input Section (DESIGN.md Section 11 Omnibox + Standalone Dropzone) -->
     <div class="space-y-4">
-      <!-- URL Omnibox (DESIGN.md Section 11 Architecture) -->
-      <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-        <div class="relative flex-1 w-full flex items-center">
-          <LinkIcon class="absolute left-3.5 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
-          <input
-            v-model="imageUrlInput"
-            type="url"
-            placeholder="https://example.com/screenshot.jpg"
-            class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
-            :disabled="isAnalyzing"
-            @keydown.enter="handleUrlSearch"
-          />
-
-          <!-- Trailing Micro-Actions -->
-          <div class="absolute right-2.5 flex items-center gap-1">
-            <button
-              v-if="imageUrlInput"
-              type="button"
-              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
-              title="Clear"
-              @click="imageUrlInput = ''"
-            >
-              <X class="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer rounded-md hover:bg-zinc-100 dark:hover:bg-white/10"
-              title="Paste image or URL (Ctrl+V)"
-              @click="handlePasteFromClipboard"
-            >
-              <Clipboard class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <Button
-          id="btn-search-url"
-          variant="primary"
-          size="default"
-          class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
-          :disabled="isAnalyzing || !imageUrlInput.trim()"
-          @click="handleUrlSearch"
-        >
-          <ScanSearch class="w-4 h-4 mr-1.5" />
-          <span>{{ locale === 'id' ? 'Cari Adegan' : 'Search Scene' }}</span>
-        </Button>
-      </div>
+      <!-- URL Omnibox with History Popover -->
+      <UrlOmnibar
+        id="anime-url-input"
+        v-model="imageUrlInput"
+        :loading="isAnalyzing"
+        storage-key="avttr_anime_trace_history"
+        placeholder="https://example.com/screenshot.jpg"
+        :submit-text="locale === 'id' ? 'Cari Adegan' : 'Search Scene'"
+        :submit-icon="ScanSearch"
+        @submit="handleUrlSearch"
+        @clear="imageUrlInput = ''"
+      >
+        <template #leading>
+          <LinkIcon class="w-4 h-4" />
+        </template>
+      </UrlOmnibar>
 
       <!-- Cut Borders Option Bar -->
       <div class="flex items-center justify-between text-xs text-[var(--text-secondary)] px-1 flex-wrap gap-2">
@@ -608,20 +580,12 @@ const resetAll = () => {
       </div>
     </div>
 
-    <!-- Analyzing Indicator -->
-    <Card v-if="isAnalyzing" class="p-8 sm:p-12 text-center space-y-4">
-      <div class="w-12 h-12 mx-auto rounded-xl bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white animate-pulse">
-        <RefreshCw class="w-6 h-6 animate-spin text-zinc-900 dark:text-white" />
-      </div>
-      <div class="space-y-1">
-        <div class="text-base font-semibold text-[var(--text-primary)]">
-          {{ locale === 'id' ? 'Memindai Database Anime...' : 'Scanning Anime Database...' }}
-        </div>
-        <p class="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
-          {{ locale === 'id' ? 'Mencocokkan fingerprint frame dengan arsip video trace.moe.' : 'Matching frame layout against trace.moe anime database.' }}
-        </p>
-      </div>
-    </Card>
+    <!-- Minimalist Unboxed Loading State -->
+    <MinimalLoader
+      v-if="isAnalyzing"
+      :text="locale === 'id' ? 'Memindai Database Anime...' : 'Scanning Anime Database...'"
+      :subtext="locale === 'id' ? 'Mencocokkan fingerprint frame dengan arsip video trace.moe...' : 'Matching frame layout against trace.moe anime database...'"
+    />
 
     <!-- Error State Alert -->
     <Card v-else-if="errorMsg && !searchResults.length" class="p-6 border-red-500/30 bg-red-500/5">

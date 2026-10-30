@@ -29,6 +29,8 @@ import type { SecurityAuditResult, HeaderAnalysisItem } from '~/server/utils/sec
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
+import MinimalLoader from '~/components/ui/MinimalLoader.vue'
 
 const toast = useToast()
 const { t, locale } = useI18n()
@@ -110,7 +112,8 @@ const pasteFromClipboard = async () => {
   }
 }
 
-const handleScan = async () => {
+const handleScan = async (overrideUrl?: string) => {
+  if (overrideUrl) inputUrl.value = overrideUrl
   const raw = inputUrl.value.trim()
   if (!raw) {
     error.value = ui.value.toastInputRequired
@@ -243,62 +246,29 @@ const getGradeColorClasses = (grade: string) => {
       </p>
     </div>
 
-    <!-- Standalone URL Omnibar (DESIGN.md Section 11) -->
-    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-      <div class="relative flex items-center w-full">
-        <!-- Leading Icon -->
-        <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
-          <ShieldCheck class="w-5 h-5" />
-        </div>
+    <!-- Standalone URL Omnibar with History Popover -->
+    <UrlOmnibar
+      id="security-url-input"
+      v-model="inputUrl"
+      :loading="loading"
+      storage-key="avttr_web_security_history"
+      :placeholder="ui.placeholder"
+      :submit-text="ui.btnScan"
+      :submit-icon="ShieldCheck"
+      @submit="handleScan"
+      @clear="clearInput"
+    >
+      <template #leading>
+        <ShieldCheck class="w-5 h-5" />
+      </template>
+    </UrlOmnibar>
 
-        <!-- Input Field -->
-        <input
-          v-model="inputUrl"
-          id="security-url-input"
-          type="text"
-          :placeholder="ui.placeholder"
-          class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
-          :disabled="loading"
-          @keydown.enter="handleScan"
-        />
-
-        <!-- Micro-Actions (Clear & Paste) -->
-        <div class="absolute right-2.5 flex items-center gap-1">
-          <button
-            v-if="inputUrl"
-            id="btn-clear-security-input"
-            type="button"
-            title="Clear"
-            class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            @click="clearInput"
-          >
-            <X class="w-4 h-4" />
-          </button>
-          <button
-            id="btn-paste-security-input"
-            type="button"
-            title="Paste from Clipboard"
-            class="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-            @click="pasteFromClipboard"
-          >
-            <Clipboard class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Submit Action CTA -->
-      <Button
-        id="btn-run-security-check"
-        variant="primary"
-        size="default"
-        class="w-full sm:w-auto shrink-0 h-12 px-6 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
-        :loading="loading"
-        @click="handleScan"
-      >
-        <ShieldCheck class="w-4 h-4 mr-1.5" />
-        {{ ui.btnScan }}
-      </Button>
-    </div>
+    <!-- Minimalist Unboxed Loading State -->
+    <MinimalLoader
+      v-if="loading"
+      :text="locale === 'id' ? 'Memindai Keamanan Website...' : 'Scanning Website Security...'"
+      :subtext="locale === 'id' ? 'Memeriksa header HTTPS, HSTS, CSP, X-Frame-Options, dan keamanan server...' : 'Inspecting HTTPS, HSTS, CSP, X-Frame-Options, and server security headers...'"
+    />
 
     <!-- Error Alert -->
     <div
@@ -310,7 +280,7 @@ const getGradeColorClasses = (grade: string) => {
     </div>
 
     <!-- Results Section -->
-    <div v-if="result" class="space-y-6">
+    <div v-if="result && !loading" class="space-y-6">
       <!-- Hero Score Card Bento -->
       <Card :hoverable="false" class="p-6 space-y-6 border border-[var(--border-card)]">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-[var(--border-subtle)]">

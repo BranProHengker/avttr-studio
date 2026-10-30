@@ -26,6 +26,8 @@ import { useI18n } from '~/composables/useI18n'
 import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
+import MinimalLoader from '~/components/ui/MinimalLoader.vue'
 
 interface CompressedItem {
   id: string
@@ -281,7 +283,8 @@ const onFileInputChange = (e: Event) => {
   }
 }
 
-const fetchImageFromUrl = async () => {
+const fetchImageFromUrl = async (overrideUrl?: string) => {
+  if (overrideUrl) imageUrlInput.value = overrideUrl
   const target = imageUrlInput.value.trim()
   if (!target) return
 
@@ -644,60 +647,28 @@ const handleContainerTouchMove = (e: TouchEvent) => {
         </div>
       </div>
 
-      <!-- Mode B: Standalone URL Omnibar (DESIGN.md Section 11 Standard) -->
+      <!-- Mode B: Standalone URL Omnibar with History Popover -->
       <div v-else class="space-y-3">
-        <form @submit.prevent="fetchImageFromUrl" class="flex flex-col sm:flex-row items-center gap-2.5 w-full">
-          <div class="relative w-full flex-1 flex items-center">
-            <div class="absolute left-3.5 flex items-center justify-center pointer-events-none text-[var(--text-tertiary)]">
-              <Globe class="w-4 h-4" />
-            </div>
-            <input
-              id="compress-image-url-input"
-              v-model="imageUrlInput"
-              type="url"
-              placeholder="https://example.com/photo.jpg atau tempel tautan gambar..."
-              class="w-full h-12 pl-10 pr-20 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs font-mono"
-              :disabled="isFetchingUrl"
-              @keydown.enter="fetchImageFromUrl"
-            />
-            <div class="absolute right-2.5 flex items-center gap-1">
-              <button
-                v-if="imageUrlInput"
-                type="button"
-                title="Clear input"
-                aria-label="Clear input"
-                class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
-                @click="imageUrlInput = ''"
-              >
-                <X class="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                title="Paste from clipboard"
-                aria-label="Paste from clipboard"
-                class="p-1.5 text-zinc-400 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
-                @click="handlePasteUrl"
-              >
-                <Clipboard class="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+        <UrlOmnibar
+          id="compress-image-url-input"
+          v-model="imageUrlInput"
+          :loading="isFetchingUrl"
+          storage-key="avttr_compressor_url_history"
+          placeholder="https://example.com/photo.jpg atau tempel tautan gambar..."
+          :submit-text="isFetchingUrl ? 'Mengambil...' : (locale === 'id' ? 'Ambil & Kompres' : 'Fetch & Compress')"
+          :submit-icon="ArrowRight"
+          @submit="fetchImageFromUrl"
+          @clear="imageUrlInput = ''"
+        />
 
-          <Button
-            id="btn-fetch-compress"
-            variant="primary"
-            size="default"
-            class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
-            :loading="isFetchingUrl"
-            :disabled="!imageUrlInput.trim() || isFetchingUrl"
-            @click="fetchImageFromUrl"
-          >
-            <ArrowRight v-if="!isFetchingUrl" class="w-4 h-4 mr-1.5" />
-            <span>{{ isFetchingUrl ? 'Mengambil...' : (locale === 'id' ? 'Ambil & Kompres' : 'Fetch & Compress') }}</span>
-          </Button>
-        </form>
+        <!-- Minimalist Unboxed Loading State -->
+        <MinimalLoader
+          v-if="isFetchingUrl"
+          :text="locale === 'id' ? 'Mengunduh & Memproses Gambar...' : 'Downloading & Processing Image...'"
+          :subtext="locale === 'id' ? 'Mengambil buffer media dan menyiapkan kompresi canvas...' : 'Fetching media stream and mounting to browser Canvas...'"
+        />
 
-        <p class="text-[11px] text-[var(--text-tertiary)] px-1">
+        <p v-else class="text-[11px] text-[var(--text-tertiary)] px-1">
           {{ locale === 'id' ? 'Mendukung tautan gambar langsung PNG, JPG, WebP, SVG, AVIF. 100% diproses di browser Canvas.' : 'Supports PNG, JPG, WebP, SVG, AVIF direct URLs. 100% client-side processed via browser Canvas.' }}
         </p>
       </div>

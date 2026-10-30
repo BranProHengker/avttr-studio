@@ -86,5 +86,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     removeBgApiKey: process.env.REMOVE_BG_API_KEY || '',
     groqApiKey: process.env.GROQ_API_KEY || '',
+    groqApiKeyBackup: process.env.GROQ_API_KEY_BACKUP || '',
   },
 })
