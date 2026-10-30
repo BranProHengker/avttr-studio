@@ -556,7 +556,7 @@ const activeRadialData = computed(() => {
                 <span>{{ t.dashboard }}</span>
               </div>
               <svg
-                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
+                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-200"
                 :class="openMenus['dashboard'] ? 'rotate-90' : ''"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -566,25 +566,33 @@ const activeRadialData = computed(() => {
               </svg>
             </button>
 
-            <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['dashboard']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
-              <NuxtLink
-                to="/"
-                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
-                <span
-                  v-if="isRouteActive('/')"
-                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <span class="truncate">{{ t.allDownloaders }}</span>
-              </NuxtLink>
+            <!-- Collapsible Submenu Tree (Smooth Grid Transition) -->
+            <div
+              class="sidebar-submenu-grid"
+              :class="openMenus['dashboard'] ? 'is-open' : ''"
+              :aria-hidden="!openMenus['dashboard']"
+            >
+              <div class="overflow-hidden">
+                <div class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-1 pb-0.5">
+                  <NuxtLink
+                    to="/"
+                    class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
+                    :class="
+                      isRouteActive('/')
+                        ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                    "
+                  >
+                    <!-- Active Guideline Indicator (Linear / Docs Style) -->
+                    <span
+                      v-if="isRouteActive('/')"
+                      class="absolute -left-[15px] top-1.5 bottom-1.5 w-[2px] rounded-full bg-zinc-900 dark:bg-white pointer-events-none transition-all z-10"
+                      aria-hidden="true"
+                    />
+                    <span class="truncate">{{ t.allDownloaders }}</span>
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -602,7 +610,7 @@ const activeRadialData = computed(() => {
                 <span>{{ t.videoSocials }}</span>
               </div>
               <svg
-                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
+                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-200"
                 :class="openMenus['video-reels'] ? 'rotate-90' : ''"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -612,27 +620,35 @@ const activeRadialData = computed(() => {
               </svg>
             </button>
 
-            <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['video-reels']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
-              <NuxtLink
-                v-for="item in radialCategories['video-reels']?.items"
-                :key="item.path"
-                :to="item.path"
-                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive(item.path)
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
-                <span
-                  v-if="isRouteActive(item.path)"
-                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <span class="truncate">{{ item.label }}</span>
-              </NuxtLink>
+            <!-- Collapsible Submenu Tree (Smooth Grid Transition) -->
+            <div
+              class="sidebar-submenu-grid"
+              :class="openMenus['video-reels'] ? 'is-open' : ''"
+              :aria-hidden="!openMenus['video-reels']"
+            >
+              <div class="overflow-hidden">
+                <div class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-1 pb-0.5">
+                  <NuxtLink
+                    v-for="item in radialCategories['video-reels']?.items"
+                    :key="item.path"
+                    :to="item.path"
+                    class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
+                    :class="
+                      isRouteActive(item.path)
+                        ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                    "
+                  >
+                    <!-- Active Guideline Indicator (Linear / Docs Style) -->
+                    <span
+                      v-if="isRouteActive(item.path)"
+                      class="absolute -left-[15px] top-1.5 bottom-1.5 w-[2px] rounded-full bg-zinc-900 dark:bg-white pointer-events-none transition-all z-10"
+                      aria-hidden="true"
+                    />
+                    <span class="truncate">{{ item.label }}</span>
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -650,7 +666,7 @@ const activeRadialData = computed(() => {
                 <span>{{ t.audioMusic }}</span>
               </div>
               <svg
-                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
+                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-200"
                 :class="openMenus['feeds-audio'] ? 'rotate-90' : ''"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -660,27 +676,35 @@ const activeRadialData = computed(() => {
               </svg>
             </button>
 
-            <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['feeds-audio']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
-              <NuxtLink
-                v-for="item in radialCategories['feeds-audio']?.items"
-                :key="item.path"
-                :to="item.path"
-                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive(item.path)
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
-                <span
-                  v-if="isRouteActive(item.path)"
-                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <span class="truncate">{{ item.label }}</span>
-              </NuxtLink>
+            <!-- Collapsible Submenu Tree (Smooth Grid Transition) -->
+            <div
+              class="sidebar-submenu-grid"
+              :class="openMenus['feeds-audio'] ? 'is-open' : ''"
+              :aria-hidden="!openMenus['feeds-audio']"
+            >
+              <div class="overflow-hidden">
+                <div class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-1 pb-0.5">
+                  <NuxtLink
+                    v-for="item in radialCategories['feeds-audio']?.items"
+                    :key="item.path"
+                    :to="item.path"
+                    class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
+                    :class="
+                      isRouteActive(item.path)
+                        ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                    "
+                  >
+                    <!-- Active Guideline Indicator (Linear / Docs Style) -->
+                    <span
+                      v-if="isRouteActive(item.path)"
+                      class="absolute -left-[15px] top-1.5 bottom-1.5 w-[2px] rounded-full bg-zinc-900 dark:bg-white pointer-events-none transition-all z-10"
+                      aria-hidden="true"
+                    />
+                    <span class="truncate">{{ item.label }}</span>
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -705,7 +729,7 @@ const activeRadialData = computed(() => {
                 <span>{{ t.assetGenerators }}</span>
               </div>
               <svg
-                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
+                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-200"
                 :class="openMenus['assets'] ? 'rotate-90' : ''"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -715,27 +739,35 @@ const activeRadialData = computed(() => {
               </svg>
             </button>
 
-            <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['assets']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
-              <NuxtLink
-                v-for="item in radialCategories['assets']?.items"
-                :key="item.path"
-                :to="item.path"
-                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive(item.path)
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
-                <span
-                  v-if="isRouteActive(item.path)"
-                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <span class="truncate">{{ item.label }}</span>
-              </NuxtLink>
+            <!-- Collapsible Submenu Tree (Smooth Grid Transition) -->
+            <div
+              class="sidebar-submenu-grid"
+              :class="openMenus['assets'] ? 'is-open' : ''"
+              :aria-hidden="!openMenus['assets']"
+            >
+              <div class="overflow-hidden">
+                <div class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-1 pb-0.5">
+                  <NuxtLink
+                    v-for="item in radialCategories['assets']?.items"
+                    :key="item.path"
+                    :to="item.path"
+                    class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
+                    :class="
+                      isRouteActive(item.path)
+                        ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                    "
+                  >
+                    <!-- Active Guideline Indicator (Linear / Docs Style) -->
+                    <span
+                      v-if="isRouteActive(item.path)"
+                      class="absolute -left-[15px] top-1.5 bottom-1.5 w-[2px] rounded-full bg-zinc-900 dark:bg-white pointer-events-none transition-all z-10"
+                      aria-hidden="true"
+                    />
+                    <span class="truncate">{{ item.label }}</span>
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -751,7 +783,7 @@ const activeRadialData = computed(() => {
                 <span>Developer & AI</span>
               </div>
               <svg
-                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
+                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-200"
                 :class="openMenus['developer'] ? 'rotate-90' : ''"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -761,27 +793,35 @@ const activeRadialData = computed(() => {
               </svg>
             </button>
 
-            <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['developer']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
-              <NuxtLink
-                v-for="item in radialCategories['developer']?.items"
-                :key="item.path"
-                :to="item.path"
-                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive(item.path)
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
-                <span
-                  v-if="isRouteActive(item.path)"
-                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <span class="truncate">{{ item.label }}</span>
-              </NuxtLink>
+            <!-- Collapsible Submenu Tree (Smooth Grid Transition) -->
+            <div
+              class="sidebar-submenu-grid"
+              :class="openMenus['developer'] ? 'is-open' : ''"
+              :aria-hidden="!openMenus['developer']"
+            >
+              <div class="overflow-hidden">
+                <div class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-1 pb-0.5">
+                  <NuxtLink
+                    v-for="item in radialCategories['developer']?.items"
+                    :key="item.path"
+                    :to="item.path"
+                    class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
+                    :class="
+                      isRouteActive(item.path)
+                        ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                    "
+                  >
+                    <!-- Active Guideline Indicator (Linear / Docs Style) -->
+                    <span
+                      v-if="isRouteActive(item.path)"
+                      class="absolute -left-[15px] top-1.5 bottom-1.5 w-[2px] rounded-full bg-zinc-900 dark:bg-white pointer-events-none transition-all z-10"
+                      aria-hidden="true"
+                    />
+                    <span class="truncate">{{ item.label }}</span>
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -799,7 +839,7 @@ const activeRadialData = computed(() => {
                 <span>{{ t.designSystem }}</span>
               </div>
               <svg
-                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-150"
+                class="w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-200"
                 :class="openMenus['design'] ? 'rotate-90' : ''"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -809,27 +849,35 @@ const activeRadialData = computed(() => {
               </svg>
             </button>
 
-            <!-- Collapsible Submenu Tree -->
-            <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
-              <NuxtLink
-                v-for="item in radialCategories['design']?.items"
-                :key="item.path"
-                :to="item.path"
-                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive(item.path)
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
-                <span
-                  v-if="isRouteActive(item.path)"
-                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
-                  aria-hidden="true"
-                />
-                <span class="truncate">{{ item.label }}</span>
-              </NuxtLink>
+            <!-- Collapsible Submenu Tree (Smooth Grid Transition) -->
+            <div
+              class="sidebar-submenu-grid"
+              :class="openMenus['design'] ? 'is-open' : ''"
+              :aria-hidden="!openMenus['design']"
+            >
+              <div class="overflow-hidden">
+                <div class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-1 pb-0.5">
+                  <NuxtLink
+                    v-for="item in radialCategories['design']?.items"
+                    :key="item.path"
+                    :to="item.path"
+                    class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
+                    :class="
+                      isRouteActive(item.path)
+                        ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                    "
+                  >
+                    <!-- Active Guideline Indicator (Linear / Docs Style) -->
+                    <span
+                      v-if="isRouteActive(item.path)"
+                      class="absolute -left-[15px] top-1.5 bottom-1.5 w-[2px] rounded-full bg-zinc-900 dark:bg-white pointer-events-none transition-all z-10"
+                      aria-hidden="true"
+                    />
+                    <span class="truncate">{{ item.label }}</span>
+                  </NuxtLink>
+                </div>
+              </div>
             </div>
           </div>
         </div>
