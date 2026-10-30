@@ -5,6 +5,10 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   telemetry: false,
 
+  experimental: {
+    appManifest: false,
+  },
+
   css: ['~/assets/css/main.css'],
 
   modules: [

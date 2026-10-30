@@ -47,6 +47,7 @@ Aturan:
    - evidence: kutipan bukti singkat atau nama pola (maksimal 10 kata).
 5. fix: 1 kalimat saran perbaikan paling praktis dan berdampak besar (maksimal 20 kata).
 6. DILARANG menggunakan emoji, dilarang em-dash, dilarang hashtag. Sindir websitenya, bukan orangnya.
+7. DILARANG mengutip key JSON teknis internal (seperti 'top_findings: []', 'slop_score', atau tanda kurung kosong) sebagai evidence. Jika bukti temuan kosong atau bersih, tulis evidence seperti 'clean scan' atau 'tidak ada kata klise'.
 Output WAJIB berupa JSON murni tanpa markdown wrapper:
 {
   "verdict": "string",
@@ -68,6 +69,7 @@ Rules:
    - evidence: exact short quote or pattern, at most 10 words.
 5. fix: one practical sentence, at most 20 words, the single change that would help most.
 6. No emoji, no em dashes, no hashtags. Punch at the website, never at people.
+7. NEVER quote internal JSON keys (like 'top_findings: []', 'slop_score', or empty brackets) as evidence. If evidence is empty, write 'clean scan' or 'zero buzzwords found'.
 Output MUST be strict JSON matching this schema:
 {
   "verdict": "string",
@@ -196,11 +198,23 @@ Output MUST be strict JSON matching this schema:
     : 'Swap out marketing filler with concrete product facts and custom typography.'
 
   if (parsedResult) {
+    const rawRoasts = Array.isArray(parsedResult.roasts) ? parsedResult.roasts.slice(0, 3) : []
+    const cleanedRoasts = rawRoasts.map((r: any) => {
+      let ev = String(r?.evidence || '').trim()
+      if (/top_findings|slop_score|\[\s*\]/i.test(ev)) {
+        ev = ''
+      }
+      return {
+        line: String(r?.line || '').trim(),
+        evidence: ev
+      }
+    })
+
     return {
       success: true,
       model: usedModel,
       verdict: parsedResult.verdict || verdictLabel,
-      roasts: Array.isArray(parsedResult.roasts) ? parsedResult.roasts.slice(0, 3) : [],
+      roasts: cleanedRoasts,
       fix: parsedResult.fix || defaultFix
     }
   }

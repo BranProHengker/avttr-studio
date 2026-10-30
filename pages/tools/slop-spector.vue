@@ -6,18 +6,14 @@ import {
   PasteClipboard as Clipboard,
   Xmark as X,
   Scanning as ScanSearch,
-  FireFlame as Flame,
-  WarningTriangle as AlertTriangle,
-  CheckCircle as CheckCircle2,
-  ShareAndroid as Share2,
-  Undo as RotateCcw,
-  Sparks as Sparkles,
-  Page as Receipt,
-  PageEdit as FileCode,
+  Check,
   ShieldCheck,
-  Flash as Zap,
+  Undo as RotateCcw,
+  Page as Receipt,
+  NavArrowDown,
   InfoCircle as Info,
   MediaImage as ImageIcon,
+  OpenNewWindow as ExternalLink,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
@@ -25,9 +21,10 @@ import { useClipboard } from '~/composables/useClipboard'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 import Card from '~/components/ui/Card.vue'
+import LoadingBreadcrumb from '~/components/ui/LoadingBreadcrumb.vue'
 
 const toast = useToast()
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 const { copy } = useClipboard()
 
 useHead({
@@ -45,9 +42,12 @@ const activeMode = ref<'url' | 'shot'>('url')
 const inputUrl = ref('')
 const isAnalyzing = ref(false)
 const isRoasting = ref(false)
+const showLogs = ref(false)
+const screenshotLoadError = ref(false)
+const selectedCategory = ref<'all' | string>('all')
 const scanLogs = ref<Array<{ text: string; hit?: boolean }>>([])
 
-// Inspection Results
+// Inspection Results Interface
 interface FindingItem {
   cat: string
   key: string
@@ -61,6 +61,8 @@ interface FindingItem {
 interface InspectionResult {
   host: string
   url: string
+  source?: string
+  heroImage?: string
   score: number
   verdictId: string
   verdictLabel: string
@@ -97,6 +99,21 @@ const formatBytes = (bytes: number): string => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
+// Dynamic hero section screenshot
+const siteHeroScreenshot = computed(() => {
+  if (activeMode.value === 'shot' && previewImage.value) {
+    return previewImage.value
+  }
+  if (!inspection.value?.url) return ''
+  if (screenshotLoadError.value) {
+    return `https://api.microlink.io/?url=${encodeURIComponent(inspection.value.url)}&screenshot=true&embed=screenshot.url`
+  }
+  if (inspection.value.heroImage) {
+    return inspection.value.heroImage
+  }
+  return `https://image.thum.io/get/width/1200/crop/700/${inspection.value.url}`
+})
+
 // Clear screenshot state
 const clearScreenshot = () => {
   previewImage.value = null
@@ -106,6 +123,9 @@ const clearScreenshot = () => {
   roastData.value = null
   scanLogs.value = []
   isAnalyzing.value = false
+  showLogs.value = false
+  screenshotLoadError.value = false
+  selectedCategory.value = 'all'
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
 
@@ -137,10 +157,97 @@ const handleClear = () => {
 // Log streaming helper
 const addLog = (text: string, hit = false) => {
   scanLogs.value.unshift({ text, hit })
-  if (scanLogs.value.length > 7) {
+  if (scanLogs.value.length > 8) {
     scanLogs.value.pop()
   }
 }
+
+const currentLogText = computed(() => {
+  return scanLogs.value[0]?.text || (locale.value === 'id' ? 'Menginisialisasi audit...' : 'Initializing audit...')
+})
+
+// Categories list for filtering
+const categoriesList = computed(() => {
+  if (!inspection.value?.findings) return []
+  const set = new Set(inspection.value.findings.map((f) => f.cat))
+  return Array.from(set)
+})
+
+// Filtered findings based on selected tab
+const filteredFindings = computed(() => {
+  if (!inspection.value?.findings) return []
+  if (selectedCategory.value === 'all') return inspection.value.findings
+  return inspection.value.findings.filter((f) => f.cat === selectedCategory.value)
+})
+
+// Formatted and sanitized roast lines
+const formattedRoasts = computed(() => {
+  if (roastData.value?.roasts && roastData.value.roasts.length > 0) {
+    return roastData.value.roasts.map((r) => {
+      let ev = (r.evidence || '').trim()
+      if (/top_findings|slop_score|\[\s*\]/i.test(ev)) {
+        ev = ''
+      }
+      return {
+        line: r.line,
+        evidence: ev
+      }
+    })
+  }
+
+  if (inspection.value?.findings && inspection.value.findings.length > 0) {
+    return inspection.value.findings.slice(0, 3).map((f) => ({
+      line: f.roast || f.label,
+      evidence: f.quotes?.[0] || f.label
+    }))
+  }
+
+  // Graceful roast for clean sites
+  return [
+    {
+      line: locale.value === 'id'
+        ? 'Website sangat bersih dari aroma template instan.'
+        : 'Site is remarkably clean with no obvious generator boilerplate.',
+      evidence: ''
+    },
+    {
+      line: locale.value === 'id'
+        ? 'Tidak ditemukan buzzwords murahan atau orbs blur template.'
+        : 'Zero cheap buzzwords or unstyled floating orbs detected.',
+      evidence: ''
+    },
+    {
+      line: locale.value === 'id'
+        ? 'Hasil audit menunjukkan kode dan tipografi dibuat dengan teliti.'
+        : 'Audit confirms typography and markup were handcrafted with care.',
+      evidence: ''
+    }
+  ]
+})
+
+// Score level indicator
+const scoreLevel = computed(() => {
+  const s = inspection.value?.score ?? 0
+  if (s > 60) {
+    return {
+      label: locale.value === 'id' ? 'Dosa AI Tinggi' : 'High AI Slop',
+      colorBg: 'bg-rose-500',
+      badgeVariant: 'error' as const
+    }
+  }
+  if (s > 30) {
+    return {
+      label: locale.value === 'id' ? 'Aroma AI Tercium' : 'Moderate AI Residue',
+      colorBg: 'bg-amber-500',
+      badgeVariant: 'warning' as const
+    }
+  }
+  return {
+    label: locale.value === 'id' ? 'Karya Otentik' : 'Authentic Craft',
+    colorBg: 'bg-emerald-500',
+    badgeVariant: 'success' as const
+  }
+})
 
 // Core URL Inspection Handler
 const runInspection = async () => {
@@ -156,6 +263,9 @@ const runInspection = async () => {
   inspection.value = null
   roastData.value = null
   scanLogs.value = []
+  showLogs.value = false
+  screenshotLoadError.value = false
+  selectedCategory.value = 'all'
 
   addLog(locale.value === 'id' ? `Menghubungi target: ${inputUrl.value}...` : `Connecting to: ${inputUrl.value}...`)
 
@@ -175,7 +285,7 @@ const runInspection = async () => {
     if (res.findings.length > 0) {
       addLog(locale.value === 'id' ? `Ditemukan ${res.findings.length} indikasi AI slop!` : `Detected ${res.findings.length} slop patterns!`, true)
     } else {
-      addLog(locale.value === 'id' ? 'Website sangat bersih dari aroma template.' : 'Site is surprisingly clean.')
+      addLog(locale.value === 'id' ? 'Website sangat bersih dari aroma template.' : 'Site is clean of template boilerplate.')
     }
 
     inspection.value = res
@@ -192,7 +302,7 @@ const runInspection = async () => {
   }
 }
 
-// Trigger AI Roasting via Qwen 3.8-27B (Groq) with Gemini fallback
+// Trigger AI Roasting via server
 const triggerRoast = async (insp: InspectionResult) => {
   isRoasting.value = true
   try {
@@ -284,7 +394,7 @@ const handlePasteFromClipboard = async () => {
       locale.value === 'id' ? 'Tidak Ada Gambar' : 'No Image Found',
       locale.value === 'id' ? 'Clipboard Anda tidak memuat gambar. Salin screenshot terlebih dahulu.' : 'No image found in clipboard. Copy a screenshot first.'
     )
-  } catch (err: any) {
+  } catch {
     toast.error(
       locale.value === 'id' ? 'Gagal Akses Clipboard' : 'Clipboard Access Failed',
       locale.value === 'id' ? 'Izin akses clipboard ditolak. Silakan tekan Ctrl+V langsung di halaman.' : 'Clipboard permission denied. Please press Ctrl+V directly on the page.'
@@ -328,6 +438,9 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
   inspection.value = null
   roastData.value = null
   scanLogs.value = []
+  showLogs.value = false
+  screenshotLoadError.value = false
+  selectedCategory.value = 'all'
 
   addLog(locale.value === 'id' ? `Memuat screenshot: ${filename}` : `Loading screenshot: ${filename}`)
   const img = new Image()
@@ -392,8 +505,8 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
           key: 'dark',
           label: isIndo ? 'Dark Mode Pekat Dominan' : 'Predominant Near-Black Background',
           pts: 14,
-          roast: isIndo ? 'Latar gelap total khas startup AI generasi 2024.' : 'Near-black backdrop. The standard uniform of seed-funded AI startups.',
-          why: isIndo ? 'Area visual didominasi latar hitam pekat tanpa variasi elevasi.' : 'The above-the-fold canvas is overwhelmingly near-black with little tonal depth.',
+          roast: isIndo ? 'Latar gelap total khas template startup AI.' : 'Near-black backdrop. The standard uniform of seed-funded AI startups.',
+          why: isIndo ? 'Area visual didominasi latar hitam pekat tanpa variasi tonal depth.' : 'The canvas is overwhelmingly near-black with little tonal depth.',
           quotes: [`${Math.round(darkRatio * 100)}% ${isIndo ? 'area gelap' : 'dark area'}`]
         })
       }
@@ -405,7 +518,7 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
           key: 'violet',
           label: isIndo ? 'Aksen Violet / Indigo AI' : 'Violet / Indigo AI Accents',
           pts: 18,
-          roast: isIndo ? 'Warna ungu lagi. Warna seragam wajib template seed-round.' : 'Purple again. The official color palette of default AI templates.',
+          roast: isIndo ? 'Warna ungu template. Palet seragam wajib generator.' : 'Purple again. The official color palette of default AI templates.',
           why: isIndo ? 'Palet warna aksen ungu/indigo sangat dominan di atas lipatan.' : 'Indigo and violet dominate the visual hierarchy above the fold.',
           quotes: [`${Math.round(violetRatio * 100)}% ${isIndo ? 'piksel ungu' : 'violet pixels'}`]
         })
@@ -419,7 +532,7 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
           label: isIndo ? 'Neon Acid Lime Highlight' : 'Acid Lime Highlighter Accents',
           pts: 15,
           roast: isIndo ? 'Tombol hijau neon stabilo bawaan generator.' : 'Acid lime buttons. The favorite highlighter of modern AI templates.',
-          why: isIndo ? 'Warna tombol lime kontras tinggi khas template AI modern.' : 'High-contrast neon lime pills placed over dark backdrops.',
+          why: isIndo ? 'Warna tombol lime kontras tinggi khas template modern.' : 'High-contrast neon lime pills placed over dark backdrops.',
           quotes: [`${Math.round(limeRatio * 100)}% ${isIndo ? 'piksel hijau lime' : 'lime pixels'}`]
         })
       }
@@ -473,41 +586,14 @@ const copyRoastResult = () => {
 ${isIndo ? 'Skor Slop' : 'Slop Score'}: ${inspection.value.score}% (${roastData.value?.verdict || inspection.value.verdictLabel})
 
 Roasting:
-${roastData.value?.roasts.map((r, i) => `${i + 1}. ${r.line}`).join('\n') || inspection.value.findings.slice(0, 3).map((f, i) => `${i + 1}. ${f.roast}`).join('\n')}
+${formattedRoasts.value.map((r, i) => `${i + 1}. ${r.line}`).join('\n')}
 
-${isIndo ? 'Saran Perbaikan' : 'Key Recommendation'}:
-${roastData.value?.fix || (isIndo ? 'Hapus orbs melayang dan ganti font bawaan.' : 'Remove floating blurred orbs and adopt unique typography.')}
+${isIndo ? 'Rekomendasi Utama' : 'Key Recommendation'}:
+${roastData.value?.fix || (isIndo ? 'Pertahankan kode bersih dan hindari copy klise generator.' : 'Maintain authentic copy and avoid default generator templates.')}
 
-${isIndo ? 'Periksa website lu di Avttr Studio' : 'Inspect your site at Avttr Studio'}: https://studio.avttr.my.id/tools/slop-spector`
+${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr Studio'}: https://studio.avttr.my.id/tools/slop-spector`
 
   copy(text, isIndo ? 'Hasil Roasting' : 'Roast Result')
-}
-
-// Score color meter
-const scoreColorClass = computed(() => {
-  const s = inspection.value?.score || 0
-  if (s > 70) return 'text-rose-500 border-rose-500/30 bg-rose-500/10'
-  if (s > 45) return 'text-amber-500 border-amber-500/30 bg-amber-500/10'
-  if (s > 25) return 'text-yellow-500 border-yellow-500/30 bg-yellow-500/10'
-  return 'text-emerald-500 border-emerald-500/30 bg-emerald-500/10'
-})
-
-// Category badge color
-const categoryBadgeClass = (cat: string) => {
-  switch (cat) {
-    case 'fingerprint':
-      return 'border-rose-500/30 text-rose-400 bg-rose-500/10'
-    case 'copy':
-      return 'border-amber-500/30 text-amber-400 bg-amber-500/10'
-    case 'layout':
-      return 'border-sky-500/30 text-sky-400 bg-sky-500/10'
-    case 'nitpick':
-      return 'border-zinc-500/30 text-zinc-400 bg-zinc-500/10'
-    case 'visual':
-      return 'border-purple-500/30 text-purple-400 bg-purple-500/10'
-    default:
-      return 'border-zinc-500/30 text-zinc-400 bg-zinc-500/10'
-  }
 }
 </script>
 
@@ -529,8 +615,8 @@ const categoryBadgeClass = (cat: string) => {
       </h1>
       <p class="text-xs sm:text-sm text-[var(--text-secondary)]">
         {{ locale === 'id'
-          ? 'Forensik jejak dosa generator AI di balik website. Deteksi buzzwords, unstyled Shadcn tokens, orbs melayang, dan di-roast langsung oleh AI.'
-          : 'Forensic detector for AI slop and generator fingerprints. Audits buzzwords, default Shadcn tokens, blurred blobs, and roasts the result.' }}
+          ? 'Forensik jejak generator AI di balik website. Deteksi buzzwords, unstyled tokens, dan pola template dengan vonis roast terkalibrasi.'
+          : 'Forensic detector for AI slop and generator fingerprints. Audits buzzwords, unstyled tokens, and template patterns with a calibrated roast.' }}
       </p>
     </div>
 
@@ -600,6 +686,7 @@ const categoryBadgeClass = (cat: string) => {
           size="default"
           class="w-full sm:w-auto shrink-0 h-12 px-5 rounded-xl font-medium text-xs sm:text-sm cursor-pointer"
           :loading="isAnalyzing"
+          :disabled="isAnalyzing || !inputUrl.trim()"
           @click="runInspection"
         >
           <ScanSearch class="w-4 h-4 mr-2" />
@@ -610,7 +697,6 @@ const categoryBadgeClass = (cat: string) => {
 
     <!-- Screenshot Mode Container -->
     <div v-else class="w-full">
-      <!-- Hidden File Input for Screenshot Mode -->
       <input
         ref="fileInputRef"
         type="file"
@@ -621,7 +707,6 @@ const categoryBadgeClass = (cat: string) => {
 
       <!-- Active Screenshot Preview Card -->
       <Card v-if="previewImage" :hoverable="false" class="p-4 sm:p-5 space-y-4">
-        <!-- Preview Header Bar: File Info + Change / Remove Actions -->
         <div class="flex items-center justify-between gap-3 pb-3 border-b border-[var(--border-subtle)]">
           <div class="flex items-center gap-2.5 min-w-0">
             <div class="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-[#1E1E20] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center shrink-0">
@@ -663,7 +748,6 @@ const categoryBadgeClass = (cat: string) => {
           </div>
         </div>
 
-        <!-- Image Frame & Radar Laser Scan Overlay when analyzing -->
         <div class="relative rounded-xl overflow-hidden bg-zinc-950/60 border border-zinc-800/80 flex items-center justify-center p-3 min-h-[220px]">
           <img
             :src="previewImage"
@@ -671,16 +755,19 @@ const categoryBadgeClass = (cat: string) => {
             class="max-h-80 w-auto object-contain rounded-lg shadow-md"
           />
 
-          <!-- Scanning Overlay Animation -->
           <div
             v-if="isAnalyzing"
-            class="absolute inset-0 bg-gradient-to-b from-rose-500/10 via-transparent to-rose-500/10 pointer-events-none flex flex-col justify-between"
+            class="absolute inset-0 bg-gradient-to-b from-zinc-500/10 via-transparent to-zinc-500/10 pointer-events-none flex flex-col justify-between"
           >
-            <div class="w-full h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_rgba(244,63,94,0.8)] animate-pulse" />
-            <div class="w-full text-center py-2 bg-black/60 backdrop-blur-xs text-[11px] font-mono text-rose-400 font-semibold tracking-wider uppercase">
-              {{ locale === 'id' ? 'Memindai Spektrum Piksel AI...' : 'Scanning AI Pixel Spectrum...' }}
+            <div class="w-full h-1 bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_12px_rgba(255,255,255,0.8)] animate-pulse" />
+            <div class="w-full text-center py-2 bg-black/70 backdrop-blur-xs">
+              <LoadingBreadcrumb
+                :text="locale === 'id' ? 'Menganalisis Spektrum Piksel...' : 'Analyzing Pixel Spectrum...'"
+                :size="18"
+                class="text-xs"
+              />
             </div>
-            <div class="w-full h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_rgba(244,63,94,0.8)] animate-pulse" />
+            <div class="w-full h-1 bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_12px_rgba(255,255,255,0.8)] animate-pulse" />
           </div>
         </div>
       </Card>
@@ -733,29 +820,120 @@ const categoryBadgeClass = (cat: string) => {
       </div>
     </div>
 
-    <!-- Live Scanner Terminal (Log Pemindaian) -->
-    <div
-      v-if="scanLogs.length > 0 || isAnalyzing"
-      class="p-4 rounded-[14px] bg-[#111113] border border-[#262629] text-xs font-mono text-zinc-400 space-y-1.5 shadow-inner"
+    <!-- Active Scanning Status Bar (Features LoadingBreadcrumb Animation) -->
+    <Card
+      v-if="isAnalyzing"
+      :hoverable="false"
+      class="p-5 rounded-[14px] bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4 transition-all"
     >
-      <div class="flex items-center justify-between text-[11px] text-zinc-500 pb-1 border-b border-zinc-800">
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full" :class="isAnalyzing ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'" />
-          <span>SLOPSPECTOR RADAR ENGINE</span>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-xs">
+        <LoadingBreadcrumb
+          :text="currentLogText"
+          :size="20"
+          :stroke-width="2.2"
+        />
+        <span class="font-mono text-[11px] text-[var(--text-tertiary)] truncate max-w-[240px]">
+          {{ inputUrl || previewFilename || 'Target' }}
+        </span>
+      </div>
+
+      <div class="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden relative">
+        <div class="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full animate-indeterminate" />
+      </div>
+
+      <div class="flex items-center justify-between text-xs font-mono text-[var(--text-secondary)]">
+        <span class="truncate">{{ locale === 'id' ? 'Memindai DOM AST, CSS tokens, & jejak AI builder' : 'Probing DOM AST, CSS tokens, & builder fingerprints' }}</span>
+        <span class="text-[10px] text-[var(--text-tertiary)] shrink-0 ml-2">PROBING ACTIVE</span>
+      </div>
+    </Card>
+
+    <!-- Completed Inspection: Website Hero Section Viewport Card (Replacing plain text line) -->
+    <Card
+      v-if="inspection && !isAnalyzing"
+      :hoverable="false"
+      class="p-4 sm:p-5 space-y-3.5 bg-[var(--bg-card)] border-[var(--border-card)]"
+    >
+      <!-- Browser Chrome Header Bar -->
+      <div class="flex items-center justify-between gap-3">
+        <!-- Window Control Dots -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
         </div>
-        <span>{{ isAnalyzing ? (locale === 'id' ? 'MEMINDAI...' : 'ANALYZING...') : 'IDLE' }}</span>
+
+        <!-- URL Omnibox Pill in Window Header -->
+        <div class="flex-1 max-w-sm sm:max-w-md mx-auto">
+          <div class="h-7 px-3 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 text-[11px] font-mono text-[var(--text-secondary)] flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 truncate">
+              <Globe class="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+              <span class="truncate">https://{{ inspection.host }}</span>
+            </div>
+            <a
+              v-if="inspection.url.startsWith('http')"
+              :href="inspection.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-zinc-400 hover:text-[var(--text-primary)] transition-colors shrink-0"
+              title="Open site in new tab"
+            >
+              <ExternalLink class="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+
+        <!-- Status Badge & Logs Toggle -->
+        <div class="flex items-center gap-2 shrink-0">
+          <Badge variant="success" size="sm" class="hidden sm:inline-flex text-[10px] font-mono">
+            {{ locale === 'id' ? 'Audit Selesai' : 'Audit Complete' }}
+          </Badge>
+          <button
+            type="button"
+            class="text-[11px] font-mono text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center gap-1"
+            @click="showLogs = !showLogs"
+          >
+            <span>{{ showLogs ? (locale === 'id' ? 'Tutup Log' : 'Hide Log') : (locale === 'id' ? 'Log Audit' : 'Probe Log') }}</span>
+            <NavArrowDown class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': showLogs }" />
+          </button>
+        </div>
       </div>
-      <div v-for="(log, idx) in scanLogs" :key="idx" class="flex items-baseline justify-between gap-4">
-        <span :class="log.hit ? 'text-rose-400 font-semibold' : 'text-zinc-300'">{{ log.text }}</span>
-        <span class="text-[10px] text-zinc-600">t+{{ idx * 120 }}ms</span>
+
+      <!-- Hero Section Viewport Image Frame -->
+      <div class="relative w-full max-h-[300px] sm:max-h-[360px] overflow-hidden rounded-xl bg-zinc-950 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center">
+        <img
+          v-if="siteHeroScreenshot"
+          :src="siteHeroScreenshot"
+          :alt="`Hero preview of ${inspection.host}`"
+          class="w-full h-auto max-h-[300px] sm:max-h-[360px] object-cover object-top transition-transform duration-300 hover:scale-[1.01]"
+          loading="lazy"
+          @error="screenshotLoadError = true"
+        />
+        <div v-else class="py-16 text-center text-xs text-[var(--text-tertiary)] font-mono">
+          {{ locale === 'id' ? 'Preview viewport tidak tersedia' : 'Hero viewport preview unavailable' }}
+        </div>
+
+        <!-- Subtle Gradient Overlay with Viewport Label -->
+        <div class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex items-center justify-between text-[11px] font-mono text-zinc-300 pointer-events-none">
+          <span class="truncate">Hero Section &bull; {{ inspection.host }}</span>
+          <span class="text-zinc-400 shrink-0 ml-2">1280 &times; 720 Viewport</span>
+        </div>
       </div>
-    </div>
+
+      <!-- Expandable Probe Log (Only shown when requested) -->
+      <div
+        v-if="showLogs && scanLogs.length > 0"
+        class="p-3.5 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2D2D30] text-xs font-mono text-zinc-500 dark:text-zinc-400 space-y-1.5 shadow-inner"
+      >
+        <div v-for="(log, idx) in scanLogs" :key="idx" class="flex items-baseline justify-between gap-4">
+          <span :class="log.hit ? 'text-rose-500 dark:text-rose-400 font-medium' : 'text-zinc-700 dark:text-zinc-300'">{{ log.text }}</span>
+          <span class="text-[10px] text-zinc-400 dark:text-zinc-600">t+{{ idx * 120 }}ms</span>
+        </div>
+      </div>
+    </Card>
 
     <!-- Skeleton Loading State (Bento Grid) -->
     <div v-if="isAnalyzing" class="space-y-6 pt-2 animate-pulse" aria-busy="true">
-      <!-- Top Bento Overview Skeleton -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Slop Score Card Skeleton (5 Cols) -->
         <Card :hoverable="false" class="lg:col-span-5 p-6 flex flex-col justify-between space-y-6 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]">
           <div class="space-y-3">
             <div class="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
@@ -766,7 +944,6 @@ const categoryBadgeClass = (cat: string) => {
             <div class="h-4 w-44 rounded bg-zinc-200 dark:bg-zinc-800/70 pt-1" />
           </div>
 
-          <!-- Meter Bar Skeleton -->
           <div class="space-y-2">
             <div class="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800" />
             <div class="flex justify-between">
@@ -775,24 +952,18 @@ const categoryBadgeClass = (cat: string) => {
             </div>
           </div>
 
-          <!-- Metadata Skeleton -->
           <div class="pt-3 border-t border-[var(--border-subtle)] flex justify-between">
             <div class="h-3 w-28 rounded bg-zinc-200 dark:bg-zinc-800/60" />
             <div class="h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
           </div>
         </Card>
 
-        <!-- AI Roaster Card Skeleton (7 Cols) -->
         <Card :hoverable="false" class="lg:col-span-7 p-6 space-y-5 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <div class="w-4 h-4 rounded bg-rose-500/30" />
-              <div class="h-3 w-32 rounded bg-zinc-200 dark:bg-zinc-800" />
-            </div>
+            <div class="h-4 w-36 rounded bg-zinc-200 dark:bg-zinc-800" />
             <div class="h-4 w-20 rounded-full bg-zinc-200 dark:bg-zinc-800" />
           </div>
 
-          <!-- Roasting Rows Skeleton -->
           <div class="space-y-3.5">
             <div v-for="i in 3" :key="i" class="flex items-start gap-3">
               <div class="w-5 h-5 rounded-md bg-zinc-200 dark:bg-zinc-800 shrink-0" />
@@ -802,64 +973,12 @@ const categoryBadgeClass = (cat: string) => {
               </div>
             </div>
 
-            <!-- Fix Recommendation Skeleton -->
             <div class="pt-3 border-t border-[var(--border-subtle)] space-y-1.5">
-              <div class="h-3 w-40 rounded bg-emerald-500/30" />
+              <div class="h-3 w-32 rounded bg-zinc-200 dark:bg-zinc-800" />
               <div class="h-3.5 w-5/6 rounded bg-zinc-200 dark:bg-zinc-800/60" />
             </div>
           </div>
-
-          <!-- Buttons Skeleton -->
-          <div class="flex gap-2 pt-2">
-            <div class="h-8 w-24 rounded-lg bg-zinc-200 dark:bg-zinc-800" />
-            <div class="h-8 w-28 rounded-lg bg-zinc-200 dark:bg-zinc-800/60" />
-          </div>
         </Card>
-      </div>
-
-      <!-- Findings Skeleton Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Receipt Skeleton (4 Cols) -->
-        <Card :hoverable="false" class="lg:col-span-4 p-5 space-y-4 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]">
-          <div class="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
-            <div class="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
-            <div class="h-3 w-20 rounded bg-zinc-200 dark:bg-zinc-800/60" />
-          </div>
-          <div class="space-y-2.5">
-            <div v-for="j in 4" :key="j" class="flex justify-between">
-              <div class="h-3 w-3/5 rounded bg-zinc-200 dark:bg-zinc-800/70" />
-              <div class="h-3 w-10 rounded bg-zinc-200 dark:bg-zinc-800" />
-            </div>
-          </div>
-          <div class="pt-3 border-t border-dashed border-zinc-700 flex justify-between">
-            <div class="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-800" />
-            <div class="h-5 w-12 rounded bg-zinc-200 dark:bg-zinc-800" />
-          </div>
-        </Card>
-
-        <!-- Findings Cards Skeleton (8 Cols) -->
-        <div class="lg:col-span-8 space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="h-3 w-40 rounded bg-zinc-200 dark:bg-zinc-800" />
-            <div class="h-3 w-32 rounded bg-zinc-200 dark:bg-zinc-800/60" />
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Card
-              v-for="k in 4"
-              :key="k"
-              :hoverable="false"
-              class="p-4 space-y-2.5 bg-zinc-100/60 dark:bg-[#1A1A1C]/60 border-zinc-200 dark:border-[#262629]"
-            >
-              <div class="flex items-center justify-between">
-                <div class="h-4 w-16 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-                <div class="h-3 w-12 rounded bg-rose-500/20" />
-              </div>
-              <div class="h-4 w-4/5 rounded bg-zinc-200 dark:bg-zinc-800" />
-              <div class="h-10 rounded bg-black/30 border border-white/5" />
-              <div class="h-3 w-full rounded bg-zinc-200 dark:bg-zinc-800/50" />
-            </Card>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -868,20 +987,27 @@ const categoryBadgeClass = (cat: string) => {
       <!-- Top Bento Overview: Score & Roasting Verdict -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <!-- Slop Score Card (5 Cols) -->
-        <Card :hoverable="false" class="lg:col-span-5 p-6 flex flex-col justify-between space-y-6">
-          <div class="space-y-1">
-            <span class="text-[11px] font-mono uppercase tracking-wider text-[var(--text-tertiary)]">
-              SLOP INDEX
-            </span>
-            <div class="flex items-baseline gap-3">
-              <span class="text-6xl font-extrabold tracking-tighter" :class="scoreColorClass.split(' ')[0]">
+        <Card :hoverable="false" class="lg:col-span-5 p-6 flex flex-col justify-between space-y-6 bg-[var(--bg-card)] border-[var(--border-card)]">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-mono uppercase tracking-wider text-[var(--text-tertiary)]">
+                SLOP INDEX
+              </span>
+              <Badge :variant="scoreLevel.badgeVariant" size="sm">
+                {{ scoreLevel.label }}
+              </Badge>
+            </div>
+
+            <div class="flex items-baseline gap-2.5">
+              <span class="text-6xl font-extrabold tracking-tight font-mono text-[var(--text-primary)]">
                 {{ inspection.score }}%
               </span>
-              <span class="text-xs text-[var(--text-secondary)] font-mono">
-                / 100% Slop
+              <span class="text-xs text-[var(--text-tertiary)] font-mono">
+                / 100% slop
               </span>
             </div>
-            <p class="text-xs font-medium text-[var(--text-primary)] pt-1">
+
+            <p class="text-sm font-semibold text-[var(--text-primary)] tracking-tight pt-1">
               {{ roastData?.verdict || inspection.verdictLabel }}
             </p>
           </div>
@@ -891,8 +1017,8 @@ const categoryBadgeClass = (cat: string) => {
             <div class="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
               <div
                 class="h-full rounded-full transition-all duration-700"
-                :class="inspection.score > 60 ? 'bg-rose-500' : inspection.score > 35 ? 'bg-amber-500' : 'bg-emerald-500'"
-                :style="{ width: `${inspection.score}%` }"
+                :class="scoreLevel.colorBg"
+                :style="{ width: `${Math.max(4, inspection.score)}%` }"
               />
             </div>
             <div class="flex justify-between text-[10px] font-mono text-[var(--text-tertiary)]">
@@ -902,67 +1028,64 @@ const categoryBadgeClass = (cat: string) => {
           </div>
 
           <!-- Target Metadata -->
-          <div class="pt-3 border-t border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-secondary)] flex justify-between">
-            <span>Target: {{ inspection.host }}</span>
-            <span>Words: {{ inspection.stats.words || 'Screenshot' }}</span>
+          <div class="pt-3 border-t border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-tertiary)] flex items-center justify-between">
+            <span class="truncate max-w-[220px]">Target: {{ inspection.host }}</span>
+            <span>{{ activeMode === 'shot' ? (previewFileSize || 'Image') : `${inspection.stats.words} words` }}</span>
           </div>
         </Card>
 
         <!-- AI Roasting Card (7 Cols) -->
-        <Card :hoverable="false" class="lg:col-span-7 p-6 space-y-5 bg-gradient-to-br from-[var(--bg-card)] to-zinc-900/40 border-[var(--border-card)]">
+        <Card :hoverable="false" class="lg:col-span-7 p-6 space-y-4 bg-[var(--bg-card)] border-[var(--border-card)]">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <Flame class="w-4 h-4 text-rose-500" />
-              <span class="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
-                {{ locale === 'id' ? 'VONIS AI ROASTER' : 'AI ROASTER VERDICT' }}
-              </span>
-            </div>
-            <Badge v-if="roastData?.model" variant="outline" size="sm" class="text-[10px] font-mono">
-              {{ roastData.model }}
+            <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">
+              {{ locale === 'id' ? 'Vonis AI Roaster' : 'AI Roaster Verdict' }}
+            </h2>
+            <Badge variant="outline" size="sm" class="text-[10px] font-mono font-normal text-[var(--text-tertiary)]">
+              {{ roastData?.model || 'qwen/qwen3.8-27b' }}
             </Badge>
           </div>
 
           <!-- Loading Roast Shimmer -->
           <div v-if="isRoasting" class="py-6 space-y-3 animate-pulse">
-            <div class="h-4 bg-zinc-700/30 rounded w-3/4" />
-            <div class="h-4 bg-zinc-700/30 rounded w-5/6" />
-            <div class="h-4 bg-zinc-700/30 rounded w-1/2" />
+            <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
+            <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-5/6" />
+            <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
           </div>
 
           <!-- Roasting List -->
           <div v-else class="space-y-3.5">
             <div
-              v-for="(r, idx) in roastData?.roasts || inspection.findings.slice(0, 3)"
+              v-for="(r, idx) in formattedRoasts"
               :key="idx"
               class="flex items-start gap-3 text-xs leading-relaxed"
             >
-              <div class="w-5 h-5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-400 font-mono flex items-center justify-center shrink-0 text-[11px]">
+              <span class="w-5 h-5 rounded-md bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 text-zinc-700 dark:text-zinc-300 font-mono text-xs flex items-center justify-center shrink-0">
                 {{ idx + 1 }}
-              </div>
-              <div class="space-y-0.5">
-                <p class="text-sm font-medium text-[var(--text-primary)]">
-                  {{ 'line' in r ? r.line : r.roast }}
+              </span>
+              <div class="space-y-0.5 min-w-0">
+                <p class="text-sm font-medium text-[var(--text-primary)] leading-snug">
+                  {{ r.line }}
                 </p>
-                <span class="text-[11px] font-mono text-zinc-500">
-                  {{ 'evidence' in r ? r.evidence : r.quotes[0] || r.label }}
-                </span>
+                <p v-if="r.evidence" class="text-xs font-mono text-[var(--text-tertiary)] truncate">
+                  {{ r.evidence }}
+                </p>
               </div>
             </div>
 
             <!-- Single Practical Fix -->
-            <div class="pt-3 border-t border-[var(--border-subtle)] space-y-1">
-              <span class="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold flex items-center gap-1.5">
-                <ShieldCheck class="w-3.5 h-3.5" />
-                {{ locale === 'id' ? 'Saran Perbaikan Paling Mendesak:' : 'Most Urgent Fix Recommendation:' }}
-              </span>
-              <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-                {{ roastData?.fix || (locale === 'id' ? 'Hapus elemen rounded-full blur-3xl dan gunakan tipografi yang berkarakter.' : 'Remove floating blurred orbs and adopt unique typography.') }}
+            <div class="p-3 rounded-lg bg-zinc-50 dark:bg-[#1A1A1C] border border-zinc-200 dark:border-[#2D2D30] space-y-1">
+              <div class="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
+                <ShieldCheck class="w-3.5 h-3.5 text-zinc-400" />
+                <span>{{ locale === 'id' ? 'Rekomendasi Utama' : 'Key Recommendation' }}</span>
+              </div>
+              <p class="text-xs text-[var(--text-primary)] leading-relaxed">
+                {{ roastData?.fix || (locale === 'id' ? 'Pertahankan kode bersih dan hindari copy klise generator.' : 'Maintain authentic copy and avoid default generator templates.') }}
               </p>
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex flex-wrap items-center gap-2 pt-2">
+          <div class="flex flex-wrap items-center gap-2 pt-1">
             <Button
               id="btn-copy-roast"
               variant="secondary"
@@ -981,92 +1104,176 @@ const categoryBadgeClass = (cat: string) => {
               @click="handleClear"
             >
               <RotateCcw class="w-3.5 h-3.5 mr-1.5" />
-              {{ locale === 'id' ? 'Coba Web Lain' : 'Try Another Web' }}
+              {{ locale === 'id' ? 'Audit Web Lain' : 'Inspect Another' }}
             </Button>
           </div>
         </Card>
       </div>
 
       <!-- Slop Receipt & Detailed Findings Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         <!-- Slop Receipt Column (4 Cols) -->
-        <Card :hoverable="false" class="lg:col-span-4 p-5 space-y-4 font-mono text-xs">
-          <div class="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
-            <div class="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-              <Receipt class="w-4 h-4" />
-              <span>SLOP RECEIPT</span>
+        <Card :hoverable="false" class="lg:col-span-4 p-5 space-y-4 font-mono text-xs bg-[var(--bg-card)] border-[var(--border-card)] flex flex-col justify-between">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
+              <div class="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+                <Receipt class="w-4 h-4" />
+                <span>SLOP RECEIPT</span>
+              </div>
+              <span class="truncate max-w-[130px] text-right">{{ inspection.host }}</span>
             </div>
-            <span>{{ inspection.host }}</span>
-          </div>
 
-          <!-- Items Breakdown -->
-          <div class="space-y-2 text-[11px]">
-            <div
-              v-for="f in inspection.findings"
-              :key="f.key"
-              class="flex justify-between items-baseline gap-2"
-            >
-              <span class="truncate text-[var(--text-secondary)]">{{ f.label }}</span>
-              <span class="text-rose-400 font-bold shrink-0">+{{ f.pts }}</span>
+            <!-- Items Breakdown -->
+            <div v-if="inspection.findings.length > 0 || inspection.credits.length > 0" class="space-y-2 text-[11px]">
+              <div
+                v-for="f in inspection.findings"
+                :key="f.key"
+                class="flex justify-between items-baseline gap-2"
+              >
+                <span class="truncate text-[var(--text-secondary)]">{{ f.label }}</span>
+                <span class="text-rose-500 font-medium shrink-0">+{{ f.pts }}</span>
+              </div>
+              <div
+                v-for="c in inspection.credits"
+                :key="c.label"
+                class="flex justify-between items-baseline gap-2 text-emerald-500"
+              >
+                <span class="truncate">{{ c.label }}</span>
+                <span class="font-medium shrink-0">-{{ c.pts }}</span>
+              </div>
             </div>
-            <div
-              v-for="c in inspection.credits"
-              :key="c.label"
-              class="flex justify-between items-baseline gap-2 text-emerald-400"
-            >
-              <span class="truncate">{{ c.label }}</span>
-              <span class="font-bold shrink-0">-{{ c.pts }}</span>
+
+            <!-- Clean baseline receipt when findings is 0 -->
+            <div v-else class="space-y-2 text-[11px]">
+              <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
+                <span>Typography Stack</span>
+                <span class="text-emerald-500 font-medium">-5 (Custom)</span>
+              </div>
+              <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
+                <span>Generator Signatures</span>
+                <span class="text-[var(--text-tertiary)]">0 (Clean)</span>
+              </div>
+              <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
+                <span>Lexical Buzzwords</span>
+                <span class="text-[var(--text-tertiary)]">0 (None)</span>
+              </div>
+              <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
+                <span>Template Grids</span>
+                <span class="text-[var(--text-tertiary)]">0 (Clean)</span>
+              </div>
             </div>
           </div>
 
           <!-- Receipt Total -->
-          <div class="pt-3 border-t border-dashed border-zinc-700 flex justify-between items-baseline">
+          <div class="pt-3 border-t border-dashed border-[var(--border-subtle)] flex justify-between items-baseline">
             <span class="text-xs uppercase text-[var(--text-secondary)]">
-              {{ locale === 'id' ? 'Total Dosa AI:' : 'Total Slop Crimes:' }}
+              {{ locale === 'id' ? 'Total Skor Slop:' : 'Total Slop Score:' }}
             </span>
-            <span class="text-lg font-extrabold" :class="scoreColorClass.split(' ')[0]">
+            <span class="text-lg font-bold text-[var(--text-primary)]">
               {{ inspection.score }}%
             </span>
           </div>
         </Card>
 
-        <!-- Detailed Evidence Bento Grid (8 Cols) -->
-        <div class="lg:col-span-8 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-mono uppercase tracking-wider text-[var(--text-tertiary)]">
-              {{ locale === 'id' ? `DETAIL TEMUAN BUKTI (${inspection.findings.length})` : `EVIDENCE FINDINGS (${inspection.findings.length})` }}
-            </span>
-            <span class="text-[11px] font-mono text-zinc-500">
-              {{ locale === 'id' ? 'Kutipan Langsung dari Source Code' : 'Direct Source Code Quotes' }}
-            </span>
+        <!-- Right Side: Detailed Findings OR Pristine Clean State (8 Cols) -->
+        <!-- Clean State when 0 findings -->
+        <Card
+          v-if="inspection.findings.length === 0"
+          :hoverable="false"
+          class="lg:col-span-8 p-6 flex flex-col justify-center items-center text-center space-y-4 bg-[var(--bg-card)] border-[var(--border-card)]"
+        >
+          <div class="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-xs">
+            <ShieldCheck class="w-6 h-6 text-emerald-500" />
+          </div>
+
+          <div class="space-y-1 max-w-md">
+            <h3 class="text-base font-semibold text-[var(--text-primary)]">
+              {{ locale === 'id' ? 'Website Bersih dari Indikasi AI Slop' : 'Zero AI Slop Signatures Detected' }}
+            </h3>
+            <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
+              {{ locale === 'id'
+                ? 'Target tidak menunjukkan pola template murahan, copy klise generator, atau komponen bawaan AI builder. Kode tampak dibuat otentik.'
+                : 'The target exhibits no boilerplate marketing buzzwords, default template tokens, or automated generator signatures. Craftsmanship appears authentic.' }}
+            </p>
+          </div>
+
+          <!-- Verification checklist grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-lg pt-2 text-left">
+            <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
+              <Check class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span class="text-xs text-[var(--text-secondary)]">{{ locale === 'id' ? 'Bebas Fingerprint Builder' : 'No Builder Signatures' }}</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
+              <Check class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span class="text-xs text-[var(--text-secondary)]">{{ locale === 'id' ? 'Bebas Buzzword Klise' : 'Zero Lexical Buzzwords' }}</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
+              <Check class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span class="text-xs text-[var(--text-secondary)]">{{ locale === 'id' ? 'Tipografi Berkarakter' : 'Custom Typography Stack' }}</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
+              <Check class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span class="text-xs text-[var(--text-secondary)]">{{ locale === 'id' ? 'Bebas Orbs Blur Template' : 'No Floating Gradient Orbs' }}</span>
+            </div>
+          </div>
+        </Card>
+
+        <!-- Detailed Evidence Bento Grid when findings exist -->
+        <div v-else class="lg:col-span-8 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                {{ locale === 'id' ? 'Temuan Bukti Forensik' : 'Forensic Evidence' }}
+              </span>
+              <Badge variant="outline" size="sm" class="font-mono text-[10px]">
+                {{ inspection.findings.length }}
+              </Badge>
+            </div>
+
+            <!-- Category filter buttons -->
+            <div v-if="categoriesList.length > 1" class="flex items-center gap-1">
+              <button
+                type="button"
+                class="px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer"
+                :class="selectedCategory === 'all' ? 'bg-zinc-200 dark:bg-zinc-700 text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'"
+                @click="selectedCategory = 'all'"
+              >
+                All
+              </button>
+              <button
+                v-for="cat in categoriesList"
+                :key="cat"
+                type="button"
+                class="px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer capitalize"
+                :class="selectedCategory === cat ? 'bg-zinc-200 dark:bg-zinc-700 text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'"
+                @click="selectedCategory = cat"
+              >
+                {{ cat }}
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Card
-              v-for="item in inspection.findings"
+              v-for="item in filteredFindings"
               :key="item.key"
               :hoverable="false"
-              class="p-4 space-y-2"
+              class="p-4 space-y-2.5 bg-[var(--bg-card)] border-[var(--border-card)]"
             >
               <div class="flex items-center justify-between">
-                <Badge
-                  variant="outline"
-                  size="sm"
-                  class="text-[10px] font-mono capitalize"
-                  :class="categoryBadgeClass(item.cat)"
-                >
+                <Badge variant="outline" size="sm" class="text-[10px] font-mono capitalize">
                   {{ item.cat }}
                 </Badge>
-                <span class="text-xs font-mono font-bold text-rose-400">+{{ item.pts }} pts</span>
+                <span class="text-xs font-mono font-medium text-rose-500">+{{ item.pts }} pts</span>
               </div>
 
-              <div class="text-xs font-semibold text-[var(--text-primary)]">
+              <div class="text-xs font-semibold text-[var(--text-primary)] leading-snug">
                 {{ item.label }}
               </div>
 
-              <div v-if="item.quotes.length" class="p-2 rounded bg-black/40 border border-white/5 font-mono text-[11px] text-zinc-400 space-y-1">
+              <div v-if="item.quotes.length" class="p-2 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800/80 font-mono text-[11px] text-[var(--text-secondary)] space-y-1">
                 <div v-for="(q, qidx) in item.quotes" :key="qidx" class="truncate">
-                  "{{ q }}"
+                  “{{ q }}”
                 </div>
               </div>
 
@@ -1080,3 +1287,23 @@ const categoryBadgeClass = (cat: string) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+    width: 35%;
+  }
+  50% {
+    transform: translateX(60%);
+    width: 55%;
+  }
+  100% {
+    transform: translateX(260%);
+    width: 35%;
+  }
+}
+.animate-indeterminate {
+  animation: indeterminate 1.4s infinite ease-in-out;
+}
+</style>

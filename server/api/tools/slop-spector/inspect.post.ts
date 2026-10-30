@@ -124,6 +124,19 @@ export default defineEventHandler(async (event) => {
   // Load into Cheerio for DOM inspection
   const $ = cheerio.load(html)
 
+  // Extract open graph or twitter card hero image if available
+  const rawOgImage = $('meta[property="og:image"]').attr('content') ||
+                     $('meta[name="twitter:image"]').attr('content') ||
+                     $('meta[property="og:image:url"]').attr('content') || ''
+  let heroImage = ''
+  if (rawOgImage) {
+    try {
+      heroImage = new URL(rawOgImage, url).href
+    } catch {
+      heroImage = rawOgImage
+    }
+  }
+
   // Remove script and style tags from text extraction
   $('script, style, noscript, template, iframe').remove()
 
@@ -1252,6 +1265,7 @@ export default defineEventHandler(async (event) => {
     host,
     url,
     source,
+    heroImage,
     score: finalScore,
     verdictId: matchedVerdict.id,
     verdictLabel: isIndo ? matchedVerdict.idLabel : matchedVerdict.en,
