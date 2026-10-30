@@ -107,13 +107,14 @@ const siteHeroScreenshot = computed(() => {
     return previewImage.value
   }
   if (!inspection.value?.url) return ''
+  const target = inspection.value.url.startsWith('http')
+    ? inspection.value.url
+    : `https://${inspection.value.url}`
+
   if (screenshotLoadError.value) {
-    return `https://api.microlink.io/?url=${encodeURIComponent(inspection.value.url)}&screenshot=true&embed=screenshot.url`
+    return `https://image.thum.io/get/width/1280/crop/720/${encodeURI(target)}`
   }
-  if (inspection.value.heroImage) {
-    return inspection.value.heroImage
-  }
-  return `https://image.thum.io/get/width/1200/crop/700/${inspection.value.url}`
+  return `https://api.microlink.io/?url=${encodeURIComponent(target)}&screenshot=true&meta=false&embed=screenshot.url`
 })
 
 // Clear screenshot state
@@ -794,99 +795,16 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
       :text="currentLogText"
     />
 
-    <!-- Completed Inspection: Website Hero Section Viewport Card (Replacing plain text line) -->
-    <Card
-      v-if="inspection && !isAnalyzing"
-      :hoverable="false"
-      class="p-4 sm:p-5 space-y-3.5 bg-[var(--bg-card)] border-[var(--border-card)]"
-    >
-      <!-- Browser Chrome Header Bar -->
-      <div class="flex items-center justify-between gap-3">
-        <!-- Window Control Dots -->
-        <div class="flex items-center gap-1.5 shrink-0">
-          <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-          <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-        </div>
-
-        <!-- URL Omnibox Pill in Window Header -->
-        <div class="flex-1 max-w-sm sm:max-w-md mx-auto">
-          <div class="h-7 px-3 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 text-[11px] font-mono text-[var(--text-secondary)] flex items-center justify-between gap-2">
-            <div class="flex items-center gap-1.5 truncate">
-              <Globe class="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span class="truncate">https://{{ inspection.host }}</span>
-            </div>
-            <a
-              v-if="inspection.url.startsWith('http')"
-              :href="inspection.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-zinc-400 hover:text-[var(--text-primary)] transition-colors shrink-0"
-              title="Open site in new tab"
-            >
-              <ExternalLink class="w-3 h-3" />
-            </a>
-          </div>
-        </div>
-
-        <!-- Status Badge & Logs Toggle -->
-        <div class="flex items-center gap-2 shrink-0">
-          <Badge variant="success" size="sm" class="hidden sm:inline-flex text-[10px] font-mono">
-            {{ locale === 'id' ? 'Audit Selesai' : 'Audit Complete' }}
-          </Badge>
-          <button
-            type="button"
-            class="text-[11px] font-mono text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center gap-1"
-            @click="showLogs = !showLogs"
-          >
-            <span>{{ showLogs ? (locale === 'id' ? 'Tutup Log' : 'Hide Log') : (locale === 'id' ? 'Log Audit' : 'Probe Log') }}</span>
-            <NavArrowDown class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': showLogs }" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Hero Section Viewport Image Frame -->
-      <div class="relative w-full max-h-[300px] sm:max-h-[360px] overflow-hidden rounded-xl bg-zinc-950 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center">
-        <img
-          v-if="siteHeroScreenshot"
-          :src="siteHeroScreenshot"
-          :alt="`Hero preview of ${inspection.host}`"
-          class="w-full h-auto max-h-[300px] sm:max-h-[360px] object-cover object-top transition-transform duration-300 hover:scale-[1.01]"
-          loading="lazy"
-          @error="screenshotLoadError = true"
-        />
-        <div v-else class="py-16 text-center text-xs text-[var(--text-tertiary)] font-mono">
-          {{ locale === 'id' ? 'Preview viewport tidak tersedia' : 'Hero viewport preview unavailable' }}
-        </div>
-
-        <!-- Subtle Gradient Overlay with Viewport Label -->
-        <div class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex items-center justify-between text-[11px] font-mono text-zinc-300 pointer-events-none">
-          <span class="truncate">Hero Section &bull; {{ inspection.host }}</span>
-          <span class="text-zinc-400 shrink-0 ml-2">1280 &times; 720 Viewport</span>
-        </div>
-      </div>
-
-      <!-- Expandable Probe Log (Only shown when requested) -->
-      <div
-        v-if="showLogs && scanLogs.length > 0"
-        class="p-3.5 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2D2D30] text-xs font-mono text-zinc-500 dark:text-zinc-400 space-y-1.5 shadow-inner"
-      >
-        <div v-for="(log, idx) in scanLogs" :key="idx" class="flex items-baseline justify-between gap-4">
-          <span :class="log.hit ? 'text-rose-500 dark:text-rose-400 font-medium' : 'text-zinc-700 dark:text-zinc-300'">{{ log.text }}</span>
-          <span class="text-[10px] text-zinc-400 dark:text-zinc-600">t+{{ idx * 120 }}ms</span>
-        </div>
-      </div>
-    </Card>
-
-    <!-- Results Section -->
-    <div v-else-if="inspection" class="space-y-6 pt-2">
-      <!-- Top Bento Overview: Score & Roasting Verdict -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <!-- Slop Score Card (5 Cols) -->
-        <Card :hoverable="false" class="lg:col-span-5 p-6 flex flex-col justify-between space-y-6 bg-[var(--bg-card)] border-[var(--border-card)]">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-[11px] font-mono uppercase tracking-wider text-[var(--text-tertiary)]">
+    <!-- Results Section (Unboxed Editorial Typography - /minimalist-ui) -->
+    <div v-if="inspection && !isAnalyzing" class="space-y-10 pt-4">
+      <!-- 1. Top Section: Score Overview + Generous Browser Viewport Preview -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        <!-- Left: Slop Score & Metadata (5 Cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Category Eyebrow & Probe Log Toggle -->
+          <div class="flex items-center justify-between pb-1">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
                 SLOP INDEX
               </span>
               <Badge :variant="scoreLevel.badgeVariant" size="sm">
@@ -894,23 +812,37 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
               </Badge>
             </div>
 
-            <div class="flex items-baseline gap-2.5">
-              <span class="text-6xl font-extrabold tracking-tight font-mono text-[var(--text-primary)]">
+            <!-- Probe Log Toggle Button -->
+            <button
+              v-if="scanLogs.length > 0"
+              type="button"
+              class="text-[11px] font-mono text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center gap-1 px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              @click="showLogs = !showLogs"
+            >
+              <span>{{ showLogs ? (locale === 'id' ? 'Tutup Log' : 'Hide Log') : (locale === 'id' ? 'Log Probe' : 'Probe Log') }}</span>
+              <NavArrowDown class="w-3.5 h-3.5 transition-transform" :class="{ 'rotate-180': showLogs }" />
+            </button>
+          </div>
+
+          <!-- Big Monospace Score & Headline -->
+          <div class="space-y-2">
+            <div class="flex items-baseline gap-3">
+              <span class="text-6xl sm:text-7xl font-extrabold tracking-tighter font-mono text-[var(--text-primary)]">
                 {{ inspection.score }}%
               </span>
-              <span class="text-xs text-[var(--text-tertiary)] font-mono">
+              <span class="text-xs font-mono text-[var(--text-tertiary)]">
                 / 100% slop
               </span>
             </div>
 
-            <p class="text-sm font-semibold text-[var(--text-primary)] tracking-tight pt-1">
+            <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)] capitalize">
               {{ roastData?.verdict || inspection.verdictLabel }}
-            </p>
+            </h2>
           </div>
 
-          <!-- Score Gauge Meter Bar -->
-          <div class="space-y-1.5">
-            <div class="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+          <!-- Slender Gauge Meter Bar -->
+          <div class="space-y-1.5 pt-1">
+            <div class="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
               <div
                 class="h-full rounded-full transition-all duration-700"
                 :class="scoreLevel.colorBg"
@@ -923,200 +855,185 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
             </div>
           </div>
 
-          <!-- Target Metadata -->
-          <div class="pt-3 border-t border-[var(--border-subtle)] text-[11px] font-mono text-[var(--text-tertiary)] flex items-center justify-between">
-            <span class="truncate max-w-[220px]">Target: {{ inspection.host }}</span>
+          <!-- Target Metadata Row -->
+          <div class="pt-3 border-t border-zinc-200 dark:border-zinc-800/80 text-[11px] font-mono text-[var(--text-tertiary)] flex items-center justify-between">
+            <span class="truncate max-w-[240px]">Target: {{ inspection.host }}</span>
             <span>{{ activeMode === 'shot' ? (previewFileSize || 'Image') : `${inspection.stats.words} words` }}</span>
           </div>
-        </Card>
 
-        <!-- AI Roasting Card (7 Cols) -->
-        <Card :hoverable="false" class="lg:col-span-7 p-6 space-y-4 bg-[var(--bg-card)] border-[var(--border-card)]">
-          <div class="flex items-center justify-between">
-            <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">
-              {{ locale === 'id' ? 'Vonis AI Roaster' : 'AI Roaster Verdict' }}
-            </h2>
-            <Badge variant="outline" size="sm" class="text-[10px] font-mono font-normal text-[var(--text-tertiary)]">
-              {{ roastData?.model || 'qwen/qwen3.8-27b' }}
-            </Badge>
-          </div>
-
-          <!-- Loading Roast Shimmer -->
-          <div v-if="isRoasting" class="py-6 space-y-3 animate-pulse">
-            <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
-            <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-5/6" />
-            <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
-          </div>
-
-          <!-- Roasting List -->
-          <div v-else class="space-y-3.5">
-            <div
-              v-for="(r, idx) in formattedRoasts"
-              :key="idx"
-              class="flex items-start gap-3 text-xs leading-relaxed"
-            >
-              <span class="w-5 h-5 rounded-md bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 text-zinc-700 dark:text-zinc-300 font-mono text-xs flex items-center justify-center shrink-0">
-                {{ idx + 1 }}
-              </span>
-              <div class="space-y-0.5 min-w-0">
-                <p class="text-sm font-medium text-[var(--text-primary)] leading-snug">
-                  {{ r.line }}
-                </p>
-                <p v-if="r.evidence" class="text-xs font-mono text-[var(--text-tertiary)] truncate">
-                  {{ r.evidence }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Single Practical Fix -->
-            <div class="p-3 rounded-lg bg-zinc-50 dark:bg-[#1A1A1C] border border-zinc-200 dark:border-[#2D2D30] space-y-1">
-              <div class="text-[11px] font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
-                <ShieldCheck class="w-3.5 h-3.5 text-zinc-400" />
-                <span>{{ locale === 'id' ? 'Rekomendasi Utama' : 'Key Recommendation' }}</span>
-              </div>
-              <p class="text-xs text-[var(--text-primary)] leading-relaxed">
-                {{ roastData?.fix || (locale === 'id' ? 'Pertahankan kode bersih dan hindari copy klise generator.' : 'Maintain authentic copy and avoid default generator templates.') }}
-              </p>
+          <!-- Expandable Probe Log (Terminal block) -->
+          <div
+            v-if="showLogs && scanLogs.length > 0"
+            class="p-3.5 rounded-xl bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 text-xs font-mono text-zinc-500 dark:text-zinc-400 space-y-1.5 max-h-56 overflow-y-auto"
+          >
+            <div v-for="(log, idx) in scanLogs" :key="idx" class="flex items-baseline justify-between gap-4">
+              <span :class="log.hit ? 'text-rose-500 dark:text-rose-400 font-medium' : 'text-zinc-700 dark:text-zinc-300'">{{ log.text }}</span>
+              <span class="text-[10px] text-zinc-400 dark:text-zinc-600">t+{{ idx * 120 }}ms</span>
             </div>
           </div>
+        </div>
 
-          <!-- Action Buttons -->
-          <div class="flex flex-wrap items-center gap-2 pt-1">
-            <Button
-              id="btn-copy-roast"
-              variant="secondary"
-              size="sm"
-              class="rounded-lg text-xs cursor-pointer"
-              @click="copyRoastResult"
-            >
-              <Clipboard class="w-3.5 h-3.5 mr-1.5" />
-              {{ locale === 'id' ? 'Salin Roasting' : 'Copy Roast' }}
-            </Button>
-            <Button
-              id="btn-audit-another"
-              variant="ghost"
-              size="sm"
-              class="rounded-lg text-xs cursor-pointer"
-              @click="handleClear"
-            >
-              <RotateCcw class="w-3.5 h-3.5 mr-1.5" />
-              {{ locale === 'id' ? 'Audit Web Lain' : 'Inspect Another' }}
-            </Button>
+        <!-- Right: Prominent Browser Viewport Preview Frame (7 Cols) -->
+        <div class="lg:col-span-7">
+          <div
+            v-if="siteHeroScreenshot"
+            class="relative w-full rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm group select-none"
+          >
+            <!-- Browser Header Bar -->
+            <div class="h-8 bg-zinc-900/90 backdrop-blur-xs flex items-center justify-between px-3 border-b border-zinc-800 text-[11px] font-mono">
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+              </div>
+              <div class="flex items-center gap-1.5 text-zinc-400 truncate max-w-xs px-2 py-0.5 rounded bg-zinc-800/60 border border-zinc-700/50 text-[10px]">
+                <Globe class="w-3 h-3 text-zinc-500 shrink-0" />
+                <span class="truncate">{{ inspection.url.startsWith('http') ? inspection.url : `https://${inspection.host}` }}</span>
+              </div>
+              <a
+                v-if="inspection.url.startsWith('http')"
+                :href="inspection.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-zinc-400 hover:text-white transition-colors p-1"
+                title="Open site in new tab"
+              >
+                <ExternalLink class="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <!-- Viewport Screenshot (Generous, Clear, and Readable) -->
+            <div class="relative w-full aspect-[16/10] sm:aspect-[16/9] overflow-hidden bg-zinc-950 flex items-start justify-center">
+              <img
+                :src="siteHeroScreenshot"
+                :alt="`Hero preview of ${inspection.host}`"
+                class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
+                loading="lazy"
+                @error="screenshotLoadError = true"
+              />
+            </div>
           </div>
-        </Card>
+          <div
+            v-else
+            class="w-full aspect-[16/10] rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800 flex items-center justify-center text-xs font-mono text-[var(--text-tertiary)]"
+          >
+            {{ locale === 'id' ? 'Preview viewport tidak tersedia' : 'Hero viewport preview unavailable' }}
+          </div>
+        </div>
       </div>
 
-      <!-- Slop Receipt & Detailed Findings Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+      <!-- Hairline Divider -->
+      <div class="border-t border-zinc-200 dark:border-zinc-800/80" />
+
+      <!-- 2. Slop Receipt & Forensic Findings Grid (Unboxed, Pure Typography) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
         <!-- Slop Receipt Column (4 Cols) -->
-        <Card :hoverable="false" class="lg:col-span-4 p-5 space-y-4 font-mono text-xs bg-[var(--bg-card)] border-[var(--border-card)] flex flex-col justify-between">
-          <div class="space-y-4">
-            <div class="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
-              <div class="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-                <Receipt class="w-4 h-4" />
-                <span>SLOP RECEIPT</span>
-              </div>
-              <span class="truncate max-w-[130px] text-right">{{ inspection.host }}</span>
+        <div class="lg:col-span-4 space-y-4 font-mono text-xs">
+          <div class="flex items-center justify-between pb-2 border-b border-zinc-200 dark:border-zinc-800 text-[var(--text-secondary)]">
+            <div class="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+              <Receipt class="w-4 h-4" />
+              <span>SLOP RECEIPT</span>
             </div>
+            <span class="truncate max-w-[130px] text-right">{{ inspection.host }}</span>
+          </div>
 
-            <!-- Items Breakdown -->
-            <div v-if="inspection.findings.length > 0 || inspection.credits.length > 0" class="space-y-2 text-[11px]">
-              <div
-                v-for="f in inspection.findings"
-                :key="f.key"
-                class="flex justify-between items-baseline gap-2"
-              >
-                <span class="truncate text-[var(--text-secondary)]">{{ f.label }}</span>
-                <span class="text-rose-500 font-medium shrink-0">+{{ f.pts }}</span>
-              </div>
-              <div
-                v-for="c in inspection.credits"
-                :key="c.label"
-                class="flex justify-between items-baseline gap-2 text-emerald-500"
-              >
-                <span class="truncate">{{ c.label }}</span>
-                <span class="font-medium shrink-0">-{{ c.pts }}</span>
-              </div>
+          <!-- Items Breakdown -->
+          <div v-if="inspection.findings.length > 0 || inspection.credits.length > 0" class="space-y-2.5 text-[11px]">
+            <div
+              v-for="f in inspection.findings"
+              :key="f.key"
+              class="flex justify-between items-baseline gap-2"
+            >
+              <span class="truncate text-[var(--text-secondary)]">{{ f.label }}</span>
+              <span class="text-rose-500 font-medium shrink-0">+{{ f.pts }}</span>
             </div>
+            <div
+              v-for="c in inspection.credits"
+              :key="c.label"
+              class="flex justify-between items-baseline gap-2 text-emerald-500"
+            >
+              <span class="truncate">{{ c.label }}</span>
+              <span class="font-medium shrink-0">-{{ c.pts }}</span>
+            </div>
+          </div>
 
-            <!-- Clean baseline receipt when findings is 0 -->
-            <div v-else class="space-y-2 text-[11px]">
-              <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
-                <span>Typography Stack</span>
-                <span class="text-emerald-500 font-medium">-5 (Custom)</span>
-              </div>
-              <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
-                <span>Generator Signatures</span>
-                <span class="text-[var(--text-tertiary)]">0 (Clean)</span>
-              </div>
-              <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
-                <span>Lexical Buzzwords</span>
-                <span class="text-[var(--text-tertiary)]">0 (None)</span>
-              </div>
-              <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
-                <span>Template Grids</span>
-                <span class="text-[var(--text-tertiary)]">0 (Clean)</span>
-              </div>
+          <!-- Clean baseline receipt when findings is 0 -->
+          <div v-else class="space-y-2.5 text-[11px]">
+            <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
+              <span>Typography Stack</span>
+              <span class="text-emerald-500 font-medium">-5 (Custom)</span>
+            </div>
+            <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
+              <span>Generator Signatures</span>
+              <span class="text-[var(--text-tertiary)]">0 (Clean)</span>
+            </div>
+            <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
+              <span>Lexical Buzzwords</span>
+              <span class="text-[var(--text-tertiary)]">0 (None)</span>
+            </div>
+            <div class="flex justify-between items-baseline gap-2 text-[var(--text-secondary)]">
+              <span>Template Grids</span>
+              <span class="text-[var(--text-tertiary)]">0 (Clean)</span>
             </div>
           </div>
 
           <!-- Receipt Total -->
-          <div class="pt-3 border-t border-dashed border-[var(--border-subtle)] flex justify-between items-baseline">
+          <div class="pt-3 border-t border-dashed border-zinc-200 dark:border-zinc-800 flex justify-between items-baseline">
             <span class="text-xs uppercase text-[var(--text-secondary)]">
               {{ locale === 'id' ? 'Total Skor Slop:' : 'Total Slop Score:' }}
             </span>
-            <span class="text-lg font-bold text-[var(--text-primary)]">
+            <span class="text-xl font-bold text-[var(--text-primary)]">
               {{ inspection.score }}%
             </span>
           </div>
-        </Card>
+        </div>
 
-        <!-- Right Side: Detailed Findings OR Pristine Clean State (8 Cols) -->
+        <!-- Detailed Findings OR Clean State (8 Cols) -->
         <!-- Clean State when 0 findings -->
-        <Card
+        <div
           v-if="inspection.findings.length === 0"
-          :hoverable="false"
-          class="lg:col-span-8 p-6 flex flex-col justify-center items-center text-center space-y-4 bg-[var(--bg-card)] border-[var(--border-card)]"
+          class="lg:col-span-8 space-y-5"
         >
-          <div class="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-xs">
-            <ShieldCheck class="w-6 h-6 text-emerald-500" />
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 flex items-center justify-center text-zinc-900 dark:text-zinc-100 shadow-xs">
+              <ShieldCheck class="w-5 h-5 text-emerald-500" />
+            </div>
+            <div class="space-y-0.5">
+              <h3 class="text-base font-semibold text-[var(--text-primary)]">
+                {{ locale === 'id' ? 'Website Bersih dari Indikasi AI Slop' : 'Zero AI Slop Signatures Detected' }}
+              </h3>
+              <p class="text-xs text-[var(--text-secondary)] leading-relaxed max-w-xl">
+                {{ locale === 'id'
+                  ? 'Target tidak menunjukkan pola template murahan, copy klise generator, atau komponen bawaan AI builder. Kode tampak dibuat otentik.'
+                  : 'The target exhibits no boilerplate marketing buzzwords, default template tokens, or automated generator signatures. Craftsmanship appears authentic.' }}
+              </p>
+            </div>
           </div>
 
-          <div class="space-y-1 max-w-md">
-            <h3 class="text-base font-semibold text-[var(--text-primary)]">
-              {{ locale === 'id' ? 'Website Bersih dari Indikasi AI Slop' : 'Zero AI Slop Signatures Detected' }}
-            </h3>
-            <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-              {{ locale === 'id'
-                ? 'Target tidak menunjukkan pola template murahan, copy klise generator, atau komponen bawaan AI builder. Kode tampak dibuat otentik.'
-                : 'The target exhibits no boilerplate marketing buzzwords, default template tokens, or automated generator signatures. Craftsmanship appears authentic.' }}
-            </p>
-          </div>
-
-          <!-- Verification checklist grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-lg pt-2 text-left">
-            <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-              <Check class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+          <!-- Verification checklist grid (Unboxed, subtle border lines) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center gap-2.5">
+              <Check class="w-4 h-4 text-emerald-500 shrink-0" />
               <span class="text-xs text-[var(--text-secondary)]">{{ locale === 'id' ? 'Bebas Fingerprint Builder' : 'No Builder Signatures' }}</span>
             </div>
-            <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-              <Check class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center gap-2.5">
+              <Check class="w-4 h-4 text-emerald-500 shrink-0" />
               <span class="text-xs text-[var(--text-secondary)]">{{ locale === 'id' ? 'Bebas Buzzword Klise' : 'Zero Lexical Buzzwords' }}</span>
             </div>
-            <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-              <Check class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center gap-2.5">
+              <Check class="w-4 h-4 text-emerald-500 shrink-0" />
               <span class="text-xs text-[var(--text-secondary)]">{{ locale === 'id' ? 'Tipografi Berkarakter' : 'Custom Typography Stack' }}</span>
             </div>
-            <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-              <Check class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <div class="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 flex items-center gap-2.5">
+              <Check class="w-4 h-4 text-emerald-500 shrink-0" />
               <span class="text-xs text-[var(--text-secondary)]">{{ locale === 'id' ? 'Bebas Orbs Blur Template' : 'No Floating Gradient Orbs' }}</span>
             </div>
           </div>
-        </Card>
+        </div>
 
-        <!-- Detailed Evidence Bento Grid when findings exist -->
-        <div v-else class="lg:col-span-8 space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-1">
+        <!-- Detailed Evidence List when findings exist -->
+        <div v-else class="lg:col-span-8 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-zinc-200 dark:border-zinc-800">
             <div class="flex items-center gap-2">
               <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                 {{ locale === 'id' ? 'Temuan Bukti Forensik' : 'Forensic Evidence' }}
@@ -1149,12 +1066,11 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Card
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div
               v-for="item in filteredFindings"
               :key="item.key"
-              :hoverable="false"
-              class="p-4 space-y-2.5 bg-[var(--bg-card)] border-[var(--border-card)]"
+              class="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2.5 bg-transparent"
             >
               <div class="flex items-center justify-between">
                 <Badge variant="outline" size="sm" class="text-[10px] font-mono capitalize">
@@ -1167,7 +1083,7 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
                 {{ item.label }}
               </div>
 
-              <div v-if="item.quotes.length" class="p-2 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800/80 font-mono text-[11px] text-[var(--text-secondary)] space-y-1">
+              <div v-if="item.quotes.length" class="p-2 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 font-mono text-[11px] text-[var(--text-secondary)] space-y-1">
                 <div v-for="(q, qidx) in item.quotes" :key="qidx" class="truncate">
                   “{{ q }}”
                 </div>
@@ -1176,7 +1092,92 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
               <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
                 {{ item.why }}
               </p>
-            </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hairline Divider -->
+      <div class="border-t border-zinc-200 dark:border-zinc-800/80" />
+
+      <!-- 3. AI Roaster Verdict Section (Unboxed, Pure Typography) -->
+      <div class="space-y-5">
+        <div class="flex items-center justify-between pb-1">
+          <div class="space-y-0.5">
+            <span class="text-[11px] font-mono uppercase tracking-widest text-[var(--text-tertiary)]">
+              CRITIQUE & FORENSIC FEEDBACK
+            </span>
+            <h3 class="text-base sm:text-lg font-bold tracking-tight text-[var(--text-primary)]">
+              {{ locale === 'id' ? 'Vonis AI Roaster' : 'AI Roaster Verdict' }}
+            </h3>
+          </div>
+          <Badge variant="outline" size="sm" class="text-[10px] font-mono font-normal text-[var(--text-tertiary)]">
+            {{ roastData?.model || 'qwen/qwen3.8-27b' }}
+          </Badge>
+        </div>
+
+        <!-- Loading Roast Shimmer -->
+        <div v-if="isRoasting" class="py-6 space-y-3 animate-pulse">
+          <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
+          <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-5/6" />
+          <div class="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/2" />
+        </div>
+
+        <!-- Roasting Points List -->
+        <div v-else class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-1">
+            <div
+              v-for="(r, idx) in formattedRoasts"
+              :key="idx"
+              class="space-y-2 border-l border-zinc-200 dark:border-zinc-800 pl-4"
+            >
+              <div class="text-[11px] font-mono text-[var(--text-tertiary)]">
+                {{ String(idx + 1).padStart(2, '0') }}
+              </div>
+              <p class="text-sm font-semibold text-[var(--text-primary)] leading-snug">
+                {{ r.line }}
+              </p>
+              <p v-if="r.evidence" class="text-xs font-mono text-[var(--text-tertiary)] truncate">
+                {{ r.evidence }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Single Practical Fix (Key Recommendation) -->
+          <div class="mt-4 p-4 rounded-xl bg-zinc-50 dark:bg-[#151517] border border-zinc-200 dark:border-zinc-800/80 flex items-start gap-3">
+            <ShieldCheck class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+            <div class="space-y-0.5">
+              <span class="text-[11px] font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold">
+                {{ locale === 'id' ? 'Rekomendasi Utama' : 'Key Recommendation' }}
+              </span>
+              <p class="text-xs text-[var(--text-primary)] leading-relaxed">
+                {{ roastData?.fix || (locale === 'id' ? 'Pertahankan kode bersih dan hindari copy klise generator.' : 'Maintain authentic copy and avoid default generator templates.') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-wrap items-center gap-2 pt-2">
+            <Button
+              id="btn-copy-roast"
+              variant="secondary"
+              size="sm"
+              class="rounded-lg text-xs cursor-pointer"
+              @click="copyRoastResult"
+            >
+              <Clipboard class="w-3.5 h-3.5 mr-1.5" />
+              {{ locale === 'id' ? 'Salin Roasting' : 'Copy Roast' }}
+            </Button>
+            <Button
+              id="btn-audit-another"
+              variant="ghost"
+              size="sm"
+              class="rounded-lg text-xs cursor-pointer"
+              @click="handleClear"
+            >
+              <RotateCcw class="w-3.5 h-3.5 mr-1.5" />
+              {{ locale === 'id' ? 'Audit Web Lain' : 'Inspect Another' }}
+            </Button>
           </div>
         </div>
       </div>

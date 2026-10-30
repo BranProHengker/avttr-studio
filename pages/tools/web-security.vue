@@ -280,78 +280,99 @@ const getGradeColorClasses = (grade: string) => {
     </div>
 
     <!-- Results Section -->
-    <div v-if="result && !loading" class="space-y-6">
-      <!-- Hero Score Card Bento -->
-      <Card :hoverable="false" class="p-6 space-y-6 border border-[var(--border-card)]">
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-[var(--border-subtle)]">
-          <!-- Grade Display -->
-          <div class="flex items-center gap-5">
-            <div
-              class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex flex-col items-center justify-center border font-mono font-bold shadow-sm"
-              :class="getGradeColorClasses(result.grade).bg"
-            >
-              <span class="text-3xl sm:text-4xl tracking-tighter">{{ result.grade }}</span>
-              <span class="text-[10px] uppercase font-sans font-medium tracking-wider mt-0.5 opacity-90">
+    <div v-if="result && !loading" class="space-y-8">
+      <!-- Unboxed Editorial Score & Posture Summary -->
+      <div class="space-y-6 pb-8 border-b border-zinc-200 dark:border-zinc-800">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <!-- Col Left: Monospaced Grade, Posture & Metadata -->
+          <div class="lg:col-span-8 space-y-4">
+            <div class="flex items-center gap-3">
+              <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                Security Posture Report
+              </span>
+              <span
+                class="text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold"
+                :class="getGradeColorClasses(result.grade).bg"
+              >
                 {{ getGradeColorClasses(result.grade).label }}
               </span>
             </div>
 
-            <div class="space-y-1.5">
+            <div class="space-y-1">
               <div class="flex items-center gap-2">
-                <h2 class="text-base sm:text-lg font-bold text-[var(--text-primary)] break-all font-mono">
+                <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-display break-all">
                   {{ result.targetUrl }}
                 </h2>
                 <a
                   :href="result.finalUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                  class="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors shrink-0"
                 >
                   <ExternalLink class="w-4 h-4" />
                 </a>
               </div>
 
-              <div class="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)] font-mono">
-                <span v-if="result.ip" class="flex items-center gap-1">
-                  <Globe class="w-3.5 h-3.5 text-zinc-400" />
-                  {{ result.ip }}
+              <div class="flex items-baseline gap-3 pt-1">
+                <span class="font-mono text-5xl sm:text-6xl font-light tracking-tighter text-zinc-900 dark:text-zinc-50">
+                  {{ result.grade }}
                 </span>
-                <span>•</span>
-                <span class="flex items-center gap-1">
-                  <Clock class="w-3.5 h-3.5 text-zinc-400" />
-                  {{ result.responseTimeMs }} ms
-                </span>
-                <span>•</span>
-                <span :class="result.isHttps ? 'text-emerald-500 font-medium' : 'text-rose-500 font-medium'">
-                  {{ result.isHttps ? ui.httpsActive : ui.httpsInsecure }}
+                <span class="text-xs font-mono text-zinc-400">
+                  / {{ result.score }} of 100 security index
                 </span>
               </div>
             </div>
+
+            <!-- Score Gauge Bar -->
+            <div class="w-full max-w-md h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                :class="result.score >= 80 ? 'bg-emerald-500' : result.score >= 60 ? 'bg-amber-500' : 'bg-rose-500'"
+                :style="{ width: `${result.score}%` }"
+              />
+            </div>
+
+            <!-- Metadata Stat Line -->
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+              <span v-if="result.ip" class="flex items-center gap-1">
+                <Globe class="w-3.5 h-3.5 text-zinc-400" />
+                {{ result.ip }}
+              </span>
+              <span>•</span>
+              <span class="flex items-center gap-1">
+                <Clock class="w-3.5 h-3.5 text-zinc-400" />
+                {{ result.responseTimeMs }} ms
+              </span>
+              <span>•</span>
+              <span :class="result.isHttps ? 'text-emerald-500 font-medium' : 'text-rose-500 font-medium'">
+                {{ result.isHttps ? ui.httpsActive : ui.httpsInsecure }}
+              </span>
+            </div>
           </div>
 
-          <!-- Quick Stats Pill Counters -->
-          <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            <div class="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-              <div class="text-lg font-bold text-emerald-500 font-mono">{{ result.summary.passed }}</div>
-              <div class="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-medium">{{ ui.statsPassed }}</div>
+          <!-- Col Right: Quick Stats Pill Counters -->
+          <div class="lg:col-span-4 flex lg:justify-end items-center gap-2.5 sm:gap-3 shrink-0 pt-2">
+            <div class="px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center min-w-[76px]">
+              <div class="text-xl font-bold text-emerald-500 font-mono">{{ result.summary.passed }}</div>
+              <div class="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-medium font-mono">{{ ui.statsPassed }}</div>
             </div>
-            <div class="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-              <div class="text-lg font-bold text-amber-500 font-mono">{{ result.summary.warnings }}</div>
-              <div class="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-medium">{{ ui.statsWarnings }}</div>
+            <div class="px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center min-w-[76px]">
+              <div class="text-xl font-bold text-amber-500 font-mono">{{ result.summary.warnings }}</div>
+              <div class="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-medium font-mono">{{ ui.statsWarnings }}</div>
             </div>
-            <div class="px-3.5 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
-              <div class="text-lg font-bold text-rose-500 font-mono">{{ result.summary.failed }}</div>
-              <div class="text-[10px] text-rose-600 dark:text-rose-400 uppercase font-medium">{{ ui.statsFailed }}</div>
+            <div class="px-4 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center min-w-[76px]">
+              <div class="text-xl font-bold text-rose-500 font-mono">{{ result.summary.failed }}</div>
+              <div class="text-[10px] text-rose-600 dark:text-rose-400 uppercase font-medium font-mono">{{ ui.statsFailed }}</div>
             </div>
           </div>
         </div>
 
         <!-- Filter Tab Buttons -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 pt-2">
           <Button
             size="sm"
             :variant="activeFilter === 'all' ? 'primary' : 'ghost'"
-            class="text-xs h-8 cursor-pointer"
+            class="text-xs h-8 cursor-pointer font-mono"
             @click="activeFilter = 'all'"
           >
             {{ ui.filterAll }} ({{ result.headersAnalyzed.length }})
@@ -359,7 +380,7 @@ const getGradeColorClasses = (grade: string) => {
           <Button
             size="sm"
             :variant="activeFilter === 'issues' ? 'primary' : 'ghost'"
-            class="text-xs h-8 cursor-pointer"
+            class="text-xs h-8 cursor-pointer font-mono"
             @click="activeFilter = 'issues'"
           >
             {{ ui.filterIssues }} ({{ result.summary.failed + result.summary.warnings }})
@@ -367,25 +388,24 @@ const getGradeColorClasses = (grade: string) => {
           <Button
             size="sm"
             :variant="activeFilter === 'passed' ? 'primary' : 'ghost'"
-            class="text-xs h-8 cursor-pointer"
+            class="text-xs h-8 cursor-pointer font-mono"
             @click="activeFilter = 'passed'"
           >
             {{ ui.filterPassed }} ({{ result.summary.passed }})
           </Button>
         </div>
-      </Card>
+      </div>
 
       <!-- Leaked Info & Fingerprinting Section (if detected) -->
-      <Card
+      <div
         v-if="result.infoLeaks.length > 0"
-        :hoverable="false"
-        class="p-5 border border-amber-500/20 bg-amber-500/5 space-y-3"
+        class="p-5 border border-amber-500/20 bg-amber-500/5 rounded-xl space-y-3"
       >
         <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider font-mono">
           <AlertTriangle class="w-4 h-4" />
           {{ ui.infoLeakAlert }}
         </div>
-        <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
           {{ ui.infoLeakDesc }}
         </p>
 
@@ -393,21 +413,21 @@ const getGradeColorClasses = (grade: string) => {
           <div
             v-for="leak in result.infoLeaks"
             :key="leak.header"
-            class="p-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1.5"
+            class="p-3 rounded-lg bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 space-y-1.5"
           >
             <div class="flex items-center justify-between text-xs font-mono">
-              <span class="font-bold text-[var(--text-primary)]">{{ leak.header }}</span>
+              <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ leak.header }}</span>
               <span class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-500 font-semibold">
                 {{ leak.value }}
               </span>
             </div>
-            <p class="text-[11px] text-[var(--text-secondary)]">{{ leak.description }}</p>
-            <div class="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
+            <p class="text-[11px] text-zinc-500">{{ leak.description }}</p>
+            <div class="text-[11px] text-zinc-400 font-mono">
               {{ ui.remedyPrefix }}{{ leak.remedy }}
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       <!-- Detailed Headers Evaluation List -->
       <div class="space-y-3">
@@ -418,11 +438,11 @@ const getGradeColorClasses = (grade: string) => {
         <div
           v-for="item in filteredHeaders"
           :key="item.key"
-          class="rounded-[14px] border border-[var(--border-card)] bg-[var(--bg-card)] transition-colors overflow-hidden"
+          class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#141416] transition-colors overflow-hidden"
         >
           <!-- Header Card Header Row -->
           <div
-            class="p-4 sm:p-5 flex items-center justify-between gap-3 cursor-pointer select-none"
+            class="p-4 sm:p-5 flex items-center justify-between gap-3 cursor-pointer select-none hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors"
             @click="toggleCard(item.key)"
           >
             <div class="flex items-center gap-3">
@@ -444,7 +464,7 @@ const getGradeColorClasses = (grade: string) => {
 
               <!-- Header Title & Key -->
               <div>
-                <div class="text-xs sm:text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <div class="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                   <span>{{ item.name }}</span>
                   <Badge
                     :variant="item.status === 'pass' ? 'badge' : item.status === 'warn' ? 'secondary' : 'outline'"
@@ -454,7 +474,7 @@ const getGradeColorClasses = (grade: string) => {
                     {{ item.status === 'pass' ? ui.statusInstalled : item.status === 'warn' ? ui.statusOptimize : ui.statusMissing }}
                   </Badge>
                 </div>
-                <div class="text-[11px] text-[var(--text-secondary)] font-mono mt-0.5">
+                <div class="text-[11px] text-zinc-400 font-mono mt-0.5">
                   {{ item.key }}
                 </div>
               </div>
@@ -474,34 +494,34 @@ const getGradeColorClasses = (grade: string) => {
           <!-- Expanded Body Content -->
           <div
             v-if="expandedCards[item.key]"
-            class="px-4 pb-5 sm:px-5 border-t border-[var(--border-subtle)] pt-4 space-y-4 bg-zinc-950/20"
+            class="px-4 pb-5 sm:px-5 border-t border-zinc-200 dark:border-zinc-800 pt-4 space-y-4 bg-zinc-50/50 dark:bg-zinc-950/40"
           >
             <!-- Current Value (if present) -->
             <div v-if="item.value" class="space-y-1">
-              <div class="text-[11px] font-mono uppercase text-[var(--text-tertiary)]">{{ ui.detectedValue }}</div>
-              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] font-mono text-xs text-zinc-300 break-all select-all">
+              <div class="text-[11px] font-mono uppercase text-zinc-400">{{ ui.detectedValue }}</div>
+              <div class="p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 font-mono text-xs text-zinc-700 dark:text-zinc-300 break-all select-all">
                 {{ item.value }}
               </div>
             </div>
 
             <!-- Human Explanation & Real-world Risk -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs leading-relaxed">
-              <div class="p-3.5 rounded-xl bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1">
-                <div class="font-semibold text-[var(--text-primary)] flex items-center gap-1.5 text-xs">
+              <div class="p-3.5 rounded-xl bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-1">
+                <div class="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 text-xs">
                   <Info class="w-3.5 h-3.5 text-sky-400" />
                   {{ ui.whatItDoes }}
                 </div>
-                <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                <p class="text-[11px] text-zinc-500 leading-relaxed">
                   {{ item.explanation }}
                 </p>
               </div>
 
-              <div class="p-3.5 rounded-xl bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1">
+              <div class="p-3.5 rounded-xl bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-1">
                 <div class="font-semibold text-rose-500 flex items-center gap-1.5 text-xs">
                   <ShieldAlert class="w-3.5 h-3.5" />
                   {{ ui.riskIfMissing }}
                 </div>
-                <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                <p class="text-[11px] text-zinc-500 leading-relaxed">
                   {{ item.risk }}
                 </p>
               </div>
@@ -510,17 +530,17 @@ const getGradeColorClasses = (grade: string) => {
             <!-- How to Fix Section (Deterministic Snippets - Zero AI Tokens Needed) -->
             <div class="space-y-2 pt-1">
               <div class="flex items-center justify-between">
-                <div class="text-[11px] font-mono uppercase text-[var(--text-tertiary)] flex items-center gap-1.5">
+                <div class="text-[11px] font-mono uppercase text-zinc-400 flex items-center gap-1.5">
                   <FileCode class="w-3.5 h-3.5" />
                   {{ ui.howToFix }}
                 </div>
 
                 <!-- Environment Switcher Tabs -->
-                <div class="flex items-center gap-1 bg-[var(--bg-app)] p-0.5 rounded-lg border border-[var(--border-subtle)] text-[10px] font-mono">
+                <div class="flex items-center gap-1 bg-white dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-[10px] font-mono">
                   <button
                     type="button"
                     class="px-2 py-0.5 rounded cursor-pointer transition-colors"
-                    :class="snippetTabs[item.key] === 'nginx' ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white'"
+                    :class="snippetTabs[item.key] === 'nginx' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
                     @click="setSnippetTab(item.key, 'nginx')"
                   >
                     Nginx
@@ -528,7 +548,7 @@ const getGradeColorClasses = (grade: string) => {
                   <button
                     type="button"
                     class="px-2 py-0.5 rounded cursor-pointer transition-colors"
-                    :class="snippetTabs[item.key] === 'cloudflare' ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white'"
+                    :class="snippetTabs[item.key] === 'cloudflare' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
                     @click="setSnippetTab(item.key, 'cloudflare')"
                   >
                     Cloudflare
@@ -536,7 +556,7 @@ const getGradeColorClasses = (grade: string) => {
                   <button
                     type="button"
                     class="px-2 py-0.5 rounded cursor-pointer transition-colors"
-                    :class="snippetTabs[item.key] === 'nuxt' ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white'"
+                    :class="snippetTabs[item.key] === 'nuxt' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
                     @click="setSnippetTab(item.key, 'nuxt')"
                   >
                     Nuxt
@@ -544,7 +564,7 @@ const getGradeColorClasses = (grade: string) => {
                   <button
                     type="button"
                     class="px-2 py-0.5 rounded cursor-pointer transition-colors"
-                    :class="snippetTabs[item.key] === 'vercel' ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-400 hover:text-white'"
+                    :class="snippetTabs[item.key] === 'vercel' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-bold' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
                     @click="setSnippetTab(item.key, 'vercel')"
                   >
                     Vercel
@@ -557,7 +577,7 @@ const getGradeColorClasses = (grade: string) => {
                 <pre class="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 font-mono text-xs overflow-x-auto whitespace-pre-wrap leading-relaxed">{{ item.snippets[snippetTabs[item.key] || 'nginx'] }}</pre>
                 <button
                   type="button"
-                  class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[11px] font-mono flex items-center gap-1 transition-colors border border-zinc-700"
+                  class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white text-[11px] font-mono flex items-center gap-1 transition-colors border border-zinc-700 cursor-pointer"
                   @click="copySnippet(item.snippets[snippetTabs[item.key] || 'nginx'], `${item.key}-${snippetTabs[item.key]}`)"
                 >
                   <Check v-if="copiedSnippetKey === `${item.key}-${snippetTabs[item.key]}`" class="w-3.5 h-3.5 text-emerald-400" />
@@ -570,17 +590,17 @@ const getGradeColorClasses = (grade: string) => {
         </div>
       </div>
 
-      <!-- Raw Headers Accordion Card -->
-      <Card :hoverable="false" class="p-4 space-y-3 border border-[var(--border-card)]">
+      <!-- Raw Headers Accordion (Unboxed Hairline) -->
+      <div class="p-4 space-y-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#141416]">
         <div
           class="flex items-center justify-between cursor-pointer select-none"
           @click="showRawHeaders = !showRawHeaders"
         >
-          <div class="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)] font-mono">
+          <div class="flex items-center gap-2 text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
             <Server class="w-4 h-4 text-zinc-400" />
             {{ ui.rawHeadersTitle }} ({{ Object.keys(result.rawHeaders).length }})
           </div>
-          <button type="button" class="text-xs text-[var(--text-secondary)] hover:text-white font-mono flex items-center gap-1">
+          <button type="button" class="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white font-mono flex items-center gap-1 cursor-pointer">
             <span>{{ showRawHeaders ? ui.toggleHide : ui.toggleShow }}</span>
             <ChevronUp v-if="showRawHeaders" class="w-3.5 h-3.5" />
             <ChevronDown v-else class="w-3.5 h-3.5" />
@@ -599,7 +619,7 @@ const getGradeColorClasses = (grade: string) => {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   </div>
 </template>

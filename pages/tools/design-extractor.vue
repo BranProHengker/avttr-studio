@@ -441,35 +441,39 @@ const renderedMarkdownHtml = computed(() => {
     </div>
 
     <!-- Results Workspace -->
-    <div v-else-if="extractedData" class="space-y-6">
-      <!-- Target Site Summary & Tech Stack Chips -->
-      <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div v-else-if="extractedData" class="space-y-8">
+      <!-- Unboxed Editorial Site Summary & Metadata -->
+      <div class="space-y-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div class="flex items-start gap-3 min-w-0">
             <img
               v-if="extractedData.metadata.favicon"
               :src="extractedData.metadata.favicon"
               alt="Favicon"
-              class="w-6 h-6 rounded-xs shrink-0 mt-0.5 object-contain"
+              class="w-7 h-7 rounded-sm shrink-0 mt-1 object-contain"
               @error="($event.target as HTMLElement).style.display = 'none'"
             />
-            <div class="min-w-0">
-              <h2 class="text-base font-bold text-[var(--text-primary)] truncate">
+            <div class="min-w-0 space-y-1">
+              <span class="text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+                Design System Forensics
+              </span>
+              <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-display truncate">
                 {{ extractedData.metadata.title }}
               </h2>
               <a
                 :href="extractedData.metadata.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-mono"
+                class="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors font-mono"
               >
                 <span>{{ extractedData.metadata.hostname }}</span>
-                <ExternalLink class="w-3 h-3" />
+                <ExternalLink class="w-3.5 h-3.5" />
               </a>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
+          <!-- Forensic Badges -->
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
             <Badge v-if="extractedData.aiUsed" variant="primary">
               Qwen 3.8-27B
             </Badge>
@@ -488,80 +492,80 @@ const renderedMarkdownHtml = computed(() => {
           </div>
         </div>
 
-        <p v-if="extractedData.metadata.description" class="text-xs text-[var(--text-secondary)] line-clamp-2">
+        <p v-if="extractedData.metadata.description" class="text-xs text-zinc-500 dark:text-zinc-400 max-w-3xl leading-relaxed line-clamp-2">
           {{ extractedData.metadata.description }}
         </p>
 
-        <!-- Quick Tech Stack Chips Row (Separated overview) -->
-        <div v-if="extractedData.techStack.length > 0" class="pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-2">
-          <span class="text-[11px] uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mr-1">
+        <!-- Quick Tech Stack Chips Row (Unboxed) -->
+        <div v-if="extractedData.techStack.length > 0" class="pt-2 flex flex-wrap items-center gap-2">
+          <span class="text-[11px] uppercase tracking-wider font-semibold text-zinc-400 font-mono mr-1">
             Detected Stack:
           </span>
           <button
             v-for="item in extractedData.techStack"
             :key="item.name"
             type="button"
-            class="px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--bg-app)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--border-card-hover)] transition-all cursor-pointer inline-flex items-center gap-1.5"
+            class="px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all cursor-pointer inline-flex items-center gap-1.5"
             @click="activeTab = 'stack'"
           >
-            <Cpu class="w-3 h-3 text-[var(--text-secondary)]" />
+            <Cpu class="w-3 h-3 text-zinc-400" />
             <span>{{ item.name }}</span>
-            <span class="text-[10px] text-[var(--text-tertiary)] font-mono">({{ item.category }})</span>
+            <span class="text-[10px] text-zinc-400 font-mono">({{ item.category }})</span>
           </button>
         </div>
-      </Card>
+      </div>
 
-      <!-- Navigation Tabs -->
-      <div class="flex items-center gap-1.5 border-b border-[var(--border-subtle)] pb-2 overflow-x-auto">
+      <!-- Navigation Tabs (Unboxed) -->
+      <div class="flex items-center gap-1.5 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto">
         <button
           type="button"
-          class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
-          :class="activeTab === 'export' ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          :class="activeTab === 'export' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-semibold shadow-xs' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'"
           @click="activeTab = 'export'"
         >
-          <FileText class="w-4 h-4" />
+          <FileText class="w-3.5 h-3.5" />
           <span>DESIGN.md</span>
         </button>
 
         <button
           type="button"
-          class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
-          :class="activeTab === 'palette' ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          :class="activeTab === 'palette' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-semibold shadow-xs' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'"
           @click="activeTab = 'palette'"
         >
-          <Palette class="w-4 h-4" />
+          <Palette class="w-3.5 h-3.5" />
           <span>Color Palette</span>
           <span class="text-[10px] opacity-70">({{ extractedData.colors.palette.length }})</span>
         </button>
 
         <button
           type="button"
-          class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
-          :class="activeTab === 'typography' ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          :class="activeTab === 'typography' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-semibold shadow-xs' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'"
           @click="activeTab = 'typography'"
         >
-          <Type class="w-4 h-4" />
+          <Type class="w-3.5 h-3.5" />
           <span>Typography</span>
           <span class="text-[10px] opacity-70">({{ extractedData.typography.fonts.length }})</span>
         </button>
 
         <button
           type="button"
-          class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
-          :class="activeTab === 'geometry' ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          :class="activeTab === 'geometry' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-semibold shadow-xs' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'"
           @click="activeTab = 'geometry'"
         >
-          <Box class="w-4 h-4" />
+          <Box class="w-3.5 h-3.5" />
           <span>Geometry & Elevation</span>
         </button>
 
         <button
           type="button"
-          class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
-          :class="activeTab === 'stack' ? 'bg-[var(--bg-card-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all flex items-center gap-2 cursor-pointer shrink-0"
+          :class="activeTab === 'stack' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-semibold shadow-xs' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'"
           @click="activeTab = 'stack'"
         >
-          <Cpu class="w-4 h-4" />
+          <Cpu class="w-3.5 h-3.5" />
           <span>Tech Stack</span>
           <span class="text-[10px] opacity-70">({{ extractedData.techStack.length }})</span>
         </button>
@@ -665,15 +669,15 @@ const renderedMarkdownHtml = computed(() => {
         <!-- Rendered Markdown Specification View -->
         <div v-if="isMarkdownFormat && viewMode === 'preview'" class="space-y-4">
           <!-- Specification Header Card (Frontmatter Overview) -->
-          <Card v-if="frontmatterSpec" :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-4">
+          <div v-if="frontmatterSpec" class="p-5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-4">
               <div class="space-y-1">
                 <div class="flex items-center gap-2">
                   <Badge variant="primary" size="sm">Specification</Badge>
                   <Badge variant="outline" size="sm">alpha</Badge>
-                  <span class="text-xs text-[var(--text-tertiary)] font-mono">1 Page Analyzed</span>
+                  <span class="text-xs text-zinc-400 font-mono">1 Page Analyzed</span>
                 </div>
-                <h3 class="text-base font-bold text-[var(--text-primary)]">
+                <h3 class="text-base font-bold text-zinc-900 dark:text-zinc-100 font-display">
                   {{ frontmatterSpec.title }}
                 </h3>
               </div>
@@ -681,7 +685,7 @@ const renderedMarkdownHtml = computed(() => {
                 :href="frontmatterSpec.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-mono"
+                class="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 font-mono"
               >
                 <span>{{ frontmatterSpec.hostname }}</span>
                 <ExternalLink class="w-3 h-3" />
@@ -690,140 +694,140 @@ const renderedMarkdownHtml = computed(() => {
 
             <!-- Frontmatter Key Color Roles -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1 select-none">
-                <span class="text-[10px] uppercase tracking-wider font-mono text-[var(--text-tertiary)] font-semibold">Canvas</span>
+              <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-1 select-none">
+                <span class="text-[10px] uppercase tracking-wider font-mono text-zinc-400 font-semibold">Canvas</span>
                 <div class="flex items-center gap-2">
                   <span class="w-3.5 h-3.5 rounded-xs border border-black/20" :style="{ backgroundColor: frontmatterSpec.canvas }"></span>
-                  <span class="font-mono font-bold text-[var(--text-primary)]">{{ frontmatterSpec.canvas }}</span>
+                  <span class="font-mono font-bold text-zinc-900 dark:text-zinc-100">{{ frontmatterSpec.canvas }}</span>
                 </div>
               </div>
 
-              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1 select-none">
-                <span class="text-[10px] uppercase tracking-wider font-mono text-[var(--text-tertiary)] font-semibold">Surface</span>
+              <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-1 select-none">
+                <span class="text-[10px] uppercase tracking-wider font-mono text-zinc-400 font-semibold">Surface</span>
                 <div class="flex items-center gap-2">
                   <span class="w-3.5 h-3.5 rounded-xs border border-black/20" :style="{ backgroundColor: frontmatterSpec.surface }"></span>
-                  <span class="font-mono font-bold text-[var(--text-primary)]">{{ frontmatterSpec.surface }}</span>
+                  <span class="font-mono font-bold text-zinc-900 dark:text-zinc-100">{{ frontmatterSpec.surface }}</span>
                 </div>
               </div>
 
-              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1 select-none">
-                <span class="text-[10px] uppercase tracking-wider font-mono text-[var(--text-tertiary)] font-semibold">Primary CTA</span>
+              <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-1 select-none">
+                <span class="text-[10px] uppercase tracking-wider font-mono text-zinc-400 font-semibold">Primary CTA</span>
                 <div class="flex items-center gap-2">
                   <span class="w-3.5 h-3.5 rounded-xs border border-black/20" :style="{ backgroundColor: frontmatterSpec.primary }"></span>
-                  <span class="font-mono font-bold text-[var(--text-primary)]">{{ frontmatterSpec.primary }}</span>
+                  <span class="font-mono font-bold text-zinc-900 dark:text-zinc-100">{{ frontmatterSpec.primary }}</span>
                 </div>
               </div>
 
-              <div class="p-2.5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] space-y-1 select-none">
-                <span class="text-[10px] uppercase tracking-wider font-mono text-[var(--text-tertiary)] font-semibold">Hairline</span>
+              <div class="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-1 select-none">
+                <span class="text-[10px] uppercase tracking-wider font-mono text-zinc-400 font-semibold">Hairline</span>
                 <div class="flex items-center gap-2">
                   <span class="w-3.5 h-3.5 rounded-xs border border-black/20" :style="{ backgroundColor: frontmatterSpec.hairline }"></span>
-                  <span class="font-mono font-bold text-[var(--text-primary)]">{{ frontmatterSpec.hairline }}</span>
+                  <span class="font-mono font-bold text-zinc-900 dark:text-zinc-100">{{ frontmatterSpec.hairline }}</span>
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
 
           <!-- Formatted Markdown Document Container -->
-          <Card :hoverable="false" class="p-6 sm:p-8 bg-[var(--bg-card)] border border-[var(--border-card)]">
-            <div class="max-w-none prose dark:prose-invert space-y-2" v-html="renderedMarkdownHtml" />
-          </Card>
+          <div class="p-6 sm:p-8 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl">
+            <div class="max-w-none prose dark:prose-invert space-y-2 text-xs leading-relaxed" v-html="renderedMarkdownHtml" />
+          </div>
         </div>
 
         <!-- Raw Code Viewer (Fallback & Toggle) -->
-        <Card v-else :hoverable="false" class="overflow-hidden bg-[#121214] border border-[var(--border-card)]">
+        <div v-else class="overflow-hidden bg-[#121214] border border-zinc-200 dark:border-zinc-800 rounded-xl">
           <div class="flex items-center justify-between px-4 py-2 bg-[#18181b] border-b border-[#27272a] text-xs font-mono text-zinc-400">
             <span>{{ currentExportFilename }}</span>
             <span class="text-[11px] opacity-75 uppercase">{{ exportFormat }}</span>
           </div>
           <pre class="p-4 text-xs font-mono text-zinc-200 overflow-x-auto max-h-[600px] leading-relaxed"><code v-html="highlightedExportCode"></code></pre>
-        </Card>
+        </div>
       </div>
 
       <!-- Tab 2: Color Palette -->
       <div v-if="activeTab === 'palette'" class="space-y-6">
         <!-- Dominant Archetypes -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
-            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
+          <div class="p-4 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2">
+            <div class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
               Background Archetype
             </div>
             <div class="flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
+                class="w-10 h-10 rounded-lg border border-black/10 dark:border-white/10 shrink-0 shadow-xs"
                 :style="{ backgroundColor: extractedData.colors.dominantBackground }"
               />
               <div class="min-w-0">
-                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
+                <div class="text-sm font-mono font-bold text-zinc-900 dark:text-zinc-100">
                   {{ extractedData.colors.dominantBackground }}
                 </div>
-                <div class="text-[11px] text-[var(--text-secondary)]">
+                <div class="text-[11px] text-zinc-500 font-mono">
                   Primary canvas surface
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
-            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
+          <div class="p-4 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2">
+            <div class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
               Foreground Archetype
             </div>
             <div class="flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
+                class="w-10 h-10 rounded-lg border border-black/10 dark:border-white/10 shrink-0 shadow-xs"
                 :style="{ backgroundColor: extractedData.colors.dominantForeground }"
               />
               <div class="min-w-0">
-                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
+                <div class="text-sm font-mono font-bold text-zinc-900 dark:text-zinc-100">
                   {{ extractedData.colors.dominantForeground }}
                 </div>
-                <div class="text-[11px] text-[var(--text-secondary)]">
+                <div class="text-[11px] text-zinc-500 font-mono">
                   Primary typography color
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card :hoverable="false" class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2">
-            <div class="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-semibold">
+          <div class="p-4 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2">
+            <div class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">
               Accent Archetype
             </div>
             <div class="flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-lg border border-[var(--border-subtle)] shrink-0 shadow-xs"
+                class="w-10 h-10 rounded-lg border border-black/10 dark:border-white/10 shrink-0 shadow-xs"
                 :style="{ backgroundColor: extractedData.colors.accentColor }"
               />
               <div class="min-w-0">
-                <div class="text-sm font-mono font-bold text-[var(--text-primary)]">
+                <div class="text-sm font-mono font-bold text-zinc-900 dark:text-zinc-100">
                   {{ extractedData.colors.accentColor }}
                 </div>
-                <div class="text-[11px] text-[var(--text-secondary)]">
+                <div class="text-[11px] text-zinc-500 font-mono">
                   Interactive brand accent
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         <!-- Color Swatches Grid -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-[var(--text-primary)]">
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-display">
               Extracted Colors & WCAG AA Ratios
             </h3>
-            <span class="text-xs text-[var(--text-secondary)]">
+            <span class="text-xs text-zinc-400 font-mono">
               Evaluated against dominant background ({{ extractedData.colors.dominantBackground }})
             </span>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <Card
+            <div
               v-for="color in extractedData.colors.palette"
               :key="color.hex"
-              class="p-3.5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3 hover:border-[var(--border-card-hover)] transition-all"
+              class="p-3.5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all"
             >
               <div
-                class="w-full h-14 rounded-lg border border-[var(--border-subtle)] flex items-end justify-end p-2 cursor-pointer shadow-xs"
+                class="w-full h-14 rounded-lg border border-black/10 dark:border-white/10 flex items-end justify-end p-2 cursor-pointer shadow-xs"
                 :style="{ backgroundColor: color.hex }"
                 @click="copyToClipboard(color.hex, color.hex)"
               >
@@ -834,7 +838,7 @@ const renderedMarkdownHtml = computed(() => {
 
               <div class="space-y-1.5">
                 <div class="flex items-center justify-between">
-                  <span class="font-mono text-xs font-bold text-[var(--text-primary)]">
+                  <span class="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">
                     {{ color.hex }}
                   </span>
                   <Badge :variant="getRoleBadgeVariant(color.role)">
@@ -842,36 +846,36 @@ const renderedMarkdownHtml = computed(() => {
                   </Badge>
                 </div>
 
-                <div class="text-[11px] font-mono text-[var(--text-secondary)] truncate">
+                <div class="text-[11px] font-mono text-zinc-400 truncate">
                   {{ color.rgb }}
                 </div>
 
                 <!-- WCAG AA Badge -->
-                <div v-if="color.contrastWithBg" class="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
-                  <span class="text-[11px] text-[var(--text-secondary)] font-mono">
+                <div v-if="color.contrastWithBg" class="pt-2 border-t border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between text-xs">
+                  <span class="text-[11px] text-zinc-400 font-mono">
                     {{ color.contrastWithBg.ratio }}:1
                   </span>
                   <span
                     v-if="color.contrastWithBg.passesAA"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                   >
                     Pass AA
                   </span>
                   <span
                     v-else-if="color.contrastWithBg.passesAALarge"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20"
                   >
                     AA Large
                   </span>
                   <span
                     v-else
-                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/20"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/20"
                   >
                     Below AA
                   </span>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>
@@ -880,18 +884,17 @@ const renderedMarkdownHtml = computed(() => {
       <div v-if="activeTab === 'typography'" class="space-y-6">
         <!-- Detected Fonts -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card
+          <div
             v-for="font in extractedData.typography.fonts"
             :key="font.name"
-            :hoverable="false"
-            class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3"
+            class="p-4 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3"
           >
             <div class="flex items-center justify-between">
               <div>
-                <h4 class="text-sm font-bold text-[var(--text-primary)]">
+                <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-display">
                   {{ font.name }}
                 </h4>
-                <span class="text-xs text-[var(--text-secondary)] uppercase font-mono">
+                <span class="text-xs text-zinc-400 uppercase font-mono">
                   {{ font.category }} • {{ font.source }}
                 </span>
               </div>
@@ -901,7 +904,7 @@ const renderedMarkdownHtml = computed(() => {
             </div>
 
             <div
-              class="p-3 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] text-[var(--text-primary)]"
+              class="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
               :style="{ fontFamily: font.name }"
             >
               <div class="text-base truncate">
@@ -911,24 +914,24 @@ const renderedMarkdownHtml = computed(() => {
                 ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         <!-- Live Font Tester -->
-        <Card :hoverable="false" class="p-5 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-4">
+        <div class="p-5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h3 class="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
-              <Sliders class="w-4 h-4 text-[var(--text-secondary)]" />
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 font-display">
+              <Sliders class="w-4 h-4 text-zinc-400" />
               <span>Interactive Font Tester</span>
             </h3>
-            <div class="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+            <div class="flex items-center gap-3 text-xs text-zinc-400 font-mono">
               <span>Size: {{ previewFontSize }}px</span>
               <input
                 v-model="previewFontSize"
                 type="range"
                 min="12"
                 max="48"
-                class="w-28 accent-[var(--text-primary)]"
+                class="w-28 accent-zinc-900 dark:accent-white"
               />
             </div>
           </div>
@@ -942,7 +945,7 @@ const renderedMarkdownHtml = computed(() => {
           />
 
           <div
-            class="p-5 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] text-[var(--text-primary)] transition-all overflow-x-auto"
+            class="p-5 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 transition-all overflow-x-auto"
             :style="{
               fontFamily: extractedData.typography.primaryFont,
               fontSize: `${previewFontSize}px`,
@@ -950,18 +953,18 @@ const renderedMarkdownHtml = computed(() => {
           >
             {{ previewText || 'Preview text here' }}
           </div>
-        </Card>
+        </div>
 
         <!-- Detected Scales -->
         <div v-if="extractedData.typography.fontSizes.length > 0" class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-400 font-mono">
             Detected Font Sizes
           </h4>
           <div class="flex flex-wrap gap-2">
             <span
               v-for="s in extractedData.typography.fontSizes"
               :key="s"
-              class="px-3 py-1 rounded-md text-xs font-mono bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-primary)]"
+              class="px-3 py-1 rounded-md text-xs font-mono bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200"
             >
               {{ s }}
             </span>
@@ -973,49 +976,47 @@ const renderedMarkdownHtml = computed(() => {
       <div v-if="activeTab === 'geometry'" class="space-y-6">
         <!-- Radii -->
         <div class="space-y-3">
-          <h3 class="text-sm font-bold text-[var(--text-primary)]">
+          <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-display">
             Border Radii Tokens
           </h3>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Card
+            <div
               v-for="r in (extractedData.geometry.radii.length ? extractedData.geometry.radii : ['4px', '8px', '14px', '9999px'])"
               :key="r"
-              :hoverable="false"
-              class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] text-center space-y-3"
+              class="p-4 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl text-center space-y-3"
             >
               <div
-                class="w-16 h-16 mx-auto bg-[var(--bg-app)] border-2 border-[var(--text-secondary)] shadow-xs transition-all"
+                class="w-16 h-16 mx-auto bg-zinc-100 dark:bg-zinc-900 border-2 border-zinc-400 dark:border-zinc-600 shadow-xs transition-all"
                 :style="{ borderRadius: r }"
               />
-              <div class="font-mono text-xs font-bold text-[var(--text-primary)]">
+              <div class="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">
                 {{ r }}
               </div>
-            </Card>
+            </div>
           </div>
         </div>
 
         <!-- Shadows -->
         <div v-if="extractedData.geometry.shadows.length > 0" class="space-y-3">
-          <h3 class="text-sm font-bold text-[var(--text-primary)]">
+          <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-display">
             Elevation & Box Shadows
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card
+            <div
               v-for="(s, idx) in extractedData.geometry.shadows"
               :key="idx"
-              :hoverable="false"
-              class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-3"
+              class="p-4 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-3"
             >
               <div
-                class="h-16 rounded-lg bg-[var(--bg-card)] flex items-center justify-center text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)]"
+                class="h-16 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-xs text-zinc-500 border border-zinc-200 dark:border-zinc-800 font-mono"
                 :style="{ boxShadow: s }"
               >
                 Elevation Level {{ idx + 1 }}
               </div>
-              <div class="text-[11px] font-mono text-[var(--text-tertiary)] truncate">
+              <div class="text-[11px] font-mono text-zinc-400 truncate">
                 {{ s }}
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>
@@ -1024,10 +1025,10 @@ const renderedMarkdownHtml = computed(() => {
       <div v-if="activeTab === 'stack'" class="space-y-6">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-sm font-bold text-[var(--text-primary)]">
+            <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-display">
               Detected Tech Stack Breakdown
             </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-0.5">
+            <p class="text-xs text-zinc-400 mt-0.5 font-mono">
               Identified through DOM signatures, asset structures, and HTTP response headers.
             </p>
           </div>
@@ -1042,26 +1043,26 @@ const renderedMarkdownHtml = computed(() => {
           </Button>
         </div>
 
-        <div v-if="extractedData.techStack.length === 0" class="p-8 text-center bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl text-xs text-[var(--text-secondary)]">
+        <div v-if="extractedData.techStack.length === 0" class="p-8 text-center bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs text-zinc-400 font-mono">
           No distinctive framework or library signatures detected on this target.
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card
+          <div
             v-for="item in extractedData.techStack"
             :key="item.name"
-            class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] space-y-2 hover:border-[var(--border-card-hover)] transition-all"
+            class="p-4 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-2 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all"
           >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-[var(--bg-app)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--text-primary)]">
+                <div class="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center text-zinc-800 dark:text-zinc-200">
                   <Cpu class="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 class="text-sm font-bold text-[var(--text-primary)]">
+                  <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 font-display">
                     {{ item.name }}
                   </h4>
-                  <span class="text-[11px] uppercase tracking-wider font-mono text-[var(--text-tertiary)]">
+                  <span class="text-[11px] uppercase tracking-wider font-mono text-zinc-400">
                     {{ item.category }}
                   </span>
                 </div>
@@ -1071,10 +1072,10 @@ const renderedMarkdownHtml = computed(() => {
               </Badge>
             </div>
 
-            <p class="text-xs text-[var(--text-secondary)] pt-1 border-t border-[var(--border-subtle)]">
+            <p class="text-xs text-zinc-500 pt-1 border-t border-zinc-200 dark:border-zinc-800/80 font-mono">
               {{ item.evidence }}
             </p>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -93,23 +93,24 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 ## 3. Typography Rules
 
 ### Font Family
-* **Primary:** `Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
-* **Monospace:** `JetBrains Mono, Fira Code, monospace` (for code snippets, JSON, regex, metrics, and badges)
+* **Primary (UI & Body):** `Satoshi, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+* **Display & Headings (Sub-Main):** `Cabinet Grotesk, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+* **Monospace:** `JetBrains Mono, Fira Code, monospace` (for code snippets, omnibar URLs, JSON, regex, metrics, and badges)
 
 ### Hierarchy Table
 
 | Role | Font | Size | Weight | Line Height | Letter Spacing | Context / Usage |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Display Large** | Inter | 32px | 600 | 40px | -0.01em | Dashboard hero headers, page titles |
-| **Heading 1** | Inter | 24px | 600 | 32px | -0.01em | Major section headers, metric values |
-| **Heading 2** | Inter | 20px | 600 | 28px | 0em | Card titles, modal titles |
-| **Heading 3** | Inter | 16px | 600 | 24px | 0em | Subsection headers, navigation groups |
-| **Body Regular** | Inter | 14px | 400 | 20px | 0em | Primary body text, descriptions |
-| **Body Small** | Inter | 12px | 400 | 16px | 0em | Secondary metadata, timestamps, hints |
-| **Label Strong** | Inter | 12px | 600 | 15px | 0em | Form labels, category headers, badges |
-| **Button** | Inter | 14px | 500 | 20px | 0em | Standard action buttons |
-| **Button Small** | Inter | 12px | 500 | 16px | 0em | Compact actions, table actions |
-| **Code / Mono** | Mono | 12px | 400 | 16px | 0em | URLs, JSON, hashes, keyboard shortcuts |
+| **Display Large** | Cabinet Grotesk | 32px | 700 | 40px | -0.02em | Dashboard hero headers, page titles |
+| **Heading 1** | Cabinet Grotesk | 24px | 700 | 32px | -0.02em | Major section headers, metric values |
+| **Heading 2** | Cabinet Grotesk | 20px | 600 | 28px | -0.01em | Card titles, modal titles |
+| **Heading 3** | Cabinet Grotesk | 16px | 600 | 24px | -0.01em | Subsection headers, navigation groups |
+| **Body Regular** | Satoshi | 14px | 400 | 20px | 0em | Primary body text, descriptions |
+| **Body Small** | Satoshi | 12px | 400 | 16px | 0em | Secondary metadata, timestamps, hints |
+| **Label Strong** | Satoshi | 12px | 600 | 15px | 0em | Form labels, category headers, badges |
+| **Button** | Satoshi | 14px | 500 | 20px | 0em | Standard action buttons |
+| **Button Small** | Satoshi | 12px | 500 | 16px | 0em | Compact actions, table actions |
+| **Code / Mono** | JetBrains Mono | 12px | 400 | 16px | 0em | URLs, JSON, hashes, keyboard shortcuts |
 
 ---
 

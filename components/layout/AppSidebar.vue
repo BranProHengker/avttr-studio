@@ -570,14 +570,20 @@ const activeRadialData = computed(() => {
             <div v-show="openMenus['dashboard']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
                 to="/"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
                   isRouteActive('/')
                     ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                {{ t.allDownloaders }}
+                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
+                <span
+                  v-if="isRouteActive('/')"
+                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span class="truncate">{{ t.allDownloaders }}</span>
               </NuxtLink>
             </div>
           </div>
@@ -609,81 +615,23 @@ const activeRadialData = computed(() => {
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['video-reels']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
-                to="/d/tiktok"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                v-for="item in radialCategories['video-reels']?.items"
+                :key="item.path"
+                :to="item.path"
+                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
-                  isRouteActive('/d/tiktok')
+                  isRouteActive(item.path)
                     ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                TikTok
-              </NuxtLink>
-              <NuxtLink
-                to="/d/instagram"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/d/instagram')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Instagram
-              </NuxtLink>
-              <NuxtLink
-                to="/d/youtube"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/d/youtube')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                YouTube
-              </NuxtLink>
-              <NuxtLink
-                to="/d/twitter"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/d/twitter')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Twitter / X
-              </NuxtLink>
-              <NuxtLink
-                to="/d/capcut"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/d/capcut')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                CapCut
-              </NuxtLink>
-              <NuxtLink
-                to="/d/facebook"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/d/facebook')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Facebook
-              </NuxtLink>
-              <NuxtLink
-                to="/d/terabox"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/d/terabox')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                TeraBox
+                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
+                <span
+                  v-if="isRouteActive(item.path)"
+                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span class="truncate">{{ item.label }}</span>
               </NuxtLink>
             </div>
           </div>
@@ -715,48 +663,23 @@ const activeRadialData = computed(() => {
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['feeds-audio']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
-                to="/d/spotify"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                v-for="item in radialCategories['feeds-audio']?.items"
+                :key="item.path"
+                :to="item.path"
+                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
-                  isRouteActive('/d/spotify')
+                  isRouteActive(item.path)
                     ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                Spotify
-              </NuxtLink>
-              <NuxtLink
-                to="/d/soundcloud"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/d/soundcloud')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                SoundCloud
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/audio-cutter"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/audio-cutter')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Audio Extractor & Trimmer
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/lrc-studio"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/lrc-studio')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                LRC Lyrics Studio
+                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
+                <span
+                  v-if="isRouteActive(item.path)"
+                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span class="truncate">{{ item.label }}</span>
               </NuxtLink>
             </div>
           </div>
@@ -795,180 +718,23 @@ const activeRadialData = computed(() => {
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['assets']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
-                to="/tools/image-compressor"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                v-for="item in radialCategories['assets']?.items"
+                :key="item.path"
+                :to="item.path"
+                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
-                  isRouteActive('/tools/image-compressor')
+                  isRouteActive(item.path)
                     ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                Image Compressor
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/image-converter"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/image-converter')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Image Format Converter
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/background-remover"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/background-remover')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Background Remover
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/sticker-maker"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/sticker-maker')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Sticker Studio
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/anime-trace"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/anime-trace')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Anime Scene Search
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/qr-generator"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/qr-generator')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                QR Code Generator
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/pairdrop"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/pairdrop')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                PairDrop (P2P Transfer)
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/brat-generator"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/brat-generator')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Brat Text Generator
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/pdf-tools"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/pdf-tools')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                PDF Studio
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/doc-to-markdown"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/doc-to-markdown')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Doc to Markdown
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/svg-optimizer"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/svg-optimizer')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                SVG Optimizer
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/code-to-image"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/code-to-image')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Code to Image Studio
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/audio-cutter"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/audio-cutter')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Audio Extractor & Trimmer
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/video-to-gif"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/video-to-gif')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Video to GIF
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/video-resizer"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/video-resizer')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Video Resizer & Trimmer
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/teleprompter"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/teleprompter')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Teleprompter Studio
+                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
+                <span
+                  v-if="isRouteActive(item.path)"
+                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span class="truncate">{{ item.label }}</span>
               </NuxtLink>
             </div>
           </div>
@@ -998,92 +764,23 @@ const activeRadialData = computed(() => {
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['developer']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
-                to="/tools/skillspector"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                v-for="item in radialCategories['developer']?.items"
+                :key="item.path"
+                :to="item.path"
+                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
-                  isRouteActive('/tools/skillspector')
+                  isRouteActive(item.path)
                     ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                SkillSpector
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/slop-spector"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/slop-spector')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                SlopSpector
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/link-bypasser"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/link-bypasser')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Link Bypasser
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/design-extractor"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/design-extractor')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Design Extractor
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/web-security"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/web-security')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Web Security
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/svg-optimizer"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/svg-optimizer')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                SVG Optimizer
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/code-to-image"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/code-to-image')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Code to Image Studio
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/hash-encoder"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/hash-encoder')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Base64 & Hash Encoder
+                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
+                <span
+                  v-if="isRouteActive(item.path)"
+                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span class="truncate">{{ item.label }}</span>
               </NuxtLink>
             </div>
           </div>
@@ -1115,59 +812,23 @@ const activeRadialData = computed(() => {
             <!-- Collapsible Submenu Tree -->
             <div v-show="openMenus['design']" class="ml-4 pl-3.5 border-l border-[var(--border-subtle)] space-y-0.5 mt-0.5">
               <NuxtLink
-                to="/tools/device-mockup"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
+                v-for="item in radialCategories['design']?.items"
+                :key="item.path"
+                :to="item.path"
+                class="relative flex items-center px-3 py-2 text-[13px] rounded-md transition-colors"
                 :class="
-                  isRouteActive('/tools/device-mockup')
+                  isRouteActive(item.path)
                     ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                 "
               >
-                Device Mockup Studio
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/font-library"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/font-library')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Font Library
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/color-converter"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/color-converter')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Color Converter & Picker
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/color-palette"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/color-palette')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Color Palette Generator
-              </NuxtLink>
-              <NuxtLink
-                to="/tools/og-previewer"
-                class="block px-3 py-2 text-[13px] rounded-md transition-colors"
-                :class="
-                  isRouteActive('/tools/og-previewer')
-                    ? 'bg-zinc-100 dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium shadow-xs border border-zinc-200 dark:border-transparent'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                "
-              >
-                Open Graph Previewer
+                <!-- Active Tree Branch Line connecting to vertical trunk line (├──) -->
+                <span
+                  v-if="isRouteActive(item.path)"
+                  class="absolute -left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-px bg-zinc-400 dark:bg-zinc-400 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span class="truncate">{{ item.label }}</span>
               </NuxtLink>
             </div>
           </div>

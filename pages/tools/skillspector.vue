@@ -668,7 +668,7 @@ const resetScanner = () => {
     </div>
 
     <!-- Inspection Results Workspace -->
-    <div v-if="report" class="space-y-4">
+    <div v-if="report" class="space-y-8">
       <!-- Multi-Skill Explorer Pills (if repo has multiple skills) -->
       <div
         v-if="availableSkills.length > 1"
@@ -682,8 +682,8 @@ const resetScanner = () => {
           class="px-2.5 py-1 rounded-md text-xs font-mono transition-all cursor-pointer shrink-0 border"
           :class="
             skillName === s
-              ? 'bg-white text-black font-semibold border-white'
-              : 'bg-[#212121] text-[var(--text-secondary)] hover:text-white border-[#2E2E2E]'
+              ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 font-semibold border-zinc-900 dark:border-white'
+              : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border-zinc-200 dark:border-zinc-800'
           "
           @click="selectSkillFromRepo(s)"
         >
@@ -691,32 +691,58 @@ const resetScanner = () => {
         </button>
       </div>
 
-      <!-- Flat Clean Toolbar Row (No Boxed Rectangle Shape) -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1">
-        <!-- Status & Metadata -->
-        <div class="flex items-center gap-3">
-          <span class="font-mono text-sm font-bold text-white">
-            {{ skillName }}
-          </span>
+      <!-- Unboxed Editorial Score & Action Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-8 border-b border-zinc-200 dark:border-zinc-800">
+        <!-- Col Left: Monospaced Score, Status & Metadata -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="flex items-center gap-3">
+            <span class="text-[11px] font-mono uppercase tracking-widest text-zinc-500">Security Index</span>
+            <Badge
+              :variant="report.status === 'danger' ? 'primary' : report.status === 'warning' ? 'secondary' : 'badge'"
+            >
+              {{ report.status === 'danger' ? 'CRITICAL RISK' : report.status === 'warning' ? 'POTENTIAL RISK' : 'AUTHENTIC & CLEAN' }}
+            </Badge>
+          </div>
 
-          <Badge
-            :variant="report.status === 'danger' ? 'primary' : report.status === 'warning' ? 'secondary' : 'badge'"
-          >
-            {{ report.status === 'danger' ? 'CRITICAL RISK' : report.status === 'warning' ? 'WARNING' : 'CLEAN' }}
-            ({{ report.score }}/100)
-          </Badge>
+          <div class="space-y-1">
+            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-display">
+              {{ skillName }}
+            </h2>
+            <div class="flex items-baseline gap-3">
+              <span class="font-mono text-5xl sm:text-6xl font-light tracking-tighter text-zinc-900 dark:text-zinc-50">
+                {{ report.score }}
+              </span>
+              <span class="text-xs font-mono text-zinc-400">/ 100 security score</span>
+            </div>
+          </div>
 
-          <span class="text-xs text-[var(--text-secondary)] font-mono">
-            {{ files.length }} files · {{ totalLines }} lines
-          </span>
+          <!-- Score Gauge Bar -->
+          <div class="w-full max-w-md h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-500"
+              :class="report.status === 'danger' ? 'bg-rose-500' : report.status === 'warning' ? 'bg-amber-500' : 'bg-emerald-500'"
+              :style="{ width: `${report.score}%` }"
+            />
+          </div>
+
+          <!-- Metadata Stat Line -->
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-zinc-500 dark:text-zinc-400">
+            <span>{{ files.length }} files</span>
+            <span>·</span>
+            <span>{{ totalLines }} lines</span>
+            <span>·</span>
+            <span :class="report.criticalCount > 0 ? 'text-rose-500 font-semibold' : ''">{{ report.criticalCount }} critical</span>
+            <span>·</span>
+            <span :class="report.warningCount > 0 ? 'text-amber-500 font-semibold' : ''">{{ report.warningCount }} warnings</span>
+          </div>
         </div>
 
-        <!-- Action Buttons Directly on Row -->
-        <div class="flex flex-wrap items-center gap-2">
+        <!-- Col Right: Clean Action Buttons -->
+        <div class="lg:col-span-5 flex flex-wrap lg:justify-end items-center gap-2 pt-2">
           <Button
             variant="primary"
             size="sm"
-            class="h-8 px-3 text-xs font-medium cursor-pointer"
+            class="h-9 px-3.5 text-xs font-medium cursor-pointer"
             @click="downloadZip"
           >
             <Archive class="w-3.5 h-3.5 mr-1.5" />
@@ -727,7 +753,7 @@ const resetScanner = () => {
             v-if="installCommand && !installCommand.startsWith('//')"
             variant="secondary"
             size="sm"
-            class="h-8 px-2.5 text-xs cursor-pointer"
+            class="h-9 px-3 text-xs cursor-pointer"
             @click="copyInstallCommand"
           >
             <Terminal class="w-3.5 h-3.5 mr-1.5" />
@@ -737,7 +763,7 @@ const resetScanner = () => {
           <Button
             variant="secondary"
             size="sm"
-            class="h-8 px-2.5 text-xs cursor-pointer"
+            class="h-9 px-3 text-xs cursor-pointer"
             @click="copyCode"
           >
             <Copy class="w-3.5 h-3.5 mr-1.5" />
@@ -747,7 +773,7 @@ const resetScanner = () => {
           <Button
             variant="ghost"
             size="sm"
-            class="h-8 px-2 text-xs cursor-pointer"
+            class="h-9 px-2.5 text-xs cursor-pointer"
             @click="resetScanner"
           >
             <RefreshCw class="w-3.5 h-3.5" />
@@ -755,16 +781,16 @@ const resetScanner = () => {
         </div>
       </div>
 
-      <!-- Security Findings Panel (Proportional Top Section) -->
-      <div v-if="report.findings.length > 0" class="space-y-2">
-        <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+      <!-- Security Findings Section (Unboxed Editorial List) -->
+      <div v-if="report.findings.length > 0" class="space-y-4 pb-8 border-b border-zinc-200 dark:border-zinc-800">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xs font-mono uppercase tracking-widest text-zinc-500">
               Security Findings ({{ report.findings.length }})
             </span>
             <span
-              class="text-[10px] font-mono px-2 py-0.5 rounded uppercase font-bold"
-              :class="report.criticalCount > 0 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+              class="text-[10px] font-mono px-2 py-0.5 rounded uppercase font-semibold"
+              :class="report.criticalCount > 0 ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'"
             >
               {{ report.criticalCount > 0 ? `${report.criticalCount} Critical` : '' }}
               {{ report.criticalCount > 0 && report.warningCount > 0 ? ' · ' : '' }}
@@ -772,64 +798,61 @@ const resetScanner = () => {
             </span>
           </div>
 
-          <span class="text-xs text-[var(--text-secondary)] font-mono">
+          <span class="text-xs text-zinc-400 font-mono">
             Click finding to jump to code line
           </span>
         </div>
 
-        <!-- Findings List in Clean Compact Rows -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="divide-y divide-zinc-200 dark:divide-zinc-800/80 border-y border-zinc-200 dark:border-zinc-800/80">
           <div
             v-for="f in report.findings"
             :key="f.id"
-            class="p-3.5 rounded-[12px] bg-[var(--bg-card)] border transition-all cursor-pointer group space-y-2 text-left"
-            :class="
-              activeFinding?.id === f.id
-                ? 'border-white/50 bg-[var(--bg-card-hover)] ring-1 ring-white/20'
-                : 'border-[var(--border-card)] hover:border-[#3E3E3E]'
-            "
+            class="py-3.5 px-3 transition-colors cursor-pointer group hover:bg-zinc-50/70 dark:hover:bg-zinc-900/40 rounded-lg -mx-3"
+            :class="activeFinding?.id === f.id ? 'bg-zinc-100 dark:bg-zinc-900/70' : ''"
             @click="scrollToFinding(f)"
           >
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2 min-w-0">
-                <ShieldAlert v-if="f.severity === 'critical'" class="w-4 h-4 text-rose-400 shrink-0" />
-                <AlertTriangle v-else class="w-4 h-4 text-amber-400 shrink-0" />
-                <span class="text-xs font-semibold text-white truncate">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span
+                  class="text-[10px] font-mono uppercase font-bold tracking-wider px-1.5 py-0.5 rounded"
+                  :class="f.severity === 'critical' ? 'bg-rose-500/15 text-rose-500' : 'bg-amber-500/15 text-amber-500'"
+                >
+                  {{ f.severity }}
+                </span>
+                <span class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                   {{ f.title }}
                 </span>
               </div>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#212121] text-neutral-400 shrink-0">
-                Line {{ f.line }}
-              </span>
+              <div class="flex items-center gap-3 shrink-0 text-xs font-mono text-zinc-400">
+                <span class="truncate max-w-[200px] sm:max-w-xs">{{ f.filename }}</span>
+                <span>:</span>
+                <span class="text-zinc-500 dark:text-zinc-400">L{{ f.line }}</span>
+              </div>
             </div>
 
-            <div class="text-[11px] font-mono text-[var(--text-secondary)] truncate">
-              {{ f.filename }}
-            </div>
-
-            <div class="p-2 rounded bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] font-mono text-[11px] text-[var(--text-primary)] truncate">
-              {{ f.codeSnippet }}
+            <div class="mt-2 p-2.5 rounded bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800/80 font-mono text-xs text-zinc-700 dark:text-zinc-300 overflow-x-auto">
+              <code>{{ f.codeSnippet }}</code>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Zero Findings Clean Banner (Takes only 1 line, leaves full width for code) -->
+      <!-- Zero Findings Clean Banner (Unboxed) -->
       <div
         v-else
-        class="flex items-center gap-3 px-4 py-3 rounded-[12px] bg-[var(--bg-card)] border border-[var(--border-card)] text-xs text-[var(--text-secondary)]"
+        class="flex items-center gap-3 py-4 px-1 text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800"
       >
         <ShieldCheck class="w-4 h-4 text-emerald-500 shrink-0" />
-        <span class="font-medium text-[var(--text-primary)]">No Security Threats Detected:</span>
-        <span class="text-[var(--text-secondary)]">
+        <span class="font-medium text-zinc-900 dark:text-zinc-200 font-mono">Zero Security Threats Detected:</span>
+        <span class="font-mono">
           All {{ files.length }} files verified clean. No prompt overrides, destructive shell executions, credential harvesting, or exfiltration patterns detected.
         </span>
       </div>
 
-      <!-- Full-Width Code Viewer Stage -->
-      <div class="w-full bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] overflow-hidden">
+      <!-- Full-Width Code Viewer Stage (Unboxed Hairline Surface) -->
+      <div class="w-full border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-[#141416]">
         <!-- File Selector / Tabs Header -->
-        <div class="px-4 py-2 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs font-mono">
+        <div class="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 text-xs font-mono bg-zinc-50/50 dark:bg-zinc-900/30">
           <div class="flex items-center gap-1.5 overflow-x-auto py-0.5 max-w-[70%] sm:max-w-[75%]">
             <button
               v-for="f in files"
@@ -838,8 +861,8 @@ const resetScanner = () => {
               class="px-2.5 py-1 rounded text-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer border"
               :class="
                 activeFile?.path === f.path
-                  ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white font-medium border-zinc-200 dark:border-white/20 shadow-xs'
-                  : 'text-[var(--text-secondary)] hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/5 border-transparent'
+                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium border-zinc-200 dark:border-zinc-700 shadow-xs'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/50 border-transparent'
               "
               @click="activeFilePath = f.path"
             >
@@ -853,15 +876,15 @@ const resetScanner = () => {
             <!-- View Mode Switcher for Markdown -->
             <div
               v-if="isMarkdownFile"
-              class="flex items-center p-0.5 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E]"
+              class="flex items-center p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
             >
               <button
                 type="button"
                 class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer"
                 :class="
                   markdownViewMode === 'preview'
-                    ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs'
+                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
                 "
                 @click="markdownViewMode = 'preview'"
               >
@@ -873,8 +896,8 @@ const resetScanner = () => {
                 class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer"
                 :class="
                   markdownViewMode === 'raw'
-                    ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs'
+                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
                 "
                 @click="markdownViewMode = 'raw'"
               >
@@ -883,7 +906,7 @@ const resetScanner = () => {
               </button>
             </div>
 
-            <span class="text-[11px] text-[var(--text-secondary)] shrink-0 font-mono">
+            <span class="text-[11px] text-zinc-500 shrink-0 font-mono">
               {{ codeLines.length }} lines
             </span>
           </div>
@@ -894,13 +917,13 @@ const resetScanner = () => {
           v-if="isMarkdownFile && markdownViewMode === 'preview'"
           class="max-h-[640px] overflow-y-auto p-5 sm:p-6 space-y-6 select-text"
         >
-          <!-- Frontmatter Specification Bento Card -->
+          <!-- Frontmatter Specification (Unboxed Hairline Grid) -->
           <div
             v-if="parsedMarkdownDoc.frontmatter"
-            class="p-4 rounded-xl border border-zinc-200 dark:border-[#2E2E2E] bg-zinc-50 dark:bg-[#141416] space-y-3"
+            class="pb-5 border-b border-zinc-200 dark:border-zinc-800 space-y-3"
           >
             <div class="flex items-center justify-between">
-              <span class="text-[10px] font-mono uppercase font-bold tracking-wider text-[var(--text-tertiary)]">
+              <span class="text-[10px] font-mono uppercase font-bold tracking-wider text-zinc-500">
                 Skill Specification (Frontmatter)
               </span>
               <Badge variant="outline" size="sm" class="text-[10px] font-mono">
@@ -912,12 +935,12 @@ const resetScanner = () => {
               <div
                 v-for="(val, key) in parsedMarkdownDoc.frontmatter"
                 :key="key"
-                class="p-2.5 rounded-lg bg-white dark:bg-[#1c1c1f] border border-zinc-200/80 dark:border-[#262626] space-y-0.5"
+                class="p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 space-y-0.5"
               >
-                <div class="text-[10px] font-mono font-semibold text-[var(--text-secondary)] uppercase">
+                <div class="text-[10px] font-mono font-semibold text-zinc-500 uppercase">
                   {{ key }}
                 </div>
-                <div class="text-xs font-mono text-[var(--text-primary)] break-words">
+                <div class="text-xs font-mono text-zinc-900 dark:text-zinc-200 break-words">
                   {{ val }}
                 </div>
               </div>
