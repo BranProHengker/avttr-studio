@@ -51,6 +51,7 @@ Every tool in this section runs entirely in the browser using WebAssembly, the C
 - **Color Palette Generator**: build balanced palettes, check WCAG contrast compliance (AA/AAA), and export CSS custom properties.
 - **Color Converter & Picker**: visual picker with two-way translation between HEX, RGB, CMYK, HSL, HSV, and shade matrix calculations.
 - **Font Library**: search and test hundreds of Google Fonts and DaFont typefaces with live text specimens and font downloads.
+- **Markdown Studio**: live typography editor with 5 themes, GitHub callouts, Prism syntax highlighting, rich text clipboard copy, and print-to-PDF export.
 - **Open Graph Previewer**: preview and debug social sharing cards for Twitter, Discord, WhatsApp, LinkedIn, Facebook, and Google Search.
 
 ### 4. Developer and security
@@ -233,6 +234,7 @@ Semua tool di kategori ini diproses langsung di browser menggunakan WebAssembly,
 - **Color Palette Generator**: buat kombinasi palet warna harmonis, cek rasio kontras WCAG (AA/AAA), dan ekspor variabel token CSS.
 - **Color Converter & Picker**: color picker visual dengan konversi dua arah antara HEX, RGB, CMYK, HSL, HSV, dan matriks shade warna.
 - **Font Library**: eksplorasi dan tes ratusan font dari Google Fonts dan DaFont dengan live preview input teks serta unduhan berkas font.
+- **Markdown Studio**: editor tipografi markdown live dengan 5 tema estetika, callout GitHub, syntax highlighting Prism, salin rich text langsung ke clipboard, dan ekspor cetak PDF.
 - **Open Graph Previewer**: simulator kartu media sosial untuk mengecek tampilan link di Twitter, Discord, WhatsApp, LinkedIn, Facebook, dan Google Search.
 
 ### 4. Developer dan keamanan

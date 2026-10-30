@@ -378,6 +378,17 @@ export const ALL_CATEGORIES: ToolCategory[] = [
         badge: 'Popular',
       },
       {
+        id: 'markdown-studio',
+        title: 'Markdown Studio',
+        description: 'Live typography editor with 5 themes, GitHub callouts, syntax highlighting, and rich text export.',
+        category: 'color',
+        icon: 'doc-to-markdown',
+        route: '/tools/markdown-studio',
+        format: '.md • .rtf',
+        badge: 'New',
+        popular: true,
+      },
+      {
         id: 'og-previewer',
         title: 'Open Graph Previewer',
         description: 'Test, simulate, and generate social cards for Twitter, Discord, WhatsApp, Facebook, LinkedIn, and Google.',

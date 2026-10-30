@@ -278,6 +278,10 @@ const translations: Record<Locale, Translations> = {
         title: 'Doc to Markdown',
         description: 'Convert PDF documents and images into structured GitHub Markdown with preserved tables, formulas, and headings.',
       },
+      'markdown-studio': {
+        title: 'Markdown Studio',
+        description: 'Live typography styler, document formatter, and multi-format exporter with zero token cost.',
+      },
       'audio-cutter': {
         title: 'Audio Extractor & Trimmer',
         description: 'Extract audio from video, inspect waveforms, and trim audio clips preserving original sample rates.',
@@ -535,6 +539,10 @@ const translations: Record<Locale, Translations> = {
       'doc-to-markdown': {
         title: 'Dokumen ke Markdown',
         description: 'Konversi file PDF dan gambar ke Markdown terstruktur dengan tabel, rumus, dan heading yang rapi.',
+      },
+      'markdown-studio': {
+        title: 'Markdown Studio',
+        description: 'Editor typography markdown live, pemformat dokumen, dan ekspor multi-format tanpa biaya token.',
       },
       'audio-cutter': {
         title: 'Audio Extractor & Trimmer',

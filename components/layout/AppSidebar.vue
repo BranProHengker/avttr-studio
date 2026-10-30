@@ -120,6 +120,7 @@ const isCategoryActive = (category: string) => {
   if (category === 'design') {
     return [
       '/tools/device-mockup',
+      '/tools/markdown-studio',
       '/tools/font-library',
       '/tools/color-converter',
       '/tools/color-palette',
@@ -211,6 +212,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
     title: t.value.designSystem,
     items: [
       { path: '/tools/device-mockup', label: 'Device Mockup', iconComponent: Smartphone },
+      { path: '/tools/markdown-studio', label: 'Markdown Studio', iconComponent: FileText },
       { path: '/tools/font-library', label: 'Font Library', iconComponent: Type },
       { path: '/tools/color-converter', label: 'Color Converter', iconComponent: Pipette },
       { path: '/tools/color-palette', label: 'Color Palette', brandName: 'color-palette' },
