@@ -2,6 +2,7 @@ import { defineEventHandler, readBody, createError } from 'h3'
 import dns from 'node:dns/promises'
 import { isPrivateHost } from '~/server/utils/security'
 import { evaluateSecurityHeaders, type SecurityAuditResult } from '~/server/utils/securityAudit'
+import { getGenericCache, setGenericCache } from '~/server/utils/cache'
 
 interface RequestPayload {
   url: string
@@ -49,6 +50,13 @@ export default defineEventHandler(async (event): Promise<SecurityAuditResult> =>
     })
   }
 
+  // 0. Cache check: return existing security check if domain was already inspected
+  const cacheKey = `security:check:${parsedUrl.hostname.toLowerCase()}:${body.lang || 'en'}`
+  const cachedCheck = getGenericCache<SecurityAuditResult>(cacheKey)
+  if (cachedCheck) {
+    return { ...cachedCheck, cached: true }
+  }
+
   const startTime = Date.now()
   let resolvedIp: string | undefined
 
@@ -91,7 +99,9 @@ export default defineEventHandler(async (event): Promise<SecurityAuditResult> =>
       rawHeaders[key] = val
     })
 
-    return evaluateSecurityHeaders(rawHeaders, raw, finalUrl, responseTimeMs, resolvedIp, body.lang || 'en')
+    const result = evaluateSecurityHeaders(rawHeaders, raw, finalUrl, responseTimeMs, resolvedIp, body.lang || 'en')
+    setGenericCache(cacheKey, result)
+    return result
   } catch (err: any) {
     clearTimeout(timeoutId)
     const responseTimeMs = Date.now() - startTime

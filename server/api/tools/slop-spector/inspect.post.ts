@@ -1,5 +1,6 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import * as cheerio from 'cheerio'
+import { getGenericCache, setGenericCache } from '~/server/utils/cache'
 
 interface Finding {
   cat: 'fingerprint' | 'copy' | 'layout' | 'visual' | 'nitpick'
@@ -83,6 +84,13 @@ export default defineEventHandler(async (event) => {
     host = parsed.hostname.replace(/^www\./, '')
   } catch {
     throw createError({ statusCode: 400, statusMessage: 'Invalid URL hostname' })
+  }
+
+  // 0. Cache check: return existing audit result if identical host was already audited
+  const cacheKey = `slop:inspect:${host}:${language}`
+  const cachedInspect = getGenericCache<any>(cacheKey)
+  if (cachedInspect) {
+    return { ...cachedInspect, cached: true }
   }
 
   let html = ''
@@ -1260,7 +1268,7 @@ export default defineEventHandler(async (event) => {
 
   const matchedVerdict = VERDICTS.find((v) => finalScore <= v.max) || VERDICTS[VERDICTS.length - 1]
 
-  return {
+  const result = {
     success: true,
     host,
     url,
@@ -1278,4 +1286,6 @@ export default defineEventHandler(async (event) => {
       emDashes
     }
   }
+  setGenericCache(cacheKey, result)
+  return result
 })

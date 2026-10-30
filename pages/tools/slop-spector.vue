@@ -76,6 +76,7 @@ interface InspectionResult {
     buzzCount: number
     emDashes: number
   }
+  cached?: boolean
 }
 
 interface RoastResult {
@@ -83,6 +84,7 @@ interface RoastResult {
   roasts: Array<{ line: string; evidence: string }>
   fix: string
   model: string
+  cached?: boolean
 }
 
 const inspection = ref<InspectionResult | null>(null)
@@ -1111,8 +1113,9 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
               {{ locale === 'id' ? 'Vonis AI Roaster' : 'AI Roaster Verdict' }}
             </h3>
           </div>
-          <Badge variant="outline" size="sm" class="text-[10px] font-mono font-normal text-[var(--text-tertiary)]">
-            {{ roastData?.model || 'qwen/qwen3.8-27b' }}
+          <Badge variant="outline" size="sm" class="text-[10px] font-mono font-normal text-[var(--text-tertiary)] flex items-center gap-1.5">
+            <span>{{ roastData?.model || 'qwen/qwen3.8-27b' }}</span>
+            <span v-if="roastData?.cached" class="text-emerald-500 font-semibold">• cached</span>
           </Badge>
         </div>
 

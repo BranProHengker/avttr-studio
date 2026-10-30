@@ -1,5 +1,6 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import { ofetch } from 'ofetch'
+import { getGenericCache, setGenericCache } from '~/server/utils/cache'
 
 interface RoastRequest {
   siteName: string
@@ -20,6 +21,13 @@ export default defineEventHandler(async (event) => {
 
   if (!siteName) {
     throw createError({ statusCode: 400, statusMessage: 'Site name is required' })
+  }
+
+  // 0. Cache check: return existing AI roast if identical site & score was already processed
+  const cacheKey = `slop:roast:${siteName.toLowerCase().trim()}:${score}:${language}`
+  const cachedRoast = getGenericCache<any>(cacheKey)
+  if (cachedRoast) {
+    return { ...cachedRoast, cached: true }
   }
 
   const primaryGroqKey = process.env.GROQ_API_KEY || (useRuntimeConfig().groqApiKey as string) || ''
@@ -225,17 +233,19 @@ Output MUST be strict JSON matching this schema:
       }
     })
 
-    return {
+    const result = {
       success: true,
       model: usedModel,
       verdict: parsedResult.verdict || verdictLabel,
       roasts: cleanedRoasts,
       fix: parsedResult.fix || defaultFix
     }
+    setGenericCache(cacheKey, result)
+    return result
   }
 
   // 3. Graceful deterministic fallback
-  return {
+  const fallbackResult = {
     success: true,
     model: 'deterministic-fallback',
     verdict: isIndo
@@ -247,4 +257,6 @@ Output MUST be strict JSON matching this schema:
     })),
     fix: defaultFix
   }
+  setGenericCache(cacheKey, fallbackResult)
+  return fallbackResult
 })

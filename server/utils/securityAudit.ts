@@ -44,6 +44,7 @@ export interface SecurityAuditResult {
   infoLeaks: InfoLeakItem[]
   rawHeaders: Record<string, string>
   error?: string
+  cached?: boolean
 }
 
 export function evaluateSecurityHeaders(
