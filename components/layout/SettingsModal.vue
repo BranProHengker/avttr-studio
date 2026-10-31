@@ -313,7 +313,7 @@ const handleResetPreferences = () => {
               {{ t.tabAbout }}
             </h3>
             <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
-              Project architecture, design system standards, and open-source credits.
+              {{ locale === 'id' ? 'Arsitektur sistem, standar desain, dan atribusi proyek open-source.' : 'Project architecture, design system standards, and open-source credits.' }}
             </p>
           </div>
 
@@ -324,26 +324,155 @@ const handleResetPreferences = () => {
                 <span>Avttr Studio</span>
               </div>
               <p class="text-xs text-zinc-500 dark:text-neutral-400 mt-0.5">
-                Minimalist Media Utility & Developer Tools Studio.
+                {{ locale === 'id' ? 'Personal Web Workspace untuk Media, Desain & Developer Utility.' : 'Minimalist Media Utility & Developer Tools Studio.' }}
               </p>
             </div>
           </div>
 
           <div class="space-y-2">
-            <div class="text-xs font-semibold text-zinc-900 dark:text-white">Engine & Framework Stack</div>
+            <div class="text-xs font-semibold text-zinc-900 dark:text-white">
+              {{ locale === 'id' ? 'Framework & Teknologi Inti' : 'Engine & Framework Stack' }}
+            </div>
             <div class="flex flex-wrap gap-1.5">
-              <Badge variant="outline">Nuxt 3 (Fullstack)</Badge>
+              <Badge variant="outline">Nuxt 3.16 (Nitro Engine)</Badge>
               <Badge variant="outline">Vue 3 Composition API</Badge>
               <Badge variant="outline">Tailwind CSS v4</Badge>
               <Badge variant="outline">TypeScript 5</Badge>
-              <Badge variant="outline">Lucide Icons</Badge>
+              <Badge variant="outline">Iconoir Icons (@iconoir/vue)</Badge>
               <Badge variant="outline">Web Streams Proxy</Badge>
               <Badge variant="outline">JSZip (Client Worker)</Badge>
+              <Badge variant="outline">pdf-lib (WASM)</Badge>
             </div>
           </div>
 
-          <div class="p-3.5 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] text-xs text-zinc-500 dark:text-neutral-400 flex items-center justify-between">
-            <span>Open Source under MIT License</span>
+          <!-- Open-Source Scrapers & Inspirations -->
+          <div class="space-y-2.5">
+            <div class="text-xs font-semibold text-zinc-900 dark:text-white">
+              {{ locale === 'id' ? 'Inspirasi & Engine Open-Source' : 'Open-Source Scrapers & Inspirations' }}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">NVIDIA SkillSpector</span>
+                  <a href="https://github.com/NVIDIA/SkillSpector" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Arsitektur audit statis AST & heuristik keamanan file SKILL.md untuk SkillSpector.' : 'Static AST security audit pipeline & threat heuristics for AI agent skills in SkillSpector.' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">Dembrandt & tasteskill</span>
+                  <a href="https://dembrandt.com" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Inspirasi ekstraksi token desain (Design Extractor) dan heuristik forensik anti-slop (SlopSpector).' : 'Design token extraction (Design Extractor) and anti-slop forensic heuristics (SlopSpector).' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">Cobalt Engine</span>
+                  <a href="https://github.com/imputnet/cobalt" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Universal auto-fallback stream resolver untuk YouTube, Instagram, TikTok & SoundCloud.' : 'Universal fallback stream resolver for YouTube, Instagram, TikTok & SoundCloud.' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">TikWM & SnapInsta</span>
+                  <span class="text-[10px] font-mono text-zinc-400">Scrapers</span>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Resolver native mobile API dan unpacker CDN untuk video tanpa watermark dan slide foto.' : 'Native mobile API resolvers and CDN unpackers for watermark-free videos and photo slides.' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">LRCLIB</span>
+                  <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Database lirik sinkronisasi komunitas untuk LRC Lyrics Studio.' : 'Community-curated synced lyrics API powering LRC Lyrics Studio.' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">trace.moe</span>
+                  <a href="https://github.com/soruly/trace.moe" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Engine pencari adegan anime reverse frame search karya soruly.' : 'Anime reverse frame search engine by soruly powering Anime Scene Search.' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">PairDrop / Snapdrop</span>
+                  <a href="https://github.com/schlagmichdoch/pairdrop" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Inspirasi transfer berkas P2P WebRTC jaringan lokal tanpa server pusat.' : 'Local network WebRTC P2P file transfer architecture inspiration.' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">@imgly/background-removal</span>
+                  <a href="https://github.com/imgly/background-removal-js" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Segmentasi neural network client-side via ONNX WebAssembly.' : '100% Client-side in-browser neural segmentation using ONNX WebAssembly.' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">pdf-lib & SVGO</span>
+                  <a href="https://github.com/Hopding/pdf-lib" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Manipulasi berkas PDF di browser lokal dan optimasi minifikasi path vector SVG.' : 'In-browser PDF manipulation and SVG vector path optimization algorithms.' }}
+                </p>
+              </div>
+
+              <div class="p-2.5 rounded-lg border border-zinc-200 dark:border-[#26262A] bg-zinc-50/50 dark:bg-[#18181A] space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-zinc-900 dark:text-white">DaFont & Google Fonts</span>
+                  <a href="https://www.dafont.com" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
+                    <ExternalLink class="w-3 h-3" />
+                  </a>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-neutral-400 leading-tight">
+                  {{ locale === 'id' ? 'Katalog font explorer dan rendering live specimen untuk Font Library Studio.' : 'Typeface catalog explorer and live specimen previewer for Font Library Studio.' }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-50/70 dark:bg-[#1B1B1E] text-xs text-zinc-500 dark:text-neutral-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span>PolyForm Noncommercial 1.0.0 (Anti-AI)</span>
             <a
               href="https://github.com/BranProHengker/avttr-studio"
               target="_blank"

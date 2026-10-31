@@ -11,7 +11,7 @@
 [![Zero Ads](https://img.shields.io/badge/Ads-Zero_Adware-black?style=flat)](https://studio.avttr.my.id)
 [![License](https://img.shields.io/badge/License-PolyForm_Noncommercial-blue?style=flat)](LICENSE)
 
-[**Live Studio**](https://studio.avttr.my.id) • [**Features**](#available-features) • [**Tech Stack**](#tech-stack) • [**Self-Hosting**](#local-development) • [**Contribution**](#contribution-guide) • [**Bahasa Indonesia**](#bahasa-indonesia)
+[**Live Studio**](https://studio.avttr.my.id) • [**Features**](#available-features) • [**Tech Stack**](#tech-stack) • [**Open Source Credits**](#open-source-credits--scraper-inspirations) • [**Self-Hosting**](#local-development) • [**Contribution**](#contribution-guide) • [**Bahasa Indonesia**](#bahasa-indonesia)
 
 </div>
 
@@ -91,6 +91,30 @@ Every tool in this section runs entirely in the browser using WebAssembly, the C
 - **Icons**: Iconoir (`@iconoir/vue`)
 - **Key libraries**: VueUse, JSZip, pdf-lib, PrismJS, mediabunny, ofetch
 - **Backend scraper**: Nitro server routes with Cobalt API fallback
+
+---
+
+## Open-Source Credits & Scraper Inspirations
+
+Avttr Studio stands on the shoulders of the open-source community. We gratefully acknowledge the following open-source engines, scrapers, APIs, and libraries that power or inspired features across this workspace:
+
+| Feature / Domain | Project / Source | Role & Attribution |
+| :--- | :--- | :--- |
+| **AI Skill Security Inspector** | [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) by NVIDIA | Static AST security audit architecture and threat heuristics for AI agent skills (`SKILL.md`) in SkillSpector. |
+| **Media Downloader Fallback** | [Cobalt](https://github.com/imputnet/cobalt) by imputnet | Smart auto-fallback engine for YouTube, Instagram, TikTok, Twitter/X, and SoundCloud stream resolution. |
+| **TikTok & Instagram Engine** | [TikWM](https://www.tikwm.com) & SnapInsta | Direct mobile API resolvers and CDN unpackers for watermark-free videos, audio, and photo slides. |
+| **TeraBox Downloader** | TeraBox ndus Session Resolver | Direct cloud file link generation and cookie session handling. |
+| **LRC Lyrics Studio** | [LRCLIB](https://lrclib.net) | Community-driven synchronized lyrics database with zero-latency line-by-line sync. |
+| **Anime Scene Search** | [trace.moe](https://github.com/soruly/trace.moe) by soruly | Reverse anime image search API for scene identification and timestamp matching. |
+| **P2P File Transfer** | [PairDrop](https://github.com/schlagmichdoch/pairdrop) / [Snapdrop](https://github.com/RobinLinus/snapdrop) | Peer-to-peer WebRTC local network sharing architecture and pairing workflow. |
+| **Background Remover** | [@imgly/background-removal](https://github.com/imgly/background-removal-js) | 100% Client-side in-browser neural segmentation using ONNX WebAssembly. |
+| **PDF Manipulation** | [pdf-lib](https://github.com/Hopding/pdf-lib) by Hopding | Client-side PDF page merging, splitting, and image-to-PDF compilation. |
+| **SVG Optimizer** | [SVGO](https://github.com/svg/svgo) | SVG cleanup algorithms, path simplification, and metadata stripping. |
+| **Design & Token Forensic** | [Dembrandt](https://dembrandt.com) & [tasteskill / SlopSpector](https://github.com) | Design token extraction and anti-slop forensic heuristic rules. |
+| **Typeface Catalog Explorer** | [DaFont](https://www.dafont.com) & [Google Fonts](https://fonts.google.com) | Live font specimens, category scraping, and specimen testing for Font Library Studio. |
+| **Client-Side ZIP Archiving** | [JSZip](https://github.com/Stuk/jszip) | In-browser client-side ZIP packaging for batch downloader queues and media slides. |
+| **Iconography** | [Iconoir](https://iconoir.com) | Open-source minimal SVG icon library (`@iconoir/vue`). |
+| **Syntax Highlighting** | [PrismJS](https://prismjs.com) | Lightweight, accessible syntax highlighting for Markdown Studio and Code to Image. |
 
 ---
 
@@ -211,7 +235,7 @@ Author website: [heybran.my.id](https://heybran.my.id) | GitHub: [@BranProHengke
 [![Tanpa Iklan](https://img.shields.io/badge/Iklan-Bebas_Adware-black?style=flat)](https://studio.avttr.my.id)
 [![Lisensi](https://img.shields.io/badge/Lisensi-PolyForm_Noncommercial-blue?style=flat)](LICENSE)
 
-[**Situs Langsung**](https://studio.avttr.my.id) • [**Fitur Tersedia**](#fitur-yang-tersedia) • [**Teknologi**](#tech-stack) • [**Jalankan di Lokal**](#menjalankan-proyek-di-lokal) • [**Panduan Kontribusi**](#panduan-kontribusi) • [**English**](#avttr-studio)
+[**Situs Langsung**](https://studio.avttr.my.id) • [**Fitur Tersedia**](#fitur-yang-tersedia) • [**Teknologi**](#teknologi) • [**Kredit Open Source**](#kredit-open-source--inspirasi-scraper) • [**Jalankan di Lokal**](#menjalankan-proyek-di-lokal) • [**Panduan Kontribusi**](#panduan-kontribusi) • [**English**](#avttr-studio)
 
 </div>
 
@@ -281,6 +305,40 @@ Semua tool di kategori ini diproses langsung di browser menggunakan WebAssembly,
 - **PairDrop**: transfer berkas peer-to-peer antar perangkat dalam satu jaringan lokal via WebRTC terenkripsi tanpa perantara penyimpanan server.
 - **Doc to Markdown**: ekstraksi berkas dokumen dan tangkapan layar menjadi teks terstruktur GitHub Markdown.
 - **LRC Lyrics Studio**: generator lirik lagu tersinkronisasi (.lrc) dengan database LRCLIB dan transliterasi romaji otomatis untuk lagu berbahasa Jepang.
+
+---
+
+## Teknologi
+
+- **Framework**: Nuxt 3 (Vue 3 + Nitro Engine)
+- **Styling**: Tailwind CSS v4 dengan design tokens
+- **Ikon**: Iconoir (`@iconoir/vue`)
+- **Pustaka Utama**: VueUse, JSZip, pdf-lib, PrismJS, mediabunny, ofetch
+- **Scraper Backend**: Rute server Nitro dengan auto-fallback engine Cobalt
+
+---
+
+## Kredit Open-Source & Inspirasi Scraper
+
+Avttr Studio dibangun di atas kontribusi komunitas open-source. Kami memberikan apresiasi dan atribusi penuh kepada proyek-proyek dan engine berikut yang menginspirasi atau mentenagai fitur di dalam platform ini:
+
+| Fitur / Layanan | Proyek / Sumber | Peran & Atribusi |
+| :--- | :--- | :--- |
+| **Audit Keamanan Skill AI** | [NVIDIA SkillSpector](https://github.com/NVIDIA/SkillSpector) oleh NVIDIA | Arsitektur audit statis AST dan heuristik deteksi ancaman untuk file SKILL.md di SkillSpector. |
+| **Fallback Downloader Media** | [Cobalt](https://github.com/imputnet/cobalt) oleh imputnet | Engine auto-fallback pintar untuk resolusi stream YouTube, Instagram, TikTok, Twitter/X, dan SoundCloud. |
+| **Engine TikTok & Instagram** | [TikWM](https://www.tikwm.com) & SnapInsta | Resolver API mobile langsung dan unpacker CDN untuk reels video tanpa watermark, audio, dan slide foto. |
+| **TeraBox Downloader** | TeraBox ndus Session Resolver | Resolver tautan langsung berkas cloud dan pengelolaan sesi cookie. |
+| **LRC Lyrics Studio** | [LRCLIB](https://lrclib.net) | Database lirik tersinkronisasi berbasis komunitas dengan latensi nol baris-demi-baris. |
+| **Pencari Adegan Anime** | [trace.moe](https://github.com/soruly/trace.moe) oleh soruly | API reverse search gambar anime untuk identifikasi judul, nomor episode, dan timestamp. |
+| **Transfer Berkas P2P** | [PairDrop](https://github.com/schlagmichdoch/pairdrop) / [Snapdrop](https://github.com/RobinLinus/snapdrop) | Arsitektur transfer berkas peer-to-peer WebRTC jaringan lokal tanpa server pusat. |
+| **Background Remover** | [@imgly/background-removal](https://github.com/imgly/background-removal-js) | Segmentasi neural AI 100% di browser lokal menggunakan ONNX WebAssembly. |
+| **Manipulasi Berkas PDF** | [pdf-lib](https://github.com/Hopding/pdf-lib) oleh Hopding | Penggabungan halaman PDF, ekstraksi, dan konversi foto ke PDF langsung di client. |
+| **Optimasi Berkas SVG** | [SVGO](https://github.com/svg/svgo) | Algoritma pembersihan SVG, penyederhanaan path, dan pembersihan metadata. |
+| **Audit Desain & Forensik** | [Dembrandt](https://dembrandt.com) & [tasteskill / SlopSpector](https://github.com) | Ekstraksi design token dan aturan heuristik forensik anti-slop. |
+| **Katalog Font & Spesimen** | [DaFont](https://www.dafont.com) & [Google Fonts](https://fonts.google.com) | Eksplorasi katalog font dan rendering live specimen untuk Font Library Studio. |
+| **Arsip ZIP Sisi Klien** | [JSZip](https://github.com/Stuk/jszip) | Pengarsipan berkas ZIP langsung di memori browser untuk unduhan batch dan slide media. |
+| **Ikonografi** | [Iconoir](https://iconoir.com) | Pustaka ikon SVG minimalis open-source (`@iconoir/vue`). |
+| **Penyorot Sintaks** | [PrismJS](https://prismjs.com) | Syntax highlighting ringan untuk Markdown Studio dan Code to Image. |
 
 ---
 
