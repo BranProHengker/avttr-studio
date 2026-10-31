@@ -24,6 +24,7 @@ import Badge from '~/components/ui/Badge.vue'
 import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
 import MinimalLoader from '~/components/ui/MinimalLoader.vue'
 import { useToast } from '~/composables/useToast'
+import { useI18n } from '~/composables/useI18n'
 import { useSkillAuditor, type SkillAuditReport, type SecurityFinding } from '~/composables/useSkillAuditor'
 
 interface SkillFile {
@@ -32,6 +33,7 @@ interface SkillFile {
 }
 
 const { show: showToast } = useToast()
+const { locale } = useI18n()
 const { auditFiles } = useSkillAuditor()
 
 const inputQuery = ref('')
@@ -292,7 +294,7 @@ const handlePaste = async () => {
       handleInspect()
     }
   } catch {
-    showToast({ title: 'Gagal membaca clipboard', type: 'error' })
+    showToast({ title: locale.value === 'id' ? 'Gagal membaca clipboard' : 'Failed to read clipboard', type: 'error' })
   }
 }
 
@@ -344,8 +346,8 @@ const handleInspect = async (overrideQuery?: string) => {
     }
   } catch (err: any) {
     showToast({
-      title: 'Gagal memindai repositori',
-      description: err?.data?.message || err?.message || 'Pastikan repo publik dan path valid.',
+      title: locale.value === 'id' ? 'Gagal memindai repositori' : 'Failed to scan repository',
+      description: err?.data?.message || err?.message || (locale.value === 'id' ? 'Pastikan repo publik dan path valid.' : 'Make sure repository is public and path is valid.'),
       type: 'error',
     })
   } finally {
@@ -391,7 +393,7 @@ const selectSkillFromRepo = async (skill: string) => {
     }
   } catch (err: any) {
     showToast({
-      title: 'Gagal memuat skill',
+      title: locale.value === 'id' ? 'Gagal memuat skill' : 'Failed to load skill',
       description: err?.data?.message || err?.message,
       type: 'error',
     })
@@ -537,9 +539,9 @@ const downloadZip = async () => {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
 
-    showToast({ title: 'Skill berhasil diunduh as .zip', type: 'success' })
+    showToast({ title: locale.value === 'id' ? 'Skill berhasil diunduh sebagai .zip' : 'Skill downloaded as .zip', type: 'success' })
   } catch {
-    showToast({ title: 'Gagal membuat file .zip', type: 'error' })
+    showToast({ title: locale.value === 'id' ? 'Gagal membuat file .zip' : 'Failed to create .zip archive', type: 'error' })
   }
 }
 
@@ -547,9 +549,9 @@ const copyInstallCommand = async () => {
   if (!installCommand.value) return
   try {
     await navigator.clipboard.writeText(installCommand.value)
-    showToast({ title: 'Command berhasil disalin', type: 'success' })
+    showToast({ title: locale.value === 'id' ? 'Command berhasil disalin' : 'Command copied to clipboard', type: 'success' })
   } catch {
-    showToast({ title: 'Gagal menyalin command', type: 'error' })
+    showToast({ title: locale.value === 'id' ? 'Gagal menyalin command' : 'Failed to copy command', type: 'error' })
   }
 }
 
@@ -557,9 +559,9 @@ const copyCode = async () => {
   if (!activeFile.value) return
   try {
     await navigator.clipboard.writeText(activeFile.value.content)
-    showToast({ title: 'Kode berhasil disalin', type: 'success' })
+    showToast({ title: locale.value === 'id' ? 'Kode berhasil disalin' : 'Code copied to clipboard', type: 'success' })
   } catch {
-    showToast({ title: 'Gagal menyalin kode', type: 'error' })
+    showToast({ title: locale.value === 'id' ? 'Gagal menyalin kode' : 'Failed to copy code', type: 'error' })
   }
 }
 
@@ -609,7 +611,11 @@ const resetScanner = () => {
         SkillSpector
       </h1>
       <p class="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-        Static pattern & agentic security inspector for AI agent skills and MCP bundles. Statically analyze MCP tool poisoning, prompt injection, excessive agency, memory tampering, and dangerous shell execution.
+        {{
+          locale === 'id'
+            ? 'Inspektur keamanan statis untuk skill AI agent dan bundle MCP. Menganalisis kerentanan MCP tool poisoning, prompt injection, excessive agency, manipulasi memori, dan eksekusi shell berbahaya.'
+            : 'Static pattern & agentic security inspector for AI agent skills and MCP bundles. Statically analyze MCP tool poisoning, prompt injection, excessive agency, memory tampering, and dangerous shell execution.'
+        }}
       </p>
     </div>
 
@@ -619,8 +625,8 @@ const resetScanner = () => {
       v-model="inputQuery"
       :loading="isLoading"
       storage-key="avttr_skillspector_history"
-      placeholder="https://github.com/owner/repo atau npx skills add..."
-      :submit-text="isLoading ? 'Inspecting...' : 'Inspect Skill'"
+      :placeholder="locale === 'id' ? 'https://github.com/owner/repo atau npx skills add...' : 'https://github.com/owner/repo or npx skills add...'"
+      :submit-text="isLoading ? (locale === 'id' ? 'Memindai...' : 'Inspecting...') : (locale === 'id' ? 'Periksa Skill' : 'Inspect Skill')"
       :submit-icon="FolderCheck"
       @submit="handleInspect"
       @clear="clearInput"
@@ -633,8 +639,8 @@ const resetScanner = () => {
     <!-- Minimalist Unboxed Loading State -->
     <MinimalLoader
       v-if="isLoading"
-      text="Inspecting Agent Skill & MCP Security..."
-      subtext="Analyzing MCP poisoning, excessive agency, prompt injections, and shell execution..."
+      :text="locale === 'id' ? 'Memindai Keamanan Skill & MCP...' : 'Inspecting Agent Skill & MCP Security...'"
+      :subtext="locale === 'id' ? 'Menganalisis manipulasi MCP, excessive agency, prompt injection, dan eksekusi shell...' : 'Analyzing MCP poisoning, excessive agency, prompt injections, and shell execution...'"
     />
 
     <!-- Recursive Folder Dropzone -->
@@ -660,10 +666,14 @@ const resetScanner = () => {
         <Folder class="w-6 h-6 text-zinc-900 dark:text-white" />
       </div>
       <div class="mt-4 text-sm font-semibold text-[var(--text-primary)]">
-        Drop your skill folder here or browse
+        {{ locale === 'id' ? 'Letakkan folder skill di sini atau telusuri' : 'Drop your skill folder here or browse' }}
       </div>
       <div class="text-xs text-[var(--text-secondary)] mt-1">
-        Supports full skill directories containing SKILL.md, .py, .sh, .ts, .mcp, and .json files. 100% processed client-side.
+        {{
+          locale === 'id'
+            ? 'Mendukung direktori skill lengkap berisi SKILL.md, .py, .sh, .ts, .mcp, dan file .json. 100% diproses di sisi klien.'
+            : 'Supports full skill directories containing SKILL.md, .py, .sh, .ts, .mcp, and .json files. 100% processed client-side.'
+        }}
       </div>
     </div>
 
@@ -700,7 +710,13 @@ const resetScanner = () => {
             <Badge
               :variant="report.status === 'danger' ? 'primary' : report.status === 'warning' ? 'secondary' : 'badge'"
             >
-              {{ report.status === 'danger' ? 'CRITICAL RISK' : report.status === 'warning' ? 'POTENTIAL RISK' : 'AUTHENTIC & CLEAN' }}
+              {{
+                report.status === 'danger'
+                  ? (locale === 'id' ? 'RISIKO KRITIS' : 'CRITICAL RISK')
+                  : report.status === 'warning'
+                    ? (locale === 'id' ? 'POTENSI RISIKO' : 'POTENTIAL RISK')
+                    : (locale === 'id' ? 'AMAN & BERSIH' : 'AUTHENTIC & CLEAN')
+              }}
             </Badge>
           </div>
 
@@ -712,7 +728,9 @@ const resetScanner = () => {
               <span class="font-mono text-5xl sm:text-6xl font-light tracking-tighter text-zinc-900 dark:text-zinc-50">
                 {{ report.score }}
               </span>
-              <span class="text-xs font-mono text-zinc-400">/ 100 security score</span>
+              <span class="text-xs font-mono text-zinc-400">
+                {{ locale === 'id' ? '/ 100 skor keamanan' : '/ 100 security score' }}
+              </span>
             </div>
           </div>
 
@@ -727,13 +745,17 @@ const resetScanner = () => {
 
           <!-- Metadata Stat Line -->
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-zinc-500 dark:text-zinc-400">
-            <span>{{ files.length }} files</span>
+            <span>{{ files.length }} {{ locale === 'id' ? 'file' : 'files' }}</span>
             <span>·</span>
-            <span>{{ totalLines }} lines</span>
+            <span>{{ totalLines }} {{ locale === 'id' ? 'baris' : 'lines' }}</span>
             <span>·</span>
-            <span :class="report.criticalCount > 0 ? 'text-rose-500 font-semibold' : ''">{{ report.criticalCount }} critical</span>
+            <span :class="report.criticalCount > 0 ? 'text-rose-500 font-semibold' : ''">
+              {{ report.criticalCount }} {{ locale === 'id' ? 'kritis' : 'critical' }}
+            </span>
             <span>·</span>
-            <span :class="report.warningCount > 0 ? 'text-amber-500 font-semibold' : ''">{{ report.warningCount }} warnings</span>
+            <span :class="report.warningCount > 0 ? 'text-amber-500 font-semibold' : ''">
+              {{ report.warningCount }} {{ locale === 'id' ? 'peringatan' : 'warnings' }}
+            </span>
           </div>
         </div>
 
@@ -746,7 +768,7 @@ const resetScanner = () => {
             @click="downloadZip"
           >
             <Archive class="w-3.5 h-3.5 mr-1.5" />
-            Download ZIP
+            {{ locale === 'id' ? 'Unduh ZIP' : 'Download ZIP' }}
           </Button>
 
           <Button
@@ -757,7 +779,7 @@ const resetScanner = () => {
             @click="copyInstallCommand"
           >
             <Terminal class="w-3.5 h-3.5 mr-1.5" />
-            Copy Command
+            {{ locale === 'id' ? 'Salin Command' : 'Copy Command' }}
           </Button>
 
           <Button
@@ -767,7 +789,7 @@ const resetScanner = () => {
             @click="copyCode"
           >
             <Copy class="w-3.5 h-3.5 mr-1.5" />
-            Copy Code
+            {{ locale === 'id' ? 'Salin Kode' : 'Copy Code' }}
           </Button>
 
           <Button
@@ -786,20 +808,20 @@ const resetScanner = () => {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div class="flex items-center gap-2.5">
             <span class="text-xs font-mono uppercase tracking-widest text-zinc-500">
-              Security Findings ({{ report.findings.length }})
+              {{ locale === 'id' ? `Temuan Keamanan (${report.findings.length})` : `Security Findings (${report.findings.length})` }}
             </span>
             <span
               class="text-[10px] font-mono px-2 py-0.5 rounded uppercase font-semibold"
               :class="report.criticalCount > 0 ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'"
             >
-              {{ report.criticalCount > 0 ? `${report.criticalCount} Critical` : '' }}
+              {{ report.criticalCount > 0 ? (locale === 'id' ? `${report.criticalCount} Kritis` : `${report.criticalCount} Critical`) : '' }}
               {{ report.criticalCount > 0 && report.warningCount > 0 ? ' · ' : '' }}
-              {{ report.warningCount > 0 ? `${report.warningCount} Warnings` : '' }}
+              {{ report.warningCount > 0 ? (locale === 'id' ? `${report.warningCount} Peringatan` : `${report.warningCount} Warnings`) : '' }}
             </span>
           </div>
 
           <span class="text-xs text-zinc-400 font-mono">
-            Click finding to jump to code line
+            {{ locale === 'id' ? 'Klik temuan untuk lompat ke baris kode' : 'Click finding to jump to code line' }}
           </span>
         </div>
 
@@ -848,9 +870,15 @@ const resetScanner = () => {
         class="flex items-center gap-3 py-4 px-1 text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800"
       >
         <ShieldCheck class="w-4 h-4 text-emerald-500 shrink-0" />
-        <span class="font-medium text-zinc-900 dark:text-zinc-200 font-mono">Zero Security Threats Detected:</span>
+        <span class="font-medium text-zinc-900 dark:text-zinc-200 font-mono">
+          {{ locale === 'id' ? 'Nol Ancaman Keamanan Terdeteksi:' : 'Zero Security Threats Detected:' }}
+        </span>
         <span class="font-mono">
-          All {{ files.length }} files verified clean. No MCP exploits, prompt overrides, memory tampering, excessive agency, destructive commands, or exfiltration patterns detected.
+          {{
+            locale === 'id'
+              ? `Semua ${files.length} file terverifikasi bersih. Tidak terdeteksi eksploitasi MCP, manipulasi prompt, modifikasi memori, excessive agency, perintah destruktif, atau eksfiltrasi data.`
+              : `All ${files.length} files verified clean. No MCP exploits, prompt overrides, memory tampering, excessive agency, destructive commands, or exfiltration patterns detected.`
+          }}
         </span>
       </div>
 
@@ -894,7 +922,7 @@ const resetScanner = () => {
                 @click="markdownViewMode = 'preview'"
               >
                 <Eye class="w-3.5 h-3.5" />
-                <span>Preview</span>
+                <span>{{ locale === 'id' ? 'Pratinjau' : 'Preview' }}</span>
               </button>
               <button
                 type="button"
@@ -912,7 +940,7 @@ const resetScanner = () => {
             </div>
 
             <span class="text-[11px] text-zinc-500 shrink-0 font-mono">
-              {{ codeLines.length }} lines
+              {{ codeLines.length }} {{ locale === 'id' ? 'baris' : 'lines' }}
             </span>
           </div>
         </div>
@@ -929,7 +957,7 @@ const resetScanner = () => {
           >
             <div class="flex items-center justify-between">
               <span class="text-[10px] font-mono uppercase font-bold tracking-wider text-zinc-500">
-                Skill Specification (Frontmatter)
+                {{ locale === 'id' ? 'Spesifikasi Skill (Frontmatter)' : 'Skill Specification (Frontmatter)' }}
               </span>
               <Badge variant="outline" size="sm" class="text-[10px] font-mono">
                 YAML Metadata
@@ -960,7 +988,11 @@ const resetScanner = () => {
             <div class="flex items-center gap-2">
               <AlertTriangle class="w-4 h-4 shrink-0" />
               <span>
-                File ini memiliki {{ Object.keys(findingsForActiveFile).length }} baris dengan indikasi risiko keamanan.
+                {{
+                  locale === 'id'
+                    ? `File ini memiliki ${Object.keys(findingsForActiveFile).length} baris dengan indikasi risiko keamanan.`
+                    : `This file contains ${Object.keys(findingsForActiveFile).length} line${Object.keys(findingsForActiveFile).length > 1 ? 's' : ''} with security risk indicators.`
+                }}
               </span>
             </div>
             <button
@@ -968,7 +1000,7 @@ const resetScanner = () => {
               class="font-mono text-[11px] underline underline-offset-2 hover:text-amber-500 cursor-pointer shrink-0"
               @click="markdownViewMode = 'raw'"
             >
-              Lihat di Raw Code
+              {{ locale === 'id' ? 'Lihat di Raw Code' : 'View in Raw Code' }}
             </button>
           </div>
 

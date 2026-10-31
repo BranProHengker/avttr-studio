@@ -1141,13 +1141,13 @@ const clearDocument = () => {
 
 /* Theme: Cyber Monospace */
 .theme-mono {
-  font-family: ui-monospace, 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   letter-spacing: -0.01em;
 }
 .theme-mono :deep(h1),
 .theme-mono :deep(h2),
 .theme-mono :deep(h3) {
-  font-family: ui-monospace, 'JetBrains Mono', monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 /* Theme: Academic Paper */

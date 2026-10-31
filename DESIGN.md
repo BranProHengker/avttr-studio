@@ -95,7 +95,7 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 ### Font Family
 * **Primary (UI & Body):** `Satoshi, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
 * **Display & Headings (Sub-Main):** `Cabinet Grotesk, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
-* **Monospace:** `JetBrains Mono, Fira Code, monospace` (for code snippets, omnibar URLs, JSON, regex, metrics, and badges)
+* **Monospace:** `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace` (for code snippets, omnibar URLs, JSON, regex, metrics, and badges)
 
 ### Hierarchy Table
 
@@ -110,7 +110,7 @@ The aesthetic is modern, minimal, and high-density, leveraging structured whites
 | **Label Strong** | Satoshi | 12px | 600 | 15px | 0em | Form labels, category headers, badges |
 | **Button** | Satoshi | 14px | 500 | 20px | 0em | Standard action buttons |
 | **Button Small** | Satoshi | 12px | 500 | 16px | 0em | Compact actions, table actions |
-| **Code / Mono** | JetBrains Mono | 12px | 400 | 16px | 0em | URLs, JSON, hashes, keyboard shortcuts |
+| **Code / Mono** | System Monospace | 12px | 400 | 16px | 0em | URLs, JSON, hashes, keyboard shortcuts |
 
 ---
 
