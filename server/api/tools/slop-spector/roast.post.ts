@@ -54,7 +54,7 @@ Aturan:
 4. roasts: tepat 3 poin roasting. Setiap poin berisi:
    - line: kalimat roasting pedas dan sarkas (maksimal 20 kata).
    - evidence: kutipan bukti singkat atau nama pola (maksimal 10 kata).
-5. fix: 1 kalimat saran perbaikan paling praktis dan berdampak besar (maksimal 20 kata).
+5. fix: 1 kalimat saran teknis yang konkret dan to the point (maksimal 20 kata). DILARANG menggunakan kata-kata korporat klise seperti "tingkatkan sinergi", "ruang bernafas", atau saran motivasi umum. Tulis seperti saran praktis sesama developer.
 6. DILARANG menggunakan emoji, dilarang em-dash, dilarang hashtag. Sindir websitenya, bukan orangnya.
 7. DILARANG mengutip key JSON teknis internal (seperti 'top_findings: []', 'slop_score', atau tanda kurung kosong) sebagai evidence. Jika bukti temuan kosong atau bersih, tulis evidence seperti 'clean scan' atau 'tidak ada kata klise'.
 Output WAJIB berupa JSON murni tanpa markdown wrapper:
@@ -76,7 +76,7 @@ Rules:
 4. roasts: exactly 3. Each item has:
    - line: at most 20 words.
    - evidence: exact short quote or pattern, at most 10 words.
-5. fix: one practical sentence, at most 20 words, the single change that would help most.
+5. fix: one concrete, actionable developer sentence (at most 20 words). Never write corporate fluff or generic advice; tell the developer specifically what to delete or change.
 6. No emoji, no em dashes, no hashtags. Punch at the website, never at people.
 7. NEVER quote internal JSON keys (like 'top_findings: []', 'slop_score', or empty brackets) as evidence. If evidence is empty, write 'clean scan' or 'zero buzzwords found'.
 Output MUST be strict JSON matching this schema:

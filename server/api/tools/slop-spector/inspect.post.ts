@@ -224,8 +224,8 @@ export default defineEventHandler(async (event) => {
           : `This is not a pattern guess. The site carries the builder's own markers, left in the shipped page.`,
         [`Builder: ${fp.name}`],
         isIndo
-          ? `Hapus metadata generator di tag <meta> dan bersihkan class/id pelacak bawaan builder ${fp.name}.`
-          : `Remove generator meta tags and clean up builder-specific tracking classes or IDs left by ${fp.name}.`
+          ? `Bersihkan tag meta dan class bawaan ${fp.name} biar nggak kelihatan langsung dari template.`
+          : `Remove builder meta tags and tracking attributes left by ${fp.name}.`
       )
       break
     }
@@ -248,8 +248,8 @@ export default defineEventHandler(async (event) => {
         : 'The page title is still the starter template’s default, so the page shipped without anyone finishing it.',
       [`<title>${title}</title>`],
       isIndo
-        ? 'Ganti tag <title> dengan nama produk spesifik dan nilai proposisi yang unik.'
-        : 'Replace <title> with your actual product name and a clear, unique value proposition.'
+        ? 'Ganti title tab browser pakai nama produk dan fungsinya.'
+        : 'Replace default starter title with your real product name and what it does.'
     )
   }
 
@@ -274,8 +274,8 @@ export default defineEventHandler(async (event) => {
         : 'Generators open with a vague promise or superlative boast because they don’t know what you actually built.',
       [h1Text],
       isIndo
-        ? 'Tulis apa yang produk lu lakukan secara harfiah, bukan kata sifat hiperbola atau janji muluk.'
-        : 'State literally what your product does or solves, not inflated marketing superlatives.'
+        ? 'Tulis langsung apa fungsi produk lu, hindari kata-kata klise kayak "unlock" atau "elevate".'
+        : 'State directly what your product solves without marketing superlatives.'
     )
   }
 
@@ -304,8 +304,8 @@ export default defineEventHandler(async (event) => {
         : `${totalBuzz} filler words in ${words} words of copy. These are what a model writes when it has no specific fact to offer.`,
       buzzHits.slice(0, 3).map(([w]) => `"${w}" (${findQuoteAround(w) || w})`),
       isIndo
-        ? 'Hapus kata buzzword (seamless, unlock, elevate) dan ganti dengan angka, fitur, atau fakta konkret.'
-        : 'Remove buzzwords (seamless, unlock, elevate) and replace with concrete verbs and metrics.'
+        ? 'Hapus kata-kata klise (seamless, unlock, elevate), ganti pakai fakta atau angka nyata.'
+        : 'Cut marketing buzzwords (seamless, unlock); state concrete facts instead.'
     )
   } else if (words > 180 && density < 1.0 && !lowText.includes('atmin') && !lowText.includes('cuan')) {
     // Hanya beri credit bersih jika bahasa Inggris formal asli tanpa filler, bukan slang lokal
@@ -342,8 +342,8 @@ export default defineEventHandler(async (event) => {
         : 'These are the default section names of every landing page template. They label the section instead of saying anything about you.',
       templateHeadingsFound.slice(0, 3),
       isIndo
-        ? 'Ganti judul section generik (Features, How it works) dengan judul naratif yang mendeskripsikan solusi produk.'
-        : 'Replace generic section headers with descriptive titles that tell your product’s actual story.'
+        ? 'Ganti judul section "Features" / "How it works" jadi nama fitur aslinya.'
+        : 'Replace generic "Features" / "How it works" headers with actual feature names.'
     )
   }
 
@@ -363,8 +363,8 @@ export default defineEventHandler(async (event) => {
         : 'A row of round numbers with plus signs is the most generated element on the internet. Real proof has units, dates and somewhere to check it.',
       [statsMatches.slice(0, 4).join('   ')],
       isIndo
-        ? 'Cantumkan metrik terukur yang bisa diverifikasi lengkap dengan tanggal atau tautan audit nyata.'
-        : 'Provide verifiable, auditable numbers with dates and sources instead of arbitrary rounded stats.'
+        ? 'Ganti angka bulat "10k+" pakai data riil yang bisa dicek sumbernya.'
+        : 'Replace arbitrary rounded stats with verifiable numbers and sources.'
     )
   }
 
@@ -385,8 +385,8 @@ export default defineEventHandler(async (event) => {
         : 'Star ratings over quotes from first names and job titles read as placeholders, because generators write them for every site.',
       [testimonialQuote || `${starIcons} star icons`],
       isIndo
-        ? 'Gunakan testimoni asli dari pengguna terverifikasi, sertakan tautan ke profil publik atau tweet/post nyata.'
-        : 'Use real, verifiable customer quotes with links to public profiles or authentic social posts.'
+        ? 'Pakai testimoni asli yang ada tautan profilnya, bukan kutipan dummy.'
+        : 'Use real customer quotes with verifiable links, not generic first-name quotes.'
     )
   }
 
@@ -408,8 +408,8 @@ export default defineEventHandler(async (event) => {
         : 'Emoji standing in for icons and bullets, at the start of card titles and list items, is a hallmark of one-shot generated pages.',
       [[...new Set(emojiMatches)].slice(0, 6).join(' ')],
       isIndo
-        ? 'Ganti emoji dengan icon SVG minimalis berbobot konsisten (misal: @iconoir/vue).'
-        : 'Replace emoji bullets with clean, consistent SVG vector icons.'
+        ? 'Ganti emoji pakai icon SVG beneran.'
+        : 'Replace emoji bullets with clean SVG icons.'
     )
   }
 
@@ -429,8 +429,8 @@ export default defineEventHandler(async (event) => {
         : 'Models reach for the em dash constantly. Three or more in short copy is one of the strongest text tells there is.',
       [findQuoteAround(/\u2014/) || `${emDashes} em dashes`],
       isIndo
-        ? 'Ganti tanda em-dash (—) dengan titik atau pisahkan menjadi dua kalimat pendek yang lugas.'
-        : 'Replace em dashes with simple periods or break into direct, active sentences.'
+        ? 'Ganti tanda pisah em-dash (—) jadi titik atau koma biasa.'
+        : 'Replace em dashes (—) with simple periods or commas.'
     )
   }
 
@@ -450,8 +450,8 @@ export default defineEventHandler(async (event) => {
         : '“Not just X, it’s Y” is the single most common AI sentence shape.',
       [notJustMatch],
       isIndo
-        ? 'Hapus retorika "Bukan sekadar X" dan langsung jelaskan fungsi utama produk tanpa pembelaan.'
-        : 'Drop the "Not just X" contrast; state the actual value proposition immediately.'
+        ? 'Hapus retorika "Bukan sekadar X, tapi Y", langsung sebut aja fungsinya.'
+        : 'Drop "Not just X, but Y" rhetoric; state what the product actually does.'
     )
   }
 
@@ -471,8 +471,8 @@ export default defineEventHandler(async (event) => {
         : 'Three one-word sentences in a row is a slogan formula, not an authentic brand voice.',
       [beatMatch[1]],
       isIndo
-        ? 'Tulis satu kalimat aktif yang menyatakan manfaat nyata, hindari slogan tiga kata bertitik.'
-        : 'Write an active sentence stating the real benefit instead of a staccato 3-word slogan.'
+        ? 'Hapus slogan 3 kata bertitik (Cepat. Andal. Modern.), ganti satu kalimat lugas.'
+        : 'Drop staccato 3-word slogans ("Fast. Reliable. Modern."); write one natural sentence.'
     )
   }
 
@@ -498,8 +498,8 @@ export default defineEventHandler(async (event) => {
         : 'A “Home” link plus About, Services and Contact is the nav of a template nobody edited. Visitors know where home is: it’s the logo.',
       [navLinks.filter((t) => t.length < 20).slice(0, 5).join('  |  ')],
       isIndo
-        ? 'Jadikan logo sebagai link Beranda, tampilkan hanya link esensial (Fitur, Harga, Dokumen).'
-        : 'Use the brand logo for home navigation; display only essential links in the navbar.'
+        ? 'Hapus menu "Home" di navbar (klik logo udah cukup), sisain menu penting aja.'
+        : 'Remove "Home" from nav (the logo already links home); keep only essential links.'
     )
   }
 
@@ -525,8 +525,8 @@ export default defineEventHandler(async (event) => {
         : 'The two default calls to action. Name the action instead: what actually happens when clicked?',
       ['Get Started   |   Learn More'],
       isIndo
-        ? 'Ganti tombol "Get Started / Learn More" dengan aksi spesifik ("Mulai Gratis", "Buka Editor").'
-        : 'Replace "Get Started / Learn More" with concrete action verbs ("Start Free", "Open Studio").'
+        ? 'Ganti tombol "Get Started" dan "Learn More" pakai kata kerja nyata (kayak "Mulai Gratis" atau "Buka Studio").'
+        : 'Replace "Get Started" and "Learn More" with concrete action verbs ("Start Free", "Open Studio").'
     )
   }
 
@@ -547,8 +547,8 @@ export default defineEventHandler(async (event) => {
         : 'Conversational filler phrases that occur when LLM chat output is copied wholesale into production code.',
       [chatbotMatch],
       isIndo
-        ? 'Periksa dan hapus sisa teks percakapan AI seperti "Here is an overview" atau "As an AI".'
-        : 'Scan and remove leftover LLM chat artifacts like "Here is an overview" or "As an AI".'
+        ? 'Hapus sisa teks chat AI yang ketinggalan di halaman.'
+        : 'Delete leftover LLM chat artifacts like "Here is an overview" or "As an AI".'
     )
   }
 
@@ -569,8 +569,8 @@ export default defineEventHandler(async (event) => {
         : 'Manufactured intimacy phrases and meta-announcements before an ordinary point are classic LLM tells.',
       [signpostMatch],
       isIndo
-        ? 'Hapus kalimat pembuka berputar-putar ("Let\'s dive in", "At its core") dan langsung ke inti gagasan.'
-        : 'Delete conversational filler openers and state the core point right away.'
+        ? 'Hapus kalimat pembuka basa-basi ("Let\'s dive in", "Pada dasarnya"), langsung ke poin inti.'
+        : 'Cut conversational throat-clearing ("Let\'s dive in", "At its core"); get straight to the point.'
     )
   }
 
@@ -599,8 +599,8 @@ export default defineEventHandler(async (event) => {
         : 'Over 60% of headings across the page are uniformly styled with heavy font-bold weights.',
       [`${boldHeadings.length} of ${allHeadings.length} headings are bold`],
       isIndo
-        ? 'Variasikan ketebalan teks (gunakan normal/medium pada body copy, dan semibold/regular pada display besar).'
-        : 'Vary typography weights (use normal/medium for body, semibold/regular for large display titles).'
+        ? 'Campur bobot font: jangan semua judul dipaksa tebal (bold).'
+        : 'Mix font weights: stop making every headline bold.'
     )
   }
 
@@ -624,8 +624,8 @@ export default defineEventHandler(async (event) => {
         : 'All-caps labels with wide tracking are a repeated AI template reflex to make ordinary UI feel elevated.',
       [`${uppercaseTracked} uppercase tracked elements`],
       isIndo
-        ? 'Gunakan Sentence case atau Title case dengan tracking normal untuk kenyamanan baca.'
-        : 'Use normal sentence case or title case with standard tracking for better legibility.'
+        ? 'Pakai huruf kecil/kapital normal aja, jangan dipaksa UPPERCASE berjarak renggang.'
+        : 'Use normal lower/title case with standard tracking instead of forced uppercase.'
     )
   }
 
@@ -658,8 +658,8 @@ export default defineEventHandler(async (event) => {
         : 'Prefacing UI labels with "//" is a classic AI template affectation to fake a technical developer aesthetic.',
       commentEyebrows.length ? commentEyebrows.slice(0, 3) : [codeCommentMatch || '// 01 SECTION'],
       isIndo
-        ? 'Hapus awalan double-slash "//" pada teks UI; gunakan label deskriptif yang bersih dan otentik.'
-        : 'Remove pseudo-code "//" prefixes from UI labels; use clean, unpretentious typography.'
+        ? 'Hapus tanda // di judul atau badge, tulis langsung nama fiturnya.'
+        : 'Remove the // prefix from titles; write the actual feature name.'
     )
   }
 
@@ -685,8 +685,8 @@ export default defineEventHandler(async (event) => {
         : 'Staggered fade-ups on every section is the default motion wallpaper of AI templates.',
       ['.reveal-on-scroll: opacity: 0; translateY(20px)'],
       isIndo
-        ? 'Biarkan konten statis tampil instan tanpa animasi reveal tertunda saat di-scroll.'
-        : 'Let static content render immediately; avoid delayed staggered scroll-reveal animations.'
+        ? 'Matiin animasi scroll delay, biar konten langsung kebaca tanpa nunggu gerak.'
+        : 'Turn off scroll-reveal delay so content appears immediately.'
     )
   }
 
@@ -710,8 +710,8 @@ export default defineEventHandler(async (event) => {
         : 'Pulsing animations on static buttons create visual fatigue and signal desperate CTA tactics.',
       [`${pulsingElements} pulsing element(s)`],
       isIndo
-        ? 'Hapus animate-pulse pada tombol; gunakan interaksi hover halus (150ms transition) yang tenang.'
-        : 'Remove pulsing animations; use subtle, calm hover states (150ms transition) instead.'
+        ? 'Matiin tombol kedip-kedip (animate-pulse), cukup pakai hover biasa.'
+        : 'Remove animate-pulse from buttons; a standard hover state is enough.'
     )
   }
 
@@ -731,8 +731,8 @@ export default defineEventHandler(async (event) => {
         : 'Lifting or scaling whole cards on hover adds distracting motion without conveying functional state.',
       [`${bouncyCards} bouncy hover elements`],
       isIndo
-        ? 'Ganti hover:scale dengan perubahan warna border atau latar belakang yang lebih halus dan elegan.'
-        : 'Replace hover:scale with subtle border-color or surface background shifts.'
+        ? 'Hapus hover:scale-105 pada kartu, cukup ubah warna border atau background tipis.'
+        : 'Drop hover:scale-105; use a subtle border or background highlight instead.'
     )
   }
 
@@ -752,8 +752,8 @@ export default defineEventHandler(async (event) => {
         : 'Transitioning all CSS properties wastes compositor frames; animate only specific target properties.',
       [`${transitionAllCount} elements with transition-all`],
       isIndo
-        ? 'Spesifikasikan properti transisi secara terarah (misal: transition-colors atau transition-transform).'
-        : 'Explicitly name transitioned properties (e.g., transition-colors or transition-transform).'
+        ? 'Ganti transition-all ke properti spesifik (kayak transition-colors atau transition-transform).'
+        : 'Replace transition-all with specific properties like transition-colors.'
     )
   }
 
@@ -783,8 +783,8 @@ export default defineEventHandler(async (event) => {
         : 'Gradient-filled headings have been the signature move of AI landing pages since 2023.',
       ['background-clip: text; fill: linear-gradient'],
       isIndo
-        ? 'Gunakan warna solid kontras tinggi (zinc-900 / white) untuk judul alih-alih teks gradien.'
-        : 'Use a crisp solid foreground color instead of multi-color gradient fills for headings.'
+        ? 'Ganti warna gradien judul pakai warna solid (putih atau zinc-900), biar gampang dibaca.'
+        : 'Use a solid text color (white or dark zinc) instead of gradient fills on headings.'
     )
   }
 
@@ -811,8 +811,8 @@ export default defineEventHandler(async (event) => {
         : 'Blurred colour blobs and neon glowing divider lines are decoration with no job, a default of AI templates.',
       [hasGlowDivider ? '.glow-divider { box-shadow: neon-glow }' : `${orbCount} blurred glowing blobs`],
       isIndo
-        ? 'Hapus blob warna blur di background; biarkan kontras warna murni dan ruang bernafas yang bekerja.'
-        : 'Remove blurry background glow orbs; rely on clean whitespace and calibrated contrast.'
+        ? 'Hapus bola blur neon di background, biarin latarnya polos dan bersih.'
+        : 'Delete floating blur orbs; keep the canvas clean.'
     )
   }
 
@@ -835,8 +835,8 @@ export default defineEventHandler(async (event) => {
         : 'A colored left border used purely as decoration adds visual noise without carrying real semantic information.',
       ['border-left: 4px solid var(--accent)'],
       isIndo
-        ? 'Hapus border kiri tebal warna-warni; gunakan pembeda latar belakang atau hierarki tipografi.'
-        : 'Remove decorative colored left borders; use subtle surface distinction or typography.'
+        ? 'Hapus garis border kiri di kartu, nggak perlu ada garis vertikal warna-warni.'
+        : 'Remove the colored left border from cards; let spacing and hierarchy do the work.'
     )
   }
 
@@ -863,8 +863,8 @@ export default defineEventHandler(async (event) => {
         : 'Buttons and variables use Tailwind’s stock indigo/pink hex palette rather than a considered brand identity.',
       ['#6366f1 (Indigo) + #ec4899 (Pink)'],
       isIndo
-        ? 'Ganti palet default indigo/pink dengan satu warna aksen yang relevan dengan karakter brand.'
-        : 'Replace stock indigo/pink palette with a considered brand color tailored to the product.'
+        ? 'Ganti warna ungu indigo dan pink bawaan template pakai satu warna brand pilihan sendiri.'
+        : 'Replace default template indigo and pink accents with a single deliberate brand color.'
     )
   }
 
@@ -887,8 +887,8 @@ export default defineEventHandler(async (event) => {
         : 'Backdrop blur on cards, modals, and nav simultaneously flattens hierarchy into a single frosted layer.',
       [`backdrop-filter: blur on ${glassCount} elements`],
       isIndo
-        ? 'Gunakan latar belakang solid atau semi-transparan tipis tanpa blur berlebih pada setiap elemen.'
-        : 'Use solid or subtle translucent surfaces without stacking blur filters everywhere.'
+        ? 'Kurangi pemakaian backdrop-blur biar nggak semua komponen berasa kaca buram.'
+        : 'Dial back backdrop-blur so the whole page doesn’t feel like frosted glass.'
     )
   }
 
@@ -914,8 +914,8 @@ export default defineEventHandler(async (event) => {
         : 'Pill capsule plus status dot combination is self-referential decoration typical of one-shot templates.',
       [pillText || 'status-dot: System Online'],
       isIndo
-        ? 'Hapus kapsul status buatan; letakkan pesan penting langsung di copy atau header utama.'
-        : 'Remove decorative pill status badges; integrate announcements into clear headline copy.'
+        ? 'Hapus badge lonjong berkedip di atas hero, tulis infonya langsung di teks utama.'
+        : 'Remove decorative status pills from above the hero; integrate updates into the copy.'
     )
   }
 
@@ -938,8 +938,8 @@ export default defineEventHandler(async (event) => {
         : 'Uniform rounded corners applied across all surfaces erase hierarchy and read as a template default.',
       [`${softCornersCount} elements with border-radius >= 14px`],
       isIndo
-        ? 'Gunakan radius sudut terukur (misal 8px untuk kontrol, 12-14px untuk kartu) secara konsisten.'
-        : 'Use a disciplined radius scale (e.g., 8px for controls, 12-14px for cards).'
+        ? 'Kecilin border-radius, jangan semua sudut dibuat melengkung 16px-24px.'
+        : 'Tighten border radii; avoid 16-24px rounded corners on everything.'
     )
   }
 
@@ -966,8 +966,8 @@ export default defineEventHandler(async (event) => {
         : 'Uniform card mosaics flatten content hierarchy into identical repeated tiles.',
       [`${iconCardGrids} card grid section(s)`],
       isIndo
-        ? 'Pecah grid kartu seragam dengan layout asimetris, perbandingan visual, atau preview langsung.'
-        : 'Break uniform card grids with asymmetric layouts, real screenshots, or direct interactive demos.'
+        ? 'Jangan bikin kartu berjejer 3 kotak seragam; pakai layout asimetris atau demo langsung.'
+        : 'Break uniform 3-card grids with an asymmetric layout or a live preview.'
     )
   }
 
@@ -992,8 +992,8 @@ export default defineEventHandler(async (event) => {
         : 'Repeating dot patterns and blueprint grids are the default AI method to add fake technical texture.',
       ['radial-gradient(dot-grid 1px) or .bg-grid'],
       isIndo
-        ? 'Hapus background dot-matrix atau blueprint grid; gunakan canvas solid dengan hairline border halus.'
-        : 'Remove repetitive dot-matrix grids; prefer a calm solid canvas with clean hairline borders.'
+        ? 'Hapus pola titik-titik (dot grid) atau garis blueprint di background.'
+        : 'Remove background dot matrices and blueprint grids; use a clean solid canvas.'
     )
   }
 
@@ -1022,8 +1022,8 @@ export default defineEventHandler(async (event) => {
         : 'A styled terminal window with traffic-light dots is generic costume decoration for developer landing pages.',
       ['terminal-dots: red, yellow, green window controls'],
       isIndo
-        ? 'Ganti mockup terminal dengan cuplikan kode nyata yang dapat disalin atau demo interaktif fungsional.'
-        : 'Replace decorative mockup terminals with copyable code snippets or real interactive widgets.'
+        ? 'Hapus jendela terminal Mac hiasan, ganti dengan kode beneran atau widget yang bisa dicoba.'
+        : 'Drop decorative Mac terminal mockups; show real code or an actual interactive demo.'
     )
   }
 
@@ -1053,8 +1053,8 @@ export default defineEventHandler(async (event) => {
           : 'Generators routinely force every process into an identical 3-step numbered sequence.',
         ['3 steps: 01, 02, 03'],
         isIndo
-          ? 'Jelaskan alur nyata produk sesuai langkah operasional sebenarnya, bukan dipaksa 3 langkah bulat.'
-          : 'Explain the real product workflow rather than forcing it into an arbitrary 3-step sequence.'
+          ? 'Tulis alur pemakaian sebenarnya, jangan dipaksakan persis 3 langkah (01-02-03).'
+          : 'Describe your actual workflow instead of forcing a 3-step (01-02-03) sequence.'
       )
     }
   }
@@ -1079,8 +1079,8 @@ export default defineEventHandler(async (event) => {
         : 'Unsplash shots, placeholder images and generated avatars are what a builder grabs when it has no real pictures of your product.',
       stockHits.slice(0, 3),
       isIndo
-        ? 'Gunakan screenshot produk nyata, tangkapan antarmuka, atau ilustrasi otentik buatan sendiri.'
-        : 'Use real product screenshots, UI captures, or custom handcrafted diagrams.'
+        ? 'Ganti foto stock Unsplash dengan screenshot asli produk atau UI buatan sendiri.'
+        : 'Replace Unsplash stock shots with real product UI screenshots.'
     )
   }
 
@@ -1104,8 +1104,8 @@ export default defineEventHandler(async (event) => {
         : 'The colour tokens still match shadcn’s defaults to the decimal: the components were installed and never styled.',
       matchedShadcnTokens.slice(0, 2),
       isIndo
-        ? 'Kustomisasi token radius dan variabel warna Shadcn agar memiliki identitas visual yang khas.'
-        : 'Customize Shadcn radius, border, and color variables to establish a distinct brand style.'
+        ? 'Ubah token warna bawaan Shadcn, jangan biarin nilai hex/oklch default pabrik.'
+        : 'Tweak Shadcn’s default color tokens so it doesn’t look like an unstyled starter.'
     )
   }
 
@@ -1156,8 +1156,8 @@ export default defineEventHandler(async (event) => {
           : 'Not proof on its own, but every generator defaults to the same developer font stack.',
         [`font-family: ${defaultFontFound}`],
         isIndo
-          ? 'Eksplorasi tipografi berkarakter (misal: Geist, Instrument Sans, Editorial Serif) yang sesuai niche produk.'
-          : 'Explore a distinctive typeface tailored to your product identity instead of the developer default.'
+          ? 'Ganti font template (Inter/Poppins) dengan font yang cocok sama jenis produk lu.'
+          : 'Pick a typeface suited to your product rather than default Inter or Roboto.'
       )
     }
   }
@@ -1193,8 +1193,8 @@ export default defineEventHandler(async (event) => {
         : 'Not a crime. Just the most common stack on the internet right now, which makes it the default look too.',
       ['/_next/ assets detected'],
       isIndo
-        ? 'Kustomisasi favicon, meta header, dan styling bawaan Next.js/Vercel agar tidak seragam.'
-        : 'Customize Next.js / Vercel default metadata, favicons, and styling tokens.'
+        ? 'Ganti favicon dan title default Next.js/Vercel dengan aset produk lu sendiri.'
+        : 'Replace default Next.js/Vercel favicon and metadata with your own brand assets.'
     )
   }
 
@@ -1212,8 +1212,8 @@ export default defineEventHandler(async (event) => {
         : 'A wall of little green squares is the developer portfolio’s version of a stat row.',
       ['GitHub contribution graph'],
       isIndo
-        ? 'Fokuskan portofolio pada studi kasus proyek nyata dan dampaknya, bukan riwayat commit.'
-        : 'Highlight project case studies and measurable impact rather than git commit boxes.'
+        ? 'Tampilkan hasil karya dan studi kasus nyata, bukan tembok kotak hijau GitHub.'
+        : 'Showcase actual project case studies instead of a wall of GitHub green squares.'
     )
   }
 
@@ -1234,8 +1234,8 @@ export default defineEventHandler(async (event) => {
         : 'A grid of framework logos tells visitors what you used, not what you made.',
       [stackHeading],
       isIndo
-        ? 'Ganti galeri logo teknologi dengan cerita arsitektur atau keputusan teknis di proyek lu.'
-        : 'Replace framework logo walls with context about what architectural problems you solved.'
+        ? 'Hapus deretan logo framework, ceritakan masalah teknis nyata yang berhasil lu bereskan.'
+        : 'Drop framework logo walls; explain the real problems you solved.'
     )
   }
 
@@ -1256,8 +1256,8 @@ export default defineEventHandler(async (event) => {
         : 'A line every developer portfolio shares. Swap it for one specific thing you did.',
       [bioMatch],
       isIndo
-        ? 'Tulis bio dengan menyebutkan domain spesifik keahlian atau produk nyata yang lu bangun.'
-        : 'State your actual technical focus or what specific products you’ve built.'
+        ? 'Ganti bio klise \'obsessed with details\' dengan apa yang beneran lu bangun.'
+        : 'Swap the cliché \'obsessed with details\' bio for what you actually build.'
     )
   }
 
@@ -1276,8 +1276,8 @@ export default defineEventHandler(async (event) => {
         : 'In 2026 everything claims to be AI-powered, so saying so tells the visitor nothing.',
       [aiPoweredMatch],
       isIndo
-        ? 'Sebutkan kapabilitas spesifik produk daripada sekadar melabeli "AI-powered".'
-        : 'Describe the specific user benefit rather than slapping a generic "AI-powered" badge.'
+        ? 'Jelasin fitur nyatanya, nggak usah nempel label \'AI-powered\' di mana-mana.'
+        : 'Describe what the feature actually does instead of labeling it \'AI-powered\'.'
     )
   }
 
@@ -1300,8 +1300,8 @@ export default defineEventHandler(async (event) => {
         : 'A big text box asking what you want to build is the opening scene of every AI product launched since 2024.',
       [`Placeholder: "${promptPlaceholder}"`],
       isIndo
-        ? 'Tampilkan pratinjau produk interaktif atau hasil kerja nyata sebelum meminta input prompt.'
-        : 'Show a preview of tangible output or a guided experience before prompting the user.'
+        ? 'Kasih lihat contoh hasil jadi dulu sebelum nyuruh user ngetik di kotak prompt.'
+        : 'Show output examples before asking the user to type in a prompt box.'
     )
   }
 
@@ -1322,8 +1322,8 @@ export default defineEventHandler(async (event) => {
         : 'A single narrow centred column is the default shape of a developer site. Safe, readable, and identical to the last ten.',
       [`${narrowColumns} narrow centered column containers`],
       isIndo
-        ? 'Manfaatkan lebar viewport dengan tata letak fluid dan hierarki multi-kolom yang dinamis.'
-        : 'Utilize viewport width with fluid asymmetrical layouts rather than one narrow column.'
+        ? 'Jangan cuma bikin 1 kolom sempit di tengah (max-w-2xl), manfaatkan lebar layar.'
+        : 'Use the full viewport width instead of trapping content in a narrow 600px column.'
     )
   }
 
@@ -1343,8 +1343,8 @@ export default defineEventHandler(async (event) => {
         : 'Lucide is the default icon set of shadcn and every AI builder. One on every item adds noise, not meaning.',
       [`${lucideIconsCount} Lucide icons`],
       isIndo
-        ? 'Kurangi jumlah ikon; pertahankan teks yang jelas dan gunakan ikon hanya untuk navigasi esensial.'
-        : 'Reduce decorative icons; let clean typography carry meaning and keep icons functional.'
+        ? 'Kurangi tempelan icon Lucide, biarin teksnya yang bicara.'
+        : 'Cut back on Lucide icons; let the copy carry meaning.'
     )
   } else if (lucideIconsCount >= 3) {
     nit(
@@ -1359,8 +1359,8 @@ export default defineEventHandler(async (event) => {
         : 'Lucide is the default icon set of every modern starter.',
       [`${lucideIconsCount} Lucide icons`],
       isIndo
-        ? 'Gunakan ikon seperlunya untuk mempertegas aksi navigasi, bukan sebagai hiasan tiap kata.'
-        : 'Use icons sparingly for primary actions, not as decoration on every noun.'
+        ? 'Pakai icon seperlunya buat aksi penting aja, bukan ditempel di tiap kata.'
+        : 'Use icons sparingly for primary actions, not on every single word.'
     )
   }
 
@@ -1378,8 +1378,8 @@ export default defineEventHandler(async (event) => {
         : 'Restyled, which is good. Still shadcn underneath, which we can detect.',
       ['data-slot attributes in markup'],
       isIndo
-        ? 'Berikan sentuhan tipografi dan warna khas pada komponen bawaan Shadcn.'
-        : 'Inject custom styling tokens into default Shadcn component foundations.'
+        ? 'Style ulang komponen Shadcn biar nggak kelihatan langsung copas dari dokumentasi.'
+        : 'Style default Shadcn components so they don’t look copy-pasted.'
     )
   }
 
@@ -1395,8 +1395,8 @@ export default defineEventHandler(async (event) => {
         : 'Probably human. Still, the em dash is the model’s favourite punctuation.',
       [findQuoteAround(/\u2014|&mdash;/) || '1 stray em dash'],
       isIndo
-        ? 'Ganti tanda pisah em-dash dengan titik atau koma standar.'
-        : 'Replace stray em dashes with periods or commas.'
+        ? 'Ganti tanda pisah em-dash (—) jadi titik atau koma biasa.'
+        : 'Replace em dashes with simple periods or commas.'
     )
   }
 
@@ -1419,8 +1419,8 @@ export default defineEventHandler(async (event) => {
         : 'Small arrows placed on buttons as pure decoration become visual noise instead of real directional cues.',
       [`${buttonsWithArrows} buttons with arrows`],
       isIndo
-        ? 'Hapus panah dekoratif \'→\' pada tombol; biarkan teks tombol yang menjelaskan tujuannya.'
-        : 'Remove decorative arrows on buttons; clear label copy communicates the action.'
+        ? 'Hapus tanda panah \'→\' di tombol, teks tombolnya udah cukup jelas.'
+        : 'Remove decorative arrows (→) from buttons; clear labels don’t need them.'
     )
   }
 
@@ -1451,8 +1451,8 @@ export default defineEventHandler(async (event) => {
             : 'Always highlighting the middle pricing card in a 3-tier grid is an unconsidered template default.',
           ['Middle tier: "Most Popular" / scale-105'],
           isIndo
-            ? 'Beri label harga berdasarkan profil pengguna (misal: Tim Kecil, Enterprise) tanpa manipulasi visual.'
-            : 'Differentiate pricing by user size/need rather than automatically highlighting the center.'
+            ? 'Jangan otomatis tempel badge \'Most Popular\' di paket tengah; kelompokkan paket berdasarkan kebutuhan user.'
+            : 'Stop automatically slapping \'Most Popular\' on the middle pricing tier.'
         )
       }
     }
@@ -1476,8 +1476,8 @@ export default defineEventHandler(async (event) => {
         : 'Sparkle and wand glyphs are the generic AI default icon when a builder has no specific visual metaphor.',
       [`${sparkleGlyphsCount} sparkle / wand glyphs`],
       isIndo
-        ? 'Gunakan representasi visual spesifik alih-alih bintang ajaib generik untuk fitur automasi.'
-        : 'Use domain-specific visual metaphors rather than generic sparkle / wand glyphs.'
+        ? 'Ganti icon bintang ajaib atau tongkat sihir dengan icon yang beneran nyambung sama fungsinya.'
+        : 'Replace sparkle/wand glyphs with icons that match the actual feature.'
     )
   }
 
