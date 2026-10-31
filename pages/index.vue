@@ -92,7 +92,7 @@ const handleBatchSubmit = (urls: string[]) => {
       <!-- Error / Cookie Expired Alert Box -->
       <div
         v-if="error"
-        class="p-4 rounded-xl border transition-all flex items-start gap-3.5"
+        class="p-4 rounded-xl border transition-colors flex items-start gap-3.5"
         :class="
           error.toLowerCase().includes('cookie') || error.toLowerCase().includes('terabox')
             ? 'bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200'

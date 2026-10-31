@@ -540,7 +540,7 @@ const activeRadialData = computed(() => {
       <div class="flex-1 overflow-y-auto px-3 py-3 space-y-6">
         <!-- Section: Social Downloaders -->
         <div class="space-y-1.5">
-          <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <div class="px-2.5 py-1 text-xs font-semibold text-[var(--text-tertiary)]">
             {{ t.socialDownloaders }}
           </div>
 
@@ -713,7 +713,7 @@ const activeRadialData = computed(() => {
 
         <!-- Section: Client Utilities -->
         <div class="space-y-1.5">
-          <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <div class="px-2.5 py-1 text-xs font-semibold text-[var(--text-tertiary)]">
             {{ t.clientUtilities }}
           </div>
 
@@ -886,7 +886,7 @@ const activeRadialData = computed(() => {
 
         <!-- Section: System & Storage -->
         <div class="space-y-1.5">
-          <div class="px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <div class="px-2.5 py-1 text-xs font-semibold text-[var(--text-tertiary)]">
             {{ t.systemStorage }}
           </div>
 

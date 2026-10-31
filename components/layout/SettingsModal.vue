@@ -411,7 +411,7 @@ const handleResetPreferences = () => {
 
           <!-- Diagnostic Info Box -->
           <div class="p-3.5 rounded-xl border border-zinc-200 dark:border-[#26262A] bg-zinc-100/60 dark:bg-[#121214] space-y-1.5">
-            <div class="text-[11px] font-mono font-semibold uppercase tracking-wider text-zinc-400 dark:text-neutral-500">
+            <div class="text-[11px] font-mono font-semibold text-zinc-400 dark:text-neutral-500">
               Client Diagnostic Hints
             </div>
             <div class="text-[11px] font-mono text-zinc-500 dark:text-neutral-400 space-y-0.5">

@@ -14,7 +14,7 @@ defineProps<Props>()
   <section class="space-y-3.5">
     <!-- Category Header -->
     <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2.5">
-      <h2 class="text-xs font-mono font-bold tracking-wider text-[var(--text-primary)] uppercase flex items-center gap-2">
+      <h2 class="text-xs font-mono font-semibold text-[var(--text-primary)] flex items-center gap-2">
         <Folder class="w-3.5 h-3.5 text-[var(--text-secondary)] shrink-0" />
         {{ category.name }}
       </h2>

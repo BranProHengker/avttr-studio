@@ -760,16 +760,16 @@ export default defineEventHandler(async (event) => {
   // =========================================================================
   // 5. LAYOUT, COLOR & ARCHITECTURE TELLS (HTML + VANILLA CSS SCAN)
   // =========================================================================
-  // Gradient Text Headings (Hanya jika dipakai pada heading/judul)
+  // Gradient Text Headings (Hanya jika benar-benar dipakai pada elemen judul/heading di DOM)
   const gradientHeadings = $('h1, h2, h3, .section-title, [class*="headline"]').filter((_, el) => {
     const cls = $(el).attr('class') || ''
     const st = $(el).attr('style') || ''
-    return /bg-clip-text|background-clip:\s*text/.test(cls + ' ' + st)
+    const innerSpans = $(el).find('[class*="bg-clip-text"], [style*="background-clip"]').map((_, c) => ($(c).attr('class') || '') + ' ' + ($(c).attr('style') || '')).get().join(' ')
+    const combined = cls + ' ' + st + ' ' + innerSpans
+    return /bg-clip-text|background-clip:\s*text/i.test(combined) && /(?:bg|from|to|via)-|linear-gradient/i.test(combined)
   }).length
 
-  const hasCssGradText = /-webkit-background-clip:\s*text|background-clip:\s*text/i.test(internalStyles)
-
-  if (gradientHeadings >= 1 || hasCssGradText) {
+  if (gradientHeadings >= 1) {
     add(
       'layout',
       'gtext',
@@ -795,7 +795,9 @@ export default defineEventHandler(async (event) => {
       return /rounded-full/.test(cls) && /(bg|from)-[a-z]+-\d00/.test(cls)
     }).length
 
-  const hasGlowDivider = /glow-divider|--p-accent-glow|box-shadow:.*0 0 \d+px|filter:\s*drop-shadow/.test(internalStyles)
+  const hasGlowDivider =
+    $('.glow-divider, [class*="glow-divider"], [class*="neon-divider"]').length > 0 ||
+    $('[style*="box-shadow"]').filter((_, el) => /box-shadow:\s*0\s+0\s+(?:2[0-9]|[3-9]\d)px\s*(?:rgb|#)/i.test($(el).attr('style') || '')).length > 0
 
   if (orbCount >= 1 || hasGlowDivider) {
     add(
@@ -817,9 +819,15 @@ export default defineEventHandler(async (event) => {
   }
 
   // Colored Left Stripe on Cards / Section Headers (antislop-ui R-01 & R-31)
-  const hasLeftStripe =
-    /border-l-4|border-l-\[/.test(lowerHtml) ||
-    /border-left:\s*[3-6]px\s*solid/i.test(internalStyles)
+  const hasLeftStripe = $('div, article, section, [class*="card"]').filter((_, el) => {
+    if ($(el).is('blockquote') || $(el).parents('blockquote').length > 0) return false
+    const cls = $(el).attr('class') || ''
+    const st = $(el).attr('style') || ''
+    const hasThickBorder = /\bborder-l-[3456]\b|\bborder-l-\[/.test(cls) || /border-left:\s*[3-6]px\s*solid/i.test(st)
+    const hasAccentColor = /\b(?:border-(?:indigo|purple|violet|pink|blue|emerald|green|cyan|sky|teal|rose|red|amber|orange)-\d00)\b/i.test(cls) ||
+      /border-left-color:\s*(?:#[0-9a-f]{3,8}|rgba?\([^)]+\)|var\(--(?:accent|primary|color))/i.test(st)
+    return hasThickBorder && hasAccentColor
+  }).length > 0
 
   if (hasLeftStripe) {
     add(

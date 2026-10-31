@@ -6,7 +6,7 @@ import { useUrlHistory } from '~/composables/useUrlHistory'
 import { onClickOutside } from '@vueuse/core'
 import Button from '~/components/ui/Button.vue'
 import BrandIcon from '~/components/ui/BrandIcon.vue'
-import { Flash as Zap, MultiplePages as Layers, Trash as Trash2, PasteClipboard as Clipboard, ArrowRight, Xmark as X, Clock } from '@iconoir/vue'
+import { Flash as Zap, MultiplePages as Layers, Trash as Trash2, PasteClipboard as Clipboard, Download, Xmark as X, Clock } from '@iconoir/vue'
 
 interface Props {
   modelValue: string
@@ -183,7 +183,7 @@ const submitBatch = () => {
       <div class="flex items-center bg-zinc-200/60 dark:bg-[#171717] border border-zinc-200 dark:border-[#262626] rounded-lg p-0.5">
         <button
           type="button"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
           :class="mode === 'single' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
           @click="mode = 'single'"
         >
@@ -193,7 +193,7 @@ const submitBatch = () => {
 
         <button
           type="button"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
           :class="mode === 'batch' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs font-semibold' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white'"
           @click="mode = 'batch'"
         >
@@ -224,7 +224,7 @@ const submitBatch = () => {
             :value="modelValue"
             type="url"
             :placeholder="t.pastePlaceholder"
-            class="w-full h-12 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs"
+            class="w-full h-12 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 disabled:opacity-50 shadow-xs"
             :class="modelValue ? 'pr-20' : 'pr-12'"
             :disabled="loading"
             @input="handleSingleInput"
@@ -291,7 +291,7 @@ const submitBatch = () => {
               <button
                 type="button"
                 title="Remove from history"
-                class="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-500 transition-all rounded shrink-0 cursor-pointer"
+                class="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-500 transition-colors rounded shrink-0 cursor-pointer"
                 @mousedown.stop.prevent="removeUrlHistory(item)"
               >
                 <X class="w-3.5 h-3.5" />
@@ -321,7 +321,7 @@ const submitBatch = () => {
         :loading="loading"
         @click="submitSingle()"
       >
-        <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
+        <Download class="w-3.5 h-3.5 mr-1.5" />
         <span>{{ t.download }}</span>
       </Button>
     </div>
@@ -334,7 +334,7 @@ const submitBatch = () => {
           v-model="batchText"
           rows="4"
           placeholder="Paste multiple social media links here, separated by new lines...&#10;https://www.tiktok.com/@user/video/...&#10;https://www.instagram.com/reel/...&#10;https://youtu.be/..."
-          class="w-full p-4 pr-16 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 shadow-xs"
+          class="w-full p-4 pr-16 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-900/10 dark:focus:ring-white/10 shadow-xs"
         />
 
         <div class="absolute right-2.5 bottom-3 flex items-center gap-1">
