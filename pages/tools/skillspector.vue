@@ -609,7 +609,7 @@ const resetScanner = () => {
         SkillSpector
       </h1>
       <p class="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-        Static pattern & AST security inspector for AI Agent skills. Statically analyze prompt injections, secret leaks, reverse shells, and unsafe execution across skill directories.
+        Static pattern & agentic security inspector for AI agent skills and MCP bundles. Statically analyze MCP tool poisoning, prompt injection, excessive agency, memory tampering, and dangerous shell execution.
       </p>
     </div>
 
@@ -633,8 +633,8 @@ const resetScanner = () => {
     <!-- Minimalist Unboxed Loading State -->
     <MinimalLoader
       v-if="isLoading"
-      text="Inspecting Skill AST & Patterns..."
-      subtext="Analyzing prompt injections, secret leaks, and execution vulnerabilities..."
+      text="Inspecting Agent Skill & MCP Security..."
+      subtext="Analyzing MCP poisoning, excessive agency, prompt injections, and shell execution..."
     />
 
     <!-- Recursive Folder Dropzone -->
@@ -819,6 +819,11 @@ const resetScanner = () => {
                 >
                   {{ f.severity }}
                 </span>
+                <span
+                  class="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/60"
+                >
+                  {{ f.category }}
+                </span>
                 <span class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                   {{ f.title }}
                 </span>
@@ -845,7 +850,7 @@ const resetScanner = () => {
         <ShieldCheck class="w-4 h-4 text-emerald-500 shrink-0" />
         <span class="font-medium text-zinc-900 dark:text-zinc-200 font-mono">Zero Security Threats Detected:</span>
         <span class="font-mono">
-          All {{ files.length }} files verified clean. No prompt overrides, destructive shell executions, credential harvesting, or exfiltration patterns detected.
+          All {{ files.length }} files verified clean. No MCP exploits, prompt overrides, memory tampering, excessive agency, destructive commands, or exfiltration patterns detected.
         </span>
       </div>
 
