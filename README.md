@@ -1,14 +1,31 @@
+<div align="center">
+
 # Avttr Studio
 
-[English](#avttr-studio) | [Bahasa Indonesia](#bahasa-indonesia)
+**The zero-telemetry, ad-free personal web workspace for media, design, and developer utilities.**
 
-Live website: [studio.avttr.my.id](https://studio.avttr.my.id)
+[![Nuxt 3](https://img.shields.io/badge/Nuxt_3-00DC82?style=flat&logo=nuxtdotjs&logoColor=white)](https://nuxt.com)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![100% Client-Side](https://img.shields.io/badge/Privacy-100%25_Client--Side-10B981?style=flat)](https://studio.avttr.my.id)
+[![Zero Ads](https://img.shields.io/badge/Ads-Zero_Adware-black?style=flat)](https://studio.avttr.my.id)
+[![License](https://img.shields.io/badge/License-PolyForm_Noncommercial-blue?style=flat)](LICENSE)
 
-Avttr Studio is a personal web workspace built with Nuxt 3 that pairs ad-free multi-platform media downloaders with client-side utilities for design, audio, and development work.
+[**Live Studio**](https://studio.avttr.my.id) • [**Features**](#available-features) • [**Tech Stack**](#tech-stack) • [**Self-Hosting**](#local-development) • [**Contribution**](#contribution-guide) • [**Bahasa Indonesia**](#bahasa-indonesia)
 
-The project exists for a straightforward reason: to make everyday digital tasks easier. Many open-source repositories and utility libraries on GitHub are genuinely useful, but having to run `git clone`, configure runtimes, and install local packages just for a quick one-off task is tedious.
+</div>
 
-Every utility here is completely free to use, requires no account or login, and comes with zero ads or tracking pop-ups. Data safety is built in by design: almost all file processing tasks (image compression, PDF editing, audio trimming, data hashing) run 100% locally inside your browser, meaning your files are never uploaded to or stored on any server.
+---
+
+> **The Anti-SaaS & Ad-Free Manifesto:**  
+> Stop paying \$20/month SaaS subscriptions for basic utilities or wrestling with ad-choked downloaders that track your data. Avttr Studio brings together multi-platform media downloaders, developer forensic utilities, and client-side design tools into one unified, distraction-free workspace.
+
+### Why Avttr Studio?
+
+- **100% Client-Side Privacy**: Almost all file tasks (image compression, background removal, PDF manipulation, audio cutting, and data hashing) run directly inside your browser via WebAssembly, Web Crypto, and HTML5 Canvas. Your files never touch a remote server.
+- **Zero Adware & Zero Pop-ups**: Clean, unboxed interface built with dark mode design tokens and keyboard ergonomics (`Cmd+K`).
+- **Forensic Developer & AI Suite**: Audit AI-generated code templates with **SlopSpector**, analyze AI agent security with **SkillSpector**, extract design tokens with **Design Extractor**, and style documents with **Markdown Studio**.
+- **No Token Burn**: Zero reliance on expensive, fragile third-party AI APIs for core utilities. Fast, offline-friendly, and cost-free forever.
 
 ---
 
@@ -181,17 +198,34 @@ Author website: [heybran.my.id](https://heybran.my.id) | GitHub: [@BranProHengke
 
 ---
 
+<div align="center">
+
 # Bahasa Indonesia
 
-[English](#avttr-studio) | [Bahasa Indonesia](#bahasa-indonesia)
+**Web workspace personal bebas iklan dan zero-telemetry untuk media downloader, desain, dan developer utility.**
 
-Situs web langsung: [studio.avttr.my.id](https://studio.avttr.my.id)
+[![Nuxt 3](https://img.shields.io/badge/Nuxt_3-00DC82?style=flat&logo=nuxtdotjs&logoColor=white)](https://nuxt.com)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![100% Client-Side](https://img.shields.io/badge/Privasi-100%25_Client--Side-10B981?style=flat)](https://studio.avttr.my.id)
+[![Tanpa Iklan](https://img.shields.io/badge/Iklan-Bebas_Adware-black?style=flat)](https://studio.avttr.my.id)
+[![Lisensi](https://img.shields.io/badge/Lisensi-PolyForm_Noncommercial-blue?style=flat)](LICENSE)
 
-Avttr Studio adalah web workspace personal berbasis Nuxt 3 yang menggabungkan multi-platform media downloader tanpa iklan dengan puluhan utility client-side untuk kebutuhan desain, audio, dan developer.
+[**Situs Langsung**](https://studio.avttr.my.id) • [**Fitur Tersedia**](#fitur-yang-tersedia) • [**Teknologi**](#tech-stack) • [**Jalankan di Lokal**](#menjalankan-proyek-di-lokal) • [**Panduan Kontribusi**](#panduan-kontribusi) • [**English**](#avttr-studio)
 
-Proyek ini dibuat untuk satu alasan sederhana: mempermudah rutinitas digital sehari-hari. Banyak library dan repositori open-source keren di GitHub yang sebenarnya sangat berguna, tetapi merepotkan kalau harus melakukan `git clone`, konfigurasi runtime, dan instalasi dependensi lokal hanya untuk menyelesaikan tugas kecil.
+</div>
 
-Semua tool di sini bisa diakses gratis, tanpa perlu membuat akun atau login, dan tanpa gangguan iklan atau pop-up. Yang terpenting, privasi data aman: hampir seluruh pemrosesan berkas (kompresi gambar, manipulasi PDF, audio cutting, ekstraksi data) berjalan 100% lokal di browser pengguna tanpa pernah dikirim atau disimpan di server mana pun.
+---
+
+> **Manifesto Bebas Iklan & Anti-SaaS:**  
+> Berhenti membayar biaya langganan SaaS bulanan hanya untuk utility harian sederhana, atau terjebak situs downloader penuh iklan pop-up dan pelacak privasi. Avttr Studio menyatukan downloader media multi-platform dan puluhan web tool langsung ke dalam satu workspace bersih berbasis client-side.
+
+### Mengapa Avttr Studio?
+
+- **Privasi 100% Client-Side**: Hampir seluruh pemrosesan berkas (kompresi gambar, background remover AI, manipulasi PDF, pemotong audio, dan hash data) diproses langsung di browser lokal pengguna via WebAssembly, Web Crypto, dan Canvas API tanpa pernah dikirim ke server.
+- **Bebas Iklan & Tanpa Pop-up**: Tampilan antarmuka unboxed yang bersih dan elegan, ramah navigasi keyboard (`Cmd+K`), dan default tema gelap yang nyaman.
+- **Suite Analisis Developer & AI**: Deteksi template AI dengan **SlopSpector**, audit keamanan file agent dengan **SkillSpector**, ekstraksi token desain dengan **Design Extractor**, dan editor tipografi dengan **Markdown Studio**.
+- **Tanpa Boncos Token AI**: Tidak membebani pengguna atau server dengan kuota API pihak ketiga yang rapuh untuk tool utility inti. Cepat, instan, dan gratis selamanya.
 
 ---
 
