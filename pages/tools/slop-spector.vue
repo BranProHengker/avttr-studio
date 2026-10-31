@@ -58,6 +58,7 @@ interface FindingItem {
   roast: string
   why: string
   quotes: string[]
+  fix?: string
 }
 
 interface InspectionResult {
@@ -516,7 +517,10 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
           pts: 14,
           roast: isIndo ? 'Latar gelap total khas template startup AI.' : 'Near-black backdrop. The standard uniform of seed-funded AI startups.',
           why: isIndo ? 'Area visual didominasi latar hitam pekat tanpa variasi tonal depth.' : 'The canvas is overwhelmingly near-black with little tonal depth.',
-          quotes: [`${Math.round(darkRatio * 100)}% ${isIndo ? 'area gelap' : 'dark area'}`]
+          quotes: [`${Math.round(darkRatio * 100)}% ${isIndo ? 'area gelap' : 'dark area'}`],
+          fix: isIndo
+            ? 'Gunakan kontras tonal berlapis (elevasi permukaan surface/card) alih-alih hitam pekat datar.'
+            : 'Introduce layered surface elevation and tonal depth instead of flat pure-black.'
         })
       }
 
@@ -529,7 +533,10 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
           pts: 18,
           roast: isIndo ? 'Warna ungu template. Palet seragam wajib generator.' : 'Purple again. The official color palette of default AI templates.',
           why: isIndo ? 'Palet warna aksen ungu/indigo sangat dominan di atas lipatan.' : 'Indigo and violet dominate the visual hierarchy above the fold.',
-          quotes: [`${Math.round(violetRatio * 100)}% ${isIndo ? 'piksel ungu' : 'violet pixels'}`]
+          quotes: [`${Math.round(violetRatio * 100)}% ${isIndo ? 'piksel ungu' : 'violet pixels'}`],
+          fix: isIndo
+            ? 'Ganti aksen ungu/indigo generik dengan warna brand otentik yang mencerminkan karakter produk.'
+            : 'Replace generic purple/indigo accents with an authentic brand color suited to the domain.'
         })
       }
 
@@ -542,7 +549,10 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
           pts: 15,
           roast: isIndo ? 'Tombol hijau neon stabilo bawaan generator.' : 'Acid lime buttons. The favorite highlighter of modern AI templates.',
           why: isIndo ? 'Warna tombol lime kontras tinggi khas template modern.' : 'High-contrast neon lime pills placed over dark backdrops.',
-          quotes: [`${Math.round(limeRatio * 100)}% ${isIndo ? 'piksel hijau lime' : 'lime pixels'}`]
+          quotes: [`${Math.round(limeRatio * 100)}% ${isIndo ? 'piksel hijau lime' : 'lime pixels'}`],
+          fix: isIndo
+            ? 'Hindari neon stabilo yang menusuk mata; gunakan warna aksen berbobot hangat dan kontras wajar.'
+            : 'Avoid jarring highlighter neon; opt for grounded accents with calibrated contrast.'
         })
       }
 
@@ -603,6 +613,80 @@ ${roastData.value?.fix || (isIndo ? 'Pertahankan kode bersih dan hindari copy kl
 ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr Studio'}: https://studio.avttr.my.id/tools/slop-spector`
 
   copy(text, isIndo ? 'Hasil Roasting' : 'Roast Result')
+}
+
+// Export Actionable Unslop Markdown Plan (100% Client-Side, 0 API Tokens)
+const exportUnslopActionPlan = async () => {
+  if (!inspection.value) return
+
+  const isId = locale.value === 'id'
+  const targetHost = inspection.value.host || 'website'
+
+  let md = isId
+    ? `# Unslop Action Plan: ${targetHost}\n\n`
+    : `# Unslop Action Plan: ${targetHost}\n\n`
+
+  md += isId
+    ? `> **Target:** ${inspection.value.url}\n> **Skor Slop:** ${inspection.value.score}%\n> **Vonis:** ${roastData.value?.verdict || inspection.value.verdictLabel}\n\n`
+    : `> **Target:** ${inspection.value.url}\n> **Slop Score:** ${inspection.value.score}%\n> **Verdict:** ${roastData.value?.verdict || inspection.value.verdictLabel}\n\n`
+
+  md += isId
+    ? `## 🎯 Rekomendasi Utama\n${roastData.value?.fix || 'Pertahankan kode bersih dan hindari copy klise generator.'}\n\n`
+    : `## 🎯 Key Recommendation\n${roastData.value?.fix || 'Maintain authentic copy and avoid default generator templates.'}\n\n`
+
+  md += isId
+    ? `## 📋 Daftar Perbaikan Berdasarkan Kategori\n\n`
+    : `## 📋 Actionable Checklist by Category\n\n`
+
+  const grouped: Record<string, FindingItem[]> = {}
+  for (const f of inspection.value.findings) {
+    if (!grouped[f.cat]) grouped[f.cat] = []
+    grouped[f.cat].push(f)
+  }
+
+  const categoryNames: Record<string, { id: string; en: string }> = {
+    fingerprint: { id: 'Jejak Generator AI', en: 'Generator Signatures' },
+    copy: { id: 'Naskah & Copywriting', en: 'Copywriting & Text' },
+    layout: { id: 'Layout & Struktur', en: 'Layout & Structure' },
+    type: { id: 'Tipografi', en: 'Typography' },
+    motion: { id: 'Animasi & Transisi', en: 'Motion & Interactions' },
+    visual: { id: 'Visual & Warna', en: 'Visual & Color' },
+    nitpick: { id: 'Detail Mikro', en: 'Micro Details' }
+  }
+
+  for (const [cat, items] of Object.entries(grouped)) {
+    const headerName = isId
+      ? (categoryNames[cat]?.id || cat.toUpperCase())
+      : (categoryNames[cat]?.en || cat.toUpperCase())
+
+    md += `### ${headerName}\n\n`
+    for (const item of items) {
+      md += `- [ ] **${item.label}** (+${item.pts} pts)\n`
+      if (item.roast) md += `  - *Issue:* ${item.roast}\n`
+      if (item.quotes && item.quotes.length > 0) {
+        md += `  - *Evidence:* \`${item.quotes.join('`, `')}\`\n`
+      }
+      if (item.fix) {
+        md += `  - **Action / Fix:** ${item.fix}\n`
+      }
+      md += `\n`
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(md)
+    toast.success(
+      isId ? 'Action Plan Disalin!' : 'Action Plan Copied!',
+      isId
+        ? 'Format Markdown siap di-paste ke AI coding agent atau issue tracker.'
+        : 'Markdown checklist ready to paste into your AI coding agent or tracker.'
+    )
+  } catch {
+    toast.error(
+      isId ? 'Gagal Menyalin' : 'Copy Failed',
+      isId ? 'Izin clipboard ditolak browser' : 'Clipboard permission denied'
+    )
+  }
 }
 </script>
 
@@ -1045,26 +1129,40 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
               </Badge>
             </div>
 
-            <!-- Category filter buttons -->
-            <div v-if="categoriesList.length > 1" class="flex items-center gap-1">
-              <button
-                type="button"
-                class="px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer"
-                :class="selectedCategory === 'all' ? 'bg-zinc-200 dark:bg-zinc-700 text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'"
-                @click="selectedCategory = 'all'"
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- Export Action Plan Button (Zero Token, Pure Client-Side) -->
+              <Button
+                id="btn-export-action-plan"
+                variant="secondary"
+                size="sm"
+                class="rounded-lg text-[11px] h-7 px-2.5 cursor-pointer shadow-xs"
+                @click="exportUnslopActionPlan"
               >
-                All
-              </button>
-              <button
-                v-for="cat in categoriesList"
-                :key="cat"
-                type="button"
-                class="px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer capitalize"
-                :class="selectedCategory === cat ? 'bg-zinc-200 dark:bg-zinc-700 text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'"
-                @click="selectedCategory = cat"
-              >
-                {{ cat }}
-              </button>
+                <Receipt class="w-3.5 h-3.5 mr-1 text-emerald-500" />
+                {{ locale === 'id' ? 'Ekspor Action Plan (.md)' : 'Export Action Plan (.md)' }}
+              </Button>
+
+              <!-- Category filter buttons -->
+              <div v-if="categoriesList.length > 1" class="flex items-center gap-1">
+                <button
+                  type="button"
+                  class="px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer"
+                  :class="selectedCategory === 'all' ? 'bg-zinc-200 dark:bg-zinc-700 text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'"
+                  @click="selectedCategory = 'all'"
+                >
+                  All
+                </button>
+                <button
+                  v-for="cat in categoriesList"
+                  :key="cat"
+                  type="button"
+                  class="px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer capitalize"
+                  :class="selectedCategory === cat ? 'bg-zinc-200 dark:bg-zinc-700 text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'"
+                  @click="selectedCategory = cat"
+                >
+                  {{ cat }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1072,28 +1170,39 @@ ${isIndo ? 'Periksa website Anda di Avttr Studio' : 'Inspect your site at Avttr 
             <div
               v-for="item in filteredFindings"
               :key="item.key"
-              class="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2.5 bg-transparent"
+              class="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-2.5 bg-transparent flex flex-col justify-between"
             >
-              <div class="flex items-center justify-between">
-                <Badge variant="outline" size="sm" class="text-[10px] font-mono capitalize">
-                  {{ item.cat }}
-                </Badge>
-                <span class="text-xs font-mono font-medium text-rose-500">+{{ item.pts }} pts</span>
-              </div>
-
-              <div class="text-xs font-semibold text-[var(--text-primary)] leading-snug">
-                {{ item.label }}
-              </div>
-
-              <div v-if="item.quotes.length" class="p-2 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 font-mono text-[11px] text-[var(--text-secondary)] space-y-1">
-                <div v-for="(q, qidx) in item.quotes" :key="qidx" class="truncate">
-                  “{{ q }}”
+              <div class="space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <Badge variant="outline" size="sm" class="text-[10px] font-mono capitalize">
+                    {{ item.cat }}
+                  </Badge>
+                  <span class="text-xs font-mono font-medium text-rose-500">+{{ item.pts }} pts</span>
                 </div>
+
+                <div class="text-xs font-semibold text-[var(--text-primary)] leading-snug">
+                  {{ item.label }}
+                </div>
+
+                <div v-if="item.quotes.length" class="p-2 rounded-lg bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-zinc-800 font-mono text-[11px] text-[var(--text-secondary)] space-y-1">
+                  <div v-for="(q, qidx) in item.quotes" :key="qidx" class="truncate">
+                    “{{ q }}”
+                  </div>
+                </div>
+
+                <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+                  {{ item.why }}
+                </p>
               </div>
 
-              <p class="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-                {{ item.why }}
-              </p>
+              <!-- Actionable Unslop Prescription Callout -->
+              <div
+                v-if="item.fix"
+                class="mt-2 p-2.5 rounded-lg bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-950 dark:text-emerald-300 flex items-start gap-2"
+              >
+                <span class="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">✓ Fix:</span>
+                <span class="leading-relaxed">{{ item.fix }}</span>
+              </div>
             </div>
           </div>
         </div>
