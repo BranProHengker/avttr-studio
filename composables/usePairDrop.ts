@@ -101,6 +101,11 @@ export function usePairDrop() {
 
   // Internal WebRTC & SSE tracking
   let eventSource: EventSource | null = null
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let reconnectAttempts = 0
+  let watchdogTimer: ReturnType<typeof setInterval> | null = null
+  let lastMessageTimestamp = Date.now()
+  let isExplicitlyDisconnected = false
   const peerConnections = new Map<string, RTCPeerConnection>()
   const dataChannels = new Map<string, RTCDataChannel>()
 
@@ -162,6 +167,18 @@ export function usePairDrop() {
     setMyName(generateRandomName())
   }
 
+  const scheduleReconnect = () => {
+    if (isExplicitlyDisconnected || reconnectTimer || typeof window === 'undefined') return
+    const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), 8000)
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      reconnectAttempts++
+      if (!isConnected.value && !isConnecting.value) {
+        connect(currentRoom.value)
+      }
+    }, delay)
+  }
+
   // Connect to SSE signaling channel
   const connect = (roomId = 'auto') => {
     if (typeof window === 'undefined') return
@@ -173,6 +190,7 @@ export function usePairDrop() {
     initIdentity()
     isConnecting.value = true
     currentRoom.value = roomId
+    lastMessageTimestamp = Date.now()
 
     const params = new URLSearchParams({
       peerId: myPeerId.value,
@@ -188,21 +206,34 @@ export function usePairDrop() {
     eventSource.onopen = () => {
       isConnected.value = true
       isConnecting.value = false
+      reconnectAttempts = 0
+      lastMessageTimestamp = Date.now()
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
     }
 
     eventSource.onmessage = async (e) => {
+      lastMessageTimestamp = Date.now()
       if (!e.data || e.data.startsWith(':')) return
       try {
         const msg = JSON.parse(e.data)
+        if (msg.type === 'ping') return
         await handleServerMessage(msg)
       } catch {
-        // Ping or malformed
+        // Malformed or non-JSON payload
       }
     }
 
     eventSource.onerror = () => {
       isConnected.value = false
       isConnecting.value = false
+      if (eventSource) {
+        eventSource.close()
+        eventSource = null
+      }
+      scheduleReconnect()
     }
   }
 
@@ -412,6 +443,11 @@ export function usePairDrop() {
         break
 
       case 'file-request':
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate([200, 100, 200])
+          } catch {}
+        }
         incomingRequest.value = {
           transferId: payload.transferId,
           fromPeer: sender || {
@@ -456,6 +492,11 @@ export function usePairDrop() {
         break
 
       case 'text-message':
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+          try {
+            navigator.vibrate(120)
+          } catch {}
+        }
         incomingText.value = {
           fromPeer: sender || {
             peerId: fromPeerId,
@@ -879,11 +920,59 @@ export function usePairDrop() {
     }
   }
 
+  const handleLifecycleWake = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      if (!isConnected.value && !isConnecting.value) {
+        reconnectAttempts = 0
+        connect(currentRoom.value)
+      }
+    }
+  }
+
+  const handleOnline = () => {
+    if (!isConnected.value && !isConnecting.value) {
+      reconnectAttempts = 0
+      connect(currentRoom.value)
+    }
+  }
+
   onMounted(() => {
     connect('auto')
+
+    if (typeof window !== 'undefined') {
+      document.addEventListener('visibilitychange', handleLifecycleWake)
+      window.addEventListener('online', handleOnline)
+      window.addEventListener('focus', handleLifecycleWake)
+
+      // Mobile SSE watchdog: detect silent drops if no server ping for >35s
+      watchdogTimer = setInterval(() => {
+        if (isConnected.value && Date.now() - lastMessageTimestamp > 35000) {
+          if (eventSource) {
+            eventSource.close()
+            eventSource = null
+          }
+          isConnected.value = false
+          scheduleReconnect()
+        }
+      }, 10000)
+    }
   })
 
   onUnmounted(() => {
+    isExplicitlyDisconnected = true
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+    if (watchdogTimer) {
+      clearInterval(watchdogTimer)
+      watchdogTimer = null
+    }
+    if (typeof window !== 'undefined') {
+      document.removeEventListener('visibilitychange', handleLifecycleWake)
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('focus', handleLifecycleWake)
+    }
     if (eventSource) {
       eventSource.close()
       eventSource = null
