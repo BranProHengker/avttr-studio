@@ -17,6 +17,8 @@ import {
   InfoCircle as Info,
   SystemRestart as Loader2,
   ArrowRight,
+  Puzzle,
+  Code,
 } from '@iconoir/vue'
 import { useToast } from '~/composables/useToast'
 import type { BypassResult } from '~/server/utils/bypasser'
@@ -224,26 +226,89 @@ const getStatusBadgeVariant = (status: number) => {
           </div>
         </div>
 
-        <!-- Ad Shortener / Gateway Warning Notice -->
+        <!-- Ad Shortener / Gateway Warning Notice with Userscript Helper -->
         <div
           v-if="result.warning"
-          class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2.5 text-xs"
+          class="rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 overflow-hidden text-xs"
         >
-          <div class="flex items-center gap-2 font-semibold text-sm text-amber-800 dark:text-amber-300">
-            <AlertTriangle class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            <span>Batas Proteksi Terdeteksi: {{ result.detectedService || 'Paywall Interaktif' }}</span>
-          </div>
-          
-          <p class="leading-relaxed opacity-95 text-xs">
-            {{ result.warning }}
-          </p>
-
-          <div class="pt-2 border-t border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-amber-800/90 dark:text-amber-300/90">
-            <div class="flex items-center gap-1.5">
-              <Info class="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span><strong>Tips:</strong> Klik tombol <strong>Buka Link Gateway</strong> untuk melanjutkan verifikasi langsung di browser Anda.</span>
+          <!-- Top Warning Header -->
+          <div class="p-4 sm:p-5 space-y-2.5">
+            <div class="flex items-center gap-2 font-semibold text-sm text-amber-800 dark:text-amber-300">
+              <AlertTriangle class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>Batas Proteksi Terdeteksi: {{ result.detectedService || 'Paywall Interaktif' }}</span>
             </div>
-            <span class="font-mono opacity-80 shrink-0">{{ result.hops.length }} hop terlacak</span>
+            
+            <p class="leading-relaxed opacity-95 text-xs">
+              {{ result.warning }}
+            </p>
+
+            <div class="flex items-center gap-1.5 text-[11px] text-amber-800/90 dark:text-amber-300/90 font-medium">
+              <Info class="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>Gunakan tombol <strong>Buka Link Gateway</strong> di atas untuk menyelesaikan verifikasi langsung di browser Anda.</span>
+            </div>
+          </div>
+
+          <!-- Browser Script Auto-Bypass Helper -->
+          <div class="border-t border-amber-500/20 bg-amber-500/5 p-4 sm:p-5 space-y-3">
+            <div class="flex items-center gap-2 font-semibold text-xs text-amber-800 dark:text-amber-300">
+              <Puzzle class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>Ingin Otomatis Lewati Timer & Iklan? Pasang Script Browser:</span>
+            </div>
+
+            <p class="text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+              Proteksi Cloudflare Turnstile & countdown timer mewajibkan verifikasi dari browser asli Anda. Anda dapat menginstal script browser (userscript) agar otomatis memotong timer, melewati verifikasi robot, dan langsung melompat ke file unduhan akhir:
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              <!-- Item 1: Tampermonkey Extension -->
+              <a
+                id="link-install-tampermonkey"
+                href="https://www.tampermonkey.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-start gap-2.5 p-3 rounded-lg bg-white/70 dark:bg-black/20 border border-amber-500/20 hover:border-amber-500/50 transition-colors group cursor-pointer"
+              >
+                <div class="w-7 h-7 rounded-md bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-700 dark:text-amber-300">
+                  <Puzzle class="w-3.5 h-3.5" />
+                </div>
+                <div class="space-y-0.5 min-w-0">
+                  <div class="flex items-center gap-1 font-semibold text-xs text-[var(--text-primary)] group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                    <span>1. Pasang Tampermonkey</span>
+                    <ExternalLink class="w-3 h-3 shrink-0 opacity-60" />
+                  </div>
+                  <p class="text-[10px] text-[var(--text-tertiary)] leading-tight">
+                    Ekstensi pengelola script untuk Chrome, Firefox, Edge, Brave & Kiwi.
+                  </p>
+                </div>
+              </a>
+
+              <!-- Item 2: BypassNET Script on GreasyFork -->
+              <a
+                id="link-install-bypassnet"
+                href="https://greasyfork.org/scripts/527564-bypassnet"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-start gap-2.5 p-3 rounded-lg bg-white/70 dark:bg-black/20 border border-amber-500/20 hover:border-amber-500/50 transition-colors group cursor-pointer"
+              >
+                <div class="w-7 h-7 rounded-md bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-700 dark:text-amber-300">
+                  <Code class="w-3.5 h-3.5" />
+                </div>
+                <div class="space-y-0.5 min-w-0">
+                  <div class="flex items-center gap-1 font-semibold text-xs text-[var(--text-primary)] group-hover:text-amber-600 dark:group-hover:text-amber-400">
+                    <span>2. Install Script BypassNET</span>
+                    <ExternalLink class="w-3 h-3 shrink-0 opacity-60" />
+                  </div>
+                  <p class="text-[10px] text-[var(--text-tertiary)] leading-tight">
+                    Auto-skip Linkvertise, Safelinku, Semawur, OuO & 40+ shortener lainnya.
+                  </p>
+                </div>
+              </a>
+            </div>
+
+            <div class="pt-1 flex items-center justify-between text-[11px] text-amber-800/80 dark:text-amber-300/80">
+              <span>Tips: Setelah script terpasang di browser, link akan otomatis dilewati saat Anda klik tombol <strong>Buka Link Gateway</strong>.</span>
+              <span class="font-mono opacity-80 shrink-0">{{ result.hops.length }} hop terlacak</span>
+            </div>
           </div>
         </div>
 

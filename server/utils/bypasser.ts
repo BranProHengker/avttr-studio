@@ -147,37 +147,210 @@ export function decodeLinkShim(rawUrl: string): { decodedUrl: string; service: s
   }
 }
 
-// Resolver for Social Unlockers (Sub2Unlock, Boost.ink)
-export async function resolveSocialUnlocker(rawUrl: string): Promise<string | null> {
+// Resolver for Social Unlockers (Sub2Unlock, Boost.ink, Rekonise)
+export interface SocialUnlockerResult {
+  targetUrl: string
+  serviceName: string
+}
+
+export async function resolveSocialUnlocker(rawUrl: string): Promise<SocialUnlockerResult | null> {
   try {
     const urlObj = new URL(rawUrl)
     const host = urlObj.hostname.toLowerCase()
 
-    if (host.includes('sub2unlock.') || host.includes('sub2get.')) {
-      const res = await fetch(rawUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        },
-      })
-      const html = await res.text()
-      const linkMatch = html.match(/(?:var\s+targetUrl\s*=\s*['"](https?:\/\/[^'"]+)['"]|id="link"[^>]*href="([^"]+)"|data-url="([^"]+)")/i)
-      if (linkMatch) {
-        const found = linkMatch[1] || linkMatch[2] || linkMatch[3]
-        if (found && found.startsWith('http')) return found
+    // 1. Sub2Unlock.com (Internal API Sinks + Next.js SSR Fallback)
+    if (host.includes('sub2unlock.com')) {
+      const slug = urlObj.pathname.replace(/^\/(link\/|p\/)?/, '').replace(/\/$/, '')
+      if (slug) {
+        try {
+          const apiRes = await fetch(`https://api.sub2unlock.com/api/sinks/${slug}`, {
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+              Accept: 'application/json, text/plain, */*',
+              Referer: rawUrl,
+            },
+          })
+          if (apiRes.ok) {
+            const json: any = await apiRes.json()
+            const link = json?.data?.unlocked_link
+            if (link && typeof link === 'string') {
+              const cleaned = link.replace(/\\\//g, '/')
+              if (cleaned.startsWith('http')) {
+                return { targetUrl: cleaned, serviceName: 'Sub2Unlock.com (API)' }
+              }
+            }
+          }
+        } catch {
+          // ignore API error, try SSR next
+        }
+      }
+
+      // Next.js SSR HTML fallback
+      try {
+        const pageRes = await fetch(rawUrl, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+        })
+        const html = await pageRes.text()
+        const nextMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i)
+        if (nextMatch && nextMatch[1]) {
+          const nextJson = JSON.parse(nextMatch[1])
+          const pageProps = nextJson?.props?.pageProps
+          const unlocked = pageProps?.sink?.unlocked_link || pageProps?.unlocked_link
+          if (unlocked && typeof unlocked === 'string' && unlocked.startsWith('http')) {
+            return { targetUrl: unlocked.replace(/\\\//g, '/'), serviceName: 'Sub2Unlock.com (Next.js Data)' }
+          }
+        }
+      } catch {
+        // ignore
       }
     }
 
-    if (host.includes('boost.ink')) {
-      const res = await fetch(rawUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        },
-      })
-      const html = await res.text()
-      const boostMatch = html.match(/(?:target_url\s*:\s*['"](https?:\/\/[^'"]+)['"]|"target":"([^"]+)")/i)
-      if (boostMatch) {
-        const found = boostMatch[1] || boostMatch[2]
-        if (found && found.startsWith('http')) return found
+    // 2. Sub2Unlock.id (JSON in Textarea with Base64 Params)
+    if (host.includes('sub2unlock.id')) {
+      try {
+        const pageRes = await fetch(rawUrl, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+        })
+        const html = await pageRes.text()
+        const textareaMatch = html.match(/<textarea[^>]*name=["']link["'][^>]*>([\s\S]*?)<\/textarea>/i)
+        if (textareaMatch && textareaMatch[1]) {
+          const data = JSON.parse(textareaMatch[1])
+          if (data?.original) {
+            const params = new URLSearchParams(data.original)
+            for (const [key, value] of params.entries()) {
+              if (key.startsWith('lnk')) {
+                const decoded = decodeURIComponent(Buffer.from(value, 'base64').toString('utf-8'))
+                if (decoded && decoded.startsWith('http')) {
+                  return { targetUrl: decoded, serviceName: 'Sub2Unlock.id' }
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // 3. Sub2Unlock.io / Sub4Unlock.io / Sub2Unlock.net / Sub2Unlock.top / Subtounlock
+    if (
+      host.includes('sub2unlock.') ||
+      host.includes('sub4unlock.') ||
+      host.includes('subtounlock.') ||
+      host.includes('sub2get.')
+    ) {
+      try {
+        const pageRes = await fetch(rawUrl, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+        })
+        const html = await pageRes.text()
+
+        // Match a.get-link or a#updateHiddenUnlocks or data-url attributes
+        const linkMatch =
+          html.match(/<a[^>]*class=["'][^"']*get-link[^"']*["'][^>]*href=["']([^"']+)["']/i) ||
+          html.match(/<a[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*get-link/i) ||
+          html.match(/<a[^>]*id=["']updateHiddenUnlocks["'][^>]*href=["']([^"']+)["']/i) ||
+          html.match(/(?:var\s+targetUrl\s*=\s*['"](https?:\/\/[^'"]+)['"]|id="link"[^>]*href="([^"]+)"|data-url="([^"]+)")/i)
+
+        if (linkMatch) {
+          const found = linkMatch[1] || linkMatch[2] || linkMatch[3]
+          if (found && found.startsWith('http')) {
+            return { targetUrl: found, serviceName: 'Sub2Unlock / Sub4Unlock' }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // 4. Boost.ink and variants (bst.gg, bst.wtf, booo.st)
+    if (host.includes('boost.ink') || host.includes('bst.gg') || host.includes('bst.wtf') || host.includes('booo.st')) {
+      try {
+        const res = await fetch(rawUrl, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+        })
+        const html = await res.text()
+
+        // Modern Boost.ink stores target base64 in custom script attribute bufpsvdhmjybvgfncqfa
+        const modernMatch = html.match(/<script[^>]*bufpsvdhmjybvgfncqfa=["']([A-Za-z0-9+/=]+)["']/i)
+        if (modernMatch && modernMatch[1]) {
+          try {
+            const decoded = Buffer.from(modernMatch[1], 'base64').toString('utf-8')
+            if (decoded && decoded.startsWith('http')) {
+              return { targetUrl: decoded, serviceName: 'Boost.ink' }
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        // Legacy Boost.ink regex fallback
+        const boostMatch = html.match(/(?:target_url\s*:\s*['"](https?:\/\/[^'"]+)['"]|"target":"([^"]+)")/i)
+        if (boostMatch) {
+          const found = boostMatch[1] || boostMatch[2]
+          if (found && found.startsWith('http')) {
+            return { targetUrl: found, serviceName: 'Boost.ink' }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // 5. Rekonise.com (Official API bypass)
+    if (host.includes('rekonise.com')) {
+      const slug = urlObj.pathname.replace(/^\/|\/$/g, '')
+      if (slug) {
+        try {
+          const getRes = await fetch(`https://api.rekonise.com/social-unlocks/${slug}/`, {
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+              Accept: 'application/json',
+            },
+          })
+          if (getRes.ok) {
+            const data: any = await getRes.json()
+            const token = data?.unlock_token
+            if (token) {
+              const unlockRes = await fetch(
+                `https://api.rekonise.com/social-unlocks/${slug}/unlock?token=${token}`,
+                {
+                  headers: {
+                    'User-Agent':
+                      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                    Accept: 'application/json',
+                  },
+                }
+              )
+              if (unlockRes.ok) {
+                const unlockData: any = await unlockRes.json()
+                if (unlockData?.url && typeof unlockData.url === 'string' && unlockData.url.startsWith('http')) {
+                  return { targetUrl: unlockData.url, serviceName: 'Rekonise' }
+                }
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
       }
     }
 
@@ -222,6 +395,7 @@ export async function traceAndBypassUrl(startUrl: string): Promise<BypassResult>
 
   const hops: HopItem[] = []
   let detectedService: string | undefined
+  let hasCloudflare = false
   const visited = new Set<string>()
   const maxHops = 10
   let step = 0
@@ -268,20 +442,20 @@ export async function traceAndBypassUrl(startUrl: string): Promise<BypassResult>
     }
 
     // Check for known social unlockers
-    const unlockerTarget = await resolveSocialUnlocker(currentUrl)
-    if (unlockerTarget && !visited.has(unlockerTarget)) {
-      detectedService = 'Social Unlocker Bypass'
+    const unlockerResult = await resolveSocialUnlocker(currentUrl)
+    if (unlockerResult && !visited.has(unlockerResult.targetUrl)) {
+      detectedService = unlockerResult.serviceName
       hops.push({
         step,
         url: currentUrl,
         domain: urlObj.hostname,
         status: 200,
         statusText: 'Unlocked',
-        type: 'Social Unlocker Extracted',
+        type: `${unlockerResult.serviceName} (Extracted)`,
         latencyMs: 50,
       })
       visited.add(currentUrl)
-      currentUrl = unlockerTarget
+      currentUrl = unlockerResult.targetUrl
       continue
     }
 
@@ -331,13 +505,21 @@ export async function traceAndBypassUrl(startUrl: string): Promise<BypassResult>
       responseStatusText = res.statusText || `${res.status}`
       const latencyMs = Date.now() - hopStart
 
+      const srvHeader = (res.headers.get('server') || '').toLowerCase()
+      const cfMitigated = res.headers.get('cf-mitigated')
+      if (cfMitigated === 'challenge' || ((res.status === 403 || res.status === 503) && srvHeader.includes('cloudflare'))) {
+        hasCloudflare = true
+        redirectType = 'Cloudflare WAF (Anti-Bot Challenge)'
+        responseStatusText = 'Protected (Cloudflare)'
+      }
+
       if ([301, 302, 303, 307, 308].includes(res.status)) {
         const loc = res.headers.get('location')
         if (loc) {
           nextUrl = new URL(loc, currentUrl).toString()
           redirectType = `HTTP ${res.status} Redirect`
         }
-      } else if (res.status === 200) {
+      } else if (res.status === 200 || res.status === 403 || res.status === 503) {
         const contentType = res.headers.get('content-type') || ''
         if (contentType.includes('text/html')) {
           try {
@@ -356,6 +538,17 @@ export async function traceAndBypassUrl(startUrl: string): Promise<BypassResult>
               html = await getRes.text()
             } catch {
               html = await res.text()
+            }
+
+            if (
+              html.includes('cf-browser-verification') ||
+              html.includes('challenge-platform') ||
+              html.includes('Just a moment...') ||
+              html.includes('Checking your browser before accessing')
+            ) {
+              hasCloudflare = true
+              redirectType = 'Cloudflare Turnstile Challenge'
+              responseStatusText = 'Protected (Turnstile)'
             }
 
             const metaMatch = html.match(/<meta[^>]*http-equiv=["']?refresh["']?[^>]*content=["']?\d+;\s*url=([^"'>\s]+)["']?/i)
@@ -484,6 +677,12 @@ export async function traceAndBypassUrl(startUrl: string): Promise<BypassResult>
     }
     warning =
       'Tautan ini menggunakan sistem shortener iklan bertingkat yang dilindungi countdown timer dan Cloudflare CAPTCHA interaktif. URL unduhan akhir dikunci di database server dan hanya dirilis setelah pengguna menyelesaikan verifikasi langsung di browser.'
+  } else if (hasCloudflare) {
+    if (!detectedService) {
+      detectedService = 'Cloudflare WAF / Turnstile'
+    }
+    warning =
+      'Tautan ini dilindungi Cloudflare Bot Management / Turnstile CAPTCHA. Server cloud kami tidak dapat mengeksekusi verifikasi interaktif JavaScript. Buka tautan langsung di browser Anda untuk melanjutkan.'
   }
 
   return {

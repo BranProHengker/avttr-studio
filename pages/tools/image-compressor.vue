@@ -51,7 +51,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
 const items = ref<CompressedItem[]>([])
 const quality = ref(85)
-const outputFormat = ref<'auto' | 'original' | 'webp' | 'jpeg' | 'png'>('auto')
+const outputFormat = ref<'auto' | 'original' | 'webp' | 'jpeg' | 'jpg' | 'png'>('auto')
 const isZipping = ref(false)
 
 // Input Source Switcher State
@@ -100,19 +100,53 @@ const optimizeSvg = async (file: File): Promise<Blob> => {
   return new Blob([cleaned], { type: 'image/svg+xml' })
 }
 
+type ImageFormatOption = 'auto' | 'original' | 'webp' | 'jpeg' | 'jpg' | 'png'
+
+const detectFileFormat = (file: File): 'jpg' | 'jpeg' | 'png' | 'webp' | 'svg' => {
+  const ext = file.name.split('.').pop()?.toLowerCase() || ''
+  if (ext === 'jpeg') return 'jpeg'
+  if (ext === 'jpg') return 'jpg'
+  if (ext === 'png' || file.type === 'image/png') return 'png'
+  if (ext === 'webp' || file.type === 'image/webp') return 'webp'
+  if (ext === 'svg' || file.type === 'image/svg+xml') return 'svg'
+  if (file.type === 'image/jpeg') return ext === 'jpeg' ? 'jpeg' : 'jpg'
+  return 'jpg'
+}
+
+const resolveTargetFormat = (file: File, targetFormat: ImageFormatOption): 'jpg' | 'jpeg' | 'png' | 'webp' => {
+  if (targetFormat === 'auto' || targetFormat === 'original') {
+    const detected = detectFileFormat(file)
+    if (detected === 'svg') return 'png'
+    return detected
+  }
+  return targetFormat
+}
+
 const compressRasterImage = (
   file: File,
   qualityVal: number,
-  targetFormat: string
-): Promise<{ blob: Blob; width: number; height: number }> => {
+  targetFormat: ImageFormatOption
+): Promise<{ blob: Blob; width: number; height: number; format: string }> => {
   return new Promise((resolve, reject) => {
+    const effectiveFormat = resolveTargetFormat(file, targetFormat)
     const img = new Image()
     const objectUrl = URL.createObjectURL(file)
 
     img.onload = () => {
       URL.revokeObjectURL(objectUrl)
-      const width = img.naturalWidth || img.width
-      const height = img.naturalHeight || img.height
+      let width = img.naturalWidth || img.width
+      let height = img.naturalHeight || img.height
+
+      // Scale down excessively large dimensions for aggressive quality profiles
+      if (qualityVal <= 70 && (width > 1920 || height > 1920)) {
+        const ratio = Math.min(1920 / width, 1920 / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      } else if (qualityVal <= 85 && (width > 2880 || height > 2880)) {
+        const ratio = Math.min(2880 / width, 2880 / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
 
       const canvas = document.createElement('canvas')
       canvas.width = width
@@ -128,16 +162,40 @@ const compressRasterImage = (
       ctx.imageSmoothingQuality = 'high'
       ctx.drawImage(img, 0, 0, width, height)
 
+      // PNG optimization: clean dirty transparent pixels & color quantization
+      if (effectiveFormat === 'png') {
+        try {
+          const imageData = ctx.getImageData(0, 0, width, height)
+          const data = imageData.data
+          // Step: 92 -> 2, 85 -> 4, 70 -> 8
+          const step = qualityVal >= 90 ? 2 : qualityVal >= 80 ? 4 : 8
+          for (let i = 0; i < data.length; i += 4) {
+            // If pixel is fully or almost transparent, zero out RGB dirty noise
+            if (data[i + 3] < 10) {
+              data[i] = 0
+              data[i + 1] = 0
+              data[i + 2] = 0
+              data[i + 3] = 0
+            } else if (step > 1) {
+              data[i] = Math.round(data[i] / step) * step
+              data[i + 1] = Math.round(data[i + 1] / step) * step
+              data[i + 2] = Math.round(data[i + 2] / step) * step
+            }
+          }
+          ctx.putImageData(imageData, 0, 0)
+        } catch {
+          // Fallback if cross-origin or canvas security throws
+        }
+      }
+
       // Determine MIME type
-      let mimeType = 'image/webp'
-      if (targetFormat === 'original') {
-        mimeType = file.type || 'image/jpeg'
-      } else if (targetFormat === 'jpeg' || targetFormat === 'jpg') {
-        mimeType = 'image/jpeg'
-      } else if (targetFormat === 'png') {
+      let mimeType = 'image/jpeg'
+      if (effectiveFormat === 'png') {
         mimeType = 'image/png'
-      } else {
+      } else if (effectiveFormat === 'webp') {
         mimeType = 'image/webp'
+      } else if (effectiveFormat === 'jpeg' || effectiveFormat === 'jpg') {
+        mimeType = 'image/jpeg'
       }
 
       const q = qualityVal / 100
@@ -145,7 +203,19 @@ const compressRasterImage = (
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            resolve({ blob, width, height })
+            let finalBlob = blob
+            // Critical safeguard: Never let PNG or same-format compression swell larger than original!
+            if (effectiveFormat === 'png' && (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png'))) {
+              if (blob.size >= file.size) {
+                finalBlob = file
+              }
+            } else if ((effectiveFormat === 'jpg' || effectiveFormat === 'jpeg') && file.type === 'image/jpeg') {
+              if (blob.size >= file.size) {
+                finalBlob = file
+              }
+            }
+
+            resolve({ blob: finalBlob, width, height, format: effectiveFormat })
           } else {
             reject(new Error('Compression failed'))
           }
@@ -172,7 +242,7 @@ const processFile = async (file: File): Promise<CompressedItem | null> => {
     let compressedBlob: Blob
     let width = 0
     let height = 0
-    let format = 'webp'
+    let format = 'jpg'
 
     if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
       compressedBlob = await optimizeSvg(file)
@@ -184,14 +254,7 @@ const processFile = async (file: File): Promise<CompressedItem | null> => {
       compressedBlob = result.blob
       width = result.width
       height = result.height
-
-      if (outputFormat.value === 'original') {
-        format = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-      } else if (outputFormat.value === 'auto') {
-        format = 'webp'
-      } else {
-        format = outputFormat.value
-      }
+      format = result.format
     }
 
     const compressedSize = compressedBlob.size
@@ -718,11 +781,12 @@ const handleContainerTouchMove = (e: TouchEvent) => {
               @change="reprocessAll"
               class="h-9 px-3 bg-white dark:bg-[#1A1A1A] border border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-primary)] rounded-xl text-xs font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-white/40 transition-colors cursor-pointer"
             >
-              <option value="auto">Auto (Smart WebP)</option>
-              <option value="original">Original Format</option>
-              <option value="webp">WebP (Smallest)</option>
-              <option value="jpeg">JPEG / JPG</option>
-              <option value="png">PNG (Lossless)</option>
+              <option value="auto">{{ locale === 'id' ? 'Auto (Sesuai File Unggahan)' : 'Auto (Match Uploaded Format)' }}</option>
+              <option value="jpg">JPG (.jpg)</option>
+              <option value="jpeg">JPEG (.jpeg)</option>
+              <option value="png">PNG (.png)</option>
+              <option value="webp">WebP (.webp)</option>
+              <option value="original">{{ locale === 'id' ? 'Format Asli' : 'Original Format' }}</option>
             </select>
           </div>
         </div>

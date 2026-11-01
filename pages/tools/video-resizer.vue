@@ -35,6 +35,9 @@ import {
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
+import Card from '~/components/ui/Card.vue'
+import Badge from '~/components/ui/Badge.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
 
 interface VideoQueueItem {
   id: string
@@ -137,6 +140,21 @@ const outputWidth = ref<number>(0)
 const outputHeight = ref<number>(0)
 const outputDuration = ref<number>(0)
 const outputMimeType = ref<string>('')
+const activePreviewMode = ref<'source' | 'output'>('source')
+
+const activeVideoSrc = computed(() => {
+  if (activePreviewMode.value === 'output' && outputBlobUrl.value) {
+    return outputBlobUrl.value
+  }
+  return videoUrl.value
+})
+
+watch(activePreviewMode, () => {
+  if (!videoElementRef.value) return
+  isPlaying.value = false
+  currentTime.value = 0
+  videoElementRef.value.currentTime = 0
+})
 
 // Computed Target Dimensions (Always even numbers for video encoders)
 const targetDimensions = computed<{ width: number; height: number }>(() => {
@@ -323,13 +341,15 @@ watch(customWidth, (newW) => {
 function onLoadedMetadata() {
   if (!videoElementRef.value) return
   const el = videoElementRef.value
-  videoNaturalWidth.value = el.videoWidth
-  videoNaturalHeight.value = el.videoHeight
-  totalDuration.value = el.duration
-  startTime.value = 0
-  endTime.value = el.duration
-  customWidth.value = el.videoWidth
-  customHeight.value = el.videoHeight
+  if (activePreviewMode.value === 'source') {
+    videoNaturalWidth.value = el.videoWidth
+    videoNaturalHeight.value = el.videoHeight
+    totalDuration.value = el.duration
+    startTime.value = 0
+    endTime.value = el.duration
+    customWidth.value = el.videoWidth
+    customHeight.value = el.videoHeight
+  }
 }
 
 function onTimeUpdate() {
@@ -405,6 +425,7 @@ function handleFileUpload(file: File) {
     URL.revokeObjectURL(outputBlobUrl.value)
     outputBlobUrl.value = ''
   }
+  activePreviewMode.value = 'source'
 
   videoFile.value = file
   originalFileSize.value = file.size
@@ -646,7 +667,7 @@ async function processVideo() {
       formats: ALL_FORMATS
     })
 
-    const format = new Mp4OutputFormat()
+    const format = new Mp4OutputFormat({ fastStart: 'in-memory' })
     const target = new BufferTarget()
     const output = new Output({ format, target })
 
@@ -667,7 +688,8 @@ async function processVideo() {
         width: targetW,
         height: targetH,
         fit: 'contain',
-        quality: qual
+        quality: qual,
+        keyFrameInterval: 1
       },
       audio: keepAudio.value && !isMuted.value ? {} : { discard: true },
       showWarnings: false
@@ -709,6 +731,7 @@ async function processVideo() {
     outputDuration.value = duration
     outputMimeType.value = 'video/mp4'
     isProcessing.value = false
+    activePreviewMode.value = 'output'
 
     toast.success(
       locale.value === 'id' ? 'Selesai!' : 'Complete!',
@@ -888,7 +911,7 @@ async function processBatch() {
         item.targetWidth = dims.width
         item.targetHeight = dims.height
 
-        const format = new Mp4OutputFormat()
+        const format = new Mp4OutputFormat({ fastStart: 'in-memory' })
         const target = new BufferTarget()
         const output = new Output({ format, target })
 
@@ -905,7 +928,8 @@ async function processBatch() {
             width: dims.width,
             height: dims.height,
             fit: 'contain',
-            quality: qual
+            quality: qual,
+            keyFrameInterval: 1
           },
           audio: batchKeepAudio.value ? {} : { discard: true },
           showWarnings: false
@@ -1031,6 +1055,37 @@ async function downloadBatchZip() {
   }
 }
 
+
+function clearVideo() {
+  if (videoUrl.value && videoUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(videoUrl.value)
+  }
+  if (outputBlobUrl.value && outputBlobUrl.value.startsWith('blob:')) {
+    URL.revokeObjectURL(outputBlobUrl.value)
+  }
+  videoUrl.value = ''
+  videoFile.value = null
+  outputBlobUrl.value = ''
+  activePreviewMode.value = 'source'
+  queue.value = []
+  mode.value = 'single'
+}
+
+function toggleMute() {
+  isMuted.value = !isMuted.value
+  if (videoElementRef.value) {
+    videoElementRef.value.muted = isMuted.value
+  }
+}
+
+function stepBackward(seconds = 1) {
+  seekTo(Math.max(0, currentTime.value - seconds))
+}
+
+function stepForward(seconds = 1) {
+  seekTo(Math.min(totalDuration.value, currentTime.value + seconds))
+}
+
 onUnmounted(() => {
   if (typeof document !== 'undefined') {
     document.removeEventListener('fullscreenchange', onFullscreenChange)
@@ -1084,12 +1139,12 @@ onUnmounted(() => {
       <!-- Controls when files are loaded -->
       <div v-if="videoUrl || queue.length > 0" class="flex flex-wrap items-center gap-2.5 shrink-0">
         <!-- Mode Switcher Tabs -->
-        <div class="flex items-center p-1 bg-zinc-100 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl text-xs">
+        <div class="flex items-center p-1 bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-[#2E2E2E] rounded-xl text-xs">
           <button
             type="button"
             :disabled="!videoUrl"
             class="px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5"
-            :class="mode === 'single' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
+            :class="mode === 'single' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
             @click="mode = 'single'"
           >
             <Film class="w-3.5 h-3.5" />
@@ -1099,7 +1154,7 @@ onUnmounted(() => {
             type="button"
             :disabled="queue.length === 0"
             class="px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer flex items-center gap-1.5"
-            :class="mode === 'batch' ? 'bg-white dark:bg-[#2E2E2E] text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-600 dark:text-neutral-400 hover:text-zinc-950 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
+            :class="mode === 'batch' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed'"
             @click="mode = 'batch'"
           >
             <List class="w-3.5 h-3.5" />
@@ -1110,1060 +1165,570 @@ onUnmounted(() => {
           </button>
         </div>
 
+        <!-- Clear / Reset Button -->
         <Button
-          variant="secondary"
-          size="default"
-          class="h-9 px-3.5 rounded-lg text-xs font-medium cursor-pointer"
-          @click="fileInputRef?.click()"
+          variant="outline"
+          size="sm"
+          class="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 border-zinc-200 dark:border-[#2E2E2E]"
+          @click="clearVideo"
         >
-          <Plus class="w-3.5 h-3.5 mr-1.5 text-white/70" />
-          <span>{{ mode === 'batch' ? (locale === 'id' ? 'Tambah Video' : 'Add Videos') : (locale === 'id' ? 'Ganti Video' : 'Change Video') }}</span>
+          <Trash2 class="w-3.5 h-3.5 mr-1" />
+          <span>{{ locale === 'id' ? 'Hapus' : 'Clear' }}</span>
         </Button>
       </div>
     </div>
 
-    <!-- STATE 1: Upload Stage (When No Video Loaded & Queue Empty) -->
+    <!-- Empty State: Standalone Omnibar + Dashed Dropzone (DESIGN.md Section 10 & 11) -->
     <div v-if="!videoUrl && queue.length === 0" class="space-y-4">
-      <!-- URL Input Omnibox -->
-      <div class="flex flex-col sm:flex-row items-center gap-2.5">
-        <div class="relative w-full flex-1 flex items-center">
-          <LinkIcon class="w-4 h-4 text-[var(--text-tertiary)] absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            v-model="videoUrlInput"
-            type="url"
-            :placeholder="locale === 'id' ? 'Tempel link video langsung (CORS enabled)...' : 'Paste direct video URL (CORS enabled)...'"
-            class="w-full h-11 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-zinc-400/20 dark:focus:ring-white/10"
-            :class="videoUrlInput ? 'pr-20' : 'pr-10'"
-            @keydown.enter="fetchVideoFromUrl"
-          />
-          <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <button
-              v-if="videoUrlInput"
-              type="button"
-              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
-              title="Clear input"
-              aria-label="Clear input"
-              @click="videoUrlInput = ''"
-            >
-              <X class="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 active:scale-95"
-              @click="pasteFromClipboard"
-              :title="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
-              :aria-label="locale === 'id' ? 'Tempel dari clipboard' : 'Paste from clipboard'"
-            >
-              <Clipboard class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-        <Button
-          variant="secondary"
-          size="default"
-          class="w-full sm:w-auto h-11 px-5 rounded-xl font-medium text-xs shrink-0 cursor-pointer"
-          :disabled="!videoUrlInput.trim() || isFetchingUrl"
-          :loading="isFetchingUrl"
-          @click="fetchVideoFromUrl"
-        >
-          <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
-          <span>{{ t.fetchVideo }}</span>
-        </Button>
-      </div>
+      <!-- Standalone Omnibar -->
+      <UrlOmnibar
+        v-model="videoUrlInput"
+        :loading="isFetchingUrl"
+        placeholder="https://example.com/video.mp4 or paste direct video URL..."
+        submit-text="Load Video"
+        @submit="fetchVideoFromUrl"
+      />
 
-      <!-- Standardized Dashed Dropzone (DESIGN.md Section 10) -->
+      <!-- Standalone Dashed Dropzone -->
       <div
-        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 text-center transition-all cursor-pointer select-none border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E]"
-        :class="isDragging ? 'border-zinc-900 bg-zinc-100 dark:border-white dark:bg-[var(--bg-card-hover)]' : ''"
+        class="relative border-2 border-dashed rounded-[14px] p-8 sm:p-14 border-zinc-300 dark:border-[#2E2E2E] bg-zinc-50/50 dark:bg-[#141416] hover:border-zinc-400 dark:hover:border-[#3E3E3E] text-center cursor-pointer select-none transition-colors"
+        :class="{ 'border-zinc-500 dark:border-white/50 bg-zinc-100 dark:bg-white/5': isDragging }"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
-        @drop.prevent="(e) => { isDragging = false; if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files) }"
+        @drop.prevent="isDragging = false; if ($event.dataTransfer?.files) handleFiles($event.dataTransfer.files)"
         @click="fileInputRef?.click()"
       >
-        <div class="max-w-md mx-auto space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
-            <Film class="w-6 h-6 text-zinc-900 dark:text-white" />
-          </div>
-          <div>
-            <h3 class="text-sm font-semibold text-[var(--text-primary)]">
-              {{ t.dropzoneBrowse }}
-            </h3>
-            <p class="text-xs text-[var(--text-secondary)] mt-1">
-              {{ locale === 'id' ? 'Mendukung MP4, WebM, MOV, MKV. Bisa single atau antrean batch sekaligus. 100% diproses di browser.' : 'Supports MP4, WebM, MOV, and MKV. Single or batch sequential compression. 100% processed client-side.' }}
-            </p>
-          </div>
+        <div class="w-12 h-12 mx-auto rounded-xl bg-white dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shadow-xs">
+          <Film class="w-6 h-6" />
+        </div>
+        <h3 class="text-sm font-semibold text-[var(--text-primary)] mt-4">
+          {{ locale === 'id' ? 'Tarik video ke sini atau klik untuk memilih' : 'Drop video files here or browse' }}
+        </h3>
+        <p class="text-xs text-[var(--text-secondary)] mt-1">
+          Supports MP4, WebM, MOV, MKV up to 500MB. 100% processed client-side.
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-1.5 mt-4">
+          <Badge variant="secondary" size="sm">Single & Multi-batch</Badge>
+          <Badge variant="outline" size="sm">H.264 / VP9</Badge>
+          <Badge variant="outline" size="sm">Hardware Accelerated</Badge>
         </div>
       </div>
     </div>
 
-    <!-- STATE 2: Batch Queue Workbench -->
-    <div v-else-if="mode === 'batch' && queue.length > 0" class="space-y-6">
-      <!-- Batch Summary Bar -->
-      <div class="p-4 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-[14px] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-center text-zinc-900 dark:text-white shrink-0">
-            <List class="w-5 h-5" />
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <h2 class="text-sm font-semibold text-[var(--text-primary)]">
-                {{ locale === 'id' ? 'Antrean Kompresi Batch' : 'Batch Compression Queue' }}
-              </h2>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white border border-zinc-200 dark:border-transparent">
-                {{ queue.length }} {{ queue.length > 1 ? 'Videos' : 'Video' }}
-              </span>
-            </div>
-            <p class="text-xs text-neutral-400 font-mono mt-0.5">
-              {{ completedQueueCount }} / {{ queue.length }} {{ locale === 'id' ? 'selesai diproses' : 'completed' }}
-              <span v-if="totalQueueOriginalSize > 0" class="text-neutral-500">
-                · {{ formatFileSize(totalQueueOriginalSize) }}
-                <template v-if="completedQueueCount > 0">
-                  → {{ formatFileSize(totalQueueCompressedSize) }}
-                  <span v-if="totalQueueSavingsPercent > 0" class="text-emerald-400 font-bold ml-1">
-                    (-{{ totalQueueSavingsPercent }}%)
-                  </span>
-                </template>
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <!-- Live ETA Badge if processing -->
-          <span
-            v-if="isBatchProcessing && batchEtaSeconds > 0"
-            class="px-2.5 py-1 rounded-xl text-[11px] font-mono bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center gap-1.5 shrink-0"
-          >
-            <Clock class="w-3.5 h-3.5 text-blue-400" />
-            <span>ETA {{ formatDurationEstimate(batchEtaSeconds) }}</span>
-          </span>
-
-          <!-- Download All as ZIP -->
-          <Button
-            v-if="completedQueueCount > 0"
-            variant="primary"
-            size="default"
-            class="h-9 px-4 rounded-xl text-xs font-semibold cursor-pointer shrink-0"
-            :loading="isZipping"
-            @click="downloadBatchZip"
-          >
-            <Archive class="w-3.5 h-3.5 mr-1.5" />
-            <span>{{ isZipping ? (locale === 'id' ? 'Membuat ZIP...' : 'Zipping...') : (locale === 'id' ? `Unduh Semua ZIP (${completedQueueCount})` : `Download All ZIP (${completedQueueCount})`) }}</span>
-          </Button>
-
-          <!-- Cancel processing if active -->
-          <Button
-            v-if="isBatchProcessing"
-            variant="secondary"
-            size="default"
-            class="h-9 px-3 rounded-xl text-xs font-medium cursor-pointer shrink-0 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
-            @click="cancelBatch"
-          >
-            <X class="w-3.5 h-3.5 mr-1" />
-            <span>{{ locale === 'id' ? 'Batalkan' : 'Cancel' }}</span>
-          </Button>
-
-          <!-- Clear Queue -->
-          <Button
-            v-else
-            variant="secondary"
-            size="default"
-            class="h-9 px-3 rounded-xl text-xs font-medium cursor-pointer shrink-0 text-neutral-400 hover:text-red-400"
-            @click="clearQueue"
-          >
-            <Trash2 class="w-3.5 h-3.5 mr-1.5" />
-            <span>{{ locale === 'id' ? 'Kosongkan' : 'Clear' }}</span>
-          </Button>
-        </div>
-      </div>
-
-      <!-- Batch Main Grid: 12 columns -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Left: Batch Settings & Execution Panel (5 Cols) -->
-        <div class="lg:col-span-5 space-y-4">
-          <div class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-5 space-y-5">
-            <div class="flex items-center justify-between border-b border-zinc-200 dark:border-[#212121] pb-3">
-              <div class="flex items-center gap-2">
-                <Sliders class="w-4 h-4 text-[var(--text-primary)]" />
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                  {{ locale === 'id' ? 'Pengaturan Global Batch' : 'Batch Global Settings' }}
-                </h3>
-              </div>
-              <span class="text-[11px] font-mono text-[var(--text-tertiary)]">
-                WebCodecs GPU
-              </span>
-            </div>
-
-            <!-- Resolution Preset -->
-            <div class="space-y-2">
-              <label class="text-xs font-medium text-[var(--text-secondary)]">
-                {{ locale === 'id' ? 'Target Resolusi' : 'Target Resolution' }}
-              </label>
-              <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-                <button
-                  v-for="preset in (['original', '1080p', '720p', '480p', '360p'] as ResolutionPreset[])"
-                  :key="preset"
-                  type="button"
-                  class="py-2 px-1 rounded-lg text-xs font-mono font-medium border text-center transition-all cursor-pointer"
-                  :class="batchPreset === preset
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white shadow-xs font-bold'
-                    : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                  :disabled="isBatchProcessing"
-                  @click="batchPreset = preset"
-                >
-                  {{ preset === 'original' ? 'Original' : preset }}
-                </button>
-              </div>
-              <p class="text-[11px] text-[var(--text-tertiary)]">
-                {{ locale === 'id' ? 'Setiap video mempertahankan rasio asli (landscape/portrait/square).' : 'Automatically adapts to each video native aspect ratio.' }}
-              </p>
-            </div>
-
-            <!-- Quality Profile -->
-            <div class="space-y-2">
-              <label class="text-xs font-medium text-[var(--text-secondary)]">
-                {{ locale === 'id' ? 'Tingkat Kompresi' : 'Compression Profile' }}
-              </label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
-                  :class="batchQuality === 'balanced'
-                    ? 'bg-zinc-100 dark:bg-[#1E1E22] border-zinc-900 dark:border-white/40 text-[var(--text-primary)] ring-1 ring-zinc-900/20 dark:ring-white/20'
-                    : 'bg-zinc-50 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                  :disabled="isBatchProcessing"
-                  @click="batchQuality = 'balanced'"
-                >
-                  <div class="text-xs font-semibold text-[var(--text-primary)]">Balanced</div>
-                  <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">{{ locale === 'id' ? 'Optimal ukuran & mutu' : 'Best size & quality' }}</div>
-                </button>
-                <button
-                  type="button"
-                  class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
-                  :class="batchQuality === 'compact'
-                    ? 'bg-zinc-100 dark:bg-[#1E1E22] border-zinc-900 dark:border-white/40 text-[var(--text-primary)] ring-1 ring-zinc-900/20 dark:ring-white/20'
-                    : 'bg-zinc-50 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                  :disabled="isBatchProcessing"
-                  @click="batchQuality = 'compact'"
-                >
-                  <div class="text-xs font-semibold text-[var(--text-primary)]">Compact</div>
-                  <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">{{ locale === 'id' ? 'Ukuran paling hemat' : 'Smallest file size' }}</div>
-                </button>
-                <button
-                  type="button"
-                  class="p-2.5 rounded-lg border text-left transition-all cursor-pointer"
-                  :class="batchQuality === 'high'
-                    ? 'bg-zinc-100 dark:bg-[#1E1E22] border-zinc-900 dark:border-white/40 text-[var(--text-primary)] ring-1 ring-zinc-900/20 dark:ring-white/20'
-                    : 'bg-zinc-50 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                  :disabled="isBatchProcessing"
-                  @click="batchQuality = 'high'"
-                >
-                  <div class="text-xs font-semibold text-[var(--text-primary)]">High</div>
-                  <div class="text-[10px] text-[var(--text-tertiary)] mt-0.5">{{ locale === 'id' ? 'Kualitas visual tajam' : 'Crisp visual fidelity' }}</div>
-                </button>
-              </div>
-            </div>
-
-            <!-- Audio Option -->
-            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl">
-              <div>
-                <div class="text-xs font-medium text-[var(--text-primary)]">
-                  {{ locale === 'id' ? 'Pertahankan Suara / Audio' : 'Keep Audio Track' }}
-                </div>
-                <div class="text-[11px] text-[var(--text-tertiary)]">
-                  {{ locale === 'id' ? 'Hilangkan centang untuk video bisu (hemat kuota)' : 'Uncheck to mute videos and save more size' }}
-                </div>
-              </div>
-              <input
-                v-model="batchKeepAudio"
-                type="checkbox"
-                class="w-4 h-4 rounded border-zinc-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-zinc-900 dark:text-white focus:ring-0 cursor-pointer"
-                :disabled="isBatchProcessing"
-              />
-            </div>
-
-            <!-- Sequential Execution Notice -->
-            <div class="p-3 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#262626] rounded-xl space-y-1">
-              <div class="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
-                <Sparkles class="w-3.5 h-3.5 text-[var(--text-tertiary)]" />
-                <span>{{ locale === 'id' ? 'Pemrosesan Bergantian (Sequential)' : 'Sequential Processing' }}</span>
-              </div>
-              <p class="text-[11px] text-[var(--text-tertiary)] leading-relaxed">
-                {{ locale === 'id'
-                  ? 'Video dikompres satu per satu secara otomatis via hardware GPU browser agar hemat RAM & mencegah browser crash.'
-                  : 'Videos are encoded one-by-one via browser hardware GPU to prevent memory overload and browser crash.' }}
-              </p>
-            </div>
-
-            <!-- CTA Execution Button -->
-            <div class="pt-2">
-              <Button
-                v-if="!isBatchProcessing"
-                variant="primary"
-                size="default"
-                class="w-full h-11 rounded-xl text-xs font-semibold cursor-pointer"
-                @click="processBatch"
-              >
-                <Play class="w-4 h-4 mr-2" />
-                <span>{{ locale === 'id' ? 'Mulai Kompresi Bergantian' : 'Start Sequential Compression' }}</span>
-              </Button>
-
-              <Button
-                v-else
-                variant="secondary"
-                size="default"
-                class="w-full h-11 rounded-xl text-xs font-semibold cursor-pointer text-neutral-400 hover:text-red-400 border border-zinc-200 dark:border-[#2E2E2E]"
-                @click="cancelBatch"
-              >
-                <X class="w-4 h-4 mr-1.5" />
-                <span>{{ locale === 'id' ? 'Batalkan Antrean' : 'Cancel Queue' }}</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Video Queue Items List (7 Cols) -->
-        <div class="lg:col-span-7 space-y-3">
-          <div class="flex items-center justify-between text-xs text-neutral-400 px-1">
-            <span class="font-medium text-neutral-300">
-              {{ locale === 'id' ? 'Daftar Video Antrean' : 'Queue Items' }} ({{ queue.length }})
-            </span>
-            <span>
-              {{ completedQueueCount }}/{{ queue.length }} {{ locale === 'id' ? 'Selesai' : 'Completed' }}
-            </span>
+    <!-- Mode 1: Single Studio (Player + Trimmer + Inspector) -->
+    <div v-else-if="mode === 'single' && videoUrl" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Left Column: Unified Media Canvas & Timeline Trimmer (7 cols) -->
+      <Card class="lg:col-span-7 space-y-4 p-4 sm:p-5">
+        <!-- Top Canvas Info Bar -->
+        <div class="flex items-center justify-between gap-2 pb-2 border-b border-[var(--border-card)]">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-xs font-semibold text-[var(--text-primary)] truncate">{{ videoFile?.name || 'video.mp4' }}</span>
+            <Badge variant="outline" size="sm" class="font-mono text-[10px] shrink-0">
+              {{ videoNaturalWidth }}×{{ videoNaturalHeight }} • {{ formatFileSize(originalFileSize) }}
+            </Badge>
           </div>
 
-          <!-- Queue List Cards -->
-          <div class="space-y-2.5">
-            <div
-              v-for="item in queue"
-              :key="item.id"
-              class="p-3.5 bg-white dark:bg-[#141416] border rounded-xl transition-all"
-              :class="item.status === 'processing'
-                ? 'border-blue-500/50 bg-blue-50/50 dark:bg-[#161a22]'
-                : item.status === 'done'
-                  ? 'border-emerald-500/30'
-                  : 'border-zinc-200 dark:border-[#2E2E2E]'"
-            >
-              <div class="flex items-start justify-between gap-3">
-                <!-- File info & Interactive Thumbnail Snapshot -->
-                <div class="flex items-start gap-3 min-w-0 flex-1">
-                  <!-- Thumbnail snapshot container -->
-                  <div
-                    class="relative w-16 h-12 rounded-lg bg-zinc-100 dark:bg-[#212121] border border-zinc-200 dark:border-[#2E2E2E] overflow-hidden flex items-center justify-center shrink-0 cursor-pointer group/thumb select-none"
-                    @click="openPreviewModal(item)"
-                    :title="locale === 'id' ? 'Klik untuk preview video' : 'Click to preview video'"
-                  >
-                    <img
-                      v-if="item.thumbnailUrl"
-                      :src="item.thumbnailUrl"
-                      class="w-full h-full object-cover transition-transform group-hover/thumb:scale-105"
-                      alt="Thumbnail"
-                    />
-                    <Film v-else class="w-5 h-5 text-[var(--text-tertiary)]" />
-
-                    <!-- Play overlay on hover -->
-                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-opacity">
-                      <Play class="w-4 h-4 fill-white text-white" />
-                    </div>
-                  </div>
-
-                  <div class="min-w-0 flex-1">
-                    <div
-                      class="text-xs font-semibold text-[var(--text-primary)] truncate cursor-pointer hover:underline"
-                      :title="item.name"
-                      @click="openPreviewModal(item)"
-                    >
-                      {{ item.name }}
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] font-mono text-[var(--text-tertiary)]">
-                      <span>{{ formatFileSize(item.originalSize) }}</span>
-                      <template v-if="item.status === 'done'">
-                        <span>→</span>
-                        <span class="text-emerald-500 font-bold">{{ formatFileSize(item.outputSize) }}</span>
-                        <span v-if="item.savedPercent > 0" class="text-emerald-500">(-{{ item.savedPercent }}%)</span>
-                        <span v-if="item.targetWidth" class="text-neutral-500">({{ item.targetWidth }}×{{ item.targetHeight }})</span>
-                      </template>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Status & Action Buttons -->
-                <div class="flex items-center gap-2 shrink-0">
-                  <!-- Status Badges -->
-                  <span
-                    v-if="item.status === 'waiting'"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-zinc-100 dark:bg-neutral-800 text-[var(--text-secondary)]"
-                  >
-                    {{ locale === 'id' ? 'Menunggu' : 'Waiting' }}
-                  </span>
-                  <span
-                    v-else-if="item.status === 'processing'"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/10 text-blue-500 flex items-center gap-1"
-                  >
-                    <RefreshCw class="w-3 h-3 animate-spin" />
-                    <span>{{ item.progress }}%</span>
-                    <span v-if="item.estimatedSecondsRemaining" class="text-neutral-400 ml-0.5 font-normal">({{ formatDurationEstimate(item.estimatedSecondsRemaining) }})</span>
-                  </span>
-                  <span
-                    v-else-if="item.status === 'done'"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-500 flex items-center gap-1"
-                  >
-                    <Check class="w-3 h-3" />
-                    {{ locale === 'id' ? 'Selesai' : 'Done' }}
-                  </span>
-                  <span
-                    v-else-if="item.status === 'error'"
-                    class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-red-500/10 text-red-500 flex items-center gap-1"
-                    :title="item.errorMsg"
-                  >
-                    <AlertCircle class="w-3 h-3" />
-                    Error
-                  </span>
-
-                  <!-- Download Single Item -->
-                  <button
-                    v-if="item.status === 'done'"
-                    type="button"
-                    class="p-1.5 rounded-lg bg-zinc-100 dark:bg-white/10 hover:bg-zinc-900 dark:hover:bg-white text-zinc-900 dark:text-white hover:text-white dark:hover:text-black transition-colors cursor-pointer"
-                    :title="locale === 'id' ? 'Unduh video ini' : 'Download this video'"
-                    @click="downloadQueueItem(item)"
-                  >
-                    <Download class="w-3.5 h-3.5" />
-                  </button>
-
-                  <!-- Open in Studio button -->
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-lg bg-zinc-100 dark:bg-neutral-800 hover:bg-zinc-200 dark:hover:bg-neutral-700 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                    :title="locale === 'id' ? 'Buka di Studio Player & Trimmer' : 'Open in Single Studio'"
-                    @click="openItemInStudio(item)"
-                  >
-                    <Film class="w-3.5 h-3.5" />
-                  </button>
-
-                  <!-- Remove item -->
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-lg text-neutral-400 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                    :disabled="item.status === 'processing'"
-                    :title="locale === 'id' ? 'Hapus dari antrean' : 'Remove from queue'"
-                    @click="removeQueueItem(item.id)"
-                  >
-                    <Trash2 class="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              <!-- Processing Progress Bar with Live ETA -->
-              <div v-if="item.status === 'processing'" class="mt-2.5 space-y-1">
-                <div class="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                  <span class="text-blue-400 flex items-center gap-1">
-                    <RefreshCw class="w-3 h-3 animate-spin" />
-                    <span>Hardware GPU encoding</span>
-                  </span>
-                  <span v-if="item.estimatedSecondsRemaining" class="text-neutral-300">
-                    {{ locale === 'id' ? `Perkiraan selesai: ${formatDurationEstimate(item.estimatedSecondsRemaining)}` : `Est. remaining: ${formatDurationEstimate(item.estimatedSecondsRemaining)}` }}
-                  </span>
-                </div>
-                <div class="w-full h-1.5 bg-[#2E2E2E] rounded-full overflow-hidden">
-                  <div
-                    class="h-full bg-[#00a8ff] transition-all duration-150"
-                    :style="{ width: `${item.progress}%` }"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Add More Videos Dropzone Area -->
-          <div
-            class="border border-dashed border-[#2E2E2E] hover:border-[#3E3E3E] rounded-xl p-4 text-center cursor-pointer transition-colors"
-            @click="fileInputRef?.click()"
-          >
-            <div class="flex items-center justify-center gap-2 text-xs text-neutral-400 hover:text-white">
-              <Plus class="w-4 h-4" />
-              <span>{{ locale === 'id' ? 'Klik atau tarik video lain untuk ditambahkan ke antrean' : 'Click or drop more videos to append to queue' }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Video Preview Modal (Rendered on-demand, zero background GPU overhead) -->
-      <div
-        v-if="activePreviewItem"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-        @click.self="closePreviewModal"
-      >
-        <div class="relative w-full max-w-3xl bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-2xl p-4 sm:p-5 space-y-4">
-          <!-- Header -->
-          <div class="flex items-center justify-between border-b border-zinc-200 dark:border-[#212121] pb-3">
-            <div class="min-w-0 pr-4">
-              <h3 class="text-sm font-semibold text-[var(--text-primary)] truncate" :title="activePreviewItem.name">
-                {{ activePreviewItem.name }}
-              </h3>
-              <p class="text-xs text-[var(--text-tertiary)] font-mono mt-0.5">
-                {{ activePreviewItem.outputUrl ? (locale === 'id' ? 'Preview Hasil Kompresi' : 'Preview Compressed Video') : (locale === 'id' ? 'Preview Video Asli' : 'Preview Original Video') }}
-                <span v-if="activePreviewItem.outputSize" class="text-emerald-500 font-bold ml-1">
-                  ({{ formatFileSize(activePreviewItem.outputSize) }})
-                </span>
-                <span v-else class="text-[var(--text-tertiary)] ml-1">
-                  ({{ formatFileSize(activePreviewItem.originalSize) }})
-                </span>
-              </p>
-            </div>
+          <!-- Seamless Source vs Output Switcher -->
+          <div v-if="outputBlobUrl" class="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-[#2E2E2E] rounded-lg text-xs shrink-0">
             <button
               type="button"
-              class="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              @click="closePreviewModal"
+              class="px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer"
+              :class="activePreviewMode === 'source' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
+              @click="activePreviewMode = 'source'"
             >
-              <X class="w-4 h-4" />
+              Source
+            </button>
+            <button
+              type="button"
+              class="px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer flex items-center gap-1"
+              :class="activePreviewMode === 'output' ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
+              @click="activePreviewMode = 'output'"
+            >
+              <span>Result</span>
+              <span v-if="sizeSavingsPercentage > 0" class="text-[10px] font-bold text-emerald-500">(-{{ sizeSavingsPercentage }}%)</span>
             </button>
           </div>
+        </div>
 
-          <!-- Video Player -->
-          <div class="relative bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center max-h-[60vh]">
-            <video
-              :src="previewModalUrl"
-              controls
-              autoplay
-              playsinline
-              class="w-full h-full object-contain mx-auto"
+        <!-- Video Player Canvas -->
+        <div
+          ref="playerContainerRef"
+          class="relative aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center border border-[var(--border-card)] group select-none"
+        >
+          <video
+            ref="videoElementRef"
+            :src="activeVideoSrc"
+            playsinline
+            preload="metadata"
+            class="w-full h-full object-contain cursor-pointer"
+            @timeupdate="onTimeUpdate"
+            @loadedmetadata="onLoadedMetadata"
+            @play="isPlaying = true"
+            @pause="isPlaying = false"
+            @click="togglePlay"
+          />
+
+          <!-- Big Play Overlay when Paused -->
+          <button
+            v-if="!isPlaying && !isProcessing"
+            type="button"
+            class="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/60 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white hover:bg-black/80 transition-all cursor-pointer shadow-lg"
+            @click.stop="togglePlay"
+          >
+            <Play class="w-6 h-6 ml-0.5" />
+          </button>
+
+          <!-- Current Mode Badge -->
+          <div class="absolute top-3 right-3 pointer-events-none">
+            <Badge :variant="activePreviewMode === 'output' ? 'primary' : 'secondary'" size="sm" class="shadow-xs">
+              {{ activePreviewMode === 'output' ? 'Result Preview' : 'Source Video' }}
+            </Badge>
+          </div>
+        </div>
+
+        <!-- Player Scrubber & Controls -->
+        <div class="p-3 bg-zinc-50/70 dark:bg-zinc-900/40 border border-[var(--border-card)] rounded-xl space-y-2">
+          <!-- Time Scrubber Slider -->
+          <div class="relative w-full flex items-center">
+            <input
+              type="range"
+              min="0"
+              :max="totalDuration || 100"
+              step="0.05"
+              :value="currentTime"
+              class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-zinc-900 dark:accent-white"
+              @input="seekTo(Number(($event.target as HTMLInputElement).value))"
             />
           </div>
 
-          <!-- Actions -->
-          <div class="flex items-center justify-between pt-1">
-            <span class="text-xs font-mono text-[var(--text-tertiary)]">
-              {{ activePreviewItem.status === 'done' ? (locale === 'id' ? 'Status: Selesai' : 'Status: Completed') : (locale === 'id' ? 'Status: Dalam Antrean' : 'Status: In Queue') }}
-            </span>
-            <div class="flex items-center gap-2">
-              <Button
-                v-if="activePreviewItem.outputUrl"
-                variant="primary"
-                size="default"
-                class="h-8 px-3 rounded-lg text-xs font-medium cursor-pointer"
-                @click="downloadQueueItem(activePreviewItem)"
-              >
-                <Download class="w-3.5 h-3.5 mr-1.5" />
-                <span>Download</span>
+          <!-- Bottom Micro-Controls -->
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <div class="flex items-center gap-1.5">
+              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="togglePlay">
+                <component :is="isPlaying ? Pause : Play" class="w-4 h-4" />
               </Button>
-              <Button
-                variant="secondary"
-                size="default"
-                class="h-8 px-3 rounded-lg text-xs font-medium cursor-pointer"
-                @click="closePreviewModal"
-              >
-                <span>{{ locale === 'id' ? 'Tutup' : 'Close' }}</span>
+              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" title="Step backward 1s" @click="stepBackward(1)">
+                <RotateCcw class="w-3.5 h-3.5" />
               </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- STATE 3: Single Video Studio Workbench -->
-    <div v-else class="space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Left Column: Video Preview Player & Timeline Trimmer (7 Cols) -->
-        <div class="lg:col-span-7 space-y-4">
-          <!-- Video Display Card (Minimalist Player bar as requested by user) -->
-          <div
-            ref="playerContainerRef"
-            class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] overflow-hidden shadow-xs"
-          >
-            <div
-              class="relative bg-black aspect-video flex items-center justify-center overflow-hidden cursor-pointer"
-              @click="togglePlay"
-            >
-              <video
-                ref="videoElementRef"
-                :src="videoUrl"
-                crossorigin="anonymous"
-                playsinline
-                :muted="isMuted"
-                class="w-full h-full object-contain"
-                @loadedmetadata="onLoadedMetadata"
-                @timeupdate="onTimeUpdate"
-                @ended="isPlaying = false"
-              />
-            </div>
-
-            <!-- Sleek Minimalist Player Bar (Matching user reference mockup) -->
-            <div class="px-3.5 py-2.5 bg-zinc-100 dark:bg-[#121214] border-t border-zinc-200 dark:border-[#262626] flex items-center gap-2.5 select-none">
-              <!-- Play / Pause -->
-              <button
-                type="button"
-                class="p-1 text-[var(--text-primary)] hover:opacity-80 transition-colors cursor-pointer shrink-0 flex items-center justify-center focus:outline-none"
-                :title="isPlaying ? 'Pause' : 'Play'"
-                @click="togglePlay"
-              >
-                <Play v-if="!isPlaying" class="w-4 h-4 fill-current text-current" />
-                <Pause v-else class="w-4 h-4 fill-current text-current" />
-              </button>
-
-              <!-- Scrubber Bar -->
-              <div
-                ref="scrubberBarRef"
-                class="relative flex-1 flex items-center h-5 cursor-pointer group/scrub"
-                @mousedown="startScrubbing"
-                @touchstart.passive="startTouchScrubbing"
-              >
-                <!-- Track -->
-                <div class="w-full h-1 bg-zinc-200 dark:bg-[#2E2E2E] group-hover/scrub:h-1.5 rounded-full relative overflow-hidden transition-all">
-                  <!-- Progress Fill -->
-                  <div
-                    class="h-full bg-[#00a8ff] rounded-full"
-                    :style="{ width: `${progressPercent}%` }"
-                  />
-                </div>
-
-                <!-- Circular Knob -->
-                <div
-                  class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-zinc-900 dark:bg-white rounded-full shadow-md pointer-events-none transition-transform group-hover/scrub:scale-125"
-                  :style="{ left: `${progressPercent}%` }"
-                />
-              </div>
-
-              <!-- Time Display (0:01 / 0:31) -->
-              <div class="text-[11px] font-mono text-[var(--text-secondary)] shrink-0 whitespace-nowrap">
+              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" title="Step forward 1s" @click="stepForward(1)">
+                <ArrowRight class="w-3.5 h-3.5" />
+              </Button>
+              <span class="text-xs font-mono text-[var(--text-secondary)] ml-1">
                 {{ formatPlayerTime(currentTime) }} / {{ formatPlayerTime(totalDuration) }}
-              </div>
-
-              <!-- Mute Button -->
-              <button
-                type="button"
-                class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer shrink-0 focus:outline-none"
-                :title="isMuted ? 'Unmute' : 'Mute'"
-                @click="isMuted = !isMuted"
-              >
-                <Volume2 v-if="!isMuted" class="w-4 h-4" />
-                <VolumeX v-else class="w-4 h-4 text-red-500" />
-              </button>
-
-              <!-- Fullscreen Button -->
-              <button
-                type="button"
-                class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer shrink-0 focus:outline-none"
-                :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
-                @click="toggleFullscreen"
-              >
-                <Maximize v-if="!isFullscreen" class="w-4 h-4" />
-                <Minimize v-else class="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <!-- Video Timeline Trimmer Card -->
-          <div class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <Scissors class="w-4 h-4 text-[var(--text-primary)]" />
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] font-mono">
-                  Clip Trimmer
-                </h3>
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  class="text-[11px] font-mono text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                  @click="resetTrim"
-                >
-                  Reset Full Duration
-                </button>
-              </div>
-            </div>
-
-            <!-- Visual Timeline Scrub Bar -->
-            <div class="space-y-2">
-              <div
-                ref="timelineContainerRef"
-                class="relative h-9 bg-zinc-100 dark:bg-[#212121] rounded-lg border border-zinc-200 dark:border-[#2E2E2E] overflow-hidden cursor-pointer select-none"
-                @click="onTimelineClick"
-              >
-                <!-- Trimmed Active Range Zone -->
-                <div
-                  v-if="totalDuration > 0"
-                  class="absolute top-0 bottom-0 bg-zinc-900/15 dark:bg-white/15 border-x border-zinc-900/40 dark:border-white/40"
-                  :style="{
-                    left: `${(startTime / totalDuration) * 100}%`,
-                    width: `${Math.max(0, ((endTime - startTime) / totalDuration) * 100)}%`
-                  }"
-                />
-
-                <!-- Current Playhead Scrubber -->
-                <div
-                  v-if="totalDuration > 0"
-                  class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
-                  :style="{ left: `${(currentTime / totalDuration) * 100}%` }"
-                >
-                  <div class="w-2 h-2 rounded-full bg-red-500 -ml-[3px] -mt-0.5" />
-                </div>
-              </div>
-
-              <!-- Start / End Range Sliders -->
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <div class="flex items-center justify-between text-[11px] font-mono text-[var(--text-tertiary)] mb-1">
-                    <span>Start:</span>
-                    <span class="text-[var(--text-primary)] font-medium">{{ formatPlayerTime(startTime) }}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    :max="Math.max(0, endTime - 0.1)"
-                    step="0.1"
-                    v-model.number="startTime"
-                    class="w-full accent-zinc-900 dark:accent-white cursor-pointer"
-                    @input="seekTo(startTime)"
-                  />
-                </div>
-
-                <div>
-                  <div class="flex items-center justify-between text-[11px] font-mono text-[var(--text-tertiary)] mb-1">
-                    <span>End:</span>
-                    <span class="text-[var(--text-primary)] font-medium">{{ formatPlayerTime(endTime) }}</span>
-                  </div>
-                  <input
-                    type="range"
-                    :min="Math.min(totalDuration, startTime + 0.1)"
-                    :max="totalDuration || 1"
-                    step="0.1"
-                    v-model.number="endTime"
-                    class="w-full accent-zinc-900 dark:accent-white cursor-pointer"
-                    @input="seekTo(endTime)"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Trimmer Footer Action -->
-            <div class="pt-2 border-t border-zinc-200 dark:border-[#212121] flex items-center justify-between">
-              <div class="text-xs font-mono text-[var(--text-tertiary)]">
-                Trimmed Duration: <span class="text-[var(--text-primary)] font-semibold">{{ formatPlayerTime(trimDuration) }}</span>
-              </div>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                class="h-8 px-3 rounded-lg text-xs font-medium cursor-pointer"
-                @click="previewTrimSelection"
-              >
-                <Play class="w-3 h-3 fill-current mr-1.5" />
-                <span>Preview Trim</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Column: Resolution & Quality Controls (5 Cols) -->
-        <div class="lg:col-span-5 space-y-4">
-          <!-- Resolution Controls Card -->
-          <div class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
-            <div class="flex items-center gap-2">
-              <Monitor class="w-4 h-4 text-[var(--text-primary)]" />
-              <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] font-mono">
-                Resolution Presets
-              </h3>
-            </div>
-
-            <!-- Resolution Preset Grid (Clean & Non-Alay) -->
-            <div class="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                :class="selectedPreset === 'original'
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
-                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                @click="selectedPreset = 'original'"
-              >
-                <div class="text-xs">Original</div>
-                <div class="text-[10px] opacity-70 font-mono mt-0.5">100%</div>
-              </button>
-
-              <button
-                type="button"
-                class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                :class="selectedPreset === '1080p'
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
-                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                @click="selectedPreset = '1080p'"
-              >
-                <div class="text-xs font-medium">1080p</div>
-                <div class="text-[10px] opacity-70 font-mono mt-0.5">FHD</div>
-              </button>
-
-              <button
-                type="button"
-                class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                :class="selectedPreset === '720p'
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
-                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                @click="selectedPreset = '720p'"
-              >
-                <div class="text-xs font-medium">720p</div>
-                <div class="text-[10px] opacity-70 font-mono mt-0.5">HD Standard</div>
-              </button>
-
-              <button
-                type="button"
-                class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                :class="selectedPreset === '480p'
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
-                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                @click="selectedPreset = '480p'"
-              >
-                <div class="text-xs font-medium">480p</div>
-                <div class="text-[10px] opacity-70 font-mono mt-0.5">SD Compact</div>
-              </button>
-
-              <button
-                type="button"
-                class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                :class="selectedPreset === '360p'
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
-                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                @click="selectedPreset = '360p'"
-              >
-                <div class="text-xs font-medium">360p</div>
-                <div class="text-[10px] opacity-70 font-mono mt-0.5">Minimal</div>
-              </button>
-
-              <button
-                type="button"
-                class="px-3 py-2.5 rounded-lg border text-center transition-all cursor-pointer select-none"
-                :class="selectedPreset === 'custom'
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-semibold border-zinc-900 dark:border-white shadow-xs'
-                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)] hover:border-zinc-400 dark:hover:border-neutral-500'"
-                @click="selectedPreset = 'custom'"
-              >
-                <div class="text-xs font-medium">Custom</div>
-                <div class="text-[10px] opacity-70 font-mono mt-0.5">W × H</div>
-              </button>
-            </div>
-
-            <!-- Custom W x H Inputs -->
-            <div v-if="selectedPreset === 'custom'" class="p-3 bg-zinc-50 dark:bg-[#18181A] rounded-xl border border-zinc-200 dark:border-[#2E2E2E] space-y-3">
-              <div class="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label class="block text-[11px] font-mono text-[var(--text-tertiary)] mb-1">Width (px)</label>
-                  <input
-                    type="number"
-                    min="16"
-                    step="2"
-                    v-model.number="customWidth"
-                    class="w-full h-8 px-2.5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-lg text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/40"
-                  />
-                </div>
-                <div>
-                  <label class="block text-[11px] font-mono text-[var(--text-tertiary)] mb-1">Height (px)</label>
-                  <input
-                    type="number"
-                    min="16"
-                    step="2"
-                    v-model.number="customHeight"
-                    class="w-full h-8 px-2.5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-lg text-xs font-mono text-[var(--text-primary)] focus:outline-none focus:border-zinc-400 dark:focus:border-white/40"
-                  />
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  class="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer select-none"
-                  @click="lockAspectRatio = !lockAspectRatio"
-                >
-                  <Lock v-if="lockAspectRatio" class="w-3.5 h-3.5 text-[var(--text-primary)]" />
-                  <Unlock v-else class="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Lock Aspect Ratio</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Output Resolution Badge Display -->
-            <div class="px-3.5 py-2.5 rounded-lg bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] flex items-center justify-between text-xs font-mono">
-              <span class="text-[var(--text-tertiary)]">Target Resolution:</span>
-              <span class="text-[var(--text-primary)] font-semibold">
-                {{ targetDimensions.width }} × {{ targetDimensions.height }} px
               </span>
             </div>
-          </div>
 
-          <!-- Quality & Audio Settings Card -->
-          <div class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-5 space-y-4">
+            <div class="flex items-center gap-1.5">
+              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="toggleMute">
+                <component :is="isMuted ? VolumeX : Volume2" class="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="toggleFullscreen">
+                <component :is="isFullscreen ? Minimize : Maximize" class="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Precision Trimmer Section -->
+        <div class="pt-2 border-t border-[var(--border-card)] space-y-3">
+          <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-              <Sliders class="w-4 h-4 text-[var(--text-primary)]" />
-              <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] font-mono">
-                Compression & Audio
-              </h3>
+              <Scissors class="w-4 h-4 text-[var(--text-secondary)]" />
+              <span class="text-xs font-semibold text-[var(--text-primary)]">Clip Trimmer</span>
+              <Badge variant="outline" size="sm" class="font-mono text-[10px]">
+                Duration: {{ formatPlayerTime(trimDuration) }}
+              </Badge>
             </div>
-
-            <!-- Quality Presets -->
-            <div class="space-y-1.5">
-              <label class="block text-[11px] font-mono text-[var(--text-tertiary)]">Encoding Profile</label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  class="py-2 px-2 rounded-lg border text-center text-xs transition-colors cursor-pointer select-none"
-                  :class="qualityPreset === 'high'
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-medium border-zinc-900 dark:border-white/30'
-                    : 'bg-zinc-100 dark:bg-[#18181A] text-[var(--text-secondary)] border-zinc-200 dark:border-[#2E2E2E] hover:text-[var(--text-primary)]'"
-                  @click="qualityPreset = 'high'"
-                >
-                  High
-                </button>
-
-                <button
-                  type="button"
-                  class="py-2 px-2 rounded-lg border text-center text-xs transition-colors cursor-pointer select-none"
-                  :class="qualityPreset === 'balanced'
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-medium border-zinc-900 dark:border-white/30'
-                    : 'bg-zinc-100 dark:bg-[#18181A] text-[var(--text-secondary)] border-zinc-200 dark:border-[#2E2E2E] hover:text-[var(--text-primary)]'"
-                  @click="qualityPreset = 'balanced'"
-                >
-                  Balanced
-                </button>
-
-                <button
-                  type="button"
-                  class="py-2 px-2 rounded-lg border text-center text-xs transition-colors cursor-pointer select-none"
-                  :class="qualityPreset === 'compact'
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-medium border-zinc-900 dark:border-white/30'
-                    : 'bg-zinc-100 dark:bg-[#18181A] text-[var(--text-secondary)] border-zinc-200 dark:border-[#2E2E2E] hover:text-[var(--text-primary)]'"
-                  @click="qualityPreset = 'compact'"
-                >
-                  Compact
-                </button>
-              </div>
-            </div>
-
-            <!-- Audio Toggle Switch -->
-            <div class="pt-2 border-t border-zinc-200 dark:border-[#212121] flex items-center justify-between">
-              <div>
-                <div class="text-xs font-medium text-[var(--text-primary)]">Audio Track</div>
-                <div class="text-[11px] text-[var(--text-tertiary)]">Keep or mute audio track</div>
-              </div>
-
-              <button
-                type="button"
-                class="px-3 py-1.5 rounded-lg border text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
-                :class="keepAudio
-                  ? 'bg-zinc-900 dark:bg-[#2E2E2E] border-zinc-900 dark:border-white/30 text-white'
-                  : 'bg-zinc-100 dark:bg-[#18181A] border-zinc-200 dark:border-[#2E2E2E] text-[var(--text-secondary)]'"
-                @click="keepAudio = !keepAudio"
-              >
-                <Volume2 v-if="keepAudio" class="w-3.5 h-3.5" />
-                <VolumeX v-else class="w-3.5 h-3.5" />
-                <span>{{ keepAudio ? 'Keep Audio' : 'Muted' }}</span>
-              </button>
-            </div>
+            <button
+              v-if="startTime > 0 || endTime < totalDuration"
+              type="button"
+              class="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              @click="resetTrim"
+            >
+              Reset Trim
+            </button>
           </div>
 
-          <!-- Process Action Button -->
-          <div class="space-y-3">
-            <Button
-              variant="primary"
-              size="lg"
-              class="w-full h-11 rounded-xl text-sm font-semibold cursor-pointer shadow-xs"
-              :disabled="isProcessing"
-              @click="processVideo"
-            >
-              <RefreshCw v-if="isProcessing" class="w-4 h-4 mr-2 animate-spin" />
-              <Film v-else class="w-4 h-4 mr-2" />
-              <span>{{ isProcessing ? 'Processing Video...' : 'Resize & Trim Video' }}</span>
-            </Button>
+          <!-- Interactive Timeline Track -->
+          <div
+            ref="timelineContainerRef"
+            class="relative h-10 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl overflow-hidden border border-[var(--border-card)] cursor-pointer select-none"
+            @click="onTimelineClick"
+          >
+            <!-- Selected Range Highlight -->
+            <div
+              class="absolute top-0 bottom-0 bg-zinc-900/15 dark:bg-white/20 border-x-2 border-zinc-900 dark:border-white transition-none"
+              :style="{
+                left: `${totalDuration ? (startTime / totalDuration) * 100 : 0}%`,
+                width: `${totalDuration ? ((endTime - startTime) / totalDuration) * 100 : 100}%`
+              }"
+            />
 
-            <!-- Processing Progress Bar -->
-            <div v-if="isProcessing" class="p-4 bg-zinc-50 dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-2">
-              <div class="flex items-center justify-between text-xs font-mono">
-                <span class="text-[var(--text-tertiary)]">{{ processStatus }}</span>
-                <span class="text-[var(--text-primary)] font-bold">{{ processProgress }}%</span>
-              </div>
-              <div class="w-full h-2 bg-zinc-200 dark:bg-[#212121] rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-zinc-900 dark:bg-white transition-all duration-150"
-                  :style="{ width: `${processProgress}%` }"
+            <!-- Current Playhead Indicator -->
+            <div
+              class="absolute top-0 bottom-0 w-0.5 bg-rose-500 pointer-events-none z-10"
+              :style="{ left: `${totalDuration ? (currentTime / totalDuration) * 100 : 0}%` }"
+            />
+          </div>
+
+          <!-- Numeric Fine-Tuning Steppers -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900/40 border border-[var(--border-card)] rounded-xl space-y-1">
+              <label class="text-[10px] uppercase font-mono tracking-wider text-[var(--text-tertiary)]">Start Time</label>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model.number="startTime"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  :max="endTime - 0.5"
+                  class="w-full bg-transparent text-xs font-mono font-medium text-[var(--text-primary)] focus:outline-none"
+                  @change="seekTo(startTime)"
                 />
+                <span class="text-[10px] font-mono text-[var(--text-tertiary)]">sec</span>
               </div>
-              <div class="flex justify-end pt-1">
-                <button
-                  type="button"
-                  class="text-[11px] font-mono text-red-500 hover:underline cursor-pointer"
-                  @click="cancelProcessing"
-                >
-                  Cancel
-                </button>
+            </div>
+
+            <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900/40 border border-[var(--border-card)] rounded-xl space-y-1">
+              <label class="text-[10px] uppercase font-mono tracking-wider text-[var(--text-tertiary)]">End Time</label>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model.number="endTime"
+                  type="number"
+                  step="0.1"
+                  :min="startTime + 0.5"
+                  :max="totalDuration"
+                  class="w-full bg-transparent text-xs font-mono font-medium text-[var(--text-primary)] focus:outline-none"
+                  @change="seekTo(endTime)"
+                />
+                <span class="text-[10px] font-mono text-[var(--text-tertiary)]">sec</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <!-- STATE 3: Processed Output Section -->
-      <div v-if="outputBlobUrl" class="bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#2E2E2E] rounded-[14px] p-6 space-y-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-zinc-200 dark:border-[#212121] pb-4">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-              <Check class="w-4 h-4" />
+      <!-- Right Column: Studio Inspector (5 cols) -->
+      <Card class="lg:col-span-5 space-y-5 p-4 sm:p-5">
+        <!-- Inspector Header -->
+        <div class="pb-2 border-b border-[var(--border-card)]">
+          <h2 class="text-sm font-semibold text-[var(--text-primary)]">Export Settings</h2>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Configure target resolution and compression profile</p>
+        </div>
+
+        <!-- Resolution Presets -->
+        <div class="space-y-2">
+          <label class="text-xs font-medium text-[var(--text-secondary)]">Target Resolution</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button
+              v-for="preset in (['original', '1080p', '720p', '480p', 'custom'] as const)"
+              :key="preset"
+              type="button"
+              class="px-3 py-2 rounded-xl text-xs font-medium border text-center transition-all cursor-pointer"
+              :class="selectedPreset === preset
+                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                : 'border-zinc-200 dark:border-[#2E2E2E] bg-white dark:bg-zinc-900/50 text-[var(--text-primary)] hover:border-zinc-400 dark:hover:border-zinc-700'"
+              @click="selectedPreset = preset"
+            >
+              <div class="capitalize font-semibold">{{ preset }}</div>
+              <div class="text-[10px] opacity-70">
+                {{ preset === 'original' ? `${videoNaturalWidth}×${videoNaturalHeight}` : preset === '1080p' ? '1920×1080' : preset === '720p' ? '1280×720' : preset === '480p' ? '854×480' : 'Manual W×H' }}
+              </div>
+            </button>
+          </div>
+
+          <!-- Custom Dimension Inputs -->
+          <div v-if="selectedPreset === 'custom'" class="pt-2 space-y-2">
+            <div class="flex items-center gap-2">
+              <div class="flex-1 space-y-1">
+                <span class="text-[10px] uppercase font-mono text-[var(--text-tertiary)]">Width</span>
+                <input
+                  v-model.number="customWidth"
+                  type="number"
+                  step="2"
+                  class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-900 border border-[var(--border-card)] rounded-lg text-xs font-mono text-[var(--text-primary)] focus:outline-none"
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="mt-4 h-8 w-8 p-0"
+                :title="lockAspectRatio ? 'Lock Aspect Ratio' : 'Unlock Aspect Ratio'"
+                @click="lockAspectRatio = !lockAspectRatio"
+              >
+                <component :is="lockAspectRatio ? Lock : Unlock" class="w-4 h-4" />
+              </Button>
+              <div class="flex-1 space-y-1">
+                <span class="text-[10px] uppercase font-mono text-[var(--text-tertiary)]">Height</span>
+                <input
+                  v-model.number="customHeight"
+                  type="number"
+                  step="2"
+                  class="w-full px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-900 border border-[var(--border-card)] rounded-lg text-xs font-mono text-[var(--text-primary)] focus:outline-none"
+                />
+              </div>
             </div>
-            <div>
-              <h3 class="text-sm font-semibold text-[var(--text-primary)]">Video Ready for Download</h3>
-              <p class="text-xs text-[var(--text-tertiary)] font-mono">
-                Processed via 100% Client-Side WebCodecs Hardware GPU
-              </p>
+          </div>
+        </div>
+
+        <!-- Quality Profile -->
+        <div class="space-y-2">
+          <label class="text-xs font-medium text-[var(--text-secondary)]">Quality Profile</label>
+          <div class="grid grid-cols-3 gap-1.5 text-xs">
+            <button
+              v-for="qp in [
+                { id: 'balanced', label: 'Balanced' },
+                { id: 'high', label: 'High' },
+                { id: 'compact', label: 'Compact' }
+              ]"
+              :key="qp.id"
+              type="button"
+              class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
+              :class="qualityPreset === qp.id
+                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                : 'border-zinc-200 dark:border-[#2E2E2E] bg-white dark:bg-zinc-900/50 text-[var(--text-primary)] hover:border-zinc-400 dark:hover:border-zinc-700'"
+              @click="qualityPreset = qp.id as any"
+            >
+              <div class="font-semibold">{{ qp.label }}</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Audio Options -->
+        <div class="space-y-3 pt-1">
+          <label class="flex items-center justify-between p-2.5 bg-zinc-50/70 dark:bg-zinc-900/40 border border-[var(--border-card)] rounded-xl cursor-pointer">
+            <div class="flex items-center gap-2">
+              <component :is="keepAudio ? Volume2 : VolumeX" class="w-4 h-4 text-[var(--text-secondary)]" />
+              <div>
+                <div class="text-xs font-medium text-[var(--text-primary)]">Include Audio Track</div>
+                <div class="text-[10px] text-[var(--text-tertiary)]">Disable to mute and reduce file size</div>
+              </div>
+            </div>
+            <input
+              v-model="keepAudio"
+              type="checkbox"
+              class="w-4 h-4 rounded-sm border-zinc-300 dark:border-zinc-700 accent-zinc-900 dark:accent-white cursor-pointer"
+            />
+          </label>
+        </div>
+
+        <!-- Processing State -->
+        <div v-if="isProcessing" class="p-3.5 bg-zinc-50 dark:bg-zinc-900/60 border border-[var(--border-card)] rounded-xl space-y-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-medium text-[var(--text-primary)]">{{ processStatus || 'Processing video...' }}</span>
+            <span class="font-mono font-bold text-[var(--text-primary)]">{{ processProgress }}%</span>
+          </div>
+          <div class="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+            <div class="h-full bg-zinc-900 dark:bg-white transition-all duration-150" :style="{ width: `${processProgress}%` }" />
+          </div>
+          <div class="flex justify-end pt-1">
+            <Button variant="outline" size="sm" class="text-xs text-rose-500 hover:text-rose-600" @click="cancelProcessing">
+              Cancel
+            </Button>
+          </div>
+        </div>
+
+        <!-- Result Summary & Download (When Output is Ready) -->
+        <div v-else-if="outputBlobUrl" class="p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <Check class="w-4 h-4" />
+              <span>Conversion Ready</span>
+            </div>
+            <Badge v-if="sizeSavingsPercentage > 0" variant="primary" size="sm" class="bg-emerald-500 text-white font-mono">
+              -{{ sizeSavingsPercentage }}% Saved
+            </Badge>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="p-2 bg-white dark:bg-zinc-900/80 rounded-lg border border-[var(--border-card)]">
+              <div class="text-[10px] text-[var(--text-tertiary)]">Duration</div>
+              <div class="font-mono font-bold text-[var(--text-primary)] mt-0.5">{{ formatPlayerTime(outputDuration) }}</div>
+            </div>
+            <div class="p-2 bg-white dark:bg-zinc-900/80 rounded-lg border border-[var(--border-card)]">
+              <div class="text-[10px] text-[var(--text-tertiary)]">Original</div>
+              <div class="font-mono text-[var(--text-tertiary)] line-through mt-0.5">{{ formatFileSize(originalFileSize) }}</div>
+            </div>
+            <div class="p-2 bg-white dark:bg-zinc-900/80 rounded-lg border border-[var(--border-card)]">
+              <div class="text-[10px] text-[var(--text-tertiary)]">New Size</div>
+              <div class="font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{{ formatFileSize(outputSize) }}</div>
             </div>
           </div>
 
+          <div class="flex items-center gap-2 pt-1">
+            <Button variant="primary" size="default" class="flex-1 font-medium text-xs" @click="downloadOutput">
+              <Download class="w-4 h-4 mr-1.5" />
+              <span>Download Video</span>
+            </Button>
+            <Button variant="outline" size="default" class="text-xs" @click="processVideo">
+              <RefreshCw class="w-3.5 h-3.5 mr-1" />
+              <span>Re-encode</span>
+            </Button>
+          </div>
+        </div>
+
+        <!-- Main CTA Button when no output yet -->
+        <div v-else>
           <Button
             variant="primary"
             size="default"
-            class="h-10 px-5 rounded-xl text-xs font-semibold cursor-pointer shrink-0"
-            @click="downloadOutput"
+            class="w-full h-11 text-sm font-semibold rounded-xl cursor-pointer"
+            :disabled="isProcessing"
+            @click="processVideo"
           >
-            <Download class="w-4 h-4 mr-2" />
-            <span>Download Video</span>
+            <Sliders class="w-4 h-4 mr-2" />
+            <span>Process & Resize Video</span>
           </Button>
         </div>
+      </Card>
+    </div>
 
-        <!-- Metrics Comparison Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
-          <div class="p-3.5 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-1">
-            <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Resolution</div>
-            <div class="text-xs text-[var(--text-tertiary)] line-through">{{ videoNaturalWidth }}×{{ videoNaturalHeight }}</div>
-            <div class="text-sm font-bold text-[var(--text-primary)]">{{ outputWidth }}×{{ outputHeight }}</div>
+    <!-- Mode 2: Batch Queue Processing -->
+    <div v-else-if="mode === 'batch'" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Left: Batch Presets (5 cols) -->
+      <Card class="lg:col-span-5 space-y-4 p-4 sm:p-5">
+        <div class="pb-2 border-b border-[var(--border-card)]">
+          <h2 class="text-sm font-semibold text-[var(--text-primary)]">Batch Settings</h2>
+          <p class="text-xs text-[var(--text-secondary)] mt-0.5">Settings applied to all queued videos</p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-xs font-medium text-[var(--text-secondary)]">Resolution Preset</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button
+              v-for="preset in (['original', '1080p', '720p', '480p'] as const)"
+              :key="preset"
+              type="button"
+              class="px-3 py-2 rounded-xl text-xs font-medium border text-center transition-all cursor-pointer"
+              :class="batchPreset === preset
+                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                : 'border-zinc-200 dark:border-[#2E2E2E] bg-white dark:bg-zinc-900/50 text-[var(--text-primary)]'"
+              @click="batchPreset = preset"
+            >
+              {{ preset.toUpperCase() }}
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-xs font-medium text-[var(--text-secondary)]">Quality Profile</label>
+          <div class="grid grid-cols-3 gap-1.5 text-xs">
+            <button
+              v-for="qp in [
+                { id: 'balanced', label: 'Balanced' },
+                { id: 'high', label: 'High' },
+                { id: 'compact', label: 'Compact' }
+              ]"
+              :key="qp.id"
+              type="button"
+              class="p-2 rounded-xl border text-center transition-all cursor-pointer"
+              :class="batchQuality === qp.id
+                ? 'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                : 'border-zinc-200 dark:border-[#2E2E2E] bg-white dark:bg-zinc-900/50 text-[var(--text-primary)]'"
+              @click="batchQuality = qp.id as any"
+            >
+              {{ qp.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <Button
+            variant="primary"
+            size="default"
+            class="w-full h-11 text-sm font-semibold rounded-xl cursor-pointer"
+            :loading="isBatchProcessing"
+            :disabled="queue.length === 0 || isBatchProcessing"
+            @click="processBatch"
+          >
+            <Play class="w-4 h-4 mr-2" />
+            <span>Process {{ queue.length }} Videos</span>
+          </Button>
+        </div>
+      </Card>
+
+      <!-- Right: Queue List (7 cols) -->
+      <Card class="lg:col-span-7 space-y-4 p-4 sm:p-5">
+        <div class="flex items-center justify-between pb-2 border-b border-[var(--border-card)]">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-semibold text-[var(--text-primary)]">Queue List</h2>
+            <Badge variant="secondary" size="sm" class="font-mono text-[10px]">{{ queue.length }} files</Badge>
           </div>
 
-          <div class="p-3.5 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-1">
-            <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Duration</div>
-            <div class="text-xs text-[var(--text-tertiary)] line-through">{{ formatPlayerTime(totalDuration) }}</div>
-            <div class="text-sm font-bold text-[var(--text-primary)]">{{ formatPlayerTime(outputDuration) }}</div>
+          <div class="flex items-center gap-2">
+            <Button
+              v-if="queue.some(i => i.status === 'done')"
+              variant="outline"
+              size="sm"
+              class="text-xs text-emerald-600 dark:text-emerald-400"
+              :loading="isZipping"
+              @click="downloadBatchZip"
+            >
+              <Archive class="w-3.5 h-3.5 mr-1" />
+              <span>Download ZIP</span>
+            </Button>
+            <Button variant="ghost" size="sm" class="text-xs" @click="fileInputRef?.click()">
+              <Plus class="w-3.5 h-3.5 mr-1" />
+              <span>Add</span>
+            </Button>
           </div>
+        </div>
 
-          <div class="p-3.5 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-1">
-            <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">File Size</div>
-            <div class="text-xs text-[var(--text-tertiary)] line-through">{{ formatFileSize(originalFileSize) }}</div>
-            <div class="text-sm font-bold text-emerald-500">{{ formatFileSize(outputSize) }}</div>
-          </div>
+        <!-- Queue Items -->
+        <div class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+          <div
+            v-for="item in queue"
+            :key="item.id"
+            class="p-3 bg-zinc-50/70 dark:bg-zinc-900/40 border border-[var(--border-card)] rounded-xl space-y-2"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-[var(--text-primary)] truncate">{{ item.name }}</div>
+                <div class="text-[10px] font-mono text-[var(--text-tertiary)] flex items-center gap-2 mt-0.5">
+                  <span>{{ formatFileSize(item.originalSize) }}</span>
+                  <span v-if="item.outputSize" class="text-emerald-600 dark:text-emerald-400 font-bold">
+                    → {{ formatFileSize(item.outputSize) }} (-{{ item.savedPercent }}%)
+                  </span>
+                </div>
+              </div>
 
-          <div class="p-3.5 bg-zinc-50 dark:bg-[#18181A] border border-zinc-200 dark:border-[#2E2E2E] rounded-xl space-y-1">
-            <div class="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">Savings</div>
-            <div class="text-xs text-[var(--text-tertiary)]">Reduced by</div>
-            <div class="text-sm font-bold" :class="sizeSavingsPercentage > 0 ? 'text-emerald-500' : 'text-[var(--text-primary)]'">
-              {{ sizeSavingsPercentage > 0 ? `-${sizeSavingsPercentage}%` : 'Optimal' }}
+              <!-- Status Badge & Per-item CTA -->
+              <div class="flex items-center gap-2 shrink-0">
+                <Badge
+                  :variant="item.status === 'done' ? 'primary' : item.status === 'processing' ? 'secondary' : item.status === 'error' ? 'outline' : 'outline'"
+                  size="sm"
+                  class="capitalize text-[10px]"
+                >
+                  {{ item.status }}
+                </Badge>
+
+                <Button
+                  v-if="item.status === 'done'"
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 p-0 text-emerald-600"
+                  @click="downloadQueueItem(item)"
+                >
+                  <Download class="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 p-0 text-zinc-400 hover:text-rose-500"
+                  @click="removeQueueItem(item.id)"
+                >
+                  <X class="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            <!-- Item Progress Bar when Processing -->
+            <div v-if="item.status === 'processing'" class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div class="h-full bg-zinc-900 dark:bg-white transition-all duration-150" :style="{ width: `${item.progress}%` }" />
             </div>
           </div>
         </div>
-
-        <!-- Output Player Preview -->
-        <div class="max-w-xl mx-auto rounded-xl overflow-hidden border border-[#2E2E2E] bg-black">
-          <video
-            :src="outputBlobUrl"
-            controls
-            playsinline
-            class="w-full max-h-[360px] object-contain mx-auto"
-          />
-        </div>
-      </div>
+      </Card>
     </div>
   </div>
 </template>
