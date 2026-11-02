@@ -447,7 +447,7 @@ const handleCopyCode = async () => {
       <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">
         <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
         <span>/</span>
-        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+        <span class="text-[var(--text-secondary)] font-medium">Image & Design</span>
         <span>/</span>
         <span class="text-[var(--text-primary)]">Code to Image Studio</span>
       </div>

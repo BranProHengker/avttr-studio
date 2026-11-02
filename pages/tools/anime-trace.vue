@@ -86,20 +86,6 @@ const fetchQuota = async () => {
   }
 }
 
-// Sample Screenshots for 1-click test
-const samplePresets = [
-  {
-    title: 'Gochuumon wa Usagi Desuka?',
-    label: 'Chino & Rabbit (Official Demo)',
-    url: 'https://images.plurk.com/32B15UXxymfSMwKGTObY5e.jpg'
-  },
-  {
-    title: 'Suzume no Tojimari',
-    label: 'Suzume & Chair',
-    url: 'https://raw.githubusercontent.com/soruly/trace.moe-api/master/demo.jpg'
-  }
-]
-
 // Active Match
 const currentMatch = computed<TraceMoeResult | null>(() => {
   if (!searchResults.value.length) return null
@@ -394,12 +380,6 @@ const handlePasteFromClipboard = async () => {
   }
 }
 
-const handleSampleClick = (sample: typeof samplePresets[0]) => {
-  previewImageUrl.value = sample.url
-  imageUrlInput.value = sample.url
-  runSearch(null, sample.url)
-}
-
 const handleDrop = (event: DragEvent) => {
   isDragging.value = false
   if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
@@ -460,7 +440,7 @@ const resetAll = () => {
         <nav class="flex items-center gap-1.5 text-xs font-mono text-[var(--text-tertiary)]">
           <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
           <span>/</span>
-          <span>Assets</span>
+          <span class="text-[var(--text-secondary)] font-medium">Image & Design</span>
           <span>/</span>
           <span class="text-[var(--text-primary)] font-medium">Anime Scene Search</span>
         </nav>

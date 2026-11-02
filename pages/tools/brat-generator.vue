@@ -434,29 +434,39 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-          Brat Text Generator
-        </h1>
-        <p class="text-xs text-[var(--text-secondary)] mt-1">
-          Create iconic Charli XCX Brat album-style full text memes and word-by-word animated GIFs.
-        </p>
+  <div class="space-y-6 pb-12 w-full">
+    <!-- Header & Breadcrumbs -->
+    <div class="space-y-2">
+      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">
+        <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
+        <span>/</span>
+        <span class="text-[var(--text-secondary)] font-medium">Image & Design</span>
+        <span>/</span>
+        <span class="text-[var(--text-primary)]">Brat Generator</span>
       </div>
 
-      <!-- Header Action Buttons -->
-      <div class="flex items-center gap-2">
-        <Button variant="secondary" size="sm" @click="copyImageBlob">
-          <Check v-if="isCopied" class="w-3.5 h-3.5 text-emerald-400" />
-          <Copy v-else class="w-3.5 h-3.5" />
-          <span>{{ isCopied ? 'Copied' : 'Copy Image' }}</span>
-        </Button>
-        <Button variant="primary" size="sm" @click="downloadStaticImage('png')">
-          <Download class="w-3.5 h-3.5" />
-          <span>Download PNG</span>
-        </Button>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+            Brat Text & GIF Generator
+          </h1>
+          <p class="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+            Create iconic Charli XCX Brat album-style full text memes and word-by-word animated GIFs.
+          </p>
+        </div>
+
+        <!-- Header Action Buttons -->
+        <div class="flex items-center gap-2">
+          <Button variant="secondary" size="sm" @click="copyImageBlob">
+            <Check v-if="isCopied" class="w-3.5 h-3.5 text-emerald-400" />
+            <Copy v-else class="w-3.5 h-3.5" />
+            <span>{{ isCopied ? 'Copied' : 'Copy Image' }}</span>
+          </Button>
+          <Button variant="primary" size="sm" @click="downloadStaticImage('png')">
+            <Download class="w-3.5 h-3.5" />
+            <span>Download PNG</span>
+          </Button>
+        </div>
       </div>
     </div>
 

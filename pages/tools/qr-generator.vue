@@ -510,15 +510,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 pb-12 w-full">
     <!-- Header & Breadcrumbs -->
     <div>
-      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] mb-1">
+      <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono mb-1">
         <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">
           Dashboard
         </NuxtLink>
         <span>/</span>
-        <span class="text-[var(--text-secondary)] font-medium">Tools</span>
+        <span class="text-[var(--text-secondary)] font-medium">Image & Design</span>
         <span>/</span>
         <span class="text-[var(--text-primary)]">QR Code Generator</span>
       </div>

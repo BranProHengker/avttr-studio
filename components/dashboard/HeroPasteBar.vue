@@ -34,10 +34,12 @@ const {
 } = useUrlHistory('avttr_downloader_history')
 
 const isHistoryOpen = ref(false)
+const selectedIndex = ref(-1)
 const singleWrapperRef = ref<HTMLElement | null>(null)
 
 onClickOutside(singleWrapperRef, () => {
   isHistoryOpen.value = false
+  selectedIndex.value = -1
 })
 
 const filteredHistory = computed(() => {
@@ -154,6 +156,7 @@ const submitSingle = (overrideUrl?: string) => {
   const url = (overrideUrl || props.modelValue || '').trim()
   if (!url || props.loading) return
   isHistoryOpen.value = false
+  selectedIndex.value = -1
   addUrlHistory(url)
   if (overrideUrl) emit('update:modelValue', overrideUrl)
   emit('submit')
@@ -163,8 +166,45 @@ const selectHistoryUrl = (url: string) => {
   submitSingle(url)
 }
 
+const handleKeydown = (e: KeyboardEvent) => {
+  const total = filteredHistory.value.length
+
+  if (e.key === 'Tab') {
+    if (isHistoryOpen.value && total > 0) {
+      e.preventDefault()
+      if (e.shiftKey) {
+        selectedIndex.value = selectedIndex.value <= 0 ? total - 1 : selectedIndex.value - 1
+      } else {
+        selectedIndex.value = selectedIndex.value >= total - 1 ? 0 : selectedIndex.value + 1
+      }
+    }
+  } else if (e.key === 'ArrowDown') {
+    if (total > 0) {
+      e.preventDefault()
+      isHistoryOpen.value = true
+      selectedIndex.value = selectedIndex.value >= total - 1 ? 0 : selectedIndex.value + 1
+    }
+  } else if (e.key === 'ArrowUp') {
+    if (isHistoryOpen.value && total > 0) {
+      e.preventDefault()
+      selectedIndex.value = selectedIndex.value <= 0 ? total - 1 : selectedIndex.value - 1
+    }
+  } else if (e.key === 'Enter') {
+    if (isHistoryOpen.value && selectedIndex.value >= 0 && selectedIndex.value < total) {
+      e.preventDefault()
+      selectHistoryUrl(filteredHistory.value[selectedIndex.value])
+    } else {
+      submitSingle()
+    }
+  } else if (e.key === 'Escape') {
+    isHistoryOpen.value = false
+    selectedIndex.value = -1
+  }
+}
+
 const clearInput = () => {
   emit('update:modelValue', '')
+  selectedIndex.value = -1
   singleInputRef.value?.focus()
 }
 
@@ -230,8 +270,7 @@ const submitBatch = () => {
             @input="handleSingleInput"
             @focus="isHistoryOpen = true"
             @click="isHistoryOpen = true"
-            @keydown.enter="submitSingle()"
-            @keydown.esc="isHistoryOpen = false"
+            @keydown="handleKeydown"
           />
 
           <!-- Action Buttons Container (Right) -->
@@ -275,14 +314,22 @@ const submitBatch = () => {
             class="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl bg-white dark:bg-[#1E1E20] border border-zinc-200 dark:border-[#2E2E2E] shadow-xl overflow-hidden py-1 max-h-72 overflow-y-auto"
           >
             <div
-              v-for="item in filteredHistory"
+              v-for="(item, index) in filteredHistory"
               :key="item"
-              class="group px-3.5 py-2.5 flex items-center justify-between gap-3 hover:bg-zinc-100 dark:hover:bg-[#28282A] cursor-pointer transition-colors"
+              class="group px-3.5 py-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors"
+              :class="selectedIndex === index ? 'bg-zinc-100 dark:bg-[#28282A] text-[var(--text-primary)] ring-1 ring-inset ring-zinc-300 dark:ring-white/20' : 'hover:bg-zinc-100 dark:hover:bg-[#28282A]'"
+              @mouseenter="selectedIndex = index"
               @mousedown.prevent="selectHistoryUrl(item)"
             >
               <div class="flex items-center gap-2.5 min-w-0">
-                <Clock class="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 transition-colors" />
-                <span class="text-xs font-mono text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors truncate">
+                <Clock
+                  class="w-4 h-4 shrink-0 transition-colors"
+                  :class="selectedIndex === index ? 'text-zinc-700 dark:text-zinc-200' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'"
+                />
+                <span
+                  class="text-xs font-mono transition-colors truncate"
+                  :class="selectedIndex === index ? 'text-[var(--text-primary)] font-medium' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'"
+                >
                   {{ item }}
                 </span>
               </div>
@@ -298,9 +345,16 @@ const submitBatch = () => {
               </button>
             </div>
 
-            <!-- Popover Footer: Clear All -->
+            <!-- Popover Footer: Clear All & Keyboard Hint -->
             <div class="pt-1 mt-1 border-t border-zinc-100 dark:border-[#28282A] px-3.5 py-1.5 flex items-center justify-between text-[11px] font-mono text-[var(--text-tertiary)]">
-              <span>{{ t.recentDownloads || 'Recent URLs' }}</span>
+              <div class="flex items-center gap-2">
+                <span>{{ t.recentDownloads || 'Recent URLs' }}</span>
+                <span class="hidden sm:inline-flex items-center gap-1 text-[10px] text-[var(--text-tertiary)] opacity-70">
+                  <kbd class="px-1 py-0.2 rounded bg-zinc-100 dark:bg-black/30 border border-zinc-200 dark:border-white/10 font-mono">Tab</kbd>
+                  <kbd class="px-1 py-0.2 rounded bg-zinc-100 dark:bg-black/30 border border-zinc-200 dark:border-white/10 font-mono">↓</kbd>
+                  <span>select</span>
+                </span>
+              </div>
               <button
                 type="button"
                 class="hover:text-rose-500 transition-colors cursor-pointer text-[10px]"

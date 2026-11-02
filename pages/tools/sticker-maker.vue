@@ -32,6 +32,7 @@ import Card from '~/components/ui/Card.vue'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
 import Input from '~/components/ui/Input.vue'
+import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
 import { createWhatsAppStickerBlob, type WhatsAppStickerMetadata } from '~/utils/whatsappSticker'
 
 useHead({
@@ -95,13 +96,6 @@ const emojiTags = ref<string>('🔥, 😎')
 
 // Target Format
 const targetFormat = ref<'whatsapp' | 'telegram' | 'png'>('whatsapp')
-
-// Quick Sample Images (Distinct Real Assets)
-const sampleImages = [
-  { name: 'Mio Mascot', url: '/mio.png' },
-  { name: 'Mio 404 Scene', url: '/mio-404-scene.webp' },
-  { name: 'Editorial Card', url: '/og-image-editorial.png' }
-]
 
 // URL Input & Clipboard Paste State
 const imageUrlInput = ref('')
@@ -248,11 +242,6 @@ const pasteFromClipboard = async () => {
   } catch (err) {
     toast.error('Clipboard Access', 'Use Ctrl+V / ⌘V to paste directly')
   }
-}
-
-// Load Distinct Sample Asset
-const loadSample = (url: string) => {
-  fetchImageFromUrl(url)
 }
 
 // Auto Fit Image into 512x512 with 24px safe padding
@@ -665,11 +654,11 @@ onUnmounted(() => {
       @change="handleFileSelect"
     />
 
-    <!-- Breadcrumb -->
-    <div class="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
+    <!-- Breadcrumbs -->
+    <div class="flex items-center gap-2 text-xs text-[var(--text-tertiary)] font-mono">
       <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">Dashboard</NuxtLink>
       <span>/</span>
-      <NuxtLink to="/" class="hover:text-[var(--text-primary)] transition-colors">{{ t.clientUtilities }}</NuxtLink>
+      <span class="text-[var(--text-secondary)] font-medium">Image & Design</span>
       <span>/</span>
       <span class="text-[var(--text-primary)]">{{ t.tools['sticker-maker']?.title || 'Sticker Studio' }}</span>
     </div>
@@ -689,60 +678,23 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- URL Omnibox & Paste Clipboard Control -->
+    <!-- URL Omnibox (DESIGN.md Section 11) -->
     <div class="space-y-3">
-      <form @submit.prevent="fetchImageFromUrl()" class="flex flex-col sm:flex-row items-center gap-2.5">
-        <div class="relative w-full flex-1 flex items-center">
-          <LinkIcon class="w-4 h-4 text-[var(--text-secondary)] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            v-model="imageUrlInput"
-            type="url"
-            placeholder="Paste image URL (https://...) or press Ctrl+V anywhere..."
-            class="w-full h-11 pl-10 bg-white dark:bg-[#171717] hover:bg-zinc-50 dark:hover:bg-[#1a1a1c] border border-zinc-200 dark:border-[#2E2E2E] focus:border-zinc-400 dark:focus:border-white/40 text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 rounded-xl text-xs font-mono transition-all focus:outline-none focus:ring-2 focus:ring-zinc-400/20 dark:focus:ring-white/10"
-            :class="imageUrlInput ? 'pr-20' : 'pr-12'"
-          />
-          <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <button
-              v-if="imageUrlInput"
-              type="button"
-              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10"
-              title="Clear input"
-              @click="imageUrlInput = ''"
-            >
-              <X class="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              class="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10"
-              title="Paste from clipboard"
-              @click="pasteFromClipboard"
-            >
-              <Clipboard class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <Button
-          type="submit"
-          variant="secondary"
-          class="w-full sm:w-auto h-11 px-5 rounded-xl font-medium text-xs shrink-0 cursor-pointer"
-          :disabled="!imageUrlInput.trim() || isFetchingUrl"
-          :loading="isFetchingUrl"
-        >
-          <ArrowRight class="w-3.5 h-3.5 mr-1.5" />
-          <span>{{ isFetchingUrl ? 'Fetching...' : 'Load URL' }}</span>
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          class="w-full sm:w-auto h-11 px-4 rounded-xl font-medium text-xs shrink-0 cursor-pointer"
-          @click="pasteFromClipboard"
-        >
-          <Clipboard class="w-3.5 h-3.5 mr-1.5" />
-          <span>Paste Image</span>
-        </Button>
-      </form>
+      <UrlOmnibar
+        id="sticker-url-input"
+        v-model="imageUrlInput"
+        :loading="isFetchingUrl"
+        storage-key="avttr_sticker_history"
+        placeholder="Paste image URL (https://...) or press Ctrl+V anywhere..."
+        :submit-text="isFetchingUrl ? 'Fetching...' : 'Load URL'"
+        :submit-icon="ArrowRight"
+        @submit="fetchImageFromUrl()"
+        @clear="imageUrlInput = ''"
+      >
+        <template #leading>
+          <LinkIcon class="w-4 h-4" />
+        </template>
+      </UrlOmnibar>
 
       <!-- Standard Upload Dropzone (DESIGN.md Section 10) -->
       <div
@@ -763,20 +715,6 @@ onUnmounted(() => {
         <p class="text-xs text-[var(--text-secondary)] mt-1">
           Supports PNG, JPG, WebP up to 10MB. 100% processed client-side.
         </p>
-
-        <!-- Quick Sample Buttons -->
-        <div class="mt-4 flex items-center justify-center gap-2 flex-wrap" @click.stop>
-          <span class="text-xs text-[var(--text-secondary)]">Or try sample:</span>
-          <button
-            v-for="sample in sampleImages"
-            :key="sample.name"
-            type="button"
-            class="px-2.5 py-1 text-xs rounded-lg border border-zinc-200 dark:border-[#2E2E2E] bg-zinc-100 dark:bg-[#1E1E1E] text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-[#2A2A2A] hover:border-zinc-300 dark:hover:border-[#4E4E4E] transition-colors cursor-pointer"
-            @click="loadSample(sample.url)"
-          >
-            {{ sample.name }}
-          </button>
-        </div>
       </div>
 
       <!-- AI Cutout Engine & Model Notice (Unboxed Minimalist) -->
