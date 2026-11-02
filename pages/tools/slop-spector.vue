@@ -562,8 +562,8 @@ const analyzeImagePixels = (imgSrc: string, filename: string) => {
         score: Math.min(95, scoreAcc),
         verdictId: scoreAcc > 45 ? 'ai-residue' : 'mostly-human',
         verdictLabel: scoreAcc > 45
-          ? (isIndo ? 'Aroma AI Tercium Kuat' : 'Strong AI Vibe Detected')
-          : (isIndo ? 'Tampilan Standar' : 'Mostly Clean'),
+          ? (isIndo ? 'Isinya masih modal vibes sama kata-kata template doang' : 'A lot of the copy still runs on pure vibes and buzzwords')
+          : (isIndo ? 'Beneran dibikin manusia sih ini, masih kecium aroma kopinya' : 'A human was here. We can smell the coffee.'),
         findings: mockFindings,
         credits: [],
         stats: {
@@ -921,8 +921,8 @@ const copyActionPlan = async () => {
               </span>
             </div>
 
-            <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)] capitalize">
-              {{ roastData?.verdict || inspection.verdictLabel }}
+            <h2 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              {{ inspection.verdictLabel }}
             </h2>
           </div>
 
@@ -1239,6 +1239,13 @@ const copyActionPlan = async () => {
 
         <!-- Roasting Points List -->
         <div v-else class="space-y-4">
+          <!-- AI Verdict Punchline Headline -->
+          <div v-if="roastData?.verdict" class="pb-1">
+            <h4 class="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)] capitalize">
+              “{{ roastData.verdict }}”
+            </h4>
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-1">
             <div
               v-for="(r, idx) in formattedRoasts"

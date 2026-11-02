@@ -1533,13 +1533,48 @@ export default defineEventHandler(async (event) => {
   )
 
   const VERDICTS = [
-    { max: 12, id: 'clean', en: 'Okay, you actually have taste', idLabel: 'Oke, lu emang beneran punya taste' },
-    { max: 25, id: 'mostly-human', en: 'A human was here. We can smell the coffee.', idLabel: 'Beneran dibikin manusia. Aroma kopinya kecium.' },
-    { max: 40, id: 'suspicious', en: 'Mostly human. Mildly suspicious.', idLabel: 'Mayoritas karya manusia. Agak mencurigakan dikit.' },
-    { max: 55, id: 'ai-residue', en: 'The AI is starting to show', idLabel: 'Aroma AI mulai tercium pekat' },
-    { max: 70, id: 'prompt-residue', en: 'Prompt residue detected', idLabel: 'Residu prompt terdeteksi di mana-mana' },
-    { max: 85, id: 'vercel-cousins', en: 'This site has 200 cousins on Vercel', idLabel: 'Website ini punya 200 sepupu kembar di Vercel' },
-    { max: 101, id: 'slop-terminal', en: 'Bro just prompted and prayed', idLabel: 'Beneran cuma modal prompt terus pasrah' }
+    {
+      max: 12,
+      id: 'clean',
+      en: 'Okay, you actually have taste',
+      idLabel: 'Okay, you actually have taste'
+    },
+    {
+      max: 25,
+      id: 'mostly-human',
+      en: 'A human was here. We can smell the coffee.',
+      idLabel: 'Beneran dibikin manusia sih ini, masih kecium aroma kopinya'
+    },
+    {
+      max: 40,
+      id: 'suspicious',
+      en: 'Mostly handmade, but we have some questions',
+      idLabel: 'Mayoritas buatan tangan, tapi ada beberapa bagian yang mencurigakan'
+    },
+    {
+      max: 55,
+      id: 'ai-residue',
+      en: 'A lot of the copy still runs on pure vibes and buzzwords',
+      idLabel: 'Isinya masih modal vibes sama kata-kata template doang'
+    },
+    {
+      max: 70,
+      id: 'prompt-residue',
+      en: 'The layout smells like an AI template',
+      idLabel: 'Bau-bau AI template nih...'
+    },
+    {
+      max: 85,
+      id: 'vercel-cousins',
+      en: 'Seen this exact template a thousand times this week',
+      idLabel: 'Yaelah template ini lagi, udah seminggu lewat terus di sosmed'
+    },
+    {
+      max: 101,
+      id: 'slop-terminal',
+      en: "Beneran cuma modal prompt terus pasrah (Doesn't have taste)",
+      idLabel: 'Minimal maksimal punya taste design lah bre, gak modal prompt doang'
+    }
   ]
 
   const matchedVerdict = VERDICTS.find((v) => finalScore <= v.max) || VERDICTS[VERDICTS.length - 1]
