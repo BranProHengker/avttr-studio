@@ -55,8 +55,8 @@ const TEMPLATE_HEADINGS = [
 // 4. Stock Domains & Fake Avatars
 const STOCK_DOMAINS = /images\.unsplash\.com|plus\.unsplash\.com|source\.unsplash\.com|images\.pexels\.com|cdn\.pixabay\.com|placeholder\.svg|via\.placeholder\.com|placehold\.(co|it)|picsum\.photos|randomuser\.me|i\.pravatar\.cc|ui-avatars\.com|dummyimage\.com|loremflickr/
 
-// 5. Common Standard Fonts (Termasuk JetBrains Mono & Plus Jakarta Sans)
-const COMMON_FONTS = /^(inter|inter var|inter tight|geist|geist sans|geist mono|poppins|roboto|open sans|montserrat|lato|plus jakarta sans|dm sans|manrope|nunito|raleway|playfair display|space grotesk|outfit|system-ui|sans-serif|serif|monospace|arial|helvetica|helvetica neue|-apple-system|blinkmacsystemfont|segoe ui|ui-sans-serif|ui-serif|ui-monospace|apple color emoji|segoe ui emoji|segoe ui symbol|noto color emoji|noto sans|times|times new roman|georgia|menlo|monaco|consolas|courier|courier new|sf mono|sfmono-regular|liberation mono|cambria|jetbrains mono|fira code|cascadia code|syne|sora|inherit|initial|emoji|math|fangsong|cursive)$/
+// 5. Common Standard Fonts (Termasuk JetBrains Mono, Plus Jakarta Sans di-whitelist)
+const COMMON_FONTS = /^(inter|inter var|inter tight|geist|geist sans|geist mono|poppins|roboto|open sans|montserrat|lato|dm sans|manrope|nunito|raleway|playfair display|space grotesk|outfit|system-ui|sans-serif|serif|monospace|arial|helvetica|helvetica neue|-apple-system|blinkmacsystemfont|segoe ui|ui-sans-serif|ui-serif|ui-monospace|apple color emoji|segoe ui emoji|segoe ui symbol|noto color emoji|noto sans|times|times new roman|georgia|menlo|monaco|consolas|courier|courier new|sf mono|sfmono-regular|liberation mono|cambria|jetbrains mono|fira code|cascadia code|syne|sora|inherit|initial|emoji|math|fangsong|cursive)$/
 
 const clip = (s: string, max = 110) => {
   const clean = (s || '').replace(/\s+/g, ' ').trim()
@@ -1117,16 +1117,38 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  // Fonts Inspection (Termasuk Google Fonts Link & CSS declarations)
+  // Fonts Inspection (Hanya prioritaskan primary/first-font, abaikan fallback cadangan)
   const fontFamilies = new Set<string>()
-  for (const m of html.matchAll(/font-family\s*:\s*([^;}{"'>]+)/gi)) {
-    m[1].split(',').forEach((f) => fontFamilies.add(f.replace(/["'()!]|important/g, '').trim().toLowerCase()))
+
+  // 1. Ekstrak deklarasi font-family dari selektor root/body/main terlebih dahulu
+  const rootBodyStyles = html.match(/(?:body|html|:root|\.font-sans)[\s\S]*?\{([^}]+)\}/gi) || []
+  for (const block of rootBodyStyles) {
+    for (const m of block.matchAll(/font-family\s*:\s*([^;}{"'>]+)/gi)) {
+      const firstInStack = m[1].split(',')[0]?.replace(/["'()!]|important/g, '').trim().toLowerCase()
+      if (firstInStack && !firstInStack.startsWith('var(') && !firstInStack.startsWith('__')) {
+        fontFamilies.add(firstInStack)
+      }
+    }
   }
-  for (const m of html.matchAll(/fonts\.googleapis\.com\/css2?\?family=([^"'&]+)/gi)) {
-    decodeURIComponent(m[1]).split('|').forEach((f) => {
-      const familyName = f.split(':')[0].replace(/\+/g, ' ').trim().toLowerCase()
-      fontFamilies.add(familyName)
-    })
+
+  // 2. Jika tidak ditemukan deklarasi spesifik di root/body, scan deklarasi font-family umum (tetap ambil first-font saja)
+  if (fontFamilies.size === 0) {
+    for (const m of html.matchAll(/font-family\s*:\s*([^;}{"'>]+)/gi)) {
+      const firstInStack = m[1].split(',')[0]?.replace(/["'()!]|important/g, '').trim().toLowerCase()
+      if (firstInStack && !firstInStack.startsWith('var(') && !firstInStack.startsWith('__')) {
+        fontFamilies.add(firstInStack)
+      }
+    }
+  }
+
+  // 3. Fallback ke Google Fonts link HANYA jika belum ada font sama sekali dari CSS
+  if (fontFamilies.size === 0) {
+    for (const m of html.matchAll(/fonts\.googleapis\.com\/css2?\?family=([^"'&]+)/gi)) {
+      decodeURIComponent(m[1]).split('|').forEach((f) => {
+        const familyName = f.split(':')[0].replace(/\+/g, ' ').trim().toLowerCase()
+        if (familyName) fontFamilies.add(familyName)
+      })
+    }
   }
 
   const realFonts = [...fontFamilies].filter(
@@ -1148,7 +1170,7 @@ export default defineEventHandler(async (event) => {
     )
   } else {
     const defaultFontFound = realFonts.find((f) =>
-      /^(inter|poppins|montserrat|plus jakarta sans|dm sans|roboto|open sans|playfair display|jetbrains mono|fira code)$/i.test(f)
+      /^(inter|poppins|montserrat|dm sans|roboto|open sans|playfair display|jetbrains mono|fira code)$/i.test(f)
     )
     if (defaultFontFound) {
       add(
@@ -1164,7 +1186,7 @@ export default defineEventHandler(async (event) => {
           : 'Not proof on its own, but every generator defaults to the same developer font stack.',
         [`font-family: ${defaultFontFound}`],
         isIndo
-          ? 'Ganti font template (Inter/Poppins) dengan font yang cocok sama jenis produk lu.'
+          ? 'Ganti font template (Inter/Roboto) dengan font yang cocok sama jenis produk lu.'
           : 'Pick a typeface suited to your product rather than default Inter or Roboto.'
       )
     }
