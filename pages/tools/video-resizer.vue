@@ -35,7 +35,6 @@ import {
 import { useToast } from '~/composables/useToast'
 import { useI18n } from '~/composables/useI18n'
 import Button from '~/components/ui/Button.vue'
-import Card from '~/components/ui/Card.vue'
 import Badge from '~/components/ui/Badge.vue'
 import UrlOmnibar from '~/components/ui/UrlOmnibar.vue'
 
@@ -380,23 +379,66 @@ function togglePlay() {
   }
 }
 
-function previewTrimSelection() {
-  if (!videoElementRef.value) return
-  videoElementRef.value.currentTime = startTime.value
-  isPreviewingTrim.value = true
-  videoElementRef.value.play().catch(() => {})
-  isPlaying.value = true
-}
-
 function seekTo(seconds: number) {
   if (!videoElementRef.value) return
   videoElementRef.value.currentTime = Math.max(0, Math.min(totalDuration.value, seconds))
 }
 
+const isDraggingTrim = ref<'start' | 'end' | null>(null)
+
+function startTrimDrag(handle: 'start' | 'end', e: MouseEvent | TouchEvent) {
+  if (totalDuration.value <= 0) return
+  isDraggingTrim.value = handle
+
+  const getClientX = (evt: MouseEvent | TouchEvent): number => {
+    if ('touches' in evt && evt.touches.length > 0 && evt.touches[0]) {
+      return evt.touches[0].clientX
+    }
+    return (evt as MouseEvent).clientX
+  }
+
+  const updateHandle = (evt: MouseEvent | TouchEvent) => {
+    if (!timelineContainerRef.value || !isDraggingTrim.value) return
+    const rect = timelineContainerRef.value.getBoundingClientRect()
+    if (rect.width <= 0) return
+    const clientX = getClientX(evt)
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    const targetSeconds = ratio * totalDuration.value
+
+    if (isDraggingTrim.value === 'start') {
+      const clamped = Math.max(0, Math.min(endTime.value - 0.2, targetSeconds))
+      startTime.value = Number(clamped.toFixed(1))
+      seekTo(startTime.value)
+    } else if (isDraggingTrim.value === 'end') {
+      const clamped = Math.max(startTime.value + 0.2, Math.min(totalDuration.value, targetSeconds))
+      endTime.value = Number(clamped.toFixed(1))
+      seekTo(endTime.value)
+    }
+  }
+
+  const onMove = (moveEvt: MouseEvent | TouchEvent) => {
+    moveEvt.preventDefault()
+    updateHandle(moveEvt)
+  }
+
+  const onEnd = () => {
+    isDraggingTrim.value = null
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onEnd)
+    window.removeEventListener('touchmove', onMove)
+    window.removeEventListener('touchend', onEnd)
+  }
+
+  window.addEventListener('mousemove', onMove, { passive: false })
+  window.addEventListener('mouseup', onEnd)
+  window.addEventListener('touchmove', onMove, { passive: false })
+  window.addEventListener('touchend', onEnd)
+}
+
 function onTimelineClick(e: MouseEvent) {
-  const target = e.currentTarget as HTMLElement | null
-  if (!target || !totalDuration.value) return
-  const rect = target.getBoundingClientRect()
+  if (isDraggingTrim.value) return
+  if (!timelineContainerRef.value || !totalDuration.value) return
+  const rect = timelineContainerRef.value.getBoundingClientRect()
   const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
   seekTo(pct * totalDuration.value)
 }
@@ -1217,199 +1259,235 @@ onUnmounted(() => {
 
     <!-- Mode 1: Single Studio (Player + Trimmer + Inspector) -->
     <div v-else-if="mode === 'single' && videoUrl" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      <!-- Left Column: Unified Media Canvas & Timeline Trimmer (7 cols) -->
-      <Card class="lg:col-span-7 space-y-4 p-4 sm:p-5">
-        <!-- Top Canvas Info Bar -->
-        <div class="flex items-center justify-between gap-2 pb-2 border-b border-[var(--border-card)]">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-xs font-semibold text-[var(--text-primary)] truncate">{{ videoFile?.name || 'video.mp4' }}</span>
-            <Badge variant="outline" size="sm" class="font-mono text-[10px] shrink-0">
-              {{ videoNaturalWidth }}×{{ videoNaturalHeight }} • {{ formatFileSize(originalFileSize) }}
-            </Badge>
+      <!-- Left Column: Media Player & Integrated Timeline Trimmer (7 cols) -->
+      <div class="lg:col-span-7 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] rounded-xl overflow-hidden shadow-xs divide-y divide-zinc-200 dark:divide-[#262626]">
+        <!-- 1. Video Player Section -->
+        <div>
+          <!-- Top Info Bar -->
+          <div class="px-4 py-2.5 bg-zinc-50 dark:bg-[#18181A] border-b border-zinc-200 dark:border-[#262626] flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-xs font-semibold text-[var(--text-primary)] truncate">{{ videoFile?.name || 'video.mp4' }}</span>
+              <Badge variant="outline" size="sm" class="font-mono text-[10px] shrink-0">
+                {{ videoNaturalWidth }}×{{ videoNaturalHeight }} • {{ formatFileSize(originalFileSize) }}
+              </Badge>
+            </div>
+
+            <!-- Seamless Source vs Output Switcher -->
+            <div v-if="outputBlobUrl" class="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-[#2E2E2E] rounded-lg text-xs shrink-0">
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer"
+                :class="activePreviewMode === 'source' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
+                @click="activePreviewMode = 'source'"
+              >
+                Source
+              </button>
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer flex items-center gap-1"
+                :class="activePreviewMode === 'output' ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
+                @click="activePreviewMode = 'output'"
+              >
+                <span>Result</span>
+                <span v-if="sizeSavingsPercentage > 0" class="text-[10px] font-bold text-emerald-500">(-{{ sizeSavingsPercentage }}%)</span>
+              </button>
+            </div>
           </div>
 
-          <!-- Seamless Source vs Output Switcher -->
-          <div v-if="outputBlobUrl" class="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-[#2E2E2E] rounded-lg text-xs shrink-0">
-            <button
-              type="button"
-              class="px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer"
-              :class="activePreviewMode === 'source' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
-              @click="activePreviewMode = 'source'"
-            >
-              Source
-            </button>
-            <button
-              type="button"
-              class="px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer flex items-center gap-1"
-              :class="activePreviewMode === 'output' ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-xs' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'"
-              @click="activePreviewMode = 'output'"
-            >
-              <span>Result</span>
-              <span v-if="sizeSavingsPercentage > 0" class="text-[10px] font-bold text-emerald-500">(-{{ sizeSavingsPercentage }}%)</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Video Player Canvas -->
-        <div
-          ref="playerContainerRef"
-          class="relative aspect-video rounded-xl overflow-hidden bg-black flex items-center justify-center border border-[var(--border-card)] group select-none"
-        >
-          <video
-            ref="videoElementRef"
-            :src="activeVideoSrc"
-            playsinline
-            preload="metadata"
-            class="w-full h-full object-contain cursor-pointer"
-            @timeupdate="onTimeUpdate"
-            @loadedmetadata="onLoadedMetadata"
-            @play="isPlaying = true"
-            @pause="isPlaying = false"
+          <!-- Video Viewport -->
+          <div
+            ref="playerContainerRef"
+            class="relative aspect-video bg-black flex items-center justify-center overflow-hidden cursor-pointer select-none"
             @click="togglePlay"
-          />
-
-          <!-- Big Play Overlay when Paused -->
-          <button
-            v-if="!isPlaying && !isProcessing"
-            type="button"
-            class="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/60 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white hover:bg-black/80 transition-all cursor-pointer shadow-lg"
-            @click.stop="togglePlay"
           >
-            <Play class="w-6 h-6 ml-0.5" />
-          </button>
-
-          <!-- Current Mode Badge -->
-          <div class="absolute top-3 right-3 pointer-events-none">
-            <Badge :variant="activePreviewMode === 'output' ? 'primary' : 'secondary'" size="sm" class="shadow-xs">
-              {{ activePreviewMode === 'output' ? 'Result Preview' : 'Source Video' }}
-            </Badge>
-          </div>
-        </div>
-
-        <!-- Player Scrubber & Controls -->
-        <div class="p-3 bg-zinc-50/70 dark:bg-zinc-900/40 border border-[var(--border-card)] rounded-xl space-y-2">
-          <!-- Time Scrubber Slider -->
-          <div class="relative w-full flex items-center">
-            <input
-              type="range"
-              min="0"
-              :max="totalDuration || 100"
-              step="0.05"
-              :value="currentTime"
-              class="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-zinc-900 dark:accent-white"
-              @input="seekTo(Number(($event.target as HTMLInputElement).value))"
+            <video
+              ref="videoElementRef"
+              :src="activeVideoSrc"
+              playsinline
+              preload="metadata"
+              crossorigin="anonymous"
+              :muted="isMuted"
+              class="w-full h-full object-contain"
+              @loadedmetadata="onLoadedMetadata"
+              @timeupdate="onTimeUpdate"
+              @ended="isPlaying = false"
             />
           </div>
 
-          <!-- Bottom Micro-Controls -->
-          <div class="flex items-center justify-between gap-2 pt-1">
-            <div class="flex items-center gap-1.5">
-              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="togglePlay">
-                <component :is="isPlaying ? Pause : Play" class="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" title="Step backward 1s" @click="stepBackward(1)">
-                <RotateCcw class="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" title="Step forward 1s" @click="stepForward(1)">
-                <ArrowRight class="w-3.5 h-3.5" />
-              </Button>
-              <span class="text-xs font-mono text-[var(--text-secondary)] ml-1">
-                {{ formatPlayerTime(currentTime) }} / {{ formatPlayerTime(totalDuration) }}
-              </span>
+          <!-- Sleek Minimalist Integrated Player Control Bar -->
+          <div class="px-3.5 py-2.5 bg-zinc-100 dark:bg-[#121214] flex items-center gap-2.5 select-none">
+            <!-- Play / Pause -->
+            <button
+              type="button"
+              class="p-1 text-[var(--text-primary)] hover:opacity-80 transition-colors cursor-pointer shrink-0 flex items-center justify-center focus:outline-none"
+              :title="isPlaying ? 'Pause' : 'Play'"
+              @click="togglePlay"
+            >
+              <Play v-if="!isPlaying" class="w-4 h-4 fill-current text-current" />
+              <Pause v-else class="w-4 h-4 fill-current text-current" />
+            </button>
+
+            <!-- Interactive Scrubber Bar -->
+            <div
+              ref="scrubberBarRef"
+              class="relative flex-1 flex items-center h-5 cursor-pointer group/scrub"
+              @mousedown="startScrubbing"
+              @touchstart.passive="startTouchScrubbing"
+            >
+              <!-- Track -->
+              <div class="w-full h-1 bg-zinc-200 dark:bg-[#2E2E2E] group-hover/scrub:h-1.5 rounded-full relative overflow-hidden transition-all">
+                <!-- Progress Fill -->
+                <div
+                  class="h-full bg-zinc-900 dark:bg-white rounded-full transition-none"
+                  :style="{ width: `${progressPercent}%` }"
+                />
+              </div>
+
+              <!-- Circular Knob -->
+              <div
+                class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-zinc-900 dark:bg-white rounded-full shadow-md pointer-events-none transition-transform group-hover/scrub:scale-125"
+                :style="{ left: `${progressPercent}%` }"
+              />
             </div>
 
-            <div class="flex items-center gap-1.5">
-              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="toggleMute">
-                <component :is="isMuted ? VolumeX : Volume2" class="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="toggleFullscreen">
-                <component :is="isFullscreen ? Minimize : Maximize" class="w-4 h-4" />
-              </Button>
+            <!-- Time Display (0:01 / 0:31) -->
+            <div class="text-[11px] font-mono text-[var(--text-secondary)] shrink-0 whitespace-nowrap">
+              {{ formatPlayerTime(currentTime) }} / {{ formatPlayerTime(totalDuration) }}
             </div>
+
+            <!-- Mute Button -->
+            <button
+              type="button"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer shrink-0 focus:outline-none"
+              :title="isMuted ? 'Unmute' : 'Mute'"
+              @click="toggleMute"
+            >
+              <Volume2 v-if="!isMuted" class="w-4 h-4" />
+              <VolumeX v-else class="w-4 h-4 text-red-500" />
+            </button>
+
+            <!-- Fullscreen Button -->
+            <button
+              type="button"
+              class="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer shrink-0 focus:outline-none"
+              :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
+              @click="toggleFullscreen"
+            >
+              <Maximize v-if="!isFullscreen" class="w-4 h-4" />
+              <Minimize v-else class="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        <!-- Precision Trimmer Section -->
-        <div class="pt-2 border-t border-[var(--border-card)] space-y-3">
+        <!-- 2. Integrated Clip Trimmer Section -->
+        <div class="p-4 sm:p-5 space-y-3.5 bg-white dark:bg-[#141416]">
+          <!-- Trimmer Title Bar -->
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-              <Scissors class="w-4 h-4 text-[var(--text-secondary)]" />
-              <span class="text-xs font-semibold text-[var(--text-primary)]">Clip Trimmer</span>
-              <Badge variant="outline" size="sm" class="font-mono text-[10px]">
-                Duration: {{ formatPlayerTime(trimDuration) }}
-              </Badge>
+              <Scissors class="w-4 h-4 text-[var(--text-primary)]" />
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] font-mono">
+                Clip Trimmer
+              </h3>
             </div>
             <button
               v-if="startTime > 0 || endTime < totalDuration"
               type="button"
-              class="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              class="text-[11px] font-mono text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               @click="resetTrim"
             >
-              Reset Trim
+              Reset Full Duration
             </button>
           </div>
 
-          <!-- Interactive Timeline Track -->
+          <!-- Draggable Timeline Track -->
           <div
             ref="timelineContainerRef"
-            class="relative h-10 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl overflow-hidden border border-[var(--border-card)] cursor-pointer select-none"
+            class="relative h-12 sm:h-13 bg-zinc-100 dark:bg-[#1B1B1E] rounded-xl border border-zinc-200 dark:border-[#2E2E2E] overflow-hidden cursor-pointer select-none"
             @click="onTimelineClick"
           >
-            <!-- Selected Range Highlight -->
+            <!-- Filmstrip frame tick pattern -->
             <div
-              class="absolute top-0 bottom-0 bg-zinc-900/15 dark:bg-white/20 border-x-2 border-zinc-900 dark:border-white transition-none"
+              class="absolute inset-0 opacity-25 pointer-events-none"
+              style="background-image: repeating-linear-gradient(90deg, transparent, transparent 15px, rgba(160,160,160,0.18) 15px, rgba(160,160,160,0.18) 16px, transparent 16px, transparent 31px, rgba(160,160,160,0.35) 31px, rgba(160,160,160,0.35) 32px);"
+            />
+
+            <!-- Left Excluded Scrim (Dimmed) -->
+            <div
+              v-if="totalDuration > 0"
+              class="absolute top-0 bottom-0 left-0 bg-black/60 pointer-events-none z-10 transition-none"
+              :style="{ width: `${(startTime / totalDuration) * 100}%` }"
+            />
+
+            <!-- Right Excluded Scrim (Dimmed) -->
+            <div
+              v-if="totalDuration > 0"
+              class="absolute top-0 bottom-0 right-0 bg-black/60 pointer-events-none z-10 transition-none"
+              :style="{ width: `${Math.max(0, 100 - (endTime / totalDuration) * 100)}%` }"
+            />
+
+            <!-- Active Selected Range with Direct Drag Handles -->
+            <div
+              v-if="totalDuration > 0"
+              class="absolute top-0 bottom-0 border-y-2 border-zinc-900 dark:border-white bg-zinc-900/10 dark:bg-white/10 z-20 pointer-events-none transition-none"
               :style="{
-                left: `${totalDuration ? (startTime / totalDuration) * 100 : 0}%`,
-                width: `${totalDuration ? ((endTime - startTime) / totalDuration) * 100 : 100}%`
+                left: `${(startTime / totalDuration) * 100}%`,
+                width: `${Math.max(0, ((endTime - startTime) / totalDuration) * 100)}%`
               }"
-            />
+            >
+              <!-- Left Drag Handle (Start Cut) -->
+              <div
+                class="absolute top-0 bottom-0 left-0 w-4 bg-zinc-900 dark:bg-white rounded-l-md flex items-center justify-center cursor-ew-resize pointer-events-auto z-30 shadow-md select-none touch-none hover:brightness-110 active:brightness-125"
+                :title="`Start Cut: ${formatPlayerTime(startTime)}`"
+                @mousedown.stop.prevent="startTrimDrag('start', $event)"
+                @touchstart.stop.prevent="startTrimDrag('start', $event)"
+              >
+                <div class="flex items-center gap-0.5 pointer-events-none">
+                  <div class="w-0.5 h-3.5 bg-zinc-400 dark:bg-zinc-600 rounded-full" />
+                  <div class="w-0.5 h-3.5 bg-zinc-400 dark:bg-zinc-600 rounded-full" />
+                </div>
+              </div>
 
-            <!-- Current Playhead Indicator -->
-            <div
-              class="absolute top-0 bottom-0 w-0.5 bg-rose-500 pointer-events-none z-10"
-              :style="{ left: `${totalDuration ? (currentTime / totalDuration) * 100 : 0}%` }"
-            />
-          </div>
-
-          <!-- Numeric Fine-Tuning Steppers -->
-          <div class="grid grid-cols-2 gap-3">
-            <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900/40 border border-[var(--border-card)] rounded-xl space-y-1">
-              <label class="text-[10px] uppercase font-mono tracking-wider text-[var(--text-tertiary)]">Start Time</label>
-              <div class="flex items-center gap-2">
-                <input
-                  v-model.number="startTime"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  :max="endTime - 0.5"
-                  class="w-full bg-transparent text-xs font-mono font-medium text-[var(--text-primary)] focus:outline-none"
-                  @change="seekTo(startTime)"
-                />
-                <span class="text-[10px] font-mono text-[var(--text-tertiary)]">sec</span>
+              <!-- Right Drag Handle (End Cut) -->
+              <div
+                class="absolute top-0 bottom-0 right-0 w-4 bg-zinc-900 dark:bg-white rounded-r-md flex items-center justify-center cursor-ew-resize pointer-events-auto z-30 shadow-md select-none touch-none hover:brightness-110 active:brightness-125"
+                :title="`End Cut: ${formatPlayerTime(endTime)}`"
+                @mousedown.stop.prevent="startTrimDrag('end', $event)"
+                @touchstart.stop.prevent="startTrimDrag('end', $event)"
+              >
+                <div class="flex items-center gap-0.5 pointer-events-none">
+                  <div class="w-0.5 h-3.5 bg-zinc-400 dark:bg-zinc-600 rounded-full" />
+                  <div class="w-0.5 h-3.5 bg-zinc-400 dark:bg-zinc-600 rounded-full" />
+                </div>
               </div>
             </div>
 
-            <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900/40 border border-[var(--border-card)] rounded-xl space-y-1">
-              <label class="text-[10px] uppercase font-mono tracking-wider text-[var(--text-tertiary)]">End Time</label>
-              <div class="flex items-center gap-2">
-                <input
-                  v-model.number="endTime"
-                  type="number"
-                  step="0.1"
-                  :min="startTime + 0.5"
-                  :max="totalDuration"
-                  class="w-full bg-transparent text-xs font-mono font-medium text-[var(--text-primary)] focus:outline-none"
-                  @change="seekTo(endTime)"
-                />
-                <span class="text-[10px] font-mono text-[var(--text-tertiary)]">sec</span>
-              </div>
+            <!-- Red Playhead Needle -->
+            <div
+              v-if="totalDuration > 0"
+              class="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-25 pointer-events-none transition-none"
+              :style="{ left: `${(currentTime / totalDuration) * 100}%` }"
+            >
+              <div class="w-2 h-2 rounded-full bg-rose-500 -ml-[3px] -mt-0.5 shadow-xs" />
+            </div>
+          </div>
+
+          <!-- Trim Timestamps (Clean, minimal, no extra buttons or sliders) -->
+          <div class="flex items-center justify-between text-[11px] font-mono text-[var(--text-tertiary)] pt-0.5 select-none">
+            <div>
+              Start Cut: <span class="text-[var(--text-primary)] font-semibold">{{ formatPlayerTime(startTime) }} ({{ startTime.toFixed(1) }}s)</span>
+            </div>
+            <div class="text-[var(--text-secondary)]">
+              Trimmed Duration: <span class="text-[var(--text-primary)] font-semibold">{{ formatPlayerTime(trimDuration) }}</span>
+            </div>
+            <div>
+              End Cut: <span class="text-[var(--text-primary)] font-semibold">{{ formatPlayerTime(endTime) }} ({{ endTime.toFixed(1) }}s)</span>
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       <!-- Right Column: Studio Inspector (5 cols) -->
-      <Card class="lg:col-span-5 space-y-5 p-4 sm:p-5">
+      <div class="lg:col-span-5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] rounded-xl p-4 sm:p-5 shadow-xs space-y-5">
         <!-- Inspector Header -->
         <div class="pb-2 border-b border-[var(--border-card)]">
           <h2 class="text-sm font-semibold text-[var(--text-primary)]">Export Settings</h2>
@@ -1580,13 +1658,13 @@ onUnmounted(() => {
             <span>Process & Resize Video</span>
           </Button>
         </div>
-      </Card>
+      </div>
     </div>
 
     <!-- Mode 2: Batch Queue Processing -->
     <div v-else-if="mode === 'batch'" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       <!-- Left: Batch Presets (5 cols) -->
-      <Card class="lg:col-span-5 space-y-4 p-4 sm:p-5">
+      <div class="lg:col-span-5 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
         <div class="pb-2 border-b border-[var(--border-card)]">
           <h2 class="text-sm font-semibold text-[var(--text-primary)]">Batch Settings</h2>
           <p class="text-xs text-[var(--text-secondary)] mt-0.5">Settings applied to all queued videos</p>
@@ -1645,10 +1723,10 @@ onUnmounted(() => {
             <span>Process {{ queue.length }} Videos</span>
           </Button>
         </div>
-      </Card>
+      </div>
 
       <!-- Right: Queue List (7 cols) -->
-      <Card class="lg:col-span-7 space-y-4 p-4 sm:p-5">
+      <div class="lg:col-span-7 bg-white dark:bg-[#141416] border border-zinc-200 dark:border-[#262626] rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
         <div class="flex items-center justify-between pb-2 border-b border-[var(--border-card)]">
           <div class="flex items-center gap-2">
             <h2 class="text-sm font-semibold text-[var(--text-primary)]">Queue List</h2>
@@ -1728,7 +1806,7 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   </div>
 </template>
