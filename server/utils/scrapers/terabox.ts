@@ -77,7 +77,7 @@ export const teraboxScraper: PlatformScraper = {
   },
 
   async resolve(url: string): Promise<ScraperResult> {
-    const { shortUrl } = extractSurl(url)
+    const { surlParam, shortUrl } = extractSurl(url)
     const userCookie = process.env.TERABOX_COOKIE || process.env.COOKIE_JSON || process.env.NDUS_COOKIE || ''
 
     let lastErrorMsg = ''
@@ -93,8 +93,35 @@ export const teraboxScraper: PlatformScraper = {
           headers['Cookie'] = userCookie.includes('=') ? userCookie : `ndus=${userCookie}`
         }
 
-        const listRes = await fetch(`https://www.1024tera.com/share/list?app_id=250528&shorturl=${shortUrl}&root=1`, {
-          headers,
+        // 1. Extract dynamic jsToken from sharing page to obtain direct 'dlink' CDN URLs
+        let jsToken = ''
+        try {
+          const pageRes = await fetch(`https://dm.terabox.app/sharing/link?surl=${surlParam}`, {
+            headers: {
+              ...headers,
+              'Referer': 'https://dm.terabox.app/',
+            },
+            signal: AbortSignal.timeout(6000),
+          })
+          if (pageRes.ok) {
+            const html = await pageRes.text()
+            const match = html.match(/fn%28%22(.*?)%22%29/)
+            if (match && match[1]) {
+              jsToken = match[1]
+            }
+          }
+        } catch {}
+
+        const listApiHost = jsToken ? 'dm.terabox.app' : 'www.1024tera.com'
+        const listUrl = jsToken
+          ? `https://${listApiHost}/share/list?app_id=250528&jsToken=${jsToken}&shorturl=${shortUrl}&root=1`
+          : `https://${listApiHost}/share/list?app_id=250528&shorturl=${shortUrl}&root=1`
+
+        const listRes = await fetch(listUrl, {
+          headers: {
+            ...headers,
+            'Referer': `https://${listApiHost}/sharing/link?surl=${shortUrl}`,
+          },
           signal: AbortSignal.timeout(8000),
         })
 
@@ -123,8 +150,15 @@ export const teraboxScraper: PlatformScraper = {
               visited.add(currentDir)
 
               try {
-                const subRes = await fetch(`https://www.1024tera.com/share/list?app_id=250528&shorturl=${shortUrl}&dir=${encodeURIComponent(currentDir)}`, {
-                  headers,
+                const subUrl = jsToken
+                  ? `https://${listApiHost}/share/list?app_id=250528&jsToken=${jsToken}&shorturl=${shortUrl}&dir=${encodeURIComponent(currentDir)}`
+                  : `https://${listApiHost}/share/list?app_id=250528&shorturl=${shortUrl}&dir=${encodeURIComponent(currentDir)}`
+
+                const subRes = await fetch(subUrl, {
+                  headers: {
+                    ...headers,
+                    'Referer': `https://${listApiHost}/sharing/link?surl=${shortUrl}`,
+                  },
                   signal: AbortSignal.timeout(6000),
                 })
                 if (subRes.ok) {
