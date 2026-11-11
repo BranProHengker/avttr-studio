@@ -78,6 +78,7 @@ Every tool in this section runs entirely in the browser using WebAssembly, the C
 - **Link Bypasser & Redirect Tracer**: trace complete HTTP redirect chains, bypass shortener link hops, and strip marketing tracking parameters (UTM, igsh).
 - **Web Security Header Inspector**: audit HTTP security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy) and generate remediation snippets.
 - **Base64 & Hash Studio**: encode files to Base64 and compute SHA-256 / SHA-512 cryptographic hashes using the native Web Crypto API.
+- **JSON Studio & Visualizer**: convert JSON to TypeScript (`interface`/`type`), Zod Schema, Go Struct, Rust Struct, and Python (Pydantic), or explore payloads with interactive 2D node graphs and searchable tree views.
 - **PairDrop**: direct, encrypted peer-to-peer file sharing between devices on the same local network using WebRTC without cloud storage.
 - **Doc to Markdown**: convert documents and screenshots into structured GitHub Markdown.
 - **LRC Lyrics Studio**: generate synchronized .lrc lyrics with LRCLIB integration and automatic Romaji transliteration for Japanese tracks.
@@ -302,6 +303,7 @@ Semua tool di kategori ini diproses langsung di browser menggunakan WebAssembly,
 - **Link Bypasser & Redirect Tracer**: telusuri rantai pengalihan HTTP lengkap, lewati pemendek URL iklan (seperti linkvertise atau adfly), dan bersihkan parameter pelacak (UTM, igsh).
 - **Web Security Header Inspector**: analisis konfigurasi header keamanan HTTP (CSP, HSTS, X-Frame-Options, Permissions-Policy) dengan rekomendasi cuplikan konfigurasi server.
 - **Base64 & Hash Studio**: konversi berkas ke Base64 serta hitung hash kriptografi SHA-256 dan SHA-512 menggunakan Web Crypto API asli browser.
+- **JSON Studio & Visualizer**: konversi JSON ke tipe TypeScript (`interface`/`type`), Zod Schema, Go Struct, Rust Struct, dan Python (Pydantic), serta eksplorasi data payload via diagram node visual 2D dan tree view interaktif.
 - **PairDrop**: transfer berkas peer-to-peer antar perangkat dalam satu jaringan lokal via WebRTC terenkripsi tanpa perantara penyimpanan server.
 - **Doc to Markdown**: ekstraksi berkas dokumen dan tangkapan layar menjadi teks terstruktur GitHub Markdown.
 - **LRC Lyrics Studio**: generator lirik lagu tersinkronisasi (.lrc) dengan database LRCLIB dan transliterasi romaji otomatis untuk lagu berbahasa Jepang.

@@ -115,6 +115,7 @@ const isCategoryActive = (category: string) => {
       '/tools/svg-optimizer',
       '/tools/code-to-image',
       '/tools/hash-encoder',
+      '/tools/json-studio',
     ].includes(route.path)
   }
   if (category === 'design') {
@@ -206,6 +207,7 @@ const radialCategories = computed<Record<string, { title: string, items: RadialI
       { path: '/tools/svg-optimizer', label: 'SVG Optimizer', iconComponent: FileCode },
       { path: '/tools/code-to-image', label: 'Code to Image', iconComponent: Code2 },
       { path: '/tools/hash-encoder', label: 'Hash Encoder', iconComponent: Hash },
+      { path: '/tools/json-studio', label: 'JSON Studio', iconComponent: Code2 },
     ],
   },
   'design': {

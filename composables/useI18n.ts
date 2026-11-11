@@ -374,6 +374,10 @@ const translations: Record<Locale, Translations> = {
         title: 'SlopSpector',
         description: 'Forensic detector for AI slop and generator fingerprints. Audits buzzwords, default Shadcn tokens, and roasts websites.',
       },
+      'json-studio': {
+        title: 'JSON Studio & Visualizer',
+        description: 'Convert JSON to TypeScript, Zod, Go, Rust, and Python, or explore payloads with interactive visual node graphs.',
+      },
     },
   },
   id: {
@@ -635,6 +639,10 @@ const translations: Record<Locale, Translations> = {
       'slop-spector': {
         title: 'SlopSpector',
         description: 'Forensik jejak dosa generator AI di balik website. Deteksi buzzwords, token Shadcn bawaan, dan roasting hasil audit.',
+      },
+      'json-studio': {
+        title: 'JSON Studio & Visualizer',
+        description: 'Ubah JSON ke tipe TypeScript, Zod, Go, Rust, dan Python, atau eksplorasi data dengan grafik node visual interaktif.',
       },
     },
   },
