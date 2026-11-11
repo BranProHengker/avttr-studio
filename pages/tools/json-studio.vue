@@ -165,10 +165,20 @@ const selectedGraphNode = ref<GraphNode | null>(null)
 
 // Tree Explorer State
 const treeSearchQuery = ref<string>('')
-const collapsedTreePaths = ref<Set<string>>(new Set())
+const collapsedNodeIds = ref<Record<string, boolean>>({})
 
 // Update JSON state & trigger downstream parsers
 function onJsonChange() {
+  if (!jsonInput.value.trim()) {
+    parsedJson.value = null
+    graphData.value = { nodes: [], edges: [] }
+    jsonStats.value = { totalKeys: 0, depth: 0, byteSize: 0, arrayCount: 0, objectCount: 0, primitiveCount: 0 }
+    validationError.value = 'Input is empty'
+    errorLine.value = null
+    errorCol.value = null
+    return
+  }
+
   const check = validateJson(jsonInput.value)
   if (check.valid) {
     parsedJson.value = check.data
@@ -178,6 +188,7 @@ function onJsonChange() {
     errorCol.value = null
     updateGraph()
   } else {
+    parsedJson.value = null
     validationError.value = check.error || 'Syntax error'
     errorLine.value = check.line || null
     errorCol.value = check.col || null
@@ -244,11 +255,16 @@ function attemptAutoFix() {
 function clearEditor() {
   jsonInput.value = ''
   parsedJson.value = null
+  graphData.value = { nodes: [], edges: [] }
+  selectedGraphNode.value = null
   validationError.value = 'Input is empty'
 }
 
 // ─── Generated Code Computation ───────────────────────────────────────
 const generatedCode = computed<string>(() => {
+  if (validationError.value && validationError.value !== 'Input is empty') {
+    return `// ⚠️ Cannot generate types: JSON syntax error\n// ${validationError.value}`
+  }
   if (!parsedJson.value) return '// Paste valid JSON to generate types'
   const options = {
     rootName: rootTypeName.value || 'Root',
@@ -395,32 +411,46 @@ async function copyJsonPath(path: string) {
 }
 
 // ─── Tree Explorer Filtering & Collapsing ─────────────────────────────
-function toggleTreeCollapse(path: string) {
-  if (collapsedTreePaths.value.has(path)) {
-    collapsedTreePaths.value.delete(path)
-  } else {
-    collapsedTreePaths.value.add(path)
-  }
+function toggleNodeCollapse(nodeId: string) {
+  collapsedNodeIds.value[nodeId] = !collapsedNodeIds.value[nodeId]
 }
 
 function expandAllTree() {
-  collapsedTreePaths.value.clear()
+  collapsedNodeIds.value = {}
 }
 
 function collapseAllTree() {
-  if (!parsedJson.value) return
-  const paths = new Set<string>()
-  function collect(val: any, p: string) {
-    if (typeof val === 'object' && val !== null) {
-      paths.add(p)
-      for (const [k, v] of Object.entries(val)) {
-        collect(v, `${p}.${k}`)
-      }
-    }
-  }
-  collect(parsedJson.value, '$')
-  collapsedTreePaths.value = paths
+  const map: Record<string, boolean> = {}
+  graphData.value.nodes.forEach((n) => {
+    map[n.id] = true
+  })
+  collapsedNodeIds.value = map
 }
+
+const filteredTreeNodes = computed<GraphNode[]>(() => {
+  if (!parsedJson.value) return []
+  if (!treeSearchQuery.value.trim()) return graphData.value.nodes
+
+  const q = treeSearchQuery.value.toLowerCase().trim()
+  return graphData.value.nodes
+    .map((node) => {
+      const labelMatch = node.label.toLowerCase().includes(q) || node.path.toLowerCase().includes(q)
+      const matchingProps = node.properties.filter(
+        (p) => p.key.toLowerCase().includes(q) || String(p.valuePreview).toLowerCase().includes(q)
+      )
+      if (labelMatch) {
+        return node
+      }
+      if (matchingProps.length > 0) {
+        return {
+          ...node,
+          properties: matchingProps,
+        }
+      }
+      return null
+    })
+    .filter((n): n is GraphNode => n !== null)
+})
 
 function triggerFileInput() {
   if (import.meta.client) {
@@ -900,6 +930,38 @@ onMounted(() => {
                 </button>
               </div>
             </div>
+
+            <!-- Error Out-of-sync Banner Overlay -->
+            <div
+              v-if="validationError && jsonInput.trim()"
+              class="absolute inset-0 bg-zinc-950/75 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center z-30 select-text"
+            >
+              <div class="p-3 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 mb-2.5">
+                <WarningTriangle class="w-6 h-6" />
+              </div>
+              <p class="text-sm font-semibold text-white">Invalid JSON Payload</p>
+              <p class="text-xs text-rose-400 mt-1 max-w-sm font-mono truncate">{{ validationError }}</p>
+              <p class="text-[11px] text-zinc-400 mt-2 max-w-sm">
+                Kanvas grafik hanya merender JSON valid (diawali kurung kurawal <code class="text-zinc-200">{ }</code> atau array <code class="text-zinc-200">[ ]</code>).
+              </p>
+              <button
+                type="button"
+                class="mt-3.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium border border-zinc-700 transition-colors cursor-pointer"
+                @click="attemptAutoFix"
+              >
+                Coba Auto-Fix Syntax
+              </button>
+            </div>
+
+            <!-- Empty State Overlay -->
+            <div
+              v-else-if="!jsonInput.trim() || graphData.nodes.length === 0"
+              class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10"
+            >
+              <Tree class="w-8 h-8 text-[var(--text-tertiary)] mb-2" />
+              <p class="text-sm font-semibold text-[var(--text-primary)]">No Graph to Display</p>
+              <p class="text-xs text-[var(--text-tertiary)] mt-1">Paste valid JSON in the editor to visualize the node graph.</p>
+            </div>
           </div>
         </div>
 
@@ -938,40 +1000,77 @@ onMounted(() => {
           </div>
 
           <!-- Tree Recursive Node List -->
-          <div class="p-3 bg-zinc-50/70 dark:bg-[#0c0c0e] rounded-xl border border-zinc-200 dark:border-[#262626] font-mono text-xs max-h-[500px] overflow-y-auto space-y-1">
+          <div class="p-3 bg-zinc-50/70 dark:bg-[#0c0c0e] rounded-xl border border-zinc-200 dark:border-[#262626] font-mono text-xs max-h-[500px] overflow-y-auto space-y-2">
             <template v-if="parsedJson">
+              <div v-if="filteredTreeNodes.length === 0" class="text-center py-10 text-[var(--text-tertiary)]">
+                <Search class="w-6 h-6 mx-auto mb-2 opacity-50" />
+                <p>Tidak ada key atau value yang cocok dengan "{{ treeSearchQuery }}"</p>
+                <button
+                  type="button"
+                  class="mt-2 text-xs text-sky-500 hover:underline cursor-pointer"
+                  @click="treeSearchQuery = ''"
+                >
+                  Reset Filter
+                </button>
+              </div>
+
               <div
-                v-for="node in graphData.nodes"
+                v-for="node in filteredTreeNodes"
                 :key="node.id"
-                class="p-2 bg-white dark:bg-[#151518] border border-zinc-200 dark:border-[#242428] rounded-lg space-y-1"
-                :style="{ marginLeft: `${node.depth * 16}px` }"
+                class="p-2.5 bg-white dark:bg-[#151518] border border-zinc-200 dark:border-[#242428] rounded-xl space-y-1.5 transition-all shadow-2xs"
+                :style="{ marginLeft: `${node.depth * 14}px` }"
               >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <span class="font-semibold text-[var(--text-primary)]">{{ node.label }}</span>
-                    <Badge variant="secondary" size="sm" class="font-mono text-[10px]">
+                <!-- Node Header (Clickable to Collapse / Expand) -->
+                <div class="flex items-center justify-between gap-2">
+                  <div
+                    class="flex items-center gap-1.5 min-w-0 cursor-pointer select-none group"
+                    @click="toggleNodeCollapse(node.id)"
+                  >
+                    <button
+                      type="button"
+                      class="p-0.5 text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-transform"
+                      :title="collapsedNodeIds[node.id] ? 'Expand' : 'Collapse'"
+                    >
+                      <NavArrowRight v-if="collapsedNodeIds[node.id]" class="w-3.5 h-3.5" />
+                      <NavArrowDown v-else class="w-3.5 h-3.5" />
+                    </button>
+                    <span class="font-semibold text-[var(--text-primary)] hover:underline truncate">{{ node.label }}</span>
+                    <Badge variant="secondary" size="sm" class="font-mono text-[9px] px-1.5 py-0">
                       {{ node.type }}{{ node.itemCount !== undefined ? ` (${node.itemCount})` : '' }}
                     </Badge>
                   </div>
                   <button
                     type="button"
-                    class="text-[10px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] flex items-center gap-1 cursor-pointer"
+                    class="text-[10px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    title="Copy JSONPath"
                     @click="copyJsonPath(node.path)"
                   >
-                    <span>{{ node.path }}</span>
+                    <span class="font-mono truncate max-w-[140px]">{{ node.path }}</span>
                     <Copy class="w-3 h-3" />
                   </button>
                 </div>
 
-                <!-- Properties within this branch -->
-                <div class="pl-2 border-l border-zinc-200 dark:border-zinc-800 space-y-0.5 mt-1">
+                <!-- Properties within this branch (Collapsible) -->
+                <div
+                  v-show="!collapsedNodeIds[node.id]"
+                  class="pl-3 border-l-2 border-zinc-200 dark:border-zinc-800/80 space-y-0.5 mt-1.5"
+                >
+                  <div
+                    v-if="node.properties.length === 0"
+                    class="text-[11px] text-[var(--text-tertiary)] italic py-0.5"
+                  >
+                    (Empty {{ node.type }})
+                  </div>
                   <div
                     v-for="p in node.properties"
                     :key="p.key"
-                    class="flex items-center justify-between text-[11px] py-0.5 px-1 rounded hover:bg-zinc-100 dark:hover:bg-white/5"
+                    class="flex items-center justify-between text-[11px] py-1 px-1.5 rounded hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
                   >
-                    <span class="text-[var(--text-secondary)]">{{ p.key }}:</span>
+                    <div class="flex items-center gap-1.5 truncate mr-2">
+                      <span class="text-[var(--text-secondary)]">{{ p.key }}:</span>
+                    </div>
                     <span
+                      class="truncate font-mono text-right"
                       :class="
                         p.type === 'string' ? 'text-sky-500' :
                         p.type === 'number' ? 'text-amber-500' :
