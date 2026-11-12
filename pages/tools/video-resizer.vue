@@ -131,6 +131,7 @@ const keepAudio = ref(true)
 const isProcessing = ref(false)
 const processProgress = ref(0)
 const processStatus = ref('Preparing video frames...')
+const encoderAccelMode = ref<'gpu' | 'cpu' | null>(null)
 
 // Output State
 const outputBlobUrl = ref<string>('')
@@ -660,6 +661,110 @@ function cancelProcessing() {
   processStatus.value = 'Cancelled'
 }
 
+/** Probe hardware acceleration and execute conversion with safe CPU fallback */
+async function executeVideoConversion(
+  mediabunny: typeof import('mediabunny'),
+  params: {
+    sourceBlob: Blob
+    width: number
+    height: number
+    qualityLevel: 'high' | 'balanced' | 'compact'
+    keepAudioTrack: boolean
+    trim?: { start: number; end: number }
+    shouldAbort: () => boolean
+    onCreated: (conv: any) => void
+    onProgress: (progress: number, processedTime: number) => void
+  }
+): Promise<ArrayBuffer> {
+  const {
+    BlobSource,
+    ALL_FORMATS,
+    Input,
+    Output,
+    Mp4OutputFormat,
+    BufferTarget,
+    Conversion,
+    Quality,
+    canEncodeVideo
+  } = mediabunny
+
+  const qual = params.qualityLevel === 'high'
+    ? new Quality('high')
+    : params.qualityLevel === 'compact'
+      ? new Quality('low')
+      : new Quality('medium')
+
+  let preferHw = false
+  try {
+    preferHw = await canEncodeVideo('avc', {
+      width: params.width,
+      height: params.height,
+      quality: qual,
+      hardwareAcceleration: 'prefer-hardware'
+    })
+  } catch {
+    preferHw = false
+  }
+
+  const attempts: Array<'prefer-hardware' | 'no-preference'> = preferHw
+    ? ['prefer-hardware', 'no-preference']
+    : ['no-preference']
+
+  let lastError: any = null
+
+  for (const hwAccel of attempts) {
+    encoderAccelMode.value = hwAccel === 'prefer-hardware' ? 'gpu' : 'cpu'
+    const input = new Input({
+      source: new BlobSource(params.sourceBlob),
+      formats: ALL_FORMATS
+    })
+    const format = new Mp4OutputFormat({ fastStart: 'in-memory' })
+    const target = new BufferTarget()
+    const output = new Output({ format, target })
+
+    try {
+      const conv = await Conversion.init({
+        input,
+        output,
+        ...(params.trim ? { trim: params.trim } : {}),
+        video: {
+          width: params.width,
+          height: params.height,
+          fit: 'contain',
+          quality: qual,
+          hardwareAcceleration: hwAccel
+        },
+        audio: params.keepAudioTrack ? {} : { discard: true },
+        showWarnings: false
+      })
+
+      if (!conv.isValid) {
+        throw new Error('Format video tidak didukung oleh encoder.')
+      }
+
+      params.onCreated(conv)
+      conv.onProgress = params.onProgress
+      await conv.execute()
+
+      if (!target.buffer) {
+        throw new Error('Output buffer kosong.')
+      }
+      return target.buffer
+    } catch (err) {
+      lastError = err
+      if (params.shouldAbort() || hwAccel === 'no-preference') {
+        throw err
+      }
+    } finally {
+      try {
+        input.dispose()
+      } catch {}
+    }
+  }
+
+  throw lastError || new Error('Gagal memproses video.')
+}
+
 async function processVideo() {
   if (!videoFile.value && !videoUrl.value) return
 
@@ -676,7 +781,8 @@ async function processVideo() {
 
   isProcessing.value = true
   processProgress.value = 0
-  processStatus.value = locale.value === 'id' ? 'Menyiapkan hardware encoder...' : 'Preparing hardware encoder...'
+  encoderAccelMode.value = null
+  processStatus.value = locale.value === 'id' ? 'Memeriksa akselerasi GPU...' : 'Probing GPU encoder...'
   abortProcessing = false
 
   if (videoElementRef.value) {
@@ -685,16 +791,7 @@ async function processVideo() {
   }
 
   try {
-    const {
-      BlobSource,
-      ALL_FORMATS,
-      Input,
-      Output,
-      Mp4OutputFormat,
-      BufferTarget,
-      Conversion,
-      Quality
-    } = await import('mediabunny')
+    const mediabunny = await import('mediabunny')
 
     let sourceBlob: Blob
     if (videoFile.value) {
@@ -704,61 +801,32 @@ async function processVideo() {
       sourceBlob = await res.blob()
     }
 
-    const input = new Input({
-      source: new BlobSource(sourceBlob),
-      formats: ALL_FORMATS
-    })
-
-    const format = new Mp4OutputFormat({ fastStart: 'in-memory' })
-    const target = new BufferTarget()
-    const output = new Output({ format, target })
-
-    const qual = qualityPreset.value === 'high'
-      ? new Quality('high')
-      : qualityPreset.value === 'compact'
-        ? new Quality('low')
-        : new Quality('medium')
-
-    activeConversion = await Conversion.init({
-      input,
-      output,
-      trim: {
-        start,
-        end
+    const buffer = await executeVideoConversion(mediabunny, {
+      sourceBlob,
+      width: targetW,
+      height: targetH,
+      qualityLevel: qualityPreset.value,
+      keepAudioTrack: keepAudio.value && !isMuted.value,
+      trim: { start, end },
+      shouldAbort: () => abortProcessing,
+      onCreated: (conv) => {
+        activeConversion = conv
       },
-      video: {
-        width: targetW,
-        height: targetH,
-        fit: 'contain',
-        quality: qual,
-        keyFrameInterval: 1
-      },
-      audio: keepAudio.value && !isMuted.value ? {} : { discard: true },
-      showWarnings: false
+      onProgress: (progress: number, processedTime: number) => {
+        if (abortProcessing) return
+        const percent = Math.min(99, Math.max(0, Math.round(progress * 100)))
+        processProgress.value = percent
+        const modeLabel = encoderAccelMode.value === 'gpu' ? 'GPU' : 'CPU'
+        processStatus.value = locale.value === 'id'
+          ? `Memproses frame (${modeLabel}): ${percent}% (${processedTime.toFixed(1)}s)`
+          : `Encoding frames (${modeLabel}): ${percent}% (${processedTime.toFixed(1)}s)`
+      }
     })
-
-    if (!activeConversion.isValid) {
-      throw new Error('Format video tidak didukung oleh hardware encoder.')
-    }
-
-    activeConversion.onProgress = (progress: number, processedTime: number) => {
-      if (abortProcessing) return
-      const percent = Math.min(99, Math.max(0, Math.round(progress * 100)))
-      processProgress.value = percent
-      processStatus.value = locale.value === 'id'
-        ? `Memproses frame hardware: ${percent}% (${processedTime.toFixed(1)}s)`
-        : `Encoding frames: ${percent}% (${processedTime.toFixed(1)}s)`
-    }
-
-    await activeConversion.execute()
 
     if (abortProcessing) return
 
     processProgress.value = 100
     processStatus.value = locale.value === 'id' ? 'Menyelesaikan file MP4...' : 'Finalizing MP4 file...'
-
-    const buffer = target.buffer
-    if (!buffer) throw new Error('Output buffer kosong.')
 
     const finalBlob = new Blob([buffer], { type: 'video/mp4' })
 
@@ -775,18 +843,19 @@ async function processVideo() {
     isProcessing.value = false
     activePreviewMode.value = 'output'
 
+    const accelText = encoderAccelMode.value === 'gpu' ? 'GPU Hardware' : 'CPU Software'
     toast.success(
       locale.value === 'id' ? 'Selesai!' : 'Complete!',
       locale.value === 'id'
-        ? `Video berhasil diproses ke ${targetW}x${targetH} (${formatFileSize(finalBlob.size)}) secara instan via hardware GPU!`
-        : `Video processed to ${targetW}x${targetH} (${formatFileSize(finalBlob.size)}) instantly via hardware GPU!`
+        ? `Video diproses ke ${targetW}x${targetH} (${formatFileSize(finalBlob.size)}) via ${accelText}.`
+        : `Video processed to ${targetW}x${targetH} (${formatFileSize(finalBlob.size)}) via ${accelText}.`
     )
   } catch (err: any) {
     if (abortProcessing) return
     console.error('WebCodecs execution error:', err)
     toast.error(
       'Processing Error',
-      err?.message || 'Gagal memproses video via hardware encoder.'
+      err?.message || 'Gagal memproses video.'
     )
     isProcessing.value = false
   } finally {
@@ -920,16 +989,8 @@ async function processBatch() {
   batchEtaSeconds.value = 0
 
   try {
-    const {
-      BlobSource,
-      ALL_FORMATS,
-      Input,
-      Output,
-      Mp4OutputFormat,
-      BufferTarget,
-      Conversion,
-      Quality
-    } = await import('mediabunny')
+    const mediabunny = await import('mediabunny')
+    const { BlobSource, ALL_FORMATS, Input } = mediabunny
 
     for (let i = 0; i < queue.value.length; i++) {
       const item = queue.value[i]
@@ -941,79 +1002,64 @@ async function processBatch() {
       item.estimatedSecondsRemaining = 0
 
       try {
-        const input = new Input({
+        const probeInput = new Input({
           source: new BlobSource(item.file),
           formats: ALL_FORMATS
         })
+        let srcW = 1280
+        let srcH = 720
+        try {
+          const videoTrack = await probeInput.getPrimaryVideoTrack()
+          if (videoTrack) {
+            srcW = await videoTrack.getDisplayWidth()
+            srcH = await videoTrack.getDisplayHeight()
+          }
+        } finally {
+          probeInput.dispose()
+        }
 
-        const videoTrack = await input.getPrimaryVideoTrack()
-        const srcW = videoTrack ? await videoTrack.getDisplayWidth() : 1280
-        const srcH = videoTrack ? await videoTrack.getDisplayHeight() : 720
         const dims = computeBatchDimensions(srcW, srcH, batchPreset.value)
         item.targetWidth = dims.width
         item.targetHeight = dims.height
 
-        const format = new Mp4OutputFormat({ fastStart: 'in-memory' })
-        const target = new BufferTarget()
-        const output = new Output({ format, target })
-
-        const qual = batchQuality.value === 'high'
-          ? new Quality('high')
-          : batchQuality.value === 'compact'
-            ? new Quality('low')
-            : new Quality('medium')
-
-        const conversion = await Conversion.init({
-          input,
-          output,
-          video: {
-            width: dims.width,
-            height: dims.height,
-            fit: 'contain',
-            quality: qual,
-            keyFrameInterval: 1
-          },
-          audio: batchKeepAudio.value ? {} : { discard: true },
-          showWarnings: false
-        })
-
-        if (!conversion.isValid) {
-          throw new Error('Conversion unsupported')
-        }
-
         const itemStartTime = Date.now()
-        conversion.onProgress = (prog: number) => {
-          if (abortBatch) return
-          item.progress = Math.min(99, Math.round(prog * 100))
+        const buffer = await executeVideoConversion(mediabunny, {
+          sourceBlob: item.file,
+          width: dims.width,
+          height: dims.height,
+          qualityLevel: batchQuality.value,
+          keepAudioTrack: batchKeepAudio.value,
+          shouldAbort: () => abortBatch,
+          onCreated: (conv) => {
+            activeBatchConversion = conv
+          },
+          onProgress: (prog: number) => {
+            if (abortBatch) return
+            item.progress = Math.min(99, Math.round(prog * 100))
 
-          const elapsedSec = (Date.now() - itemStartTime) / 1000
-          if (prog > 0.03 && elapsedSec > 0.4) {
-            const estimatedTotalSec = elapsedSec / prog
-            const currentRemainingSec = Math.max(0, Math.round(estimatedTotalSec - elapsedSec))
-            item.estimatedSecondsRemaining = currentRemainingSec
+            const elapsedSec = (Date.now() - itemStartTime) / 1000
+            if (prog > 0.03 && elapsedSec > 0.4) {
+              const estimatedTotalSec = elapsedSec / prog
+              const currentRemainingSec = Math.max(0, Math.round(estimatedTotalSec - elapsedSec))
+              item.estimatedSecondsRemaining = currentRemainingSec
 
-            // Calculate remaining waiting items estimate based on processed speed
-            const processedBytesThisItem = item.file.size * prog
-            const speedBytesPerSec = processedBytesThisItem / elapsedSec
-            const waitingItems = queue.value.slice(i + 1).filter((it) => it.status === 'waiting')
-            const waitingBytes = waitingItems.reduce((acc, it) => acc + it.file.size, 0)
-            const waitingTimeSec = speedBytesPerSec > 0 ? Math.round(waitingBytes / speedBytesPerSec) : 0
+              // Calculate remaining waiting items estimate based on processed speed
+              const processedBytesThisItem = item.file.size * prog
+              const speedBytesPerSec = processedBytesThisItem / elapsedSec
+              const waitingItems = queue.value.slice(i + 1).filter((it) => it.status === 'waiting')
+              const waitingBytes = waitingItems.reduce((acc, it) => acc + it.file.size, 0)
+              const waitingTimeSec = speedBytesPerSec > 0 ? Math.round(waitingBytes / speedBytesPerSec) : 0
 
-            batchEtaSeconds.value = currentRemainingSec + waitingTimeSec
+              batchEtaSeconds.value = currentRemainingSec + waitingTimeSec
+            }
           }
-        }
-
-        activeBatchConversion = conversion
-        await conversion.execute()
+        })
 
         if (abortBatch) {
           item.status = 'waiting'
           item.estimatedSecondsRemaining = 0
           break
         }
-
-        const buffer = target.buffer
-        if (!buffer) throw new Error('Buffer empty')
 
         const finalBlob = new Blob([buffer], { type: 'video/mp4' })
         item.outputBlob = finalBlob
@@ -1592,14 +1638,18 @@ onUnmounted(() => {
 
         <!-- Processing State -->
         <div v-if="isProcessing" class="p-3.5 bg-zinc-50 dark:bg-zinc-900/60 border border-[var(--border-card)] rounded-xl space-y-2.5">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-medium text-[var(--text-primary)]">{{ processStatus || 'Processing video...' }}</span>
-            <span class="font-mono font-bold text-[var(--text-primary)]">{{ processProgress }}%</span>
+          <div class="flex items-center justify-between text-xs gap-2">
+            <span class="font-medium text-[var(--text-primary)] truncate">{{ processStatus || 'Processing video...' }}</span>
+            <span class="font-mono font-bold text-[var(--text-primary)] shrink-0">{{ processProgress }}%</span>
           </div>
           <div class="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
             <div class="h-full bg-zinc-900 dark:bg-white transition-all duration-150" :style="{ width: `${processProgress}%` }" />
           </div>
-          <div class="flex justify-end pt-1">
+          <div class="flex items-center justify-between pt-1">
+            <Badge v-if="encoderAccelMode" variant="outline" size="sm" class="font-mono text-[10px]">
+              {{ encoderAccelMode === 'gpu' ? 'GPU Hardware' : 'CPU Software' }}
+            </Badge>
+            <span v-else />
             <Button variant="outline" size="sm" class="text-xs text-rose-500 hover:text-rose-600" @click="cancelProcessing">
               Cancel
             </Button>
@@ -1608,10 +1658,13 @@ onUnmounted(() => {
 
         <!-- Result Summary & Download (When Output is Ready) -->
         <div v-else-if="outputBlobUrl" class="p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl space-y-3">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               <Check class="w-4 h-4" />
               <span>Conversion Ready</span>
+              <Badge v-if="encoderAccelMode" variant="outline" size="sm" class="font-mono text-[10px] ml-1">
+                {{ encoderAccelMode === 'gpu' ? 'GPU' : 'CPU' }}
+              </Badge>
             </div>
             <Badge v-if="sizeSavingsPercentage > 0" variant="primary" size="sm" class="bg-emerald-500 text-white font-mono">
               -{{ sizeSavingsPercentage }}% Saved
@@ -1731,6 +1784,9 @@ onUnmounted(() => {
           <div class="flex items-center gap-2">
             <h2 class="text-sm font-semibold text-[var(--text-primary)]">Queue List</h2>
             <Badge variant="secondary" size="sm" class="font-mono text-[10px]">{{ queue.length }} files</Badge>
+            <Badge v-if="encoderAccelMode" variant="outline" size="sm" class="font-mono text-[10px]">
+              {{ encoderAccelMode === 'gpu' ? 'GPU' : 'CPU' }}
+            </Badge>
           </div>
 
           <div class="flex items-center gap-2">
